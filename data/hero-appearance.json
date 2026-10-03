@@ -36,6 +36,8 @@
     },
     "archer": {
       "gender": "female",
+      "hair": "#6a4a2a",
+      "slender": true,
       "background": "#2d4a33",
       "backgroundShade": "#243d29",
       "cloth": "#3f7a4a",

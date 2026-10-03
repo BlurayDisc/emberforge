@@ -4,6 +4,7 @@ import { createPixelCanvas, type PixelCanvas } from './pixelCanvas';
 import { POND_CENTER, drawGroundTexture, drawTownDecorations } from './townDecorationArt';
 import { isOpenGround } from './townPlacement';
 import { WELL_POSITIONS, type Point } from './townLayout';
+import { drawTree } from './townTreeArt';
 import { roadCoverage } from './townRoadCoverage';
 
 const TREE_MARGIN = 10;
@@ -34,16 +35,6 @@ function drawRoads(art: PixelCanvas, coverage: Uint8Array, random: Random): void
   }
 }
 
-function drawTree(art: PixelCanvas, centerX: number, baseY: number): void {
-  art.fill('timber', centerX - 2, baseY - 12, 4, 12);
-  const canopyRows: Array<[number, number]> = [[-9, 8], [-12, 12], [-15, 14], [-18, 14], [-21, 12], [-24, 8]];
-  canopyRows.forEach(([offset, width]) => {
-    art.fill('forest', centerX - width / 2, baseY + offset - 4, width, 4);
-    art.fill('grass', centerX - width / 2 + 2, baseY + offset - 4, Math.max(2, width / 3), 1);
-  });
-  art.fill('outline', centerX - 7, baseY - 1, 14, 1);
-}
-
 function drawWell(art: PixelCanvas, centerX: number, baseY: number): void {
   art.fill('stoneDark', centerX - 10, baseY - 14, 20, 14);
   art.fill('stone', centerX - 9, baseY - 13, 18, 11);
@@ -59,7 +50,8 @@ function drawForestEdge(art: PixelCanvas, random: Random): void {
   for (let x = 6; x < TOWN_WIDTH; x += 20) drawTree(art, x + random.nextInt(-4, 4), random.nextInt(26, 36));
 }
 
-function scatterTrees(art: PixelCanvas, coverage: Uint8Array, random: Random): void {
+// The trees are not painted here. They are sprites, so a person who walks behind a tree is hidden by it.
+function pickTreePositions(coverage: Uint8Array, random: Random): Point[] {
   const trees: Point[] = [];
   for (let attempt = 0; attempt < 1400 && trees.length < 46; attempt++) {
     const x = random.nextInt(10, TOWN_WIDTH - 10);
@@ -67,10 +59,15 @@ function scatterTrees(art: PixelCanvas, coverage: Uint8Array, random: Random): v
     const crowded = Math.hypot(POND_CENTER.x - x, POND_CENTER.y - y) < 34 || trees.some((tree) => Math.hypot(tree.x - x, tree.y - y) < 26);
     if (!crowded && isOpenGround(x, y, coverage, TREE_MARGIN)) trees.push({ x, y });
   }
-  trees.sort((first, second) => first.y - second.y).forEach((tree) => drawTree(art, tree.x, tree.y));
+  return trees;
 }
 
-export function drawTownGroundArt(): HTMLCanvasElement {
+export interface TownGroundArt {
+  canvas: HTMLCanvasElement;
+  treePositions: Point[];
+}
+
+export function drawTownGroundArt(): TownGroundArt {
   const art = createPixelCanvas(TOWN_WIDTH, LOGICAL_HEIGHT);
   const random = createRandom(11).fork('town-ground');
   const coverage = roadCoverage();
@@ -78,8 +75,8 @@ export function drawTownGroundArt(): HTMLCanvasElement {
   drawGroundTexture(art, random.fork('texture'));
   drawRoads(art, coverage, random);
   drawTownDecorations(art, coverage, random.fork('decor'));
-  scatterTrees(art, coverage, random);
+  const treePositions = pickTreePositions(coverage, random);
   WELL_POSITIONS.forEach((position) => drawWell(art, position.x, position.y));
   drawForestEdge(art, random.fork('forest-edge'));
-  return art.canvas;
+  return { canvas: art.canvas, treePositions };
 }

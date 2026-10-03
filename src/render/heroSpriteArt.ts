@@ -76,10 +76,14 @@ const DRAW_GEAR: Record<ClassId, (paint: Paint, look: ClassLook, hair: Hex) => v
     paint(GOLD, 2, 18, 2, 3);
   },
   archer: (paint, look, hair) => {
+    paint(hair, 10, 0, 4, 2);
+    paint(hair, 6, 5, 2, 17);
+    paint(hair, 16, 5, 2, 17);
     paint(hair, 8, 5, 8, 2);
     paint(look.cloth as Hex, 7, 2, 10, 5);
     paint(look.cloth as Hex, 7, 5, 2, 8);
     paint(look.clothShade as Hex, 7, 5, 1, 8);
+    paint(hair, 8, 6, 8, 1);
     paint(WOOD, 2, 11, 1, 2);
     paint(WOOD, 1, 13, 1, 7);
     paint(WOOD, 2, 20, 1, 2);

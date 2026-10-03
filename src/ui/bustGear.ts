@@ -84,13 +84,19 @@ export const BUST_GEAR: Record<ClassId, BustGearDrawer> = {
     paintBustBrows(drawing, 'angry');
     paintBustMouth(drawing, skin, 'smirk');
   },
-  archer: (drawing, { look, skin, skinShade, hair }) => {
+  archer: (drawing, { look, skin, hair }) => {
+    drawing.fill(hair, 6, 8, 3, 19);
+    drawing.fill(hair, 23, 8, 3, 19);
+    drawing.fill(hair, 13, 1, 4, 2);
     drawing.fill(look.cloth, 8, 3, 16, 5);
     drawing.fill(look.clothShade, 8, 7, 16, 1);
     drawing.fill(RED, 8, 8, 16, 1);
     drawing.fill(RED, 23, 6, 6, 2);
     drawing.fill(RED, 27, 8, 4, 1);
     drawing.fill(hair, 10, 7, 12, 1);
+    // The fringe hangs in front of the cap band, with uneven lengths.
+    [[11, 2], [14, 2], [17, 2]].forEach(([x, width]) => drawing.fill(hair, x as number, 8, width as number, 2));
+    [[13, 1], [16, 1], [19, 2]].forEach(([x, width]) => drawing.fill(hair, x as number, 8, width as number, 1));
     drawing.fill(WOOD, 3, 4, 2, 2);
     drawing.fill(WOOD, 2, 6, 1, 14);
     drawing.fill(WOOD, 3, 20, 2, 2);
@@ -105,9 +111,8 @@ export const BUST_GEAR: Record<ClassId, BustGearDrawer> = {
     drawing.fill(RED, 25, 17, 1, 3);
     drawing.fill(LEATHER, 6, 25, 3, 7);
     drawing.fill(look.trim, 6, 28, 3, 1);
-    narrowBustEyes(drawing, skinShade);
-    paintBustBrows(drawing, 'angry');
-    paintBustMouth(drawing, skin, 'smirk');
+    paintBustBrows(drawing, 'confident', hair);
+    paintBustMouth(drawing, skin, 'laugh');
   },
   mage: (drawing, { look, hair, skin, skinShade }) => {
     drawHair(drawing, hair);

@@ -2,8 +2,9 @@ import type { Paint } from './figureColors';
 import { INK, MOUTH_DARK, WHITE } from './figureColors';
 
 const LIP = '#8a3a3a';
+const LIPSTICK = '#c8505a';
 
-export type Mouth = 'smirk' | 'flat' | 'smile' | 'roar';
+export type Mouth = 'smirk' | 'flat' | 'smile' | 'laugh' | 'roar';
 export type Brows = 'angry' | 'flat' | 'sly' | 'confident';
 
 // Eyes sit at x 16-17 and 22-23, rows 12-13. A lid row of skin shade narrows them.
@@ -44,6 +45,11 @@ export function paintMouth(paint: Paint, skin: string, mouth: Mouth): void {
     paint(WHITE, 20, 16, 1, 1);
   } else if (mouth === 'flat') {
     paint('#a8505a', 19, 16, 2, 1);
+  } else if (mouth === 'laugh') {
+    paint(LIPSTICK, 18, 16, 1, 1);
+    paint(LIPSTICK, 21, 16, 1, 1);
+    paint(WHITE, 19, 16, 2, 1);
+    paint(LIPSTICK, 19, 17, 2, 1);
   } else if (mouth === 'smile') {
     paint(LIP, 18, 16, 1, 1);
     paint(LIP, 19, 17, 2, 1);

@@ -5,7 +5,7 @@ import { outlineOpaquePixels } from '../pixelOutline';
 import { drawBaseFigure } from './baseFigure';
 import { FIGURE_HEIGHT, FIGURE_WIDTH, INK, type Erase } from './figureColors';
 import { GEAR_BY_CLASS } from './gearByClass';
-import { slimJaw } from './slimJaw';
+import { separateBrowsFromHair, slimJaw } from './slimJaw';
 
 const FLOOR_TOP = 58;
 
@@ -32,7 +32,10 @@ function buildFullBodyPortrait(classId: ClassId, heroName: string): HTMLCanvasEl
   const figureContext = figure.canvas.getContext('2d');
   const erase: Erase = (x, y, width, height) => figureContext?.clearRect(x, y, width, height);
   GEAR_BY_CLASS[classId](figure.fill, appearance, erase);
-  if (appearance.gender === 'female') slimJaw(figure.fill, appearance.hair);
+  if (appearance.gender === 'female') {
+    slimJaw(figure.fill, appearance.hair);
+    separateBrowsFromHair(figure.fill, appearance.skin);
+  }
   // The outline is cut from the figure alone, so the backdrop never gets an outline.
   outlineOpaquePixels(figure.canvas, INK);
 

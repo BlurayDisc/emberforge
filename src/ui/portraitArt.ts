@@ -75,6 +75,12 @@ function slimBustJaw(drawing: PixelDrawing, hair: string): void {
   drawing.fill(hair, 19, 17, 1, 4);
 }
 
+// The outer end of each brow would touch the hair strip at the temple. One skin pixel keeps them apart.
+function separateBustBrowsFromHair(drawing: PixelDrawing, skin: string): void {
+  drawing.fill(skin, 11, 10, 1, 2);
+  drawing.fill(skin, 20, 10, 1, 2);
+}
+
 function drawBorder(drawing: PixelDrawing): void {
   drawing.fill(INK, 0, 0, 32, 1);
   drawing.fill(INK, 0, 31, 32, 1);
@@ -93,7 +99,10 @@ function buildPortrait(classId: ClassId, heroName: string): PixelDrawing {
   drawFace(drawing, skinShade, eye, hair);
   drawGenderDetails(drawing, gender, skinShade, hair);
   BUST_GEAR[classId](drawing, appearance);
-  if (gender === 'female') slimBustJaw(drawing, hair);
+  if (gender === 'female') {
+    slimBustJaw(drawing, hair);
+    separateBustBrowsFromHair(drawing, skin);
+  }
   drawBorder(drawing);
   return drawing;
 }

@@ -1,10 +1,11 @@
 import type { PixelDrawing } from './pixelDraw';
 
 const LIP = '#8a3a3a';
+const LIPSTICK = '#c8505a';
 const BROW_INK = '#2a1a14';
 const MOUTH_DARK = '#5a1a1a';
 
-export type BustMouth = 'smirk' | 'flat' | 'smile' | 'roar';
+export type BustMouth = 'smirk' | 'flat' | 'smile' | 'laugh' | 'roar';
 export type BustBrows = 'angry' | 'flat' | 'sly' | 'confident';
 
 // Eyes sit at x 12-14 and 17-19, rows 13-14. A lid row of skin shade narrows them.
@@ -42,6 +43,11 @@ export function paintBustMouth(drawing: PixelDrawing, skin: string, mouth: BustM
     drawing.fill(LIP, 18, 17, 1, 1);
   } else if (mouth === 'flat') {
     drawing.fill('#a8505a', 15, 18, 2, 1);
+  } else if (mouth === 'laugh') {
+    drawing.fill(LIPSTICK, 14, 18, 1, 1);
+    drawing.fill(LIPSTICK, 17, 18, 1, 1);
+    drawing.fill('#ffffff', 15, 18, 2, 1);
+    drawing.fill(LIPSTICK, 15, 19, 2, 1);
   } else if (mouth === 'smile') {
     drawing.fill(LIP, 14, 18, 1, 1);
     drawing.fill(LIP, 15, 19, 2, 1);
