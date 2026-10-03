@@ -1,5 +1,5 @@
 import type { GameState } from '../../model/gameState';
-import type { Hero } from '../../model/hero';
+import { SAVE_MIGRATIONS } from './migrations';
 
 export const CURRENT_SAVE_VERSION = 7;
 
@@ -7,23 +7,19 @@ export function serializeGameState(state: GameState): string {
   return JSON.stringify(state);
 }
 
-// Version 6 saves lack the timed fields. They get safe defaults, so the player keeps their game.
-function upgradeVersionSixHero(hero: Hero): Hero {
-  return { ...hero, healthAsOfMs: hero.healthAsOfMs ?? 0, downedUntilMs: hero.downedUntilMs ?? null };
-}
-
+// Runs the migrations one after another, from the saved version up to the current one.
+// A save from a newer game, or one with a missing step, returns null. The caller must then keep the raw text.
 export function parseGameState(serialized: string): GameState | null {
   try {
-    const parsed = JSON.parse(serialized) as Partial<GameState>;
-    if (parsed.saveVersion !== CURRENT_SAVE_VERSION && parsed.saveVersion !== 6) return null;
-    if (!Array.isArray(parsed.company) || !Array.isArray(parsed.backpack)) return null;
-    return {
-      ...(parsed as GameState),
-      saveVersion: CURRENT_SAVE_VERSION,
-      company: parsed.company.map(upgradeVersionSixHero),
-      jobs: parsed.jobs ?? [],
-      jobsStarted: parsed.jobsStarted ?? 0,
-    };
+    let save = JSON.parse(serialized) as Record<string, unknown>;
+    while (typeof save.saveVersion === 'number' && save.saveVersion < CURRENT_SAVE_VERSION) {
+      const migration = SAVE_MIGRATIONS.find((candidate) => candidate.fromVersion === save.saveVersion);
+      if (!migration) return null;
+      save = { ...migration.migrate(save), saveVersion: migration.fromVersion + 1 };
+    }
+    if (save.saveVersion !== CURRENT_SAVE_VERSION) return null;
+    if (!Array.isArray(save.company) || !Array.isArray(save.backpack)) return null;
+    return save as unknown as GameState;
   } catch {
     return null;
   }

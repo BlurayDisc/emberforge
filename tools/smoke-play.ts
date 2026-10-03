@@ -10,6 +10,7 @@ import {
   startDungeonRunCommand,
   type GameStore,
 } from '../src/game';
+import { CURRENT_SAVE_VERSION, parseGameState } from '../src/systems/save';
 import { MATERIALS } from '../src/content/materials';
 import { addMaterials } from '../src/systems/inventory';
 import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
@@ -137,6 +138,12 @@ function playSession(seed: number): string {
   const hero = finalState.company[0];
   return JSON.stringify([finalState.copper, encounters, hero?.level, hero?.experience, hero?.statistics]);
 }
+
+// A save from an older version must load, not reset. This is a minimal version 6 save.
+const oldSave = JSON.stringify({ ...createStore(1).getState(), saveVersion: 6, jobs: undefined, jobsStarted: undefined });
+const migrated = parseGameState(oldSave);
+assert.ok(migrated && migrated.saveVersion === CURRENT_SAVE_VERSION && Array.isArray(migrated.jobs), 'a version 6 save migrates');
+assert.equal(parseGameState(JSON.stringify({ saveVersion: CURRENT_SAVE_VERSION + 1, company: [], backpack: [] })), null, 'a newer save is not guessed');
 
 const firstSummary = playSession(12345);
 const secondSummary = playSession(12345);

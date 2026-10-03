@@ -183,6 +183,8 @@ Ten brackets. Each bracket has one town.
 
 ## 10. Save
 
+Saves are never dropped on an update. Each change of the saved data adds a migration (`systems/save/migrations.ts`). A save that cannot load is kept under `emberforge.save.unreadable`.
+
 - The game saves after every **player move** (equip, craft, sell, buy, travel, start or stop a run) and after every battle.
 - Format: one JSON object with a `version` number and migrations. Storage: browser local storage. The previous save is kept as a backup.
 - Export and import of the save file is in the menu. This moves a save between devices.
@@ -209,7 +211,7 @@ Ten brackets. Each bracket has one town.
 - **Heroes:** the Stats tab shows the portrait, attributes, Power and the battle record. The Equipment tab shows a paper doll with slots around the portrait. Click a slot: Equip new item (side by side compare, green for better, red for worse), View item (big portrait and stats) or Unequip.
 - **Sound:** all sound is made in the browser, so the game has no sound files. A music track plays for the town, for battles and for bosses. Combat sounds depend on who hits: a hero attack is the weapon plus the monster cry; a monster attack is its strike plus a hit on the armour of the hero (heavy metal clang, medium leather thud, light cloth thump). There are sounds for criticals, heals, defeats, victory, level-up and button clicks. The Settings screen has music volume, effects volume and mute. Music and sound recipes are in `data/audio/`.
 - **Reset:** the Settings screen has a red Danger zone with RESET GAME. It needs a second click to confirm.
-- **Style:** pixel art, wood and parchment menus, blackletter titles (Jacquard 12), pixel text (Pixelify Sans).
+- **Style:** pixel art, wood and parchment menus, blackletter panel titles (Jacquard 12). English body text and row titles use Atkinson Hyperlegible for easy reading. Chinese keeps the pixel fonts (Pixelify Sans, Fusion Pixel).
 - **Data:** all game data is JSON in `data/`. A README there explains each file.
 - **Languages:** English and Simplified Chinese. The player picks the language in the Settings screen. The choice is saved apart from the game save. All text and content names are in `data/i18n/`. Item names are built from parts (material, base, affixes), so they change language too.
 

@@ -47,7 +47,7 @@ Rules:
 7. Content has stable string ids (`base.sword`). Never use array positions as ids.
 8. No magic numbers in systems. Game data and numbers live in `data/*.json` (balance numbers in `data/balance/`). `content/` only loads them with types.
 9. Every player move is a command in `game/commands/`. The command runner saves after each one. The UI never changes state by itself.
-10. Change the shape of saved data → raise `SAVE_VERSION`. There are no migrations yet, so a save with an old version is dropped and a new game starts. Say this in your summary.
+10. Never drop the player's save. Change the shape of saved data → raise `CURRENT_SAVE_VERSION` and add one migration in `systems/save/migrations.ts`. The smoke tool checks that old saves load. A save that cannot load is kept under `emberforge.save.unreadable`.
 
 Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the public functions and types. Keep the rest private.
 

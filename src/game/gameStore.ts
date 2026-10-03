@@ -37,7 +37,10 @@ export interface GameStore {
 
 function loadSavedState(storage: SaveStorage): GameState | null {
   const serialized = storage.read();
-  return serialized === null ? null : parseGameState(serialized);
+  if (serialized === null) return null;
+  const parsed = parseGameState(serialized);
+  if (parsed === null) storage.keepUnreadable?.(serialized);
+  return parsed;
 }
 
 function createFreshState(): GameState {

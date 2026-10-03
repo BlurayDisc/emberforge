@@ -24,6 +24,7 @@
   --checker: linear-gradient(45deg, rgba(0, 0, 0, 0.14) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.14) 75%);
   --font-cjk: 'Fusion Pixel 12px Proportional SC';
   --font-body: 'Pixelify Sans', var(--font-cjk), ui-monospace, monospace;
+  --font-readable: 'Atkinson Hyperlegible', var(--font-cjk), system-ui, sans-serif;
   --font-title: 'Jacquard 12', var(--font-cjk), 'Pixelify Sans', serif;
 }
 
@@ -73,4 +74,22 @@ p {
 :lang(zh-Hans) .hud-log,
 :lang(zh-Hans) .run-hud {
   font-size: 12px;
+}
+
+/* English body text uses a plain readable font. Chinese keeps the pixel font. Headings keep the blackletter font. */
+html:lang(en),
+html:lang(en) body {
+  font-family: var(--font-readable);
+  -webkit-font-smoothing: antialiased;
+  font-smooth: auto;
+}
+
+/* Row and section titles carry the information, so English uses the readable font there too. */
+html:lang(en) .card-title,
+html:lang(en) .section-title,
+html:lang(en) .item-name,
+html:lang(en) .result-title {
+  font-family: var(--font-readable);
+  font-weight: 700;
+  font-size: 18px;
 }
