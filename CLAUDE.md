@@ -1,4 +1,4 @@
-# CLAUDE.md — Emberforge
+# CLAUDE.md - Emberforge
 
 Pixel-art, turn-based crafting RPG. Stack: three.js + TypeScript + Vite. Static web build.
 
@@ -15,7 +15,7 @@ Pixel-art, turn-based crafting RPG. Stack: three.js + TypeScript + Vite. Static 
 | `npm run check` | Type check + architecture boundary check. Run it before you finish any task. |
 | `npm run build` | `check` + production build into `dist/` |
 | `npm run balance` | Balance simulator (`tools/balance-sim/run.ts`). Prints win rate, duration and HP lost per dungeon and party. |
-| `npm run validate` | Content validator (created with the content in the MVP) |
+| `npm run validate` | Data validator (`tools/validate-data.ts`). `check` and `build` run it too. |
 
 ## Architecture
 
@@ -25,13 +25,14 @@ Many small directories. Each game system is independent. `tools/check-boundaries
 |---|---|---|
 | `src/kernel/` | Seeded random, ids, math. No game knowledge. | nothing |
 | `src/model/` | Plain data types (Hero, Item, Save …). No logic. | kernel |
-| `src/content/` | Static data: classes, bases, affixes, materials, monsters, dungeons, towns, balance numbers | kernel, model |
+| `src/content/` | Typed loaders for the JSON files in `data/`. The only code that reads `data/`. | kernel, model |
 | `src/systems/<name>/` | Pure game logic. One system per directory. | kernel, model, content |
 | `src/game/` | Player commands, state store, autosave, storage. The only layer that joins systems. | all except render, ui |
 | `src/render/` | three.js stage. Reads state. Never changes it. | kernel, model, content |
 | `src/ui/` | DOM screens. Sends commands to `game/`. | kernel, model, content, game |
 | `src/app/` | Composition root: joins `game`, `render` and `ui` (for example battle playback). | kernel, model, content, game, render, ui |
-| `tools/` | Node scripts: boundary check, balance simulator, content validator | everything |
+| `data/` | **Game data as JSON** (classes, materials, monsters, dungeons, towns, buildings, base items, affixes, balance numbers). No code. A wiki tool can scan it. | - |
+| `tools/` | Node scripts: boundary check, data validator, balance simulator | everything |
 
 Rules:
 
@@ -42,7 +43,7 @@ Rules:
 5. Game state is plain JSON (no classes, Map, Set or functions). A save is `JSON.stringify(state)`.
 6. Never mutate state in place. Return a new object.
 7. Content has stable string ids (`base.sword`). Never use array positions as ids.
-8. No magic numbers in systems. Numbers live in `content/` (balance numbers in `content/balance/`).
+8. No magic numbers in systems. Game data and numbers live in `data/*.json` (balance numbers in `data/balance/`). `content/` only loads them with types.
 9. Every player move is a command in `game/commands/`. The command runner saves after each one. The UI never changes state by itself.
 10. Change the shape of saved data → raise `SAVE_VERSION` and add a migration.
 
@@ -56,24 +57,27 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 ## Balance (no unit tests)
 
 - **Do not write unit tests.** Do not add a test framework or coverage tools. This is a personal game.
-- Balance is checked by `tools/balance-sim/`. It runs many seeded battles across a grid of hero level × gear ilvl × quality × monster level. It prints a table and compares it with the targets in design.md section 8 (targets live in `content/balance/targets.ts`).
-- Run `npm run balance` after you change stats, formulas, items, affixes, monsters or XP numbers. Fix the numbers in `content/balance/`, then run it again.
-- `tools/validate-content/` checks the content. It must fail on:
-  - a recipe that mixes tiers (the bracket rule),
-  - a monster drop whose tier differs from its bracket,
-  - a dungeon level outside its bracket,
-  - an unknown id.
-  Run `npm run validate` after you edit content.
+- Balance is checked by `tools/balance-sim/`. It runs many seeded battles for each dungeon, with and without crafted gear. It prints win rate, duration (against the target curve in design.md section 8) and HP lost.
+- Run `npm run balance` after you change stats, formulas, items, affixes, monsters or XP numbers. Fix the numbers in `data/balance/`, then run it again.
+- `tools/validate-data.ts` checks the JSON in `data/`. It fails on:
+  - a monster drop whose material tier differs from the tier of the dungeon bracket (the bracket rule),
+  - a base item that needs a material category that a tier does not have (so a recipe would mix tiers or fail),
+  - a dungeon level outside its town bracket,
+  - an unknown id or sprite key.
+  Run `npm run validate` after you edit `data/`.
+- Never put an em dash in `data/` files. Use a normal hyphen - instead.
 
 ## Pixel-art rules
 
 - Logical resolution 480×270. Scale by whole numbers only. `image-rendering: pixelated`.
 - Textures use `NearestFilter`, no mipmaps. The renderer has antialiasing off.
 - Put sprites and the camera on whole-pixel positions. No sub-pixel movement.
-- Use colors from `render/palette.ts` only. Add a color there first.
+- Use colors from `render/palette.ts` (stage) and `ui/styles/theme.css` (menus) only. Add a color there first.
 - Draw all sprites at one pixel scale. Do not mix scales.
 - Load sprites into one atlas once. Do not create objects in the per-frame loop. Reuse them.
-- Fonts and assets are bundled in the repo. No CDN.
+- Fonts and assets are bundled in the repo. No CDN. Fonts: Jacquard 12 (titles, signs) and Pixelify Sans (text), from `@fontsource`.
+- Menu frames use notched box-shadow outlines (no border radius). Buttons press down 2 px. Keep that look in new components.
+- Building labels are DOM text on top of the canvas (`ui/townOverlay.ts`). Their size follows the whole-number stage scale (`--stage-scale`).
 
 ## Web and platform rules
 
@@ -86,6 +90,7 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 
 - Write self-documenting code. Use game-domain names and put the technical detail in the name (`rollAffixValue`, `slotsOccupiedByItem`).
 - Do not add comments. If code needs a comment, rename it or split it.
+- Never use em dashes (the long dash character) in code, UI text, data files or docs. Use a normal hyphen - instead.
 - TypeScript `strict`. No `any`.
 - One concept per file. Keep files under about 200 lines. No `utils.ts` or `helpers.ts`.
 - Prefer data tables in `content/` over `if`/`switch` chains in systems.

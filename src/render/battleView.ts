@@ -1,4 +1,4 @@
-import { Color, Mesh, MeshBasicMaterial, PlaneGeometry, type Sprite } from 'three';
+import { Color, Group, Mesh, MeshBasicMaterial, PlaneGeometry, type Sprite } from 'three';
 import { createRandom } from '../kernel/random';
 import type { BattleUnit } from '../model/battle';
 import { PALETTE } from './palette';
@@ -13,6 +13,7 @@ const SIDE_OFFSET_X = 110;
 const FLASH_SECONDS = 0.18;
 
 export interface BattleView {
+  setVisible(isVisible: boolean): void;
   showUnits(units: readonly BattleUnit[]): void;
   setUnitHealth(unitId: string, hp: number, maxHp: number): void;
   flashUnit(unitId: string): void;
@@ -57,12 +58,15 @@ function baseColorFor(unit: BattleUnit): Color {
 }
 
 export function createBattleView(stage: PixelStage): BattleView {
+  const root = new Group();
+  stage.scene.add(root);
+
   const ground = new Mesh(
     new PlaneGeometry(LOGICAL_WIDTH, LOGICAL_HEIGHT),
     new MeshBasicMaterial({ map: createPixelTexture(drawGround()) }),
   );
   ground.position.z = -5;
-  stage.scene.add(ground);
+  root.add(ground);
 
   const visualsByUnitId = new Map<string, UnitVisual>();
   const flashColor = new Color(PALETTE.blood).lerp(new Color('#ffffff'), 0.4);
@@ -73,7 +77,7 @@ export function createBattleView(stage: PixelStage): BattleView {
       visual.sprite.material.dispose();
       (visual.healthBackground.material as MeshBasicMaterial).dispose();
       (visual.healthFill.material as MeshBasicMaterial).dispose();
-      stage.scene.remove(visual.sprite, visual.healthBackground, visual.healthFill);
+      root.remove(visual.sprite, visual.healthBackground, visual.healthFill);
     });
     visualsByUnitId.clear();
   };
@@ -102,6 +106,9 @@ export function createBattleView(stage: PixelStage): BattleView {
   });
 
   return {
+    setVisible: (isVisible) => {
+      root.visible = isVisible;
+    },
     showUnits: (units) => {
       clearUnits();
       (['party', 'enemy'] as const).forEach((side) => {
@@ -121,7 +128,7 @@ export function createBattleView(stage: PixelStage): BattleView {
           const visual: UnitVisual = { sprite, healthBackground, healthFill, baseColor, flashUntilSeconds: 0 };
           placeHealthFill(visual, unit.hp / unit.maxHp);
           visualsByUnitId.set(unit.id, visual);
-          stage.scene.add(sprite, healthBackground, healthFill);
+          root.add(sprite, healthBackground, healthFill);
         });
       });
     },

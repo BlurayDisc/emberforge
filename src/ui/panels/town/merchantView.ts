@@ -4,7 +4,7 @@ import { sellAllMaterialsCommand, sellBackpackEntryCommand } from '../../../game
 import type { BackpackEntry } from '../../../model/backpack';
 import { actionButton, element } from '../../dom';
 import { createMoneyDisplay } from '../../moneyDisplay';
-import type { PanelContext } from '../panelContext';
+import type { PanelContext, PanelRenderer } from '../panelContext';
 
 function describeEntry(entry: BackpackEntry): { label: HTMLElement; valueCopper: number } {
   if (entry.content.kind === 'item') {
@@ -23,7 +23,7 @@ function sell(context: PanelContext, entry: BackpackEntry): void {
   if (!result.accepted) context.notify(result.rejectionReason ?? 'Could not sell.');
 }
 
-export function renderMerchantView(context: PanelContext, goBack: () => void): HTMLElement {
+export const renderMerchantPanel: PanelRenderer = (context) => {
   const entries = context.store.getState().backpack;
   const sortedEntries = [...entries].sort((first, second) => Number(first.content.kind === 'material') - Number(second.content.kind === 'material'));
   const rows = sortedEntries.map((entry) => {
@@ -44,6 +44,6 @@ export function renderMerchantView(context: PanelContext, goBack: () => void): H
     element('p', 'hint', 'The merchant buys everything in your backpack. Keep materials you want to craft with.'),
     sellAllButton,
     ...(rows.length > 0 ? rows : [element('p', 'hint', 'Your backpack is empty.')]),
-    actionButton('Back to town square', goBack),
+    actionButton('Leave the merchant', context.closePanel),
   );
-}
+};

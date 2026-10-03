@@ -1,14 +1,16 @@
-export const ACTION_THRESHOLD = 100;
-export const SECONDS_PER_TICK = 0.1;
-export const MAXIMUM_BATTLE_SECONDS = 1200;
+import data from '../../../data/balance/battle.json';
 
-export const CRITICAL_DAMAGE_MULTIPLIER = 1.5;
-export const CRITICAL_CHANCE_PER_SKILL_POINT = 0.0025;
-export const MAXIMUM_CRITICAL_CHANCE = 0.5;
+export const ACTION_THRESHOLD = data.actionThreshold;
+export const SECONDS_PER_TICK = data.secondsPerTick;
+export const MAXIMUM_BATTLE_SECONDS = data.maximumBattleSeconds;
 
-export const MITIGATION_BASE = 50;
-export const MITIGATION_PER_ATTACKER_LEVEL = 10;
-export const DAMAGE_VARIANCE_FRACTION = 0.1;
+export const CRITICAL_DAMAGE_MULTIPLIER = data.criticalDamageMultiplier;
+export const CRITICAL_CHANCE_PER_SKILL_POINT = data.criticalChancePerSkillPoint;
+export const MAXIMUM_CRITICAL_CHANCE = data.maximumCriticalChance;
 
-export const HEAL_BELOW_HEALTH_FRACTION = 0.5;
-export const HEAL_POWER_MULTIPLIER = 1.5;
+export const MITIGATION_BASE = data.mitigationBase;
+export const MITIGATION_PER_ATTACKER_LEVEL = data.mitigationPerAttackerLevel;
+export const DAMAGE_VARIANCE_FRACTION = data.damageVarianceFraction;
+
+export const HEAL_BELOW_HEALTH_FRACTION = data.healBelowHealthFraction;
+export const HEAL_POWER_MULTIPLIER = data.healPowerMultiplier;

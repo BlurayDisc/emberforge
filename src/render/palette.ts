@@ -17,6 +17,22 @@ export const PALETTE = {
   bone: '#e8e4d4',
   ash: '#8a8a9a',
   fur: '#8b6f55',
+  brick: '#9b5a3c',
+  brickDark: '#6f3d2a',
+  timber: '#4a2f1d',
+  plaster: '#d9c9a0',
+  roofRed: '#a03a32',
+  roofRedDark: '#6e2622',
+  roofSlate: '#58607a',
+  roofSlateDark: '#3b4258',
+  stone: '#8d8f9a',
+  stoneDark: '#5c5e6b',
+  stoneLight: '#b4b6c0',
+  pathLight: '#b59a6a',
+  pathDark: '#8c7449',
+  lamp: '#ffd46a',
+  void: '#0c0a10',
+  awningCream: '#efe2b8',
 } as const;
 
 export type PaletteColor = keyof typeof PALETTE;

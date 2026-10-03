@@ -45,12 +45,18 @@ export function formatStatBonuses(bonuses: StatBonuses): string {
     .join(', ');
 }
 
+export function totalItemBonuses(item: Item): StatBonuses {
+  const totals: StatBonuses = { ...item.baseStats };
+  for (const affix of item.affixes) totals[affix.stat] = (totals[affix.stat] ?? 0) + affix.value;
+  return totals;
+}
+
 export function createItemCard(item: Item): HTMLElement {
   const card = element(
     'div',
     'item-card',
     element('div', `item-name quality-${item.quality}`, item.name),
-    element('div', 'card-text small', `${item.baseName} — ${item.quality}, item level ${item.itemLevel}, tier ${item.tier}`),
+    element('div', 'card-text small', `${item.baseName} - ${item.quality}, item level ${item.itemLevel}, tier ${item.tier}`),
     element('div', 'card-text', formatStatBonuses(item.baseStats)),
   );
   for (const affix of item.affixes) {

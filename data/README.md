@@ -1,0 +1,22 @@
+# Game data
+
+All game data lives in these JSON files. The game loads them through `src/content/`. A wiki tool can read them directly. Run `npm run validate` after any edit.
+
+| File | Content |
+|---|---|
+| `towns.json` | `startingTownId` and the 10 towns (one per bracket of 10 levels) |
+| `buildings.json` | Town buildings: label, panel to open, art style, position on the 480x270 stage |
+| `dungeons.json` | Dungeons: town, level, monster ids, rare monster id, boss id |
+| `monsters.json` | Monsters: rank, sprite, stat factors, drop table |
+| `materials.json` | Materials: tier, category, sell value, crafted item name prefix |
+| `base-items.json` | Item bases: slot, gear type, size, profession, ingredient categories, base stats |
+| `professions.json` | Profession ids and display names |
+| `affixes.json` | Item prefixes and suffixes: stat and value range |
+| `classes.json` | Hero classes: stats, growth per level, allowed gear |
+| `hero-names.json` | Names for new heroes |
+| `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring), dungeon runs, monster scaling, backpack, item generation |
+
+Rules:
+- Ids are stable strings. Other files refer to them.
+- A recipe uses materials of one tier only. Recipes are not stored. They come from `base-items.json` and `materials.json`: each base item needs one main and one second material category of the same tier.
+- Do not use em dashes in these files.

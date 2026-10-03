@@ -70,3 +70,17 @@ export function listEquipOptions(state: GameState, item: Item): EquipOption[] {
     problem: findEquipProblem(hero, item),
   }));
 }
+
+export interface BackpackItemOption {
+  item: Item;
+  problem: string | null;
+}
+
+export function listBackpackItemsForHero(state: GameState, heroId: string): BackpackItemOption[] {
+  const hero = state.company.find((candidate) => candidate.id === heroId);
+  if (!hero) return [];
+  const options = state.backpack.flatMap((entry) =>
+    entry.content.kind === 'item' ? [{ item: entry.content.item, problem: findEquipProblem(hero, entry.content.item) }] : [],
+  );
+  return options.sort((first, second) => Number(first.problem !== null) - Number(second.problem !== null));
+}

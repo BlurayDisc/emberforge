@@ -1,28 +1,36 @@
 import { Color, OrthographicCamera, Scene, WebGLRenderer } from 'three';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
 import { PALETTE } from './palette';
 
-export const LOGICAL_WIDTH = 480;
-export const LOGICAL_HEIGHT = 270;
+export { LOGICAL_HEIGHT, LOGICAL_WIDTH };
 
 export interface PixelStage {
   readonly scene: Scene;
+  readonly overlay: HTMLElement;
   onFrame(update: (elapsedSeconds: number) => void): void;
 }
 
-function fitCanvasToContainer(canvas: HTMLCanvasElement, container: HTMLElement): void {
+function fitFrameToContainer(frame: HTMLElement, container: HTMLElement): void {
   const fittingScale = Math.min(container.clientWidth / LOGICAL_WIDTH, container.clientHeight / LOGICAL_HEIGHT);
   const integerScale = Math.max(1, Math.floor(fittingScale));
-  canvas.style.width = `${LOGICAL_WIDTH * integerScale}px`;
-  canvas.style.height = `${LOGICAL_HEIGHT * integerScale}px`;
+  frame.style.width = `${LOGICAL_WIDTH * integerScale}px`;
+  frame.style.height = `${LOGICAL_HEIGHT * integerScale}px`;
+  frame.style.setProperty('--stage-scale', String(integerScale));
 }
 
 export function createPixelStage(container: HTMLElement): PixelStage {
   const renderer = new WebGLRenderer({ antialias: false });
   renderer.setPixelRatio(1);
   renderer.setSize(LOGICAL_WIDTH, LOGICAL_HEIGHT, false);
-  container.appendChild(renderer.domElement);
-  fitCanvasToContainer(renderer.domElement, container);
-  new ResizeObserver(() => fitCanvasToContainer(renderer.domElement, container)).observe(container);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'stage-overlay';
+  const frame = document.createElement('div');
+  frame.className = 'stage-frame';
+  frame.append(renderer.domElement, overlay);
+  container.appendChild(frame);
+  fitFrameToContainer(frame, container);
+  new ResizeObserver(() => fitFrameToContainer(frame, container)).observe(container);
 
   const scene = new Scene();
   scene.background = new Color(PALETTE.night);
@@ -46,6 +54,7 @@ export function createPixelStage(container: HTMLElement): PixelStage {
 
   return {
     scene,
+    overlay,
     onFrame: (update) => {
       frameListeners.push(update);
     },

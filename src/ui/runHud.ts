@@ -42,7 +42,7 @@ export function createRunHud(store: GameStore): RunHud {
     if (run === null) return;
     const dungeon = requireById(DUNGEONS, run.dungeonId);
     const isActive = activeRunOf(store.getState()) !== null;
-    title.textContent = `${dungeon.name} — fights won: ${run.encountersWon}${isActive ? '' : ' (run ended)'}`;
+    title.textContent = `${dungeon.name} - fights won: ${run.encountersWon}${isActive ? '' : ' (run ended)'}`;
     stopButton.style.display = isActive ? '' : 'none';
   };
 

@@ -20,8 +20,10 @@ export {
 } from './views/gameViews';
 export {
   countCatalysts,
+  listBackpackItemsForHero,
   listEquipOptions,
   listWorkshopRecipes,
+  type BackpackItemOption,
   type EquipOption,
   type IngredientView,
   type WorkshopRecipeView,

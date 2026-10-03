@@ -1,15 +1,16 @@
 import { describeMoney } from '../game';
 import { element } from './dom';
+import { createPixelIcon, type IconName } from './pixelIcons';
 
-function moneyUnit(amount: number, suffix: string, className: string): HTMLElement {
-  return element('span', className, `${amount}${suffix}`);
+function moneyPart(amount: number, className: string, coin: IconName): HTMLElement {
+  return element('span', `money-part ${className}`, String(amount), createPixelIcon(coin, 2));
 }
 
 export function createMoneyDisplay(totalCopper: number): HTMLElement {
   const { gold, silver, copper } = describeMoney(totalCopper);
   const display = element('span', 'money');
-  if (gold > 0) display.append(moneyUnit(gold, 'g', 'money-gold'), ' ');
-  if (gold > 0 || silver > 0) display.append(moneyUnit(silver, 's', 'money-silver'), ' ');
-  display.append(moneyUnit(copper, 'c', 'money-copper'));
+  if (gold > 0) display.append(moneyPart(gold, 'money-gold', 'coin-gold'));
+  if (gold > 0 || silver > 0) display.append(moneyPart(silver, 'money-silver', 'coin-silver'));
+  display.append(moneyPart(copper, 'money-copper', 'coin-copper'));
   return display;
 }

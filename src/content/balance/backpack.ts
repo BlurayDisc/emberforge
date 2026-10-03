@@ -1,3 +1,5 @@
-export const BACKPACK_COLUMNS = 10;
-export const BACKPACK_ROWS = 8;
-export const MATERIAL_STACK_LIMIT = 99;
+import data from '../../../data/balance/backpack.json';
+
+export const BACKPACK_COLUMNS = data.columns;
+export const BACKPACK_ROWS = data.rows;
+export const MATERIAL_STACK_LIMIT = data.materialStackLimit;

@@ -1,3 +1,5 @@
+import townsData from '../../data/towns.json';
+
 export interface TownDefinition {
   id: string;
   name: string;
@@ -6,17 +8,6 @@ export interface TownDefinition {
   lastLevel: number;
 }
 
-export const STARTING_TOWN_ID = 'hollowbrook';
+export const STARTING_TOWN_ID: string = townsData.startingTownId;
 
-export const TOWNS: readonly TownDefinition[] = [
-  { id: 'hollowbrook', name: 'Hollowbrook', region: 'Farmland and Old Wood', firstLevel: 1, lastLevel: 10 },
-  { id: 'barrowgate', name: 'Barrowgate', region: 'Barrow Downs', firstLevel: 11, lastLevel: 20 },
-  { id: 'mirewatch', name: 'Mirewatch', region: 'Marshes', firstLevel: 21, lastLevel: 30 },
-  { id: 'deepdelve', name: 'Deepdelve', region: 'Ruined mines', firstLevel: 31, lastLevel: 40 },
-  { id: 'highpass', name: 'Highpass', region: 'Mountain pass', firstLevel: 41, lastLevel: 50 },
-  { id: 'frostmere', name: 'Frostmere', region: 'Frozen north', firstLevel: 51, lastLevel: 60 },
-  { id: 'sunscar', name: 'Sunscar', region: 'Desert ruins', firstLevel: 61, lastLevel: 70 },
-  { id: 'emberhold', name: 'Emberhold', region: 'Volcano', firstLevel: 71, lastLevel: 80 },
-  { id: 'blackspire', name: 'Blackspire', region: 'Dark fortress', firstLevel: 81, lastLevel: 90 },
-  { id: 'worldsend', name: 'Worldsend', region: 'Dragon abyss', firstLevel: 91, lastLevel: 100 },
-];
+export const TOWNS = townsData.towns as readonly TownDefinition[];

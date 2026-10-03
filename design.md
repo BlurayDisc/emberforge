@@ -1,4 +1,4 @@
-# Emberforge — Game Design
+# Emberforge - Game Design
 
 Working title. Pixel-art, turn-based, Middle-earth-style fantasy. You lead a company of heroes and run a workshop.
 
@@ -30,11 +30,11 @@ Heroes fight alone (auto-battle). The player multitasks: craft, equip, sell and 
 |---|---|
 | Company | All heroes the player owns (max 12). |
 | Party | Up to 4 heroes who fight together. |
-| Bracket | A block of 10 levels (1–10, 11–20 … 91–100). |
+| Bracket | A block of 10 levels (1-10, 11-20 … 91-100). |
 | Tier | Material grade. Tier N belongs to bracket N. |
 | Town | Hub of one bracket: workshop, merchant, tavern, dungeons. |
-| Dungeon | A place with 1–3 monster types. The player runs it again and again. |
-| Encounter | One fight: 1–3 monsters. |
+| Dungeon | A place with 1-3 monster types. The player runs it again and again. |
+| Encounter | One fight: 1-3 monsters. |
 | Material | A loot item used to craft. |
 | Base | An item type, for example Sword. |
 | Affix | A prefix or suffix that adds a stat to an item. |
@@ -66,8 +66,8 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 - **Base stats** roll inside a range (±15%) and grow with ilvl. Weapons give attack. Armour gives Defence and Resistance.
 - **Quality:**
   - Common: 0 affixes.
-  - Magic: 1–2 affixes (max 1 prefix, 1 suffix).
-  - Rare: 3–4 affixes (max 2 prefix, 2 suffix).
+  - Magic: 1-2 affixes (max 1 prefix, 1 suffix).
+  - Rare: 3-4 affixes (max 2 prefix, 2 suffix).
   - Unique: fixed name and fixed affix set, with rolled values. Drops only.
 - **Affixes** have a stat, a value range per affix tier, and a minimum ilvl. Examples: *Sharp* (+Attack), *Sturdy* (+Defence), *of the Bear* (+HP), *of Insight* (+Magic), *of Precision* (+Skill).
 - **Backpack size (width × height):**
@@ -129,10 +129,10 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
   - Boss: 10 × the normal duration of its level (about 2 min at Lv 10, about 10 min at Lv 100).
 - **Monster stats come from a reference party curve.** The reference party is 4 heroes at level L with Magic-quality gear of ilvl L. Monster HP makes the reference party need the target duration. Monster damage makes it lose about 35% of its HP.
 - **Rare monster:** 2% of encounters. About 2.5 × HP. Drops ×3, one Catalyst, 4% Unique.
-- **Boss:** 1 boss and 0–2 adds. Drops ×5, two Catalysts, 25% Unique.
-- **Encounter size:** 1–3 monsters, never more than the party size. A solo hero meets 1 monster.
+- **Boss:** 1 boss and 0-2 adds. Drops ×5, two Catalysts, 25% Unique.
+- **Encounter size:** 1-3 monsters, never more than the party size. A solo hero meets 1 monster.
 - **End of a run** (stop, wipe, weak party or full backpack): the party returns to town and heals fully. The player keeps all loot. There is no other penalty.
-- **Between fights:** heroes heal 20% of max HP. Knocked-out heroes wake with 20% HP.
+- **Between fights:** heroes heal 30% of max HP. Knocked-out heroes wake with 30% HP.
 
 ### Level and gear balance
 
@@ -142,12 +142,12 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 
 | Case | Win rate | Party HP lost | Duration |
 |---|---|---|---|
-| Level L, Magic gear (ilvl L) | ≥ 90% | 30–40% | curve ±15% |
-| Level L, Common gear | 60–80% | — | — |
-| Level L, Rare gear | ≥ 98% | — | ≤ 80% of curve |
+| Level L, Magic gear (ilvl L) | ≥ 90% | 30-40% | curve ±15% |
+| Level L, Common gear | 60-80% | - | - |
+| Level L, Rare gear | ≥ 98% | - | ≤ 80% of curve |
 | Level L + 26, gear ilvl L + 26, monsters Lv L | ≥ 99% | ≤ 10% | ≤ 40% of curve |
-| Level L, monsters Lv L + 5 | ≤ 50% | — | — |
-| Boss, level L, Rare gear | 70–90% | — | 10 × curve ±20% |
+| Level L, monsters Lv L + 5 | ≤ 50% | - | - |
+| Boss, level L, Rare gear | 70-90% | - | 10 × curve ±20% |
 
 The balance simulator checks these targets. See CLAUDE.md.
 
@@ -157,23 +157,23 @@ Ten brackets. Each bracket has one town.
 
 | # | Levels | Town | Region | Monster families | Boss |
 |---|---|---|---|---|---|
-| 1 | 1–10 | Hollowbrook | Farmland, Old Wood | goblins, rats, wolves | Goblin Chief |
-| 2 | 11–20 | Barrowgate | Barrow Downs | skeletons, wights, clay golems | Barrow Lord |
-| 3 | 21–30 | Mirewatch | Marshes | lizardfolk, bog wraiths, giant spiders | Bog Hag |
-| 4 | 31–40 | Deepdelve | Ruined mines | cave goblins, stone golems, trolls | Troll Chieftain |
-| 5 | 41–50 | Highpass | Mountain pass | orcs, wargs, hill giants | Orc Warlord |
-| 6 | 51–60 | Frostmere | Frozen north | frost trolls, ice wraiths, snow beasts | Frost Giant |
-| 7 | 61–70 | Sunscar | Desert ruins | scorpions, sand wraiths, sand golems | Sand Tyrant |
-| 8 | 71–80 | Emberhold | Volcano | fire imps, drakes, fire golems | Magma Colossus |
-| 9 | 81–90 | Blackspire | Dark fortress | black orcs, dread knights, necromancers | Dread Lord |
-| 10 | 91–100 | Worldsend | Dragon abyss | demons, titans, dragons | The Ancient Wyrm |
+| 1 | 1-10 | Hollowbrook | Farmland, Old Wood | goblins, rats, wolves | Goblin Chief |
+| 2 | 11-20 | Barrowgate | Barrow Downs | skeletons, wights, clay golems | Barrow Lord |
+| 3 | 21-30 | Mirewatch | Marshes | lizardfolk, bog wraiths, giant spiders | Bog Hag |
+| 4 | 31-40 | Deepdelve | Ruined mines | cave goblins, stone golems, trolls | Troll Chieftain |
+| 5 | 41-50 | Highpass | Mountain pass | orcs, wargs, hill giants | Orc Warlord |
+| 6 | 51-60 | Frostmere | Frozen north | frost trolls, ice wraiths, snow beasts | Frost Giant |
+| 7 | 61-70 | Sunscar | Desert ruins | scorpions, sand wraiths, sand golems | Sand Tyrant |
+| 8 | 71-80 | Emberhold | Volcano | fire imps, drakes, fire golems | Magma Colossus |
+| 9 | 81-90 | Blackspire | Dark fortress | black orcs, dread knights, necromancers | Dread Lord |
+| 10 | 91-100 | Worldsend | Dragon abyss | demons, titans, dragons | The Ancient Wyrm |
 
 - **Town:** workshop (craft, enchant), merchant (sell items for gold, buy backpack tabs), tavern (hire heroes), dungeon board.
 - **Travel:** the army marker moves on the world map. Time = 2 s + 1 s per bracket crossed. Going back is always allowed. The next town opens when the player beats the boss of the current bracket.
-- **Dungeons:** 5–8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
-- **Dungeon content:** 1–3 monster families from the town list and 1 rare monster. An encounter holds 1–3 monsters.
-- **Run:** encounters repeat until the player stops the run, the party average HP drops below 30%, or the backpack is full. Heroes heal 20% of max HP between encounters. A town visit heals fully.
-- **Drops per kill:** gold; 1–2 main materials; a beast part (60%); an essence (15%). All are of the bracket tier.
+- **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
+- **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters.
+- **Run:** encounters repeat until the player stops the run, the party average HP drops below 30%, or the backpack is full. Heroes heal 30% of max HP between encounters. A town visit heals fully.
+- **Drops per kill:** gold; 1-2 main materials; a beast part (60%); an essence (15%). All are of the bracket tier.
 - **Sell value** = 10 × ilvl × quality factor (Common 1, Magic 2, Rare 4, Unique 10). Materials sell at a fixed price per tier.
 
 ## 10. Save
@@ -188,15 +188,24 @@ Ten brackets. Each bracket has one town.
 - 480×270 logical resolution. Integer scaling only. Units are 16×16 pixels (bosses 32×32). One shared palette. Pixel font bundled with the game.
 - Audio: chiptune loops and WebAudio effects. Optional, after the MVP.
 
+## 11b. Screens and flow
+
+- **Town screen** is the main stage when no run is active. It shows buildings: Tavern, Workshop, Merchant, Dungeons gate. Click a building to open its panel.
+- **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Menu, and the money (gold, silver, copper coins).
+- **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player starts a run.
+- **After a run:** the Inventory opens with the run summary and loot. The button "Equip gear (Heroes)" opens Heroes. In Heroes, the Items tab shows the slots and the backpack items that the hero can equip.
+- **Style:** pixel art, wood and parchment menus, blackletter titles (Jacquard 12), pixel text (Pixelify Sans).
+- **Data:** all game data is JSON in `data/`. A README there explains each file.
+
 ## 12. MVP scope
 
-- Brackets 1–2 (Lv 1–20): 2 towns, 5 and 6 dungeons, 2 bosses.
+- Brackets 1-2 (Lv 1-20): 2 towns, 5 and 6 dungeons, 2 bosses.
 - 5 base classes. Promotion works at Lv 20 with one branch for each class.
-- All 6 professions with tiers 1–2. All 10 slots. The Unique pool has 2 items per bracket.
+- All 6 professions with tiers 1-2. All 10 slots. The Unique pool has 2 items per bracket.
 - Backpack with tabs, merchant, tavern, world map and travel, auto-save, save export and import.
 - Balance simulator and content validator.
 - **Done when:** a new game plays from Lv 1 to Lv 20 (fight, loot, craft, equip, travel, promote) and a reload keeps the exact state.
 
 ## 13. After the MVP
 
-Brackets 3–10. Second promotion branches and master classes. Sockets for gems. Town orders (the merchant asks for crafted items for gold). Mobile layout and PWA. Tauri desktop builds. Audio.
+Brackets 3-10. Second promotion branches and master classes. Sockets for gems. Town orders (the merchant asks for crafted items for gold). Mobile layout and PWA. Tauri desktop builds. Audio.

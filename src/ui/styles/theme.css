@@ -1,0 +1,68 @@
+:root {
+  --ink: #17110d;
+  --wood-900: #241912;
+  --wood-800: #33241a;
+  --wood-700: #4a3322;
+  --wood-600: #664629;
+  --wood-500: #8a6340;
+  --leather: #2b1f17;
+  --parchment: #ead9a8;
+  --parchment-dim: #b9a77a;
+  --gold: #f2c14e;
+  --gold-dark: #b9821f;
+  --silver: #c0c8d0;
+  --copper: #d98a4e;
+  --crimson: #b23a3a;
+  --green: #6aa84f;
+  --blue: #5a8fe0;
+  --quality-common: #d8d0b8;
+  --quality-magic: #7fa8ff;
+  --quality-rare: #f2c14e;
+  --quality-unique: #e08a4e;
+  --outline-4: 0 -4px 0 0 var(--ink), 0 4px 0 0 var(--ink), -4px 0 0 0 var(--ink), 4px 0 0 0 var(--ink);
+  --outline-2: 0 -2px 0 0 var(--ink), 0 2px 0 0 var(--ink), -2px 0 0 0 var(--ink), 2px 0 0 0 var(--ink);
+  --checker: linear-gradient(45deg, rgba(0, 0, 0, 0.14) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.14) 75%);
+  --font-body: 'Pixelify Sans', ui-monospace, monospace;
+  --font-title: 'Jacquard 12', 'Pixelify Sans', serif;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.25;
+  overflow: hidden;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'clig' 0;
+}
+
+#game-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.pixel-icon {
+  display: block;
+  image-rendering: pixelated;
+}
+
+p {
+  margin: 0;
+}
+
+::selection {
+  background: var(--gold-dark);
+  color: var(--ink);
+}

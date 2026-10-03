@@ -3,7 +3,7 @@ import { hireHeroCommand, listTavernOffers, type TavernOffer } from '../../../ga
 import type { ClassId } from '../../../model/hero';
 import { actionButton, element } from '../../dom';
 import { createMoneyDisplay } from '../../moneyDisplay';
-import type { PanelContext } from '../panelContext';
+import type { PanelContext, PanelRenderer } from '../panelContext';
 
 function hire(context: PanelContext, classId: ClassId): void {
   const result = context.store.execute(hireHeroCommand(classId));
@@ -21,13 +21,16 @@ function renderOffer(context: PanelContext, offer: TavernOffer): HTMLElement {
   );
 }
 
-export function renderTavernView(context: PanelContext, goBack: () => void): HTMLElement {
+export const renderTavernPanel: PanelRenderer = (context) => {
   const state = context.store.getState();
   const offers = listTavernOffers(state);
-  const content = element('div', 'panel-body', element('p', 'hint', `Company: ${state.company.length} / ${MAXIMUM_COMPANY_SIZE} heroes`));
-  if (state.company.length === 0) content.append(element('p', 'hint', 'Your first hero is free.'));
+  const content = element('div', 'panel-body');
+  if (state.company.length === 0) {
+    content.append(element('p', 'hint welcome', 'Welcome, traveller! Choose your first hero. The first hero is free. Pick a class and press Hire.'));
+  }
+  content.append(element('p', 'hint', `Company: ${state.company.length} / ${MAXIMUM_COMPANY_SIZE} heroes`));
   if (offers.length === 0) content.append(element('p', 'hint', 'The company is full.'));
   content.append(element('div', 'card-grid', ...offers.map((offer) => renderOffer(context, offer))));
-  content.append(actionButton('Back to town square', goBack));
+  content.append(actionButton('Leave the tavern', context.closePanel));
   return content;
-}
+};

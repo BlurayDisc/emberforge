@@ -6,6 +6,7 @@ import type { BackpackEntry } from '../../model/backpack';
 import type { Item } from '../../model/item';
 import { actionButton, element } from '../dom';
 import { createItemCard } from '../itemText';
+import { createGoToHeroesButton, createRunSummaryCard } from '../runSummary';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
 interface SelectedPosition {
@@ -68,7 +69,7 @@ function renderDetail(context: PanelContext, entry: BackpackEntry | undefined): 
   return element(
     'p',
     'hint',
-    `${material.name} ×${entry.content.quantity} — tier ${material.tier} ${material.category}. Sells for ${material.sellValueCopper}c each.`,
+    `${material.name} ×${entry.content.quantity} - tier ${material.tier} ${material.category}. Sells for ${material.sellValueCopper}c each.`,
   );
 }
 
@@ -85,11 +86,11 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
   entries.forEach((entry) => grid.append(renderEntry(context, entry)));
 
   const selected = entries.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
-  return element(
-    'div',
-    'panel-body',
-    element('p', 'hint', 'Backpack. Items fill several cells. Materials stack to 99.'),
-    grid,
-    renderDetail(context, selected),
-  );
+  const lastRun = context.store.getState().dungeonRun;
+  const body = element('div', 'panel-body');
+  if (lastRun && lastRun.status === 'ended') {
+    body.append(createRunSummaryCard(lastRun, [createGoToHeroesButton(context.openPanel)]));
+  }
+  body.append(element('p', 'hint', 'Backpack. Items fill several cells. Materials stack to 99.'), grid, renderDetail(context, selected));
+  return body;
 };

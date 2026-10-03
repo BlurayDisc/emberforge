@@ -1,22 +1,3 @@
-export const HERO_NAMES: readonly string[] = [
-  'Aldric',
-  'Brenna',
-  'Corwin',
-  'Dara',
-  'Edric',
-  'Fenna',
-  'Garrick',
-  'Hilda',
-  'Ivor',
-  'Jessa',
-  'Kellan',
-  'Lyra',
-  'Moren',
-  'Nessa',
-  'Osric',
-  'Petra',
-  'Quill',
-  'Rowan',
-  'Sigrid',
-  'Tamsin',
-];
+import heroNamesData from '../../data/hero-names.json';
+
+export const HERO_NAMES: readonly string[] = heroNamesData;

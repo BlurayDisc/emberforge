@@ -10,7 +10,7 @@ export const renderWorldPanel: PanelRenderer = (context) => {
     return element(
       'div',
       isCurrent ? 'card in-party' : 'card disabled',
-      element('div', 'card-title', `${town.name} — Lv ${town.firstLevel}–${town.lastLevel}`),
+      element('div', 'card-title', `${town.name} - Lv ${town.firstLevel}-${town.lastLevel}`),
       element('div', 'card-text', town.region),
       element('div', 'card-text small', status),
     );

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRoot = join(projectRoot, 'src');
+const dataRoot = join(projectRoot, 'data');
 
 const layersEachLayerMayImport: Record<string, readonly string[]> = {
   kernel: [],
@@ -74,7 +75,12 @@ function findViolations(file: string): string[] {
 
   for (const match of source.matchAll(relativeImportPattern)) {
     const specifier = match[1] as string;
-    const target = locate(resolve(dirname(file), specifier));
+    const resolvedTarget = resolve(dirname(file), specifier);
+    if (resolvedTarget.startsWith(dataRoot + sep)) {
+      if (from.layer !== 'content') violations.push(`only content/ may read data/ ('${specifier}')`);
+      continue;
+    }
+    const target = locate(resolvedTarget);
     if (target.layer === undefined) {
       violations.push(`'${specifier}' imports outside any layer`);
       continue;

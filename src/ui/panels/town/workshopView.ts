@@ -7,7 +7,7 @@ import {
 } from '../../../game';
 import type { Item } from '../../../model/item';
 import { actionButton, element } from '../../dom';
-import type { PanelContext } from '../panelContext';
+import type { PanelContext, PanelRenderer } from '../panelContext';
 
 let usesCatalyst = false;
 
@@ -50,7 +50,7 @@ function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView, catalys
   );
 }
 
-export function renderWorkshopView(context: PanelContext, goBack: () => void): HTMLElement {
+export const renderWorkshopPanel: PanelRenderer = (context) => {
   const state = context.store.getState();
   const catalystCount = countCatalysts(state);
   const recipes = listWorkshopRecipes(state);
@@ -80,6 +80,6 @@ export function renderWorkshopView(context: PanelContext, goBack: () => void): H
       ),
     );
   }
-  body.append(actionButton('Back to town square', goBack));
+  body.append(actionButton('Leave the workshop', context.closePanel));
   return body;
-}
+};

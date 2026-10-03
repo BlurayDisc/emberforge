@@ -7,6 +7,7 @@ import {
 } from '../game';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { BattleView } from '../render/battleView';
+import type { TownView } from '../render/townView';
 import type { PixelStage } from '../render/pixelStage';
 import type { RunHud } from '../ui/runHud';
 
@@ -31,7 +32,13 @@ function describeEvent(event: BattleEvent, unitsById: ReadonlyMap<string, Battle
   return `${actorName} hits ${targetName} for ${event.amount}.${critical}`;
 }
 
-export function startRunPlayback(store: GameStore, stage: PixelStage, view: BattleView, hud: RunHud): void {
+export interface SceneViews {
+  battleView: BattleView;
+  townView: TownView;
+}
+
+export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: SceneViews, hud: RunHud): void {
+  const { battleView: view, townView } = scenes;
   let playback: EncounterPlayback | null = null;
   let previousFrameSeconds: number | null = null;
 
@@ -59,9 +66,13 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, view: Batt
     const state = store.getState();
     if (activeRunOf(state) === null) {
       playback = null;
-      view.showUnits(listPartyBattleUnits(state));
+      view.setVisible(false);
+      townView.setVisible(true);
+      townView.showParty(listPartyBattleUnits(state));
       return;
     }
+    townView.setVisible(false);
+    view.setVisible(true);
     if (playback === null) beginEncounter();
   };
 

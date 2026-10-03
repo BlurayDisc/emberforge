@@ -4,6 +4,7 @@ export interface PanelContext {
   store: GameStore;
   requestRender(): void;
   closePanel(): void;
+  openPanel(panelId: string): void;
   notify(message: string): void;
 }
 
