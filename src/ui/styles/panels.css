@@ -560,3 +560,7 @@
   align-items: center;
   gap: 6px;
 }
+
+.bar.downed .bar-fill { background: var(--red, #b23a3a); }
+.bar.run-progress.bar-health { height: 16px; }
+.crafter-job { margin-top: 4px; }

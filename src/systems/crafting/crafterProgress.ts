@@ -1,3 +1,4 @@
+import { CRAFT_SECONDS_BASE, CRAFT_SECONDS_PER_REQUIRED_LEVEL } from '../../content/balance/crafting';
 import {
   CRAFTING_EXPERIENCE_BASE,
   CRAFTING_EXPERIENCE_PER_REQUIRED_LEVEL,
@@ -29,4 +30,9 @@ export function applyCraftingExperience(progress: CrafterProgress, gainedExperie
     level += 1;
   }
   return { level, experience: level === CRAFTING_MAXIMUM_LEVEL ? 0 : experience };
+}
+
+// Crafting takes time, longer for higher recipes.
+export function craftSeconds(requiredCraftLevel: number): number {
+  return Math.round(CRAFT_SECONDS_BASE + CRAFT_SECONDS_PER_REQUIRED_LEVEL * requiredCraftLevel);
 }

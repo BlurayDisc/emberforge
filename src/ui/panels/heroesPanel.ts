@@ -1,7 +1,8 @@
 import { describeHero } from '../../game';
 import type { Hero } from '../../model/hero';
 import type { StatBlock } from '../../model/statBlock';
-import { actionButton, element, percentBar } from '../dom';
+import { actionButton, element } from '../dom';
+import { createExperienceBar, createLiveHealthBar } from '../liveBars';
 import { className, heroDisplayName } from '../displayNames';
 import { t } from '../i18n';
 import { createList, createListRow } from '../listRow';
@@ -27,7 +28,8 @@ function renderHeroListEntry(context: PanelContext, hero: Hero): HTMLElement {
     title: heroDisplayName(hero.name),
     lines: [
       element('div', 'card-text small', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })),
-      percentBar(hero.healthFraction, 'bar-health'),
+      createLiveHealthBar(context.store, hero.id),
+      createExperienceBar(hero.experience, describeHero(context.store.getState(), hero, Date.now()).experienceToNextLevel),
     ],
     className: `hero-choice${hero.id === selectedHeroId ? ' selected' : ''}`,
   });
@@ -42,8 +44,8 @@ function statisticRow(label: string, value: string): HTMLElement {
   return element('div', 'card-row', element('span', 'stat-name', label), element('span', '', value));
 }
 
-function renderStatsTab(hero: Hero): HTMLElement {
-  const view = describeHero(hero);
+function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
+  const view = describeHero(context.store.getState(), hero, Date.now());
   const { statistics } = hero;
   const statRows = STAT_ORDER.map((stat) => statisticRow(statLabel(stat), String(view.stats[stat])));
   const record = [
@@ -63,10 +65,10 @@ function renderStatsTab(hero: Hero): HTMLElement {
       'div',
       'hero-identity-text',
       element('div', 'card-title', t('heroes.header', { name: heroDisplayName(hero.name), className: className(hero.classId), level: hero.level })),
-      element('div', 'card-text', t('heroes.hp', { current: view.currentHp, max: view.stats.hp })),
-      percentBar(hero.healthFraction, 'bar-health'),
-      element('div', 'card-text', t('heroes.xp', { current: hero.experience, next: view.experienceToNextLevel })),
-      percentBar(hero.experience / view.experienceToNextLevel, 'bar-experience'),
+      element('div', 'card-text', t('heroes.hp', { max: view.stats.hp })),
+      createLiveHealthBar(context.store, hero.id),
+      element('div', 'card-text', t('heroes.xpTitle')),
+      createExperienceBar(hero.experience, view.experienceToNextLevel),
     ),
   );
   return element(
@@ -93,7 +95,7 @@ function renderHeroDetail(context: PanelContext, hero: Hero): HTMLElement {
     'div',
     'hero-detail',
     element('div', 'tab-row', tabButton('stats', t('heroes.tabStats')), tabButton('equipment', t('heroes.tabEquipment'))),
-    activeTab === 'stats' ? renderStatsTab(hero) : renderEquipmentScreen(context, hero),
+    activeTab === 'stats' ? renderStatsTab(context, hero) : renderEquipmentScreen(context, hero),
   );
 }
 

@@ -305,3 +305,7 @@
   color: var(--parchment, #e8d9b0);
   pointer-events: none;
 }
+
+.clear-notifications {
+  align-self: flex-end;
+}

@@ -5,7 +5,7 @@ import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import type { GameState } from '../../model/gameState';
 import type { Item } from '../../model/item';
-import { craftingExperienceToNextLevel, listRecipes } from '../../systems/crafting';
+import { craftSeconds, craftingExperienceToNextLevel, listRecipes } from '../../systems/crafting';
 import { findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
 import { previewBaseStatRanges } from '../../systems/items';
@@ -27,6 +27,8 @@ export interface WorkshopRecipeView {
   hasMaterials: boolean;
   requiredCraftLevel: number;
   isUnlocked: boolean;
+  craftSeconds: number;
+  isCrafterBusy: boolean;
   statRanges: Record<string, [number, number]>;
 }
 
@@ -72,6 +74,8 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         hasMaterials: ingredients.every((ingredient) => ingredient.owned >= ingredient.needed),
         requiredCraftLevel: recipe.requiredCraftLevel,
         isUnlocked: crafterLevel >= recipe.requiredCraftLevel,
+        craftSeconds: craftSeconds(recipe.requiredCraftLevel),
+        isCrafterBusy: state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession),
         statRanges: previewBaseStatRanges(recipe.baseId, tier, highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO),
       };
     }),

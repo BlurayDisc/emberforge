@@ -59,6 +59,7 @@ interface BaseItem extends Identified {
 interface HeroClass extends Identified {
   displayName: string;
   roleDescription: string;
+  recoveryRate: number;
   spriteKey: string;
   weaponTypes: string[];
   offHandTypes: string[];
@@ -186,6 +187,7 @@ for (const base of baseItems) {
 
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
+  if (!(heroClass.recoveryRate > 0)) report(`classes.json: '${heroClass.id}' needs a recoveryRate above 0`);
   for (const gearType of [...heroClass.weaponTypes, ...heroClass.offHandTypes]) {
     if (!gearTypes.has(gearType)) report(`classes.json: '${heroClass.id}' allows gear type '${gearType}' that no base item has`);
   }

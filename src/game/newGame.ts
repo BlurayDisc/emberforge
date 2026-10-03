@@ -18,5 +18,7 @@ export function createNewGameState(seed: number): GameState {
     reports: [],
     clearedDungeonIds: [],
     crafters: Object.fromEntries(PROFESSION_IDS.map((professionId) => [professionId, { level: 1, experience: 0 }])),
+    jobs: [],
+    jobsStarted: 0,
   };
 }

@@ -18,3 +18,8 @@ export const MATERIAL_BUY_PRICE_MULTIPLIER = data.materialBuyPriceMultiplier;
 export const TRAINING_EXPERIENCE_FRACTION = data.trainingExperienceFraction;
 export const TRAINING_COST_PER_EXPERIENCE_BASE = data.trainingCostPerExperienceBase;
 export const TRAINING_COST_PER_EXPERIENCE_GROWTH = data.trainingCostPerExperienceGrowth;
+
+export const MERCHANT_SALE_SLOTS = data.merchantSaleSlots;
+export const SALE_SECONDS_MINIMUM = data.saleSecondsMinimum;
+export const SALE_SECONDS_PER_COPPER = data.saleSecondsPerCopper;
+export const SALE_SECONDS_MAXIMUM = data.saleSecondsMaximum;

@@ -1,6 +1,8 @@
+import { MERCHANT_SALE_SLOTS } from '../../content/balance/economy';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import type { BackpackEntry } from '../../model/backpack';
+import { saleSeconds } from '../../systems/economy';
 import { findEntryAt, removeEntryAt, type GridPosition } from '../../systems/inventory';
 import { CommandRejected, type Command } from '../gameStore';
 
@@ -9,19 +11,20 @@ function valueOf(entry: BackpackEntry): number {
   return requireById(MATERIALS, entry.content.materialId).sellValueCopper * entry.content.quantity;
 }
 
-export function sellBackpackEntryCommand(position: GridPosition): Command {
+// The merchant takes the goods now and pays when the sale ends. The merchant has few sale slots.
+export function sellBackpackEntryCommand(position: GridPosition, nowMs: number): Command {
   return (state) => {
     const entry = findEntryAt(state.backpack, position);
     if (!entry) throw new CommandRejected('reject.nothingToSell');
-    return { ...state, copper: state.copper + valueOf(entry), backpack: removeEntryAt(state.backpack, position) };
-  };
-}
-
-export function sellAllMaterialsCommand(): Command {
-  return (state) => {
-    const materialEntries = state.backpack.filter((entry) => entry.content.kind === 'material');
-    if (materialEntries.length === 0) throw new CommandRejected('reject.noMaterialsToSell');
-    const total = materialEntries.reduce((sum, entry) => sum + valueOf(entry), 0);
-    return { ...state, copper: state.copper + total, backpack: state.backpack.filter((entry) => entry.content.kind === 'item') };
+    const salesInProgress = state.jobs.filter((job) => job.kind === 'sell').length;
+    if (salesInProgress >= MERCHANT_SALE_SLOTS) throw new CommandRejected('reject.merchantBusy', { slots: MERCHANT_SALE_SLOTS });
+    const copper = valueOf(entry);
+    const jobNumber = state.jobsStarted + 1;
+    return {
+      ...state,
+      backpack: removeEntryAt(state.backpack, position),
+      jobsStarted: jobNumber,
+      jobs: [...state.jobs, { id: jobNumber, kind: 'sell', startedAtMs: nowMs, finishesAtMs: nowMs + saleSeconds(copper) * 1000, content: entry.content, copper }],
+    };
   };
 }

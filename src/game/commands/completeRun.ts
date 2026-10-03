@@ -3,6 +3,7 @@ import type { EncounterResult, GameState, HeroEncounterResult } from '../../mode
 import type { Hero } from '../../model/hero';
 import { addMaterials } from '../../systems/inventory';
 import { rollMonsterLoot, type LootRoll } from '../../systems/loot';
+import { heroAfterFight } from '../../systems/recovery';
 import { applyExperience, experienceForKill } from '../../systems/progression';
 import { encounterRandomFor, planNextEncounter, type PlannedEncounter } from '../encounterPlanner';
 import { summariseHeroPerformance, type HeroPerformance } from '../encounterStatistics';
@@ -15,17 +16,21 @@ interface HeroOutcome {
   result: HeroEncounterResult;
 }
 
-function applyOutcomeToHero(hero: Hero, performance: HeroPerformance, plan: PlannedEncounter, won: boolean): HeroOutcome {
+function finalHealthFractionOf(hero: Hero, plan: PlannedEncounter): number {
+  const unit = plan.report.finalUnits.find((candidate) => candidate.id === hero.id);
+  return unit ? unit.hp / unit.maxHp : 1;
+}
+
+function applyOutcomeToHero(hero: Hero, performance: HeroPerformance, plan: PlannedEncounter, won: boolean, nowMs: number): HeroOutcome {
   const experienceGained = won
     ? plan.monsterUnits.reduce((total, monster) => total + experienceForKill(monster.level, hero.level, monster.rank), 0)
     : 0;
   const leveledHero = applyExperience(hero, experienceGained);
   const statistics = hero.statistics;
   return {
-    // Heroes rest after a run, so they start the next one at full health.
+    // Wounds stay. The hero regenerates over time, or is downed for a while at 0 health.
     hero: {
-      ...leveledHero,
-      healthFraction: 1,
+      ...heroAfterFight(leveledHero, finalHealthFractionOf(hero, plan), nowMs),
       statistics: {
         monstersDefeated: statistics.monstersDefeated + performance.monstersDefeated,
         damageDealt: statistics.damageDealt + performance.damageDealt,
@@ -53,7 +58,7 @@ function rollRunLoot(state: GameState, run: DungeonRun, monsters: readonly Battl
   return monsters.map((monster) => rollMonsterLoot(monster.definitionId, monster.level, lootRandom.fork(monster.id)));
 }
 
-export function completeRunCommand(runNumber: number): Command {
+export function completeRunCommand(runNumber: number, nowMs: number): Command {
   return (state) => {
     const run = findActiveRun(state, runNumber);
     if (!run) throw new CommandRejected('reject.noActiveRun');
@@ -69,7 +74,7 @@ export function completeRunCommand(runNumber: number): Command {
 
     const outcomes = state.company
       .filter((hero) => run.heroIds.includes(hero.id))
-      .map((hero) => applyOutcomeToHero(hero, performanceByHero.get(hero.id) as HeroPerformance, plan, won));
+      .map((hero) => applyOutcomeToHero(hero, performanceByHero.get(hero.id) as HeroPerformance, plan, won, nowMs));
     const outcomeByHeroId = new Map(outcomes.map((outcome) => [outcome.hero.id, outcome]));
 
     const result: EncounterResult = {

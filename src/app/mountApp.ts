@@ -15,6 +15,7 @@ import { getModalHost } from '../ui/modal';
 import { createNotificationCenter } from '../ui/notifications';
 import { createRunHud } from '../ui/runHud';
 import { createTownOverlay } from '../ui/townOverlay';
+import { startJobTicker } from './jobTicker';
 import { startFlowController } from './flowController';
 import { startRunPlayback } from './runPlayback';
 
@@ -34,6 +35,7 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   const townView = createTownView(stage, BUILDINGS);
   startRunPlayback(store, stage, { battleView, townView }, hud);
   startFlowController(store, panelHost);
+  startJobTicker(store, panelHost);
 
   document.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('button')) playSound('ui-click');

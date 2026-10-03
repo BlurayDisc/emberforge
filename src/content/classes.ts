@@ -16,6 +16,7 @@ export interface ClassDefinition {
   armourWeight: ArmourWeight;
   baseStats: StatBlock;
   growthPerLevel: StatBlock;
+  recoveryRate: number;
 }
 
 export const CLASSES = classesData as unknown as readonly ClassDefinition[];

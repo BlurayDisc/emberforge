@@ -3,6 +3,7 @@ import {
   craftItemCommand,
   createGameStore,
   equipItemCommand,
+  collectFinishedJobsCommand,
   completeRunCommand,
   hireHeroCommand,
   sellBackpackEntryCommand,
@@ -11,6 +12,7 @@ import {
 } from '../src/game';
 import { MATERIALS } from '../src/content/materials';
 import { addMaterials } from '../src/systems/inventory';
+import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
 import { computeHeroStats } from '../src/systems/stats';
 
 function createStore(seed: number): GameStore {
@@ -34,14 +36,25 @@ function giveStarterMaterials(store: GameStore): void {
   }));
 }
 
+// A fake clock. Jobs and recovery run by the clock, so the session moves it by hand.
+const clock = { nowMs: 1_000_000 };
+const ONE_HOUR_MS = 3_600_000;
+
+function finishJobs(store: GameStore): void {
+  clock.nowMs += ONE_HOUR_MS;
+  store.execute(collectFinishedJobsCommand(clock.nowMs));
+}
+
 function levelUpCrafter(store: GameStore, baseId: string, professionId: string, targetLevel: number): void {
   for (let attempt = 0; attempt < 80 && (store.getState().crafters[professionId]?.level ?? 1) < targetLevel; attempt++) {
-    assert.equal(rejectionKey(store, craftItemCommand(baseId, 1, false)), null, `craft ${baseId} to level up ${professionId}`);
+    assert.equal(rejectionKey(store, craftItemCommand(baseId, 1, false, clock.nowMs)), null, `craft ${baseId} to level up ${professionId}`);
+    finishJobs(store);
   }
   assert.ok((store.getState().crafters[professionId]?.level ?? 1) >= targetLevel, `${professionId} reaches level ${targetLevel}`);
 }
 
 function playSession(seed: number): string {
+  clock.nowMs = 1_000_000;
   const store = createStore(seed);
 
   assert.equal(rejectionKey(store, hireHeroCommand('warrior')), null, 'the first hero is free');
@@ -55,9 +68,13 @@ function playSession(seed: number): string {
   assert.ok(warrior && archer && mage);
 
   const strengthBefore = computeHeroStats(warrior).strength;
-  assert.equal(rejectionKey(store, craftItemCommand('sword', 1, false)), 'reject.craftLevelTooLow', 'a sword is locked at level 1');
+  assert.equal(rejectionKey(store, craftItemCommand('sword', 1, false, clock.nowMs)), 'reject.craftLevelTooLow', 'a sword is locked at level 1');
   levelUpCrafter(store, 'dagger', 'blacksmithing', 3);
-  assert.equal(rejectionKey(store, craftItemCommand('sword', 1, false)), null, 'craft a sword');
+  const itemCountBeforeSword = store.getState().backpack.filter((entry) => entry.content.kind === 'item').length;
+  assert.equal(rejectionKey(store, craftItemCommand('sword', 1, false, clock.nowMs)), null, 'craft a sword');
+  assert.equal(rejectionKey(store, craftItemCommand('dagger', 1, false, clock.nowMs)), 'reject.crafterBusy', 'a crafter makes one item at a time');
+  assert.equal(store.getState().backpack.filter((entry) => entry.content.kind === 'item').length, itemCountBeforeSword, 'the item waits for the end of the craft');
+  finishJobs(store);
   const sword = store.getState().backpack.flatMap((entry) => (entry.content.kind === 'item' ? [entry.content.item] : [])).find((item) => item.baseId === 'sword');
   assert.ok(sword, 'the crafted sword is in the backpack');
   assert.equal(rejectionKey(store, equipItemCommand(warrior.id, sword.id)), null, 'the warrior equips the sword');
@@ -65,22 +82,35 @@ function playSession(seed: number): string {
   assert.ok(equippedWarrior && computeHeroStats(equippedWarrior).strength > strengthBefore, 'the sword raises strength');
 
   levelUpCrafter(store, 'quiver', 'fletching', 4);
-  assert.equal(rejectionKey(store, craftItemCommand('bow', 1, false)), null, 'craft a bow');
+  assert.equal(rejectionKey(store, craftItemCommand('bow', 1, false, clock.nowMs)), null, 'craft a bow');
+  finishJobs(store);
   const copperBeforeSale = store.getState().copper;
   const itemEntry = store.getState().backpack.find((entry) => entry.content.kind === 'item');
   assert.ok(itemEntry);
-  assert.equal(rejectionKey(store, sellBackpackEntryCommand({ column: itemEntry.column, row: itemEntry.row })), null);
+  assert.equal(rejectionKey(store, sellBackpackEntryCommand({ column: itemEntry.column, row: itemEntry.row }, clock.nowMs)), null);
+  assert.equal(store.getState().copper, copperBeforeSale, 'a sale pays only when it ends');
+  assert.equal(store.getState().jobs.length, 1, 'the sale is a timed job');
+  for (let extraSale = 0; extraSale < 2; extraSale++) {
+    const nextEntry = store.getState().backpack[0];
+    assert.ok(nextEntry);
+    assert.equal(rejectionKey(store, sellBackpackEntryCommand({ column: nextEntry.column, row: nextEntry.row }, clock.nowMs)), null);
+  }
+  const lastEntry = store.getState().backpack[0];
+  assert.ok(lastEntry);
+  assert.equal(rejectionKey(store, sellBackpackEntryCommand({ column: lastEntry.column, row: lastEntry.row }, clock.nowMs)), 'reject.merchantBusy', 'the merchant has few sale slots');
+  finishJobs(store);
   assert.ok(store.getState().copper > copperBeforeSale, 'selling pays money');
+  assert.equal(store.getState().jobs.length, 0, 'finished jobs leave the list');
 
-  assert.equal(rejectionKey(store, craftItemCommand('axe', 1, false)), 'reject.craftLevelTooLow', 'a high recipe is locked at crafter level 1');
-  assert.equal(rejectionKey(store, startDungeonRunCommand('wolf-trail', [archer.id])), 'reject.dungeonLocked', 'a dungeon is locked until the one before is cleared');
-  assert.equal(rejectionKey(store, startDungeonRunCommand('rat-cellar', [warrior.id])), null, 'start the first run');
-  assert.equal(rejectionKey(store, startDungeonRunCommand('rat-cellar', [mage.id])), 'reject.dungeonBusy', 'one run for each dungeon');
-  assert.equal(rejectionKey(store, startDungeonRunCommand('goblin-chief-lair', [mage.id, archer.id, warrior.id])), 'reject.dungeonLocked');
+  assert.equal(rejectionKey(store, craftItemCommand('axe', 1, false, clock.nowMs)), 'reject.craftLevelTooLow', 'a high recipe is locked at crafter level 1');
+  assert.equal(rejectionKey(store, startDungeonRunCommand('wolf-trail', [archer.id], clock.nowMs)), 'reject.dungeonLocked', 'a dungeon is locked until the one before is cleared');
+  assert.equal(rejectionKey(store, startDungeonRunCommand('rat-cellar', [warrior.id], clock.nowMs)), null, 'start the first run');
+  assert.equal(rejectionKey(store, startDungeonRunCommand('rat-cellar', [mage.id], clock.nowMs)), 'reject.dungeonBusy', 'one run for each dungeon');
+  assert.equal(rejectionKey(store, startDungeonRunCommand('goblin-chief-lair', [mage.id, archer.id, warrior.id], clock.nowMs)), 'reject.dungeonLocked');
   assert.equal(rejectionKey(store, equipItemCommand(warrior.id, sword.id)), 'reject.stopRunBeforeGearChange', 'no gear change in a run');
 
   const copperBeforeRuns = store.getState().copper;
-  assert.equal(rejectionKey(store, completeRunCommand(store.getState().dungeonRuns[0]?.runNumber ?? 0)), null, 'complete the run');
+  assert.equal(rejectionKey(store, completeRunCommand(store.getState().dungeonRuns[0]?.runNumber ?? 0, clock.nowMs)), null, 'complete the run');
   let finalState = store.getState();
   assert.equal(finalState.dungeonRuns.length, 0, 'the run ends after one fight');
   assert.equal(finalState.reports.length, 1, 'a report waits for the player');
@@ -88,11 +118,17 @@ function playSession(seed: number): string {
   if (finalState.reports[0]?.result.won) {
     assert.ok(finalState.clearedDungeonIds.includes('rat-cellar'), 'a win clears the dungeon');
     assert.ok(finalState.copper > copperBeforeRuns, 'a win pays money');
-    assert.equal(rejectionKey(store, startDungeonRunCommand('wolf-trail', [archer.id])), null, 'the next dungeon opens');
-    assert.equal(rejectionKey(store, completeRunCommand(store.getState().dungeonRuns[0]?.runNumber ?? 0)), null);
+    assert.equal(rejectionKey(store, startDungeonRunCommand('wolf-trail', [archer.id], clock.nowMs)), null, 'the next dungeon opens');
+    assert.equal(rejectionKey(store, completeRunCommand(store.getState().dungeonRuns[0]?.runNumber ?? 0, clock.nowMs)), null);
     finalState = store.getState();
   }
-  assert.ok(finalState.company.every((hero) => hero.healthFraction === 1), 'heroes rest after a run');
+  const fighter = finalState.company[0];
+  assert.ok(fighter, 'the company has a fighter');
+  assert.ok(healthFractionAt(fighter, clock.nowMs + ONE_HOUR_MS) === 1, 'heroes regenerate to full health with time');
+  const woundedHero = heroAfterFight(fighter, 0, clock.nowMs);
+  assert.ok(isDowned(woundedHero, clock.nowMs), 'a hero at 0 health is down');
+  assert.ok(!isDowned(woundedHero, clock.nowMs + ONE_HOUR_MS), 'a downed hero returns after the wait');
+  assert.ok(healthFractionAt(woundedHero, (woundedHero.downedUntilMs ?? 0) + 1000) > 0, 'a revived hero has some health');
   assert.ok(finalState.company[0] && finalState.company[0].statistics.battlesWon + finalState.company[0].statistics.battlesLost > 0, 'the fighter records the battle');
   const crafter = finalState.crafters.blacksmithing;
   assert.ok(crafter && (crafter.level > 1 || crafter.experience > 0), 'crafting gives the crafter experience');

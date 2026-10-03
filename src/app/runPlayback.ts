@@ -190,7 +190,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     }
     if (encounter.elapsedSeconds >= encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS) {
       player.encounter = null;
-      store.execute(completeRunCommand(player.runNumber));
+      store.execute(completeRunCommand(player.runNumber, Date.now()));
     }
   };
 

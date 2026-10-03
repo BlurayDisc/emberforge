@@ -1,9 +1,10 @@
 import { DUNGEONS, type DungeonDefinition } from '../../content/dungeons';
 import { requireById } from '../../content/lookup';
-import { isDungeonUnlocked, runInDungeon, runOfHero, startDungeonRunCommand, stopDungeonRunCommand } from '../../game';
+import { describeHero, isDungeonUnlocked, runInDungeon, runOfHero, startDungeonRunCommand, stopDungeonRunCommand } from '../../game';
 import type { DungeonRun } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
-import { actionButton, element, percentBar } from '../dom';
+import { actionButton, element } from '../dom';
+import { createExperienceBar, createLiveHealthBar } from '../liveBars';
 import { className, heroDisplayName, listOf } from '../displayNames';
 import { describeRejection, t } from '../i18n';
 import { openDungeonView } from '../dungeonModal';
@@ -30,7 +31,7 @@ function toggleHero(heroId: string, maximumHeroes: number): void {
 }
 
 function start(context: PanelContext, dungeonId: string): void {
-  const result = context.store.execute(startDungeonRunCommand(dungeonId, selectedHeroIds));
+  const result = context.store.execute(startDungeonRunCommand(dungeonId, selectedHeroIds, Date.now()));
   if (!result.accepted) {
     context.notify(describeRejection(result.rejection));
     return;
@@ -44,11 +45,15 @@ function renderHeroChoice(context: PanelContext, hero: Hero): HTMLElement {
   const run = runOfHero(context.store.getState(), hero.id);
   const status = run
     ? element('div', 'card-text small busy-note', t('heroes.awayIn', { dungeon: t(`dungeon.${run.dungeonId}`) }))
-    : percentBar(hero.healthFraction, 'bar-health');
+    : createLiveHealthBar(context.store, hero.id);
   const entry = createListRow({
     art: createPortrait(hero.classId, hero.name, 2),
     title: heroDisplayName(hero.name),
-    lines: [element('div', 'card-text small', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })), status],
+    lines: [
+      element('div', 'card-text small', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })),
+      status,
+      createExperienceBar(hero.experience, describeHero(context.store.getState(), hero, Date.now()).experienceToNextLevel),
+    ],
     className: `hero-choice${selectedHeroIds.includes(hero.id) ? ' selected' : ''}${run ? ' busy' : ''}`,
   });
   if (!run) {

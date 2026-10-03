@@ -59,7 +59,7 @@ function equipCraftedGear(hero: Hero, random: Random): Hero {
 
 function createParty(classIds: readonly ClassId[], level: number, gearMode: GearMode, random: Random): Hero[] {
   return classIds.map((classId, index) => {
-    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, equipment: {}, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
+    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, healthAsOfMs: 0, downedUntilMs: null, equipment: {}, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
     return gearMode === 'crafted gear' ? equipCraftedGear(hero, random.fork('gear')) : hero;
   });
 }

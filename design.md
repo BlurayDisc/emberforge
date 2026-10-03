@@ -109,6 +109,7 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
 - **Crafter levels:** each profession is a crafter with level 1-100 and XP. Every craft gives XP (more for higher recipes, less for recipes far below the crafter level). A recipe needs level (tier - 1) x 10 + the base item's offset. Locked recipes show the needed level.
 - The Workshop is in town. Click a recipe to see a big portrait and the stat ranges.
+- **Timed jobs:** selling and crafting take time (real clock, also while the page is closed). A sale takes 5 s + 0.6 s per copper of value, up to 10 minutes. The merchant runs 3 sales at once. A crafter makes one item at a time, 5 s + 1.5 s per required level. Jobs show a progress bar. A finished craft waits for backpack room.
 - **Merchant:** has a Sell tab and a Buy tab. It buys items and materials. It sells materials at 4 times the sell price, so buying is a gold sink and not a profit loop. Item value = ingredient value × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)).
 - Enchanting is not built yet.
 
@@ -173,7 +174,8 @@ Ten brackets. Each bracket has one town.
 - **Travel:** the army marker moves on the world map. Time = 2 s + 1 s per bracket crossed. Going back is always allowed. The next town opens when the player beats the boss of the current bracket.
 - **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
 - **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters.
-- **Run:** one run is one fight. The heroes heal fully after it. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
+- **Run:** one run is one fight. Wounds stay after it (see Recovery).
+- **Recovery:** heroes regenerate health by the clock: 20% of max HP per minute, times the class rate (thief 1.75, priest 1.25, warrior and archer 1, mage 0.8). A hero at 0 health is down for (60 s + 5 s per level) divided by the class rate, then returns at 30% health. A down hero cannot start a run. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
 - **Locks and levels:** each dungeon shows a recommended level range. Only the first dungeon is open. Clearing a dungeon opens the next.
 - **Drops per fight:** gold; at least 1 crafting material (guaranteed); each other drop rolls its own chance, so lucky fights give more. All are of the bracket tier.
 - **Hero training:** the tavern sells XP for gold. The cost per XP grows with the hero level.
@@ -199,6 +201,8 @@ Ten brackets. Each bracket has one town.
 - **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player picks the hero (1 for normal dungeons, up to 2 for bosses) and starts a run.
 - **Dungeon details:** click a dungeon row to open a popup with a big dungeon picture, a short story, the monsters (with their pictures) and each monster's loot table with chances. A busy dungeon row shows a progress bar and the seconds left.
 - **Build label:** the build number (git commit count) and commit hash show in the Settings screen, in the corner of the page and in the browser tab title.
+- **Notifications:** a Clear all button removes every report at once.
+- **Hero bars:** hero lists show a live health bar and an experience bar.
 - **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Stop run. Locked dungeons show a lock and the dungeon to clear first.
 - **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
 - **After a run:** a notification appears. Click it to read the report: result, damage, XP, level-ups and loot. Buttons are large for touch.

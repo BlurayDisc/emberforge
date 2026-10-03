@@ -10,6 +10,8 @@ export function createHero(classId: ClassId, heroNumber: number, random: Random)
     level: 1,
     experience: 0,
     healthFraction: 1,
+    healthAsOfMs: 0,
+    downedUntilMs: null,
     equipment: {},
     statistics: {
       monstersDefeated: 0,

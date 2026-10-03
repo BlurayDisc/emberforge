@@ -4,8 +4,8 @@ import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import { createRandom } from '../../kernel/random';
 import type { BackpackEntry } from '../../model/backpack';
-import { applyCraftingExperience, craftingExperienceForCraft, findRecipe, type Recipe } from '../../systems/crafting';
-import { addItem, countMaterial, removeMaterials } from '../../systems/inventory';
+import { craftSeconds, craftingExperienceForCraft, findRecipe, type Recipe } from '../../systems/crafting';
+import { countMaterial, removeMaterials } from '../../systems/inventory';
 import { generateCraftedItem } from '../../systems/items';
 import { CommandRejected, type Command } from '../gameStore';
 import { highestUnlockedTier } from '../unlockedTier';
@@ -22,7 +22,7 @@ function consumeIngredients(entries: readonly BackpackEntry[], recipe: Recipe, u
   return remaining;
 }
 
-export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boolean): Command {
+export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boolean, nowMs: number): Command {
   return (state) => {
     const recipe = findRecipe(baseId, tier);
     if (!recipe) throw new CommandRejected('reject.noRecipe');
@@ -30,6 +30,9 @@ export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boo
     const crafter = state.crafters[recipe.profession] ?? { level: 1, experience: 0 };
     if (crafter.level < recipe.requiredCraftLevel) {
       throw new CommandRejected('reject.craftLevelTooLow', { profession: recipe.profession, level: recipe.requiredCraftLevel });
+    }
+    if (state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession)) {
+      throw new CommandRejected('reject.crafterBusy', { profession: recipe.profession });
     }
     if (usesCatalyst && countMaterial(state.backpack, CATALYST_MATERIAL_ID) < 1) {
       throw new CommandRejected('reject.noCatalyst');
@@ -54,14 +57,25 @@ export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boo
       },
       createRandom(state.seed).fork(`craft-${itemNumber}`),
     );
-    const backpackWithItem = addItem(backpackAfterPayment, item);
-    if (backpackWithItem === null) throw new CommandRejected('reject.backpackFullForItem');
-    const gainedExperience = craftingExperienceForCraft(recipe.requiredCraftLevel, crafter.level);
+    // The item is made now, from the seed, and handed over when the job ends (see collectJobs).
+    const jobNumber = state.jobsStarted + 1;
     return {
       ...state,
-      backpack: backpackWithItem,
+      backpack: backpackAfterPayment,
       itemsCrafted: itemNumber,
-      crafters: { ...state.crafters, [recipe.profession]: applyCraftingExperience(crafter, gainedExperience) },
+      jobsStarted: jobNumber,
+      jobs: [
+        ...state.jobs,
+        {
+          id: jobNumber,
+          kind: 'craft',
+          startedAtMs: nowMs,
+          finishesAtMs: nowMs + craftSeconds(recipe.requiredCraftLevel) * 1000,
+          professionId: recipe.profession,
+          item,
+          crafterExperience: craftingExperienceForCraft(recipe.requiredCraftLevel, crafter.level),
+        },
+      ],
     };
   };
 }

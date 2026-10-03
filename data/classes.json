@@ -1,6 +1,7 @@
 [
   {
     "id": "warrior",
+    "recoveryRate": 1.0,
     "displayName": "Warrior",
     "roleDescription": "Front-line melee fighter with high HP and Defence.",
     "attackKind": "physical",
@@ -14,6 +15,7 @@
   },
   {
     "id": "archer",
+    "recoveryRate": 1.0,
     "displayName": "Archer",
     "roleDescription": "Ranged physical damage. Fast and accurate.",
     "attackKind": "physical",
@@ -27,6 +29,7 @@
   },
   {
     "id": "mage",
+    "recoveryRate": 0.8,
     "displayName": "Mage",
     "roleDescription": "Ranged magic damage. Fragile.",
     "attackKind": "magic",
@@ -40,6 +43,7 @@
   },
   {
     "id": "priest",
+    "recoveryRate": 1.25,
     "displayName": "Priest",
     "roleDescription": "Heals allies below half health.",
     "attackKind": "magic",
@@ -53,6 +57,7 @@
   },
   {
     "id": "thief",
+    "recoveryRate": 1.75,
     "displayName": "Thief",
     "roleDescription": "Very fast melee attacker with high critical chance.",
     "attackKind": "physical",

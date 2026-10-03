@@ -20,7 +20,11 @@ export interface Hero {
   classId: ClassId;
   level: number;
   experience: number;
+  // Health as it was at healthAsOfMs. The game adds the regeneration since then (see systems/recovery).
   healthFraction: number;
+  healthAsOfMs: number;
+  // Set while the hero is down. The hero returns at this time.
+  downedUntilMs: number | null;
   equipment: HeroEquipment;
   statistics: HeroStatistics;
 }

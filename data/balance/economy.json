@@ -28,5 +28,9 @@
   "materialBuyPriceMultiplier": 4,
   "trainingExperienceFraction": 0.5,
   "trainingCostPerExperienceBase": 4,
-  "trainingCostPerExperienceGrowth": 0.1
+  "trainingCostPerExperienceGrowth": 0.1,
+  "merchantSaleSlots": 3,
+  "saleSecondsMinimum": 5,
+  "saleSecondsPerCopper": 0.6,
+  "saleSecondsMaximum": 600
 }

@@ -1,9 +1,10 @@
+export { collectFinishedJobsCommand, findFinishedJobs } from './commands/collectJobs';
 export { completeRunCommand } from './commands/completeRun';
 export { craftItemCommand } from './commands/craftItem';
-export { dismissReportCommand } from './commands/dismissReport';
+export { dismissAllReportsCommand, dismissReportCommand } from './commands/dismissReport';
 export { equipItemCommand, unequipItemCommand } from './commands/equipItem';
 export { hireHeroCommand } from './commands/hireHero';
-export { sellAllMaterialsCommand, sellBackpackEntryCommand } from './commands/sell';
+export { sellBackpackEntryCommand } from './commands/sell';
 export { buyMaterialCommand, trainHeroCommand } from './commands/shopping';
 export { startDungeonRunCommand } from './commands/startDungeonRun';
 export { stopDungeonRunCommand } from './commands/stopDungeonRun';
@@ -14,6 +15,7 @@ export { createBrowserSaveStorage } from './saveStorage';
 export { loadAudioPreferences, loadLanguagePreference, saveAudioPreferences, saveLanguagePreference } from './settingsStorage';
 export { describeHero, describeMoney, listTavernOffers, type HeroView, type TavernOffer } from './views/gameViews';
 export { compareEquip, listItemsForSlot, type EquipComparison, type SlotCandidate } from './views/equipmentViews';
+export { crafterJob, listSaleJobs, saleDurationSeconds } from './views/jobViews';
 export { listMaterialOffers, listTrainingOffers, type MaterialOffer, type TrainingOffer } from './views/shopViews';
 export {
   countCatalysts,

@@ -1,5 +1,6 @@
 import type { BackpackEntry } from './backpack';
 import type { Hero } from './hero';
+import type { TimedJob } from './timedJob';
 import type { MaterialStack } from './material';
 
 export interface HeroEncounterResult {
@@ -56,4 +57,6 @@ export interface GameState {
   reports: RunReport[];
   clearedDungeonIds: string[];
   crafters: Record<string, CrafterProgress>;
+  jobs: TimedJob[];
+  jobsStarted: number;
 }
