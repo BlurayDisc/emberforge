@@ -1,4 +1,5 @@
 import { currentPreferences, setPreferences } from '../../audio';
+import { BUILD_LABEL } from '../../kernel/buildInfo';
 import { LANGUAGES } from '../../content/translations';
 import { saveAudioPreferences } from '../../game';
 import type { AudioPreferences } from '../../model/audioPreferences';
@@ -78,5 +79,9 @@ function renderDangerZone(context: PanelContext): HTMLElement {
   );
 }
 
+function renderVersion(): HTMLElement {
+  return element('div', 'card', element('div', 'card-row', element('span', 'stat-name', t('settings.version')), element('span', 'card-text small', BUILD_LABEL)));
+}
+
 export const renderSettingsPanel: PanelRenderer = (context) =>
-  element('div', 'panel-body', renderLanguageChoice(), renderSoundControls(context), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));
+  element('div', 'panel-body', renderLanguageChoice(), renderSoundControls(context), renderVersion(), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));

@@ -12,6 +12,7 @@ import type { TownView } from '../render/townView';
 import { listOf, unitDisplayName } from '../ui/displayNames';
 import { t } from '../ui/i18n';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
+import { forgetRunProgress, publishRunProgress } from '../ui/runProgress';
 import type { RunHud } from '../ui/runHud';
 
 const MAXIMUM_FRAME_SECONDS = 0.1;
@@ -154,7 +155,10 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   const reconcilePlayers = (): void => {
     const state = store.getState();
     const activeNumbers = new Set(state.dungeonRuns.map((run) => run.runNumber));
-    for (const runNumber of [...players.keys()]) if (!activeNumbers.has(runNumber)) players.delete(runNumber);
+    for (const runNumber of [...players.keys()]) if (!activeNumbers.has(runNumber)) {
+      players.delete(runNumber);
+      forgetRunProgress(runNumber);
+    }
     for (const run of state.dungeonRuns) {
       if (players.has(run.runNumber)) continue;
       players.set(run.runNumber, { runNumber: run.runNumber, dungeonId: run.dungeonId, encounter: null });
@@ -173,6 +177,8 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     const encounter = player.encounter;
     if (!encounter) return;
     encounter.elapsedSeconds += deltaSeconds;
+    const totalSeconds = encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS;
+    publishRunProgress(player.runNumber, encounter.elapsedSeconds / totalSeconds, totalSeconds - encounter.elapsedSeconds);
     const isFocused = focusedRunNumber() === player.runNumber;
     for (let event = encounter.events[encounter.nextEventIndex]; event && event.timeSeconds <= encounter.elapsedSeconds; event = encounter.events[encounter.nextEventIndex]) {
       if (isFocused) applyEventToView(event, encounter);

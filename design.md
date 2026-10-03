@@ -197,6 +197,8 @@ Ten brackets. Each bracket has one town.
 - **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
 - **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.
 - **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player picks the hero (1 for normal dungeons, up to 2 for bosses) and starts a run.
+- **Dungeon details:** click a dungeon row to open a popup with a big dungeon picture, a short story, the monsters (with their pictures) and each monster's loot table with chances. A busy dungeon row shows a progress bar and the seconds left.
+- **Build label:** the build number (git commit count) and commit hash show in the Settings screen, in the corner of the page and in the browser tab title.
 - **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Stop run. Locked dungeons show a lock and the dungeon to clear first.
 - **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
 - **After a run:** a notification appears. Click it to read the report: result, damage, XP, level-ups and loot. Buttons are large for touch.
