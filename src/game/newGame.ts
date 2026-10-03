@@ -13,6 +13,7 @@ export function createNewGameState(seed: number): GameState {
     backpack: [],
     itemsCrafted: 0,
     runsStarted: 0,
-    dungeonRun: null,
+    dungeonRuns: [],
+    lastEndedRun: null,
   };
 }

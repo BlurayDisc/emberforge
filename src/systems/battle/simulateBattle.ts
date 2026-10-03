@@ -68,6 +68,8 @@ function act(actor: BattleUnit, combatants: readonly Combatant[], timeSeconds: n
   };
 }
 
+// The whole fight is simulated at once from a seed, then replayed by the screen.
+// This keeps results identical after a reload and lets the balance tool run without a screen.
 export function simulateBattle(units: readonly BattleUnit[], random: Random): BattleReport {
   const combatants: Combatant[] = units.map((unit) => ({ unit: { ...unit }, charge: 0 }));
   const events: BattleEvent[] = [];

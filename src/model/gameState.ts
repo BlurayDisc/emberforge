@@ -46,5 +46,6 @@ export interface GameState {
   backpack: BackpackEntry[];
   itemsCrafted: number;
   runsStarted: number;
-  dungeonRun: DungeonRun | null;
+  dungeonRuns: DungeonRun[];
+  lastEndedRun: DungeonRun | null;
 }

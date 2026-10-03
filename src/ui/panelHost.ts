@@ -11,6 +11,7 @@ export interface PanelHost {
   toggle(panelId: string): void;
   open(panelId: string): void;
   activePanelId(): string | null;
+  notify(message: string): void;
   onChange(listener: () => void): void;
 }
 
@@ -69,6 +70,7 @@ export function createPanelHost(store: GameStore): PanelHost {
     toggle: (panelId) => setActive(activeId === panelId ? null : panelId),
     open: (panelId) => setActive(panelId),
     activePanelId: () => activeId,
+    notify,
     onChange: (listener) => {
       changeListeners.push(listener);
     },

@@ -6,7 +6,7 @@ import type { DungeonRun, GameState } from '../model/gameState';
 import { simulateBattle } from '../systems/battle';
 import { createEncounter } from '../systems/dungeons';
 import { heroToBattleUnit } from '../systems/stats';
-import { activeRunOf } from './runStatus';
+import { findActiveRun } from './runStatus';
 
 export interface PlannedEncounter {
   partyUnits: BattleUnit[];
@@ -18,9 +18,9 @@ export function encounterRandomFor(state: GameState, run: DungeonRun): Random {
   return createRandom(state.seed).fork(`run-${run.runNumber}`).fork(`encounter-${run.encounterNumber}`);
 }
 
-export function planNextEncounter(state: GameState): PlannedEncounter {
-  const run = activeRunOf(state);
-  if (run === null) throw new Error('There is no active dungeon run');
+export function planNextEncounter(state: GameState, runNumber: number): PlannedEncounter {
+  const run = findActiveRun(state, runNumber);
+  if (!run) throw new Error(`There is no active dungeon run ${runNumber}`);
 
   const dungeon = requireById(DUNGEONS, run.dungeonId);
   const random = encounterRandomFor(state, run);

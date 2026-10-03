@@ -1,4 +1,7 @@
+import { currentPreferences, setPreferences } from '../../audio';
 import { LANGUAGES } from '../../content/translations';
+import { saveAudioPreferences } from '../../game';
+import type { AudioPreferences } from '../../model/audioPreferences';
 import { actionButton, element } from '../dom';
 import { currentLanguageId, setLanguage, t } from '../i18n';
 import type { PanelContext, PanelRenderer } from './panelContext';
@@ -14,23 +17,66 @@ function renderLanguageChoice(): HTMLElement {
   return element('div', 'card', element('div', 'card-title', t('settings.language')), element('div', 'tab-row', ...buttons));
 }
 
-function renderResetButton(context: PanelContext): HTMLElement {
-  if (isResetArmed) {
-    return actionButton(
-      t('settings.confirmNewGame'),
-      () => {
-        isResetArmed = false;
-        context.store.startNewGame();
-        context.notify(t('settings.newGameStarted'));
-      },
-      { className: 'action-button danger' },
-    );
-  }
-  return actionButton(t('settings.newGame'), () => {
-    isResetArmed = true;
+function updateAudio(changes: Partial<AudioPreferences>): void {
+  const updated = { ...currentPreferences(), ...changes };
+  setPreferences(updated);
+  saveAudioPreferences(updated);
+}
+
+function createVolumeSlider(labelKey: string, value: number, onChange: (volume: number) => void): HTMLElement {
+  const slider = element('input', 'volume-slider');
+  slider.type = 'range';
+  slider.min = '0';
+  slider.max = '100';
+  slider.value = String(Math.round(value * 100));
+  slider.addEventListener('input', () => onChange(Number(slider.value) / 100));
+  return element('label', 'card-row', element('span', 'stat-name', t(labelKey)), slider);
+}
+
+function renderSoundControls(context: PanelContext): HTMLElement {
+  const preferences = currentPreferences();
+  const muteButton = actionButton(preferences.muted ? t('settings.unmute') : t('settings.mute'), () => {
+    updateAudio({ muted: !currentPreferences().muted });
     context.requestRender();
   });
+  muteButton.classList.toggle('active', preferences.muted);
+  return element(
+    'div',
+    'card',
+    element('div', 'card-title', t('settings.sound')),
+    createVolumeSlider('settings.musicVolume', preferences.musicVolume, (volume) => updateAudio({ musicVolume: volume })),
+    createVolumeSlider('settings.effectsVolume', preferences.effectsVolume, (volume) => updateAudio({ effectsVolume: volume })),
+    muteButton,
+  );
+}
+
+function renderDangerZone(context: PanelContext): HTMLElement {
+  const resetButton = isResetArmed
+    ? actionButton(
+        t('settings.confirmReset'),
+        () => {
+          isResetArmed = false;
+          context.store.startNewGame();
+          context.notify(t('settings.resetDone'));
+        },
+        { className: 'action-button danger blink' },
+      )
+    : actionButton(
+        t('settings.resetGame'),
+        () => {
+          isResetArmed = true;
+          context.requestRender();
+        },
+        { className: 'action-button danger' },
+      );
+  return element(
+    'div',
+    'danger-zone',
+    element('div', 'danger-title', `! ${t('settings.dangerZone')} !`),
+    element('p', 'danger-text', t('settings.resetWarning')),
+    resetButton,
+  );
 }
 
 export const renderSettingsPanel: PanelRenderer = (context) =>
-  element('div', 'panel-body', renderLanguageChoice(), element('p', 'hint', t('settings.autosave')), renderResetButton(context));
+  element('div', 'panel-body', renderLanguageChoice(), renderSoundControls(context), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));

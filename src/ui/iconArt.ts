@@ -110,6 +110,22 @@ export function createDungeonIcon(dungeonId: string, scale = 3): HTMLImageElemen
   return cachedImage(`dungeon:${dungeonId}`, scale, rows, { ...BASE_LEGEND, a: '#a8855a' });
 }
 
+function crossedSwordsRows(): string[] {
+  return Array.from({ length: 12 }, (_, row) => {
+    const cells = Array.from({ length: 12 }, () => '.');
+    for (const column of [row, 11 - row]) {
+      if (column > 0 && cells[column - 1] === '.') cells[column - 1] = 'o';
+      if (column < 11 && cells[column + 1] === '.') cells[column + 1] = 'o';
+    }
+    for (const column of [row, 11 - row]) cells[column] = row >= 9 ? 'g' : 's';
+    return cells.join('');
+  });
+}
+
+export function createFightIcon(scale = 2): HTMLImageElement {
+  return cachedImage('fight', scale, crossedSwordsRows(), BASE_LEGEND);
+}
+
 export function createTownIcon(scale = 3): HTMLImageElement {
   return cachedImage('town', scale, DUNGEON_ROWS.town ?? [], BASE_LEGEND);
 }

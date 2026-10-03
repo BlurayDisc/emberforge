@@ -1,4 +1,5 @@
 import { BUILDINGS } from '../content/buildings';
+import { playSound } from '../audio';
 import type { GameStore } from '../game';
 import { createBattleView } from '../render/battleView';
 import { createPixelStage } from '../render/pixelStage';
@@ -25,4 +26,8 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   const townView = createTownView(stage, BUILDINGS);
   startRunPlayback(store, stage, { battleView, townView }, hud);
   startFlowController(store, panelHost);
+
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Element && event.target.closest('button')) playSound('ui-click');
+  });
 }

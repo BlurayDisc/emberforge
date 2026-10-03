@@ -11,7 +11,7 @@ import { applyExperience, experienceForKill } from '../../systems/progression';
 import { encounterRandomFor, planNextEncounter, type PlannedEncounter } from '../encounterPlanner';
 import { summariseHeroPerformance, type HeroPerformance } from '../encounterStatistics';
 import { CommandRejected, type Command } from '../gameStore';
-import { activeRunOf } from '../runStatus';
+import { findActiveRun } from '../runStatus';
 import { endDungeonRun } from './endDungeonRun';
 
 interface HeroOutcome {
@@ -67,12 +67,13 @@ function rollEncounterLoot(state: GameState, run: DungeonRun, monsters: readonly
   return monsters.map((monster) => rollMonsterLoot(monster.definitionId, monster.level, lootRandom.fork(monster.id)));
 }
 
-export function finishEncounterCommand(): Command {
+export function finishEncounterCommand(runNumber: number): Command {
   return (state) => {
-    const run = activeRunOf(state);
-    if (run === null) throw new CommandRejected('reject.noActiveRun');
+    const run = findActiveRun(state, runNumber);
+    if (!run) throw new CommandRejected('reject.noActiveRun');
 
-    const plan = planNextEncounter(state);
+    // The plan is re-simulated from the saved seed, so the result matches the fight that the player watched.
+    const plan = planNextEncounter(state, runNumber);
     const won = plan.report.winner === 'party';
     const performanceByHero = summariseHeroPerformance(plan.report, run.heroIds, plan.monsterUnits);
     const loot = won ? rollEncounterLoot(state, run, plan.monsterUnits) : [];
@@ -99,20 +100,24 @@ export function finishEncounterCommand(): Command {
       copper: state.copper + copperGained,
       company,
       backpack: backpack.entries,
-      dungeonRun: {
-        ...run,
-        encounterNumber: run.encounterNumber + 1,
-        encountersWon: run.encountersWon + (won ? 1 : 0),
-        copperGained: run.copperGained + copperGained,
-        materialsGained: combineMaterialQuantities(run.materialsGained, materialsDropped),
-        lastEncounter,
-      },
+      dungeonRuns: state.dungeonRuns.map((candidate) =>
+        candidate.runNumber === run.runNumber
+          ? {
+              ...run,
+              encounterNumber: run.encounterNumber + 1,
+              encountersWon: run.encountersWon + (won ? 1 : 0),
+              copperGained: run.copperGained + copperGained,
+              materialsGained: combineMaterialQuantities(run.materialsGained, materialsDropped),
+              lastEncounter,
+            }
+          : candidate,
+      ),
     };
 
-    if (!won) return endDungeonRun(updatedState, 'party-defeated');
-    if (backpack.overflow.length > 0) return endDungeonRun(updatedState, 'backpack-full');
+    if (!won) return endDungeonRun(updatedState, run.runNumber, 'party-defeated');
+    if (backpack.overflow.length > 0) return endDungeonRun(updatedState, run.runNumber, 'backpack-full');
     const runHeroes = company.filter((hero) => run.heroIds.includes(hero.id));
-    if (averageHealthFraction(runHeroes) < PARTY_WEAKENED_BELOW_AVERAGE_HEALTH) return endDungeonRun(updatedState, 'party-weakened');
+    if (averageHealthFraction(runHeroes) < PARTY_WEAKENED_BELOW_AVERAGE_HEALTH) return endDungeonRun(updatedState, run.runNumber, 'party-weakened');
     return {
       ...updatedState,
       company: company.map((hero) =>

@@ -6,7 +6,7 @@ Working title. Pixel-art, turn-based, Middle-earth-style fantasy. You lead a com
 
 Fight → Loot → Craft → Equip → Travel → Fight (harder).
 
-Heroes fight automatically. The player sends one hero (two for a boss) into a dungeon. The player crafts, equips and sells while the fight plays.
+Heroes fight automatically. The player sends one hero (two for a boss) into a dungeon. The player can send all heroes to different dungeons at the same time, and watches one battle at a time. The player crafts, equips and sells while the fights go on.
 
 ## 2. Technology decision
 
@@ -29,7 +29,7 @@ Heroes fight automatically. The player sends one hero (two for a boss) into a du
 | Word | Meaning |
 |---|---|
 | Company | All heroes the player owns (max 12). |
-| Run party | The hero or heroes sent into one dungeon run. The dungeon sets the maximum: 1 for normal dungeons, 2 for boss dungeons. There is no permanent party. |
+| Run party | The hero or heroes sent into one dungeon run. A dungeon hosts one run at a time. A hero is in one run at a time. The dungeon sets the maximum: 1 for normal dungeons, 2 for boss dungeons. There is no permanent party. |
 | Bracket | A block of 10 levels (1-10, 11-20 … 91-100). |
 | Tier | Material grade. Tier N belongs to bracket N. |
 | Town | Hub of one bracket: workshop, merchant, tavern, dungeons. |
@@ -194,9 +194,12 @@ Ten brackets. Each bracket has one town.
 - **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
 - **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.
 - **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player picks the hero (1 for normal dungeons, up to 2 for bosses) and starts a run.
-- **During a run:** a themed battle scene for each dungeon. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
+- **Several runs:** the Dungeons panel shows a dungeon that is in use as "Under fight", with a fight icon, the hero names, fights won, and the buttons Watch battle and Stop run. Heroes that are away show "Away: dungeon" and cannot be chosen. The Dungeons button in the bar shows how many runs are active. Runs that are not watched still fight, loot and level up. The HUD button "Back to town" returns to the town while the runs go on.
+- **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
 - **After each fight:** a results card shows fight time, damage, damage per second, damage taken, XP, level-ups and the loot. The next fight starts after a short pause.
 - **After a run:** the Inventory opens with the run summary and loot. The button "Equip gear (Heroes)" opens Heroes. In Heroes, the Stats tab shows the portrait, attributes, Power and the battle record. The Items tab shows the slots and the backpack items that the hero can equip.
+- **Sound:** all sound is made in the browser, so the game has no sound files. A music track plays for the town, for battles and for bosses. Combat sounds depend on who hits: a hero attack is the weapon plus the monster cry; a monster attack is its strike plus a hit on the armour of the hero (heavy metal clang, medium leather thud, light cloth thump). There are sounds for criticals, heals, defeats, victory, level-up and button clicks. The Settings screen has music volume, effects volume and mute. Music and sound recipes are in `data/audio/`.
+- **Reset:** the Settings screen has a red Danger zone with RESET GAME. It needs a second click to confirm.
 - **Style:** pixel art, wood and parchment menus, blackletter titles (Jacquard 12), pixel text (Pixelify Sans).
 - **Data:** all game data is JSON in `data/`. A README there explains each file.
 - **Languages:** English and Simplified Chinese. The player picks the language in the Settings screen. The choice is saved apart from the game save. All text and content names are in `data/i18n/`. Item names are built from parts (material, base, affixes), so they change language too.

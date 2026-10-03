@@ -44,6 +44,7 @@ export function createPixelStage(container: HTMLElement): PixelStage {
   );
 
   const frameListeners: Array<(elapsedSeconds: number) => void> = [];
+  // requestAnimationFrame stops in a hidden browser tab, so the game pauses there.
   const renderFrame = (timestampMilliseconds: number): void => {
     const elapsedSeconds = timestampMilliseconds / 1000;
     frameListeners.forEach((listener) => listener(elapsedSeconds));

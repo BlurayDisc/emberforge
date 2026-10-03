@@ -12,9 +12,10 @@ Pixel-art, turn-based crafting RPG. Stack: three.js + TypeScript + Vite. Static 
 | Command | Use |
 |---|---|
 | `npm run dev` | Dev server with hot reload |
-| `npm run check` | Type check + architecture boundary check + data and translation validation. Run it before you finish any task. |
+| `npm run check` | Type check + architecture boundary check + data and translation validation + headless smoke play. Run it before you finish any task. |
 | `npm run build` | `check` + production build into `dist/` |
 | `npm run balance` | Balance simulator (`tools/balance-sim/run.ts`). Prints win rate, duration and HP lost per dungeon and party. |
+| `npm run smoke` | Headless smoke play (`tools/smoke-play.ts`): hire, craft, equip, sell, and several dungeon runs at once, and a same-seed check. Fails on a broken rule. |
 | `npm run validate` | Data validator (`tools/validate-data.ts`). `check` and `build` run it too. |
 
 ## Architecture
@@ -29,8 +30,9 @@ Many small directories. Each game system is independent. `tools/check-boundaries
 | `src/systems/<name>/` | Pure game logic. One system per directory. | kernel, model, content |
 | `src/game/` | Player commands, state store, autosave, storage. The only layer that joins systems. | all except render, ui |
 | `src/render/` | three.js stage. Reads state. Never changes it. | kernel, model, content |
-| `src/ui/` | DOM screens. Sends commands to `game/`. | kernel, model, content, game |
-| `src/app/` | Composition root: joins `game`, `render` and `ui` (for example battle playback). | kernel, model, content, game, render, ui |
+| `src/audio/` | Browser sound: synthesized effects and music. No sound files. | kernel, model, content |
+| `src/ui/` | DOM screens. Sends commands to `game/`. | kernel, model, content, game, audio |
+| `src/app/` | Composition root: joins `game`, `render`, `ui` and `audio` (for example battle playback, which runs every active run). | kernel, model, content, game, render, ui, audio |
 | `data/` | **Game data as JSON** (classes, materials, monsters, dungeons, towns, buildings, base items, affixes, balance numbers). No code. A wiki tool can scan it. | - |
 | `tools/` | Node scripts: boundary check, data validator, balance simulator | everything |
 
@@ -56,7 +58,7 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 
 ## Balance (no unit tests)
 
-- **Do not write unit tests.** Do not add a test framework or coverage tools. This is a personal game.
+- **Do not write unit tests.** Do not add a test framework or coverage tools. This is a personal game. Use tools instead: the balance simulator, the data validator and the smoke play script. When you add a command or a rule, add a step to `tools/smoke-play.ts`.
 - Balance is checked by `tools/balance-sim/`. It runs many seeded battles for each dungeon, with and without crafted gear. It prints win rate, duration (against the target curve in design.md section 8) and HP lost.
 - Run `npm run balance` after you change stats, formulas, items, affixes, monsters or XP numbers. Fix the numbers in `data/balance/`, then run it again.
 - `tools/validate-data.ts` checks the JSON in `data/`. It fails on:
@@ -66,6 +68,21 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
   - an unknown id or sprite key.
   Run `npm run validate` after you edit `data/`.
 - Never put an em dash in `data/` files. Use a normal hyphen - instead.
+
+## Audio
+
+- Sound is synthesized with the Web Audio API in `src/audio/`. Do not add sound files.
+- Music patterns and sound recipes are data in `data/audio/`. Add a sound there, and map it in `sound-effects.json` if a class, monster or armour type needs it. `npm run validate` checks the mappings and that every music voice has the same length.
+- Browsers block audio until the first click, tap or key press. The engine creates the audio context at that moment. Call `playSound` and `playMusic` freely before it: they do nothing, or wait, until audio is unlocked.
+- Only the watched run makes combat sound. Runs in the background are silent.
+- Volumes are saved apart from the game save (`emberforge.settings`).
+
+## Several runs at once
+
+- A dungeon hosts one run. A hero is in one run. `state.dungeonRuns` holds the active runs. `state.lastEndedRun` holds the newest ended run for the summary.
+- Every run command takes the run number: `finishEncounterCommand(runNumber)`, `stopDungeonRunCommand(runNumber)`.
+- `app/runPlayback.ts` keeps one player for each run. All players advance. Only the run in focus (`ui/runFocus.ts`) draws on the stage.
+- Ending a run heals only the heroes of that run.
 
 ## Languages (English and Chinese)
 
@@ -99,7 +116,7 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 ## Code style
 
 - Write self-documenting code. Use game-domain names and put the technical detail in the name (`rollAffixValue`, `slotsOccupiedByItem`).
-- Do not add comments. If code needs a comment, rename it or split it.
+- Use clear names first. Add a short comment only where the code hides important technical behaviour or a non-obvious reason: a browser quirk, an ordering or determinism rule, a boundary of a layer. Never add a comment that repeats the code. (This project is TypeScript. The Java rules in the global file do not apply.)
 - Never use em dashes (the long dash character) in code, UI text, data files or docs. Use a normal hyphen - instead.
 - TypeScript `strict`. No `any`.
 - One concept per file. Keep files under about 200 lines. No `utils.ts` or `helpers.ts`.

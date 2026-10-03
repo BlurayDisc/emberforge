@@ -1,9 +1,11 @@
 import { DEFAULT_LANGUAGE, LANGUAGES, type LanguageId } from '../content/translations';
+import type { AudioPreferences } from '../model/audioPreferences';
 
 const SETTINGS_KEY = 'emberforge.settings';
 
 interface StoredSettings {
   language?: string;
+  audio?: Partial<AudioPreferences>;
 }
 
 function readSettings(): StoredSettings {
@@ -27,6 +29,29 @@ export function loadLanguagePreference(): LanguageId {
 export function saveLanguagePreference(language: LanguageId): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), language }));
+  } catch {
+    return;
+  }
+}
+
+const DEFAULT_AUDIO: AudioPreferences = { musicVolume: 0.5, effectsVolume: 0.7, muted: false };
+
+function clampVolume(value: number | undefined, fallback: number): number {
+  return typeof value === 'number' && value >= 0 && value <= 1 ? value : fallback;
+}
+
+export function loadAudioPreferences(): AudioPreferences {
+  const saved = readSettings().audio ?? {};
+  return {
+    musicVolume: clampVolume(saved.musicVolume, DEFAULT_AUDIO.musicVolume),
+    effectsVolume: clampVolume(saved.effectsVolume, DEFAULT_AUDIO.effectsVolume),
+    muted: saved.muted === true,
+  };
+}
+
+export function saveAudioPreferences(preferences: AudioPreferences): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), audio: preferences }));
   } catch {
     return;
   }

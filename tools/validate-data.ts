@@ -232,6 +232,25 @@ function listSourceFiles(directory: string): string[] {
     .map((entry) => join(directory, entry));
 }
 
+function checkAudio(): void {
+  const effects = load<{ effects: Record<string, unknown>; classAttack: Record<string, string>; monsterAttack: Record<string, string>; monsterHurt: Record<string, string>; armourHit: Record<string, string> }>('audio/sound-effects.json');
+  const music = load<{ tracks: Record<string, { voices: Array<{ notes: string }> }> }>('audio/music.json');
+  const mappedEffectIds = [...Object.values(effects.classAttack), ...Object.values(effects.monsterAttack), ...Object.values(effects.monsterHurt), ...Object.values(effects.armourHit)];
+  for (const effectId of mappedEffectIds) if (!(effectId in effects.effects)) report(`audio/sound-effects.json: unknown effect '${effectId}'`);
+  for (const heroClass of classes) if (!(heroClass.id in effects.classAttack)) report(`audio/sound-effects.json: class '${heroClass.id}' has no attack sound`);
+  for (const monster of monsters) {
+    if (!(monster.spriteKey in effects.monsterAttack)) report(`audio/sound-effects.json: sprite '${monster.spriteKey}' has no attack sound`);
+    if (!(monster.spriteKey in effects.monsterHurt)) report(`audio/sound-effects.json: sprite '${monster.spriteKey}' has no hurt sound`);
+  }
+  for (const [trackId, track] of Object.entries(music.tracks)) {
+    const lengths = track.voices.map((voice) => voice.notes.split(/\s+/).reduce((total, token) => total + Number(token.split(':')[1] ?? 1), 0));
+    if (new Set(lengths).size !== 1) report(`audio/music.json: voices of track '${trackId}' must have the same length (found ${lengths.join(', ')})`);
+  }
+  for (const required of ['town', 'battle', 'boss']) if (!(required in music.tracks)) report(`audio/music.json: missing track '${required}'`);
+}
+
+checkAudio();
+
 function checkTranslations(): void {
   const english = translationsByLanguage.en;
   if (!english) return report('i18n: English translations are required');

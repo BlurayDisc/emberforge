@@ -4,12 +4,12 @@ import type { EquipmentSlot } from '../../model/item';
 import { equipItem, findEquipProblem, unequipItem } from '../../systems/equipment';
 import { addItem, findItem, removeItem } from '../../systems/inventory';
 import { CommandRejected, type Command } from '../gameStore';
-import { activeRunOf } from '../runStatus';
+import { runOfHero } from '../runStatus';
 
 function requireEditableHero(state: GameState, heroId: string): Hero {
   const hero = state.company.find((candidate) => candidate.id === heroId);
   if (!hero) throw new CommandRejected('reject.heroMissing');
-  if (activeRunOf(state)?.heroIds.includes(heroId)) {
+  if (runOfHero(state, heroId)) {
     throw new CommandRejected('reject.stopRunBeforeGearChange');
   }
   return hero;

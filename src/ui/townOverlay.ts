@@ -1,8 +1,9 @@
 import { BUILDINGS, type BuildingDefinition } from '../content/buildings';
-import { activeRunOf, type GameStore } from '../game';
+import type { GameStore } from '../game';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
 import { element } from './dom';
 import { onLanguageChange, t } from './i18n';
+import { focusedRunNumber, onRunFocusChange } from './runFocus';
 
 function percentOf(value: number, total: number): string {
   return `${(value / total) * 100}%`;
@@ -28,7 +29,7 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
 
   const refresh = (): void => {
     const state = store.getState();
-    overlay.style.display = activeRunOf(state) === null ? 'block' : 'none';
+    overlay.style.display = focusedRunNumber() === null ? 'block' : 'none';
     const hasNoHeroes = state.company.length === 0;
     const isReadyForFirstRun = !hasNoHeroes && state.runsStarted === 0;
 
@@ -45,6 +46,7 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
   };
 
   store.subscribe(refresh);
+  onRunFocusChange(refresh);
   onLanguageChange(refresh);
   refresh();
   return overlay;

@@ -289,3 +289,34 @@
 .stat-grid.wide {
   grid-template-columns: 1fr 1fr;
 }
+
+.list-row.hero-choice.busy {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.busy-note {
+  color: var(--gold);
+}
+
+.list-row.fighting {
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--crimson), inset -2px -2px 0 var(--crimson);
+}
+
+.fight-art {
+  position: relative;
+  display: flex;
+}
+
+.fight-badge {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  padding: 1px;
+  background: var(--ink);
+}
+
+.fight-status {
+  color: #ff8a7a;
+  font-weight: 700;
+}

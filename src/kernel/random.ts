@@ -65,6 +65,8 @@ class SeededRandom implements Random {
     return options[options.length - 1] as Option;
   }
 
+  // A fork depends only on the original seed and the name, never on how many numbers this
+  // stream already produced. So loot, battle and hero names stay stable when the code order changes.
   fork(streamName: string): Random {
     return new SeededRandom(this.seed ^ hashText(streamName));
   }

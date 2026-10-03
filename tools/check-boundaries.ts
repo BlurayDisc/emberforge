@@ -13,8 +13,9 @@ const layersEachLayerMayImport: Record<string, readonly string[]> = {
   systems: ['kernel', 'model', 'content'],
   game: ['kernel', 'model', 'content', 'systems'],
   render: ['kernel', 'model', 'content'],
-  ui: ['kernel', 'model', 'content', 'game'],
-  app: ['kernel', 'model', 'content', 'game', 'render', 'ui'],
+  audio: ['kernel', 'model', 'content'],
+  ui: ['kernel', 'model', 'content', 'game', 'audio'],
+  app: ['kernel', 'model', 'content', 'game', 'render', 'ui', 'audio'],
 };
 
 const forbiddenInsideSystems = [

@@ -1,8 +1,9 @@
-import { activeRunOf, stopDungeonRunCommand, type GameStore } from '../game';
+import { findActiveRun, stopDungeonRunCommand, type GameStore } from '../game';
 import type { EncounterResult } from '../model/gameState';
 import { actionButton, element } from './dom';
 import { createEncounterResultCard } from './encounterResultCard';
 import { onLanguageChange, t } from './i18n';
+import { focusRun, focusedRunNumber, onRunFocusChange } from './runFocus';
 
 const MAXIMUM_LOG_LINES = 6;
 const PLAYBACK_SPEEDS = [1, 2, 4] as const;
@@ -22,7 +23,11 @@ export function createRunHud(store: GameStore): RunHud {
   const resultSlot = element('div', 'result-slot');
   const title = element('div', 'hud-title');
   const log = element('div', 'hud-log');
-  const stopButton = actionButton('', () => store.execute(stopDungeonRunCommand()));
+  const stopButton = actionButton('', () => {
+    const runNumber = focusedRunNumber();
+    if (runNumber !== null) store.execute(stopDungeonRunCommand(runNumber));
+  });
+  const townButton = actionButton('', () => focusRun(null));
   let speed: number = PLAYBACK_SPEEDS[0];
   let shownResult: EncounterResult | null = null;
 
@@ -40,7 +45,7 @@ export function createRunHud(store: GameStore): RunHud {
     speedButtons.forEach((button, index) => button.classList.toggle('active', PLAYBACK_SPEEDS[index] === speed));
   };
 
-  container.append(title, log, element('div', 'hud-controls', ...speedButtons, stopButton));
+  container.append(title, log, element('div', 'hud-controls', ...speedButtons, townButton, stopButton));
   root.append(container, resultSlot);
 
   const renderResult = (): void => {
@@ -49,19 +54,21 @@ export function createRunHud(store: GameStore): RunHud {
   };
 
   const refresh = (): void => {
-    const state = store.getState();
-    const run = activeRunOf(state);
-    root.style.display = run === null ? 'none' : 'block';
-    if (run === null) {
+    const runNumber = focusedRunNumber();
+    const run = runNumber === null ? undefined : findActiveRun(store.getState(), runNumber);
+    root.style.display = run ? 'block' : 'none';
+    if (!run) {
       shownResult = null;
       resultSlot.replaceChildren();
       return;
     }
     title.textContent = t('hud.title', { name: t(`dungeon.${run.dungeonId}`), count: run.encountersWon });
     stopButton.textContent = t('dungeons.stop');
+    townButton.textContent = t('hud.backToTown');
   };
 
   store.subscribe(refresh);
+  onRunFocusChange(refresh);
   onLanguageChange(() => {
     refresh();
     renderResult();

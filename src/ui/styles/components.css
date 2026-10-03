@@ -253,3 +253,49 @@
   box-shadow: var(--outline-4), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-900);
   pointer-events: none;
 }
+
+.bar-badge {
+  min-width: 18px;
+  padding: 0 5px;
+  text-align: center;
+  font-size: 12px;
+  color: #fff;
+  background: var(--crimson);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.danger-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px;
+  padding: 12px;
+  background: #2a1414;
+  box-shadow: var(--outline-2), inset 3px 3px 0 var(--crimson), inset -3px -3px 0 var(--crimson);
+}
+
+.danger-title {
+  font-family: var(--font-title);
+  font-size: 24px;
+  color: #ff6a5a;
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.danger-text {
+  color: #ffb0a4;
+}
+
+.action-button.blink {
+  animation: danger-blink 0.8s steps(1) infinite;
+}
+
+@keyframes danger-blink {
+  0% { background: var(--crimson); }
+  50% { background: #ff6a5a; }
+}
+
+.volume-slider {
+  flex: 1;
+  max-width: 260px;
+  accent-color: var(--gold);
+}

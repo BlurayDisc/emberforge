@@ -107,9 +107,9 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
   entries.forEach((entry) => grid.append(renderEntry(context, entry)));
 
   const selected = entries.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
-  const lastRun = context.store.getState().dungeonRun;
+  const lastRun = context.store.getState().lastEndedRun;
   const body = element('div', 'panel-body');
-  if (lastRun && lastRun.status === 'ended') {
+  if (lastRun) {
     body.append(createRunSummaryCard(lastRun, [createGoToHeroesButton(context.openPanel)]));
   }
   body.append(element('p', 'hint', t('inventory.hint')), grid, renderDetail(context, selected));

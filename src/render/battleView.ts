@@ -3,10 +3,10 @@ import type { BattleUnit } from '../model/battle';
 import { drawBattleBackdrop } from './battleBackdrops';
 import { PALETTE } from './palette';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, type PixelStage } from './pixelStage';
+import { createHealthBar, type HealthBar } from './healthBarArt';
 import { createPixelTexture, createBattleSprite } from './pixelSprites';
 
-const HEALTH_BAR_WIDTH = 24;
-const HEALTH_BAR_HEIGHT = 3;
+const HEALTH_BAR_GAP_ABOVE_HEAD = 6;
 const SIDE_OFFSET_X = 105;
 const FLASH_SECONDS = 0.18;
 const LUNGE_SECONDS = 0.28;
@@ -20,7 +20,7 @@ export interface BattleView {
   setVisible(isVisible: boolean): void;
   setBackdrop(dungeonId: string): void;
   showUnits(units: readonly BattleUnit[]): void;
-  setUnitHealth(unitId: string, hp: number, maxHp: number): void;
+  setUnitHealth(unitId: string, hp: number): void;
   playHit(actorId: string, targetId: string, amount: number, isCritical: boolean): void;
   playHeal(actorId: string, targetId: string, amount: number): void;
   markDefeated(unitId: string): void;
@@ -29,8 +29,7 @@ export interface BattleView {
 interface UnitVisual {
   sprite: Sprite;
   shadow: Mesh;
-  healthBackground: Mesh;
-  healthFill: Mesh;
+  healthBar: HealthBar;
   baseColor: Color;
   spriteHeight: number;
   worldX: number;
@@ -82,20 +81,11 @@ export function createBattleView(stage: PixelStage): BattleView {
   const clearUnits = (): void => {
     visualsByUnitId.forEach((visual) => {
       visual.sprite.material.dispose();
-      for (const part of [visual.shadow, visual.healthBackground, visual.healthFill]) {
-        (part.material as MeshBasicMaterial).dispose();
-        root.remove(part);
-      }
-      root.remove(visual.sprite);
+      (visual.shadow.material as MeshBasicMaterial).dispose();
+      visual.healthBar.dispose();
+      root.remove(visual.shadow, visual.healthBar.sprite, visual.sprite);
     });
     visualsByUnitId.clear();
-  };
-
-  const placeHealthFill = (visual: UnitVisual, fraction: number): void => {
-    const width = Math.round(HEALTH_BAR_WIDTH * Math.max(0, Math.min(1, fraction)));
-    visual.healthFill.visible = width > 0;
-    visual.healthFill.scale.x = Math.max(1, width);
-    visual.healthFill.position.x = visual.worldX - HEALTH_BAR_WIDTH / 2 + Math.max(1, width) / 2;
   };
 
   const spawnFloatingText = (visual: UnitVisual, text: string, className: string): void => {
@@ -141,7 +131,10 @@ export function createBattleView(stage: PixelStage): BattleView {
     const deltaSeconds = Math.min(0.1, elapsedSeconds - latestElapsedSeconds);
     latestElapsedSeconds = elapsedSeconds;
     if (!root.visible) return;
-    visualsByUnitId.forEach((visual) => applyAnimation(visual, elapsedSeconds));
+    visualsByUnitId.forEach((visual) => {
+      applyAnimation(visual, elapsedSeconds);
+      visual.healthBar.update(elapsedSeconds, deltaSeconds);
+    });
     for (let index = particles.length - 1; index >= 0; index--) {
       const particle = particles[index] as Particle;
       const age = elapsedSeconds - particle.bornSeconds;
@@ -184,26 +177,23 @@ export function createBattleView(stage: PixelStage): BattleView {
           const shadow = createFlatMesh('#000000', shadowWidth, 6, -0.5);
           shadow.position.set(worldX, feetWorldY + 1, -0.5);
           (shadow.material as MeshBasicMaterial).opacity = 0.35;
-          const barY = feetWorldY - 6;
-          const healthBackground = createFlatMesh(PALETTE.outline, HEALTH_BAR_WIDTH + 2, HEALTH_BAR_HEIGHT + 2, 1);
-          healthBackground.position.set(worldX, barY, 1);
-          const healthFill = createFlatMesh(side === 'party' ? PALETTE.goblin : PALETTE.blood, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT, 2);
-          healthFill.position.set(worldX, barY, 2);
+          const barWidth = Math.max(32, Math.min(56, Math.round(sprite.scale.x) + 8));
+          const healthBar = createHealthBar({ hp: unit.hp, maxHp: unit.maxHp, level: unit.level, side, rank: unit.rank, barWidth });
+          healthBar.sprite.position.set(worldX, Math.round(feetWorldY + sprite.scale.y + HEALTH_BAR_GAP_ABOVE_HEAD), 3);
           const visual: UnitVisual = {
-            sprite, shadow, healthBackground, healthFill, baseColor, spriteHeight: sprite.scale.y, worldX, feetWorldY, side,
+            sprite, shadow, healthBar, baseColor, spriteHeight: sprite.scale.y, worldX, feetWorldY, side,
             bobPhase: slotIndex * 1.7 + (side === 'party' ? 0 : 0.9),
             flashUntilSeconds: 0, lungeStartSeconds: 0, lungeDirection: side === 'party' ? 1 : -1, shakeStartSeconds: 0, defeatedStartSeconds: 0,
           };
-          placeHealthFill(visual, unit.hp / unit.maxHp);
           visualsByUnitId.set(unit.id, visual);
-          root.add(shadow, sprite, healthBackground, healthFill);
+          root.add(shadow, sprite, healthBar.sprite);
           applyAnimation(visual, latestElapsedSeconds);
         });
       });
     },
-    setUnitHealth: (unitId, hp, maxHp) => {
+    setUnitHealth: (unitId, hp) => {
       const visual = visualsByUnitId.get(unitId);
-      if (visual) placeHealthFill(visual, hp / maxHp);
+      if (visual) visual.healthBar.setHealth(hp, latestElapsedSeconds);
     },
     playHit: (actorId, targetId, amount, isCritical) => {
       const actor = visualsByUnitId.get(actorId);
@@ -227,8 +217,7 @@ export function createBattleView(stage: PixelStage): BattleView {
       const visual = visualsByUnitId.get(unitId);
       if (!visual) return;
       visual.defeatedStartSeconds = latestElapsedSeconds + 0.001;
-      visual.healthBackground.visible = false;
-      visual.healthFill.visible = false;
+      visual.healthBar.setVisible(false);
       (visual.shadow.material as MeshBasicMaterial).opacity = 0.15;
     },
   };

@@ -1,10 +1,10 @@
 import { CommandRejected, type Command } from '../gameStore';
-import { activeRunOf } from '../runStatus';
+import { findActiveRun } from '../runStatus';
 import { endDungeonRun } from './endDungeonRun';
 
-export function stopDungeonRunCommand(): Command {
+export function stopDungeonRunCommand(runNumber: number): Command {
   return (state) => {
-    if (activeRunOf(state) === null) throw new CommandRejected('reject.noActiveRun');
-    return endDungeonRun(state, 'stopped');
+    if (!findActiveRun(state, runNumber)) throw new CommandRejected('reject.noActiveRun');
+    return endDungeonRun(state, runNumber, 'stopped');
   };
 }
