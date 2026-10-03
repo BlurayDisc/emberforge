@@ -88,25 +88,28 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 
 - **Materials (all from monster drops):**
   - Main materials: Ore, Wood, Hide, Cloth, Gem.
-  - Beast parts: Fang, Scale, Bone, Sinew.
+  - Beast parts: Fang, Bone, Sinew. (Scale is added from tier 3, with lizardfolk.)
   - Essence: used by Enchanting.
   - Catalyst: rare drop. It improves the quality odds.
 - **Recipes are generated:** Recipe = Base × Tier. The tier sets the item name, for example *Copper Sword*, *Pine Bow*, *Linen Robe*. Counts scale with item size.
 
 | Profession | Makes | Ingredients (same tier) |
 |---|---|---|
-| Blacksmithing | Sword, Axe, Mace, Dagger / Heavy armour, Shield | Ore + Fang / Ore + Scale |
+| Blacksmithing | Sword, Axe, Dagger, Parrying Dagger / Mace, Heavy armour, Shield | Ore + Fang / Ore + Bone |
 | Fletching | Bow, Quiver | Wood + Sinew |
 | Woodworking | Staff, Wand | Wood + Bone |
-| Tailoring | Medium armour / Light armour, Tome, Belt, Satchel | Hide + Scale / Cloth + Sinew |
+| Tailoring | Medium armour, Belt / Light armour, Tome (Satchel later) | Hide + Sinew / Cloth + Sinew |
 | Jewelcrafting | Ring, Amulet | Gem + Ore |
 | Enchanting | Changes an existing item | Essence (same tier as the item) |
 
-- **Craft:** pay the materials. The result is instant. ilvl is random inside the bracket. Base stats, Quality and Affixes are random.
+- **Craft:** pay the materials. The result is instant. Ingredient count = half the item cells (rounded up) of the main material, plus 1 beast part (2 for items of 6 cells or more).
+- **Item level:** random from the bracket start up to your best hero's level (capped by the bracket end). The game rolls twice and keeps the higher result. So a crafted item is always usable by your best hero. Base stats, Quality and Affixes are random.
 - **Quality odds** (Common / Magic / Rare): 55 / 35 / 10. With 1 Catalyst: 25 / 45 / 30.
 - **Enchanting actions:** Reroll the values of one affix. Add an affix (up to the quality limit). Reforge all affixes (needs a Catalyst).
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
-- Recipes unlock when the company first enters a town of that tier. Crafting works anywhere.
+- Recipes of a tier unlock when the company reaches that town. The Workshop is in town.
+- **Merchant:** sells nothing yet. It buys items and materials. Item value = ingredient value × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)).
+- Enchanting is not built yet.
 
 ## 7. Backpack
 

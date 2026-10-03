@@ -1,5 +1,8 @@
+export { craftItemCommand } from './commands/craftItem';
+export { equipItemCommand, unequipItemCommand } from './commands/equipItem';
 export { finishEncounterCommand } from './commands/finishEncounter';
 export { hireHeroCommand } from './commands/hireHero';
+export { sellAllMaterialsCommand, sellBackpackEntryCommand } from './commands/sell';
 export { startDungeonRunCommand } from './commands/startDungeonRun';
 export { stopDungeonRunCommand } from './commands/stopDungeonRun';
 export { togglePartyMemberCommand } from './commands/togglePartyMember';
@@ -15,3 +18,11 @@ export {
   type HeroView,
   type TavernOffer,
 } from './views/gameViews';
+export {
+  countCatalysts,
+  listEquipOptions,
+  listWorkshopRecipes,
+  type EquipOption,
+  type IngredientView,
+  type WorkshopRecipeView,
+} from './views/workshopViews';

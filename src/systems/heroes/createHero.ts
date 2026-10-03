@@ -10,5 +10,6 @@ export function createHero(classId: ClassId, heroNumber: number, random: Random)
     level: 1,
     experience: 0,
     healthFraction: 1,
+    equipment: {},
   };
 }

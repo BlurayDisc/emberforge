@@ -6,14 +6,15 @@ export interface MaterialDefinition {
   tier: number;
   category: MaterialCategory;
   sellValueCopper: number;
+  craftedItemPrefix?: string;
 }
 
 export const MATERIALS: readonly MaterialDefinition[] = [
-  { id: 'copper-ore', name: 'Copper Ore', tier: 1, category: 'ore', sellValueCopper: 3 },
-  { id: 'pine-wood', name: 'Pine Wood', tier: 1, category: 'wood', sellValueCopper: 2 },
-  { id: 'rawhide', name: 'Rawhide', tier: 1, category: 'hide', sellValueCopper: 3 },
-  { id: 'linen', name: 'Linen', tier: 1, category: 'cloth', sellValueCopper: 2 },
-  { id: 'quartz', name: 'Quartz', tier: 1, category: 'gem', sellValueCopper: 12 },
+  { id: 'copper-ore', name: 'Copper Ore', tier: 1, category: 'ore', sellValueCopper: 3, craftedItemPrefix: 'Copper' },
+  { id: 'pine-wood', name: 'Pine Wood', tier: 1, category: 'wood', sellValueCopper: 2, craftedItemPrefix: 'Pine' },
+  { id: 'rawhide', name: 'Rawhide', tier: 1, category: 'hide', sellValueCopper: 3, craftedItemPrefix: 'Rawhide' },
+  { id: 'linen', name: 'Linen', tier: 1, category: 'cloth', sellValueCopper: 2, craftedItemPrefix: 'Linen' },
+  { id: 'quartz', name: 'Quartz', tier: 1, category: 'gem', sellValueCopper: 12, craftedItemPrefix: 'Quartz' },
   { id: 'sharp-fang', name: 'Sharp Fang', tier: 1, category: 'fang', sellValueCopper: 3 },
   { id: 'bone-shard', name: 'Bone Shard', tier: 1, category: 'bone', sellValueCopper: 2 },
   { id: 'coarse-sinew', name: 'Coarse Sinew', tier: 1, category: 'sinew', sellValueCopper: 3 },

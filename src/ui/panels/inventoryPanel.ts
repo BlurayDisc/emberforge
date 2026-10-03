@@ -1,48 +1,95 @@
-import { BACKPACK_CELL_CAPACITY, BACKPACK_COLUMNS } from '../../content/balance/dungeonRun';
+import { BACKPACK_COLUMNS, BACKPACK_ROWS } from '../../content/balance/backpack';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
-import type { MaterialStack } from '../../model/material';
-import { element } from '../dom';
+import { equipItemCommand, listEquipOptions } from '../../game';
+import type { BackpackEntry } from '../../model/backpack';
+import type { Item } from '../../model/item';
+import { actionButton, element } from '../dom';
+import { createItemCard } from '../itemText';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
-let selectedCellIndex: number | null = null;
-
-function describeStack(stack: MaterialStack): string {
-  const material = requireById(MATERIALS, stack.materialId);
-  return `${material.name} ×${stack.quantity} — Tier ${material.tier} ${material.category}, sells for ${material.sellValueCopper}c each`;
+interface SelectedPosition {
+  column: number;
+  row: number;
 }
 
-function renderCell(context: PanelContext, stack: MaterialStack | undefined, cellIndex: number): HTMLElement {
-  const isSelected = selectedCellIndex === cellIndex;
-  const cell = element('button', isSelected ? 'grid-cell selected' : 'grid-cell');
+let selectedPosition: SelectedPosition | null = null;
+
+function placeInGrid(target: HTMLElement, column: number, row: number, width: number, height: number): void {
+  target.style.gridColumn = `${column + 1} / span ${width}`;
+  target.style.gridRow = `${row + 1} / span ${height}`;
+}
+
+function renderEntry(context: PanelContext, entry: BackpackEntry): HTMLElement {
+  const content = entry.content;
+  const width = content.kind === 'item' ? content.item.width : 1;
+  const height = content.kind === 'item' ? content.item.height : 1;
+  const cell = element('button', 'grid-entry');
   cell.type = 'button';
-  if (stack) {
-    const material = requireById(MATERIALS, stack.materialId);
+  placeInGrid(cell, entry.column, entry.row, width, height);
+
+  if (content.kind === 'item') {
+    cell.classList.add(`quality-border-${content.item.quality}`);
+    cell.append(element('span', 'cell-name', content.item.baseName));
+  } else {
+    const material = requireById(MATERIALS, content.materialId);
     cell.classList.add(`category-${material.category}`);
-    cell.append(element('span', 'cell-name', material.name.slice(0, 6)), element('span', 'cell-count', String(stack.quantity)));
+    cell.append(element('span', 'cell-name', material.name.split(' ')[0] ?? material.name), element('span', 'cell-count', String(content.quantity)));
   }
+  if (selectedPosition?.column === entry.column && selectedPosition.row === entry.row) cell.classList.add('selected');
   cell.addEventListener('click', () => {
-    selectedCellIndex = cellIndex;
+    selectedPosition = { column: entry.column, row: entry.row };
     context.requestRender();
   });
   return cell;
 }
 
-export const renderInventoryPanel: PanelRenderer = (context) => {
-  const stacks = context.store.getState().backpackMaterials;
-  const grid = element('div', 'backpack-grid');
-  grid.style.gridTemplateColumns = `repeat(${BACKPACK_COLUMNS}, 1fr)`;
-  for (let cellIndex = 0; cellIndex < BACKPACK_CELL_CAPACITY; cellIndex++) {
-    grid.append(renderCell(context, stacks[cellIndex], cellIndex));
-  }
+function renderEquipButtons(context: PanelContext, item: Item): HTMLElement {
+  const state = context.store.getState();
+  const buttons = listEquipOptions(state, item).map((option) =>
+    actionButton(
+      option.problem === null ? `Equip: ${option.heroName}` : `${option.heroName} (${option.problem})`,
+      () => {
+        const result = context.store.execute(equipItemCommand(option.heroId, item.id));
+        context.notify(result.accepted ? `${option.heroName} equips ${item.name}.` : (result.rejectionReason ?? 'Could not equip.'));
+      },
+      { disabled: option.problem !== null, className: 'action-button small-button' },
+    ),
+  );
+  return element('div', 'button-column', ...buttons);
+}
 
-  const selectedStack = selectedCellIndex === null ? undefined : stacks[selectedCellIndex];
-  const detail = selectedStack ? describeStack(selectedStack) : 'Select a stack to see details.';
+function renderDetail(context: PanelContext, entry: BackpackEntry | undefined): HTMLElement {
+  if (!entry) return element('p', 'hint', 'Select an entry to see details.');
+  if (entry.content.kind === 'item') {
+    return element('div', 'detail-row', createItemCard(entry.content.item), renderEquipButtons(context, entry.content.item));
+  }
+  const material = requireById(MATERIALS, entry.content.materialId);
+  return element(
+    'p',
+    'hint',
+    `${material.name} ×${entry.content.quantity} — tier ${material.tier} ${material.category}. Sells for ${material.sellValueCopper}c each.`,
+  );
+}
+
+export const renderInventoryPanel: PanelRenderer = (context) => {
+  const entries = context.store.getState().backpack;
+  const grid = element('div', 'backpack-grid');
+  for (let row = 0; row < BACKPACK_ROWS; row++) {
+    for (let column = 0; column < BACKPACK_COLUMNS; column++) {
+      const emptyCell = element('div', 'grid-empty');
+      placeInGrid(emptyCell, column, row, 1, 1);
+      grid.append(emptyCell);
+    }
+  }
+  entries.forEach((entry) => grid.append(renderEntry(context, entry)));
+
+  const selected = entries.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
   return element(
     'div',
     'panel-body',
-    element('p', 'hint', `Backpack: ${stacks.length} / ${BACKPACK_CELL_CAPACITY} cells used (materials stack to 99).`),
+    element('p', 'hint', 'Backpack. Items fill several cells. Materials stack to 99.'),
     grid,
-    element('p', 'hint', detail),
+    renderDetail(context, selected),
   );
 };

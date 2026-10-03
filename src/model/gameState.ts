@@ -1,3 +1,4 @@
+import type { BackpackEntry } from './backpack';
 import type { Hero } from './hero';
 import type { MaterialStack } from './material';
 
@@ -22,7 +23,8 @@ export interface GameState {
   company: Hero[];
   partyHeroIds: string[];
   heroesHired: number;
-  backpackMaterials: MaterialStack[];
+  backpack: BackpackEntry[];
+  itemsCrafted: number;
   runsStarted: number;
   dungeonRun: DungeonRun | null;
 }

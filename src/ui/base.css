@@ -235,30 +235,42 @@ canvas {
 }
 
 .backpack-grid {
+  --cell: min(44px, 7.5vw);
   display: grid;
-  gap: 3px;
+  grid-template-columns: repeat(10, var(--cell));
+  grid-template-rows: repeat(8, var(--cell));
+  gap: 2px;
+  align-self: center;
 }
 
-.grid-cell {
-  aspect-ratio: 1;
+.grid-empty {
+  background: var(--night);
+  border: 1px solid var(--panel-light);
+}
+
+.grid-entry {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   font: inherit;
   font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
   color: var(--text);
-  background: var(--night);
-  border: 2px solid var(--panel-light);
-  padding: 0;
+  background: #3d3a4f;
+  border: 2px solid var(--border);
+  padding: 1px;
   cursor: pointer;
+  z-index: 1;
 }
 
-.grid-cell.selected {
-  border-color: var(--gold);
+.grid-entry.selected {
+  border-color: #ffffff;
 }
 
-.grid-cell .cell-count {
+.grid-entry .cell-count {
   color: var(--gold);
 }
 
@@ -272,6 +284,72 @@ canvas {
 .category-sinew { background: #5a3a3a; }
 .category-essence { background: #2d5a6b; }
 .category-catalyst { background: #7b5a1e; }
+
+.quality-common { color: #d0d0d0; }
+.quality-magic { color: #7f9cff; }
+.quality-rare { color: var(--gold); }
+.quality-unique { color: var(--copper); }
+.quality-border-common { border-color: #8a8a9a; }
+.quality-border-magic { border-color: #7f9cff; }
+.quality-border-rare { border-color: var(--gold); }
+.quality-border-unique { border-color: var(--copper); }
+
+.item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  background: var(--night);
+  border: 2px solid var(--border);
+  min-width: 220px;
+}
+
+.item-name {
+  font-weight: bold;
+}
+
+.affix-line {
+  color: #7f9cff;
+}
+
+.detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.button-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gear-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.gear-slot {
+  color: var(--muted);
+  min-width: 64px;
+}
+
+.ingredient {
+  margin-right: 8px;
+}
+
+.ingredient.missing {
+  color: var(--danger);
+}
+
+.merchant-row {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--panel-light);
+}
 
 .run-hud {
   position: absolute;

@@ -1,5 +1,4 @@
 import {
-  BACKPACK_CELL_CAPACITY,
   HEAL_BETWEEN_ENCOUNTERS_FRACTION,
   PARTY_WEAKENED_BELOW_AVERAGE_HEALTH,
 } from '../../content/balance/dungeonRun';
@@ -40,7 +39,7 @@ function applyVictory(state: GameState, plan: PlannedEncounter): GameState {
   const loot = plan.monsterUnits.map((monster) => rollMonsterLoot(monster.definitionId, monster.level, lootRandom.fork(monster.id)));
   const copperGained = loot.reduce((sum, drop) => sum + drop.copper, 0);
   const materialsDropped = loot.flatMap((drop) => drop.materials);
-  const backpack = addMaterials(state.backpackMaterials, materialsDropped, BACKPACK_CELL_CAPACITY);
+  const backpack = addMaterials(state.backpack, materialsDropped);
 
   const company = state.company.map((hero) =>
     state.partyHeroIds.includes(hero.id) ? applyBattleOutcomeToHero(hero, plan.report.finalUnits, plan.monsterUnits) : hero,
@@ -51,7 +50,7 @@ function applyVictory(state: GameState, plan: PlannedEncounter): GameState {
     ...state,
     copper: state.copper + copperGained,
     company,
-    backpackMaterials: backpack.stacks,
+    backpack: backpack.entries,
     dungeonRun: {
       ...run,
       encounterNumber: run.encounterNumber + 1,

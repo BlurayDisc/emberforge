@@ -12,17 +12,23 @@ function statAtLevel(base: number, growthPerLevel: number, level: number): numbe
   return Math.round(base + growthPerLevel * (level - 1));
 }
 
+const STAT_NAMES: readonly (keyof StatBlock)[] = ['hp', 'strength', 'magic', 'skill', 'speed', 'defence', 'resistance'];
+
+function gearBonusForStat(hero: Hero, stat: keyof StatBlock): number {
+  return Object.values(hero.equipment).reduce((total, item) => {
+    const fromBase = item.baseStats[stat] ?? 0;
+    const fromAffixes = item.affixes.reduce((sum, affix) => (affix.stat === stat ? sum + affix.value : sum), 0);
+    return total + fromBase + fromAffixes;
+  }, 0);
+}
+
 export function computeHeroStats(hero: Hero): StatBlock {
   const { baseStats, growthPerLevel } = requireById(CLASSES, hero.classId);
-  return {
-    hp: statAtLevel(baseStats.hp, growthPerLevel.hp, hero.level),
-    strength: statAtLevel(baseStats.strength, growthPerLevel.strength, hero.level),
-    magic: statAtLevel(baseStats.magic, growthPerLevel.magic, hero.level),
-    skill: statAtLevel(baseStats.skill, growthPerLevel.skill, hero.level),
-    speed: statAtLevel(baseStats.speed, growthPerLevel.speed, hero.level),
-    defence: statAtLevel(baseStats.defence, growthPerLevel.defence, hero.level),
-    resistance: statAtLevel(baseStats.resistance, growthPerLevel.resistance, hero.level),
-  };
+  const stats = {} as StatBlock;
+  for (const stat of STAT_NAMES) {
+    stats[stat] = statAtLevel(baseStats[stat], growthPerLevel[stat], hero.level) + gearBonusForStat(hero, stat);
+  }
+  return stats;
 }
 
 export function heroToBattleUnit(hero: Hero): BattleUnit {
