@@ -1,19 +1,25 @@
 import { describeHero } from '../../game';
 import type { Hero } from '../../model/hero';
-import type { StatBlock } from '../../model/statBlock';
-import { actionButton, element } from '../dom';
+import { ATTRIBUTE_BAR_BASE, ATTRIBUTE_BAR_PER_LEVEL } from '../../content/balance/heroSheet';
+import type { HeroSheet } from '../../model/heroSheet';
+import { actionButton, element, percentBar } from '../dom';
 import { createExperienceBar, createLiveHealthBar } from '../liveBars';
 import { className, heroDisplayName } from '../displayNames';
 import { t } from '../i18n';
 import { createList, createListRow } from '../listRow';
-import { statLabel } from '../itemText';
+import { statName } from '../itemStatTable';
 import { createPortrait } from '../portraitArt';
 import { renderEquipmentScreen } from './heroes/equipmentScreen';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
 type HeroTab = 'stats' | 'equipment';
 
-const STAT_ORDER: readonly (keyof StatBlock)[] = ['strength', 'magic', 'skill', 'speed', 'defence', 'resistance'];
+const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'mana', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed'];
+const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'skill' | 'magic'; className: string }> = [
+  { stat: 'strength', className: 'bar-strength' },
+  { stat: 'skill', className: 'bar-skill' },
+  { stat: 'magic', className: 'bar-magic' },
+];
 
 let selectedHeroId: string | null = null;
 let activeTab: HeroTab = 'stats';
@@ -47,7 +53,11 @@ function statisticRow(label: string, value: string): HTMLElement {
 function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
   const { statistics } = hero;
-  const statRows = STAT_ORDER.map((stat) => statisticRow(statLabel(stat), String(view.stats[stat])));
+  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', statName(stat)), element('span', 'stat-value', String(view.sheet[stat]))));
+  const attributeMaximum = ATTRIBUTE_BAR_BASE + ATTRIBUTE_BAR_PER_LEVEL * hero.level;
+  const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) =>
+    element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'stat-value', String(view.sheet[stat]))),
+  );
   const record = [
     statisticRow(t('heroes.power'), String(view.power)),
     statisticRow(t('heroes.kills'), String(statistics.monstersDefeated)),
@@ -65,7 +75,7 @@ function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
       'div',
       'hero-identity-text',
       element('div', 'card-title', t('heroes.header', { name: heroDisplayName(hero.name), className: className(hero.classId), level: hero.level })),
-      element('div', 'card-text', t('heroes.hp', { max: view.stats.hp })),
+      element('div', 'card-text', t('heroes.hp', { max: view.sheet.health })),
       createLiveHealthBar(context.store, hero.id),
       element('div', 'card-text', t('heroes.xpTitle')),
       createExperienceBar(hero.experience, view.experienceToNextLevel),
@@ -75,8 +85,10 @@ function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
     'div',
     'hero-detail',
     identity,
+    element('div', 'section-title', t('heroes.mainStats')),
+    element('div', 'stat-table', ...mainRows),
     element('div', 'section-title', t('heroes.attributes')),
-    element('div', 'stat-grid', ...statRows),
+    element('div', 'attribute-list', ...attributeRows),
     element('div', 'section-title', t('heroes.record')),
     element('div', 'stat-grid wide', ...record),
   );

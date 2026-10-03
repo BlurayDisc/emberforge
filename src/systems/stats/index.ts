@@ -1,1 +1,1 @@
-export { computeHeroPower, computeHeroStats, heroToBattleUnit } from './heroStats';
+export { computeHeroPower, computeHeroSheet, computeHeroStats, heroToBattleUnit } from './heroStats';

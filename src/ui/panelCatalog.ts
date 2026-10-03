@@ -5,7 +5,7 @@ import type { PanelRenderer } from './panels/panelContext';
 import { renderSettingsPanel } from './panels/settingsPanel';
 import { renderMerchantPanel } from './panels/town/merchantView';
 import { renderTavernPanel } from './panels/town/tavernView';
-import { renderWorkshopPanel } from './panels/town/workshopView';
+import { renderWorkshopPanel, resetWorkshopSelection } from './panels/town/workshopView';
 import { renderWorldPanel } from './panels/worldPanel';
 import type { IconName } from './pixelIcons';
 
@@ -23,7 +23,7 @@ export const PANEL_CATALOG: readonly PanelDefinition[] = [
   { id: 'world', barIcon: 'world', render: renderWorldPanel },
   { id: 'settings', barIcon: 'menu', render: renderSettingsPanel },
   { id: 'tavern', barIcon: null, render: renderTavernPanel },
-  { id: 'workshop', barIcon: null, render: renderWorkshopPanel },
+  { id: 'workshop', barIcon: null, render: renderWorkshopPanel, onClose: resetWorkshopSelection },
   { id: 'merchant', barIcon: null, render: renderMerchantPanel },
 ];
 

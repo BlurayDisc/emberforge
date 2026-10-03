@@ -43,7 +43,8 @@ Heroes fight automatically. The player sends one hero (two for a boss) into a du
 
 ## 4. Heroes and classes
 
-- Level cap 100. Stats: HP, Strength, Magic, Skill (crit), Speed, Defence, Resistance.
+- Level cap 100. Stats: HP, Strength, Magic, Skill (crit), Speed, Defence, Resistance. Players read them as Strength (Str), Intelligence (Int = Magic) and Agility (Agi = Skill).
+- **Hero sheet:** Physical damage = Strength + weapon physical damage. Magical damage = Magic + weapon magical damage. A hero attacks with the damage of its class kind. Mana = base + a number for each Magic point. Mana is shown only: no skill spends it yet.
 - The company starts empty. The player hires the **first hero for free** at the town tavern (any of the 5 classes). More heroes cost gold: 1s, 3s, 9s, 27s … (×3 each).
 - **Money:** 100 copper = 1 silver, 100 silver = 1 gold. The game stores copper only. The bottom bar always shows the amount.
 - **Statistics:** each hero records monsters defeated, damage dealt, damage taken, healing done, fight time, and battles won and lost. The Heroes screen shows them, with damage per second and a **Power** number (the square root of damage output times durability). Power tells how strong the hero is.
@@ -63,7 +64,8 @@ Heroes fight automatically. The player sends one hero (two for a boss) into a du
 An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level ≥ ilvl to equip it.
 
 - **Slots (10):** Main hand, Off hand, Helm, Armour, Gloves, Boots, Belt, Amulet, Ring ×2.
-- **Base stats** roll inside a range (±15%) and grow with ilvl. Weapons give attack. Armour gives Defence and Resistance.
+- **Base stats** roll inside a range (±15%) and grow with ilvl. Weapons give Physical damage and Magical damage (and sometimes Attack speed). Armour gives Defence (Armour) and Resistance.
+- **Item stat table:** every item shows one fixed table first. Weapons: Physical damage, Magical damage, Attack speed. Armour, shields, belts and jewellery: Health, Armour, Magic resist. Below the table come the other stats (Strength, Agility, Intelligence) and the affixes, prefixes in blue and suffixes in gold.
 - **Quality:**
   - Common: 0 affixes.
   - Magic: 1-2 affixes (max 1 prefix, 1 suffix).
@@ -90,12 +92,13 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
   - Main materials: Ore, Wood, Hide, Cloth, Gem.
   - Beast parts: Fang, Bone, Sinew. (Scale is added from tier 3, with lizardfolk.)
   - Essence: used by Enchanting.
-  - Catalyst: rare drop. It improves the quality odds.
+  - Catalyst: rare drop. It has no use yet. It is kept for Enchanting.
 - **Recipes are generated:** Recipe = Base × Tier. The tier sets the item name, for example *Copper Sword*, *Pine Bow*, *Linen Robe*. Counts scale with item size.
 
 | Profession | Makes | Ingredients (same tier) |
 |---|---|---|
-| Blacksmithing | Sword, Axe, Dagger, Parrying Dagger / Mace, Heavy armour, Shield | Ore + Fang / Ore + Bone |
+| Weaponsmithing | Sword, Axe, Dagger, Parrying Dagger / Mace | Ore + Fang / Ore + Bone |
+| Armoursmithing | Heavy armour, Shield | Ore + Bone |
 | Fletching | Bow, Quiver | Wood + Sinew |
 | Woodworking | Staff, Wand | Wood + Bone |
 | Tailoring | Medium armour, Belt / Light armour, Tome (Satchel later) | Hide + Sinew / Cloth + Sinew |
@@ -104,13 +107,15 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 
 - **Craft:** pay the materials. The result is instant. Ingredient count = half the item cells (rounded up) of the main material, plus 1 beast part (2 for items of 6 cells or more).
 - **Item level:** random from the bracket start up to your best hero's level (capped by the bracket end). The game rolls twice and keeps the higher result. So a crafted item is always usable by your best hero. Base stats, Quality and Affixes are random.
-- **Quality odds** (Common / Magic / Rare): 55 / 35 / 10. With 1 Catalyst: 25 / 45 / 30.
+- **Quality odds** (Common / Magic / Rare): 55 / 35 / 10. A craft never uses a Catalyst.
+- **Crafter fee:** every craft costs materials (from monster drops) and a gold fee paid to the crafter: 3 copper + 0.5 copper for each level the recipe needs. A crafter cannot start a craft when the player cannot pay. Every tier 1 material drops from the normal monsters of the first two dungeons, so the first crafts need no purchase.
 - **Enchanting actions:** Reroll the values of one affix. Add an affix (up to the quality limit). Reforge all affixes (needs a Catalyst).
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
+- **Starter gear:** every class can craft a weapon and an armour piece at crafter level 1 (the validator checks this). Harder bases need a higher offset inside the bracket. Offsets spread over 1-10 inside each profession, so a crafter at level 10 can make every base of the tier. A hero still needs level ≥ ilvl to equip what the crafter makes.
 - **Crafter levels:** each profession is a crafter with level 1-100 and XP. Every craft gives XP (more for higher recipes, less for recipes far below the crafter level). A recipe needs level (tier - 1) x 10 + the base item's offset. Locked recipes show the needed level.
-- The Workshop is in town. Click a recipe to see a big portrait and the stat ranges.
+- The Workshop is in town. It lists the crafters, each with a portrait, level and job. Click a crafter to see only the recipes that crafter can make now (recipes above the crafter level stay hidden, with a note for the next level). Click a recipe to see a big portrait and the stat ranges.
 - **Timed jobs:** selling and crafting take time (real clock, also while the page is closed). A sale takes 5 s + 0.6 s per copper of value, up to 10 minutes. The merchant runs 3 sales at once. A crafter makes one item at a time, 5 s + 1.5 s per required level. Jobs show a progress bar. A finished craft waits for backpack room.
-- **Merchant:** has a Sell tab and a Buy tab. It buys items and materials. It sells materials at 4 times the sell price, so buying is a gold sink and not a profit loop. Item value = ingredient value × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)).
+- **Merchant:** it only buys items and materials from the player. It never sells loot materials, so materials come from monster drops only. Item value = (ingredient value + crafter fee) × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)). A smith who uses dropped materials earns a small profit on each craft (on average the sale is about 1.6 times the cost). The smoke tool checks this.
 - Enchanting is not built yet.
 
 ## 7. Backpack
@@ -123,7 +128,7 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 ## 8. Battle
 
 - **Auto-battle by speed.** Each unit has a charge meter that fills at its Speed. The unit acts at 100. One action at Speed 100 takes 1 second.
-- **Action:** basic attack or active skill. Priority per class (the Priest heals an ally below 50% HP first).
+- **Action:** basic attack or active skill. Priority per class (the Priest heals an ally below 50% HP first, never itself, so a lone Priest fights like any other hero).
 - **Damage** = Attack × (1 − reduction). Reduction = Defence ÷ (Defence + 50 + 10 × attacker level). A crit does ×1.5. There are no misses.
 - **Deterministic:** a battle is simulated first from a seed, then played back at 1×, 2× or 4× speed. After a reload, the same battle replays from its start.
 - **Duration targets at 1× speed:**
@@ -150,6 +155,8 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 | Level L + 26, gear ilvl L + 26, monsters Lv L | ≥ 99% | ≤ 10% | ≤ 40% of curve |
 | Level L, monsters Lv L + 5 | ≤ 50% | - | - |
 | Boss, level L, Rare gear | 70-90% | - | 10 × curve ±20% |
+| Boss, level L, one hero, all 10 slots filled with crafted gear (mixed quality) | 85-100% | - | 10 × curve ±20% |
+| Boss, level L, one hero, no gear | 0% | - | - |
 
 The balance simulator checks these targets. See CLAUDE.md.
 
@@ -170,15 +177,14 @@ Ten brackets. Each bracket has one town.
 | 9 | 81-90 | Blackspire | Dark fortress | black orcs, dread knights, necromancers | Dread Lord |
 | 10 | 91-100 | Worldsend | Dragon abyss | demons, titans, dragons | The Ancient Wyrm |
 
-- **Town:** workshop (craft, enchant), merchant (sell items for gold, buy backpack tabs), tavern (hire heroes), dungeon board.
+- **Town:** workshop (craft, enchant), merchant (sell items and materials for gold), tavern (hire heroes), dungeon board.
 - **Travel:** the army marker moves on the world map. Time = 2 s + 1 s per bracket crossed. Going back is always allowed. The next town opens when the player beats the boss of the current bracket.
 - **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
 - **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters.
 - **Run:** one run is one fight. Wounds stay after it (see Recovery).
-- **Recovery:** heroes regenerate health by the clock: 20% of max HP per minute, times the class rate (thief 1.75, priest 1.25, warrior and archer 1, mage 0.8). A hero at 0 health is down for (60 s + 5 s per level) divided by the class rate, then returns at 30% health. A down hero cannot start a run. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
+- **Recovery:** heroes regenerate health by the clock. A level 1 hero heals from empty to full in 1 minute. The time grows in a straight line to 5 minutes at level 100 (a high level hero has more health). The class rate speeds it up or slows it down (thief 1.75, priest 1.25, warrior and archer 1, mage 0.8). A hero at 0 health is down for (60 s + 5 s per level) divided by the class rate, then returns at 30% health. A down hero cannot start a run. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
 - **Locks and levels:** each dungeon shows a recommended level range. Only the first dungeon is open. Clearing a dungeon opens the next.
 - **Drops per fight:** gold; at least 1 crafting material (guaranteed); each other drop rolls its own chance, so lucky fights give more. All are of the bracket tier.
-- **Hero training:** the tavern sells XP for gold. The cost per XP grows with the hero level.
 - **Sell value** = 10 × ilvl × quality factor (Common 1, Magic 2, Rare 4, Unique 10). Materials sell at a fixed price per tier.
 
 ## 10. Save
@@ -197,20 +203,29 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 
 ## 11b. Screens and flow
 
-- **Town screen** is the main stage when no run is active. The town has a Lord's Keep (decoration), a Tavern, a Workshop, a Merchant and a Dungeons gate. They stand apart, joined by winding cobbled roads. Villagers and a guard walk on the roads. Heroes do not stand in town. Click a building to open its panel.
+- **Town screen** is the main stage when no run is active. The town is three stage screens wide (480 pixels each). The player moves between them with the arrow buttons on the sides (or the left and right keys). The view slides. The screen name shows in the top left corner. The new game starts on the middle screen. The arrow that points to the Tavern pulses until the first hero is hired.
+  - **Market Quarter (west):** Tavern, Merchant, a market square with a well and three stalls, a mill, cottages and town houses.
+  - **Lord's Square (middle):** Lord's Keep (decoration), Workshop, a chapel, a keep square with a well, cottages and town houses.
+  - **East Gate (east):** Barracks, Stables, a watchtower, the Dungeons gate, cottages and town houses.
+  - Only the Tavern, Workshop, Merchant and Dungeons gate open a panel. Chapel, Mill, Barracks and Stables have a name sign only. Houses, stalls and the tower have no function. All buildings are in `data/buildings.json` (`label` is null for a building without a sign).
+  - A main street and a south street cross all three screens. Short lanes join each door to a street. Villagers and guards walk on the roads, and now and then a villager on the visible screen stops and says a full sentence in a speech bubble about the player, the heroes or the town. Heroes do not stand in town.
 - **Lore:** an opening story shows before the first hero is hired (and after a reset). Every town, monster and material has a short lore text (`town.<id>.lore`, `monster.<id>.lore`, `material.<id>.lore` in `data/i18n/`). The text shows in the world map town popup, the dungeon popup and the material popup. The validator requires lore for all new content.
 - **World map:** the World screen draws a pixel map of the land. Every town has a place on it (`mapX`, `mapY`, `biome` in `data/towns.json`). Land, biomes and roads are drawn from the town list. Tap a town for details. Travel is not built yet.
 - **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
 - **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.
 - **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player picks the hero (1 for normal dungeons, up to 2 for bosses) and starts a run.
-- **Dungeon details:** click a dungeon row to open a popup with a big dungeon picture, a short story, the monsters (with their pictures) and each monster's loot table with chances. A busy dungeon row shows a progress bar and the seconds left.
+- **Dungeon details:** click a dungeon row to open a popup with a big dungeon picture, a short story, the monsters (with their pictures) and each monster's loot table with chances. A busy dungeon row shows a progress bar and the seconds left. The start button says Fight!.
 - **Build label:** the build number (git commit count) and commit hash show in the Settings screen, in the corner of the page and in the browser tab title.
-- **Notifications:** a Clear all button removes every report at once.
 - **Hero bars:** hero lists show a live health bar and an experience bar.
 - **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Stop run. Locked dungeons show a lock and the dungeon to clear first.
 - **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
-- **After a run:** a notification appears. Click it to read the report: result, damage, XP, level-ups and loot. Buttons are large for touch.
-- **Heroes:** the Stats tab shows the portrait, attributes, Power and the battle record. The Equipment tab shows a paper doll with slots around the portrait. Click a slot: Equip new item (side by side compare, green for better, red for worse), View item (big portrait and stats) or Unequip.
+- **After a run:** there is no pop-up notice in the corner. If the player watches the run, the report opens at once. A run in the background leaves a report: its dungeon row shows "Fight over" and View results, and the Dungeons button shows a gold badge. The player reads the stats first, then the dungeon can start again. The report shows result, damage, XP, level-ups and loot. Buttons are large for touch.
+- **Combat log:** it has a title and groups lines into numbered turns (one turn is one second of battle). Hero names are blue, monster names red. Damage is a gold chip, damage taken red, a critical hit orange, healing green.
+- **Workshop recipes:** a recipe shows the classes that can use the item, so the player does not craft gear that no hero can wear.
+- **Loot boxes:** the report shows each loot stack in a big box. Hover shows its details, and a tap opens them.
+- **Menu always free:** the bottom menu stays on the screen during a fight. On a wide screen the combat log stands beside the stage.
+- **Close anywhere:** the player can click the empty space around a panel or a modal to close it, not only the x button.
+- **Heroes:** the Stats tab shows the portrait, the main stats (Health, Mana, Physical damage, Magical damage, Armour, Magic resist, Attack speed), the attributes as bars (Str red, Agi green, Int blue), Power and the battle record. The Equipment tab shows a paper doll with slots around the portrait. Click a slot: Equip new item (side by side compare, green for better, red for worse), View item (big portrait and stats) or Unequip.
 - **Sound:** all sound is made in the browser, so the game has no sound files. A music track plays for the town, for battles and for bosses. Combat sounds depend on who hits: a hero attack is the weapon plus the monster cry; a monster attack is its strike plus a hit on the armour of the hero (heavy metal clang, medium leather thud, light cloth thump). There are sounds for criticals, heals, defeats, victory, level-up and button clicks. The Settings screen has music volume, effects volume and mute. Music and sound recipes are in `data/audio/`.
 - **Reset:** the Settings screen has a red Danger zone with RESET GAME. It needs a second click to confirm.
 - **Style:** pixel art, wood and parchment menus, blackletter panel titles (Jacquard 12). English body text and row titles use Atkinson Hyperlegible for easy reading. Chinese keeps the pixel fonts (Pixelify Sans, Fusion Pixel).

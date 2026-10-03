@@ -5,17 +5,10 @@ import type { Item } from '../model/item';
 import { actionButton, element } from './dom';
 import { craftedBaseName, materialName } from './displayNames';
 import { t } from './i18n';
-import { createItemCard, statLabel } from './itemText';
+import { createItemCard } from './itemText';
 import { createItemPortrait, createMaterialPortrait } from './itemPortrait';
 import { createMoneyDisplay } from './moneyDisplay';
 import { openModal } from './modal';
-import type { StatBlock } from '../model/statBlock';
-
-export function formatStatRanges(ranges: Record<string, [number, number]>): string {
-  return Object.entries(ranges)
-    .map(([stat, [low, high]]) => `+${low === high ? low : `${low}-${high}`} ${statLabel(stat as keyof StatBlock)}`)
-    .join(', ');
-}
 
 export function openItemView(item: Item): void {
   openModal(t('modal.itemTitle'), element('div', 'modal-columns', createItemPortrait(item), createItemCard(item)));

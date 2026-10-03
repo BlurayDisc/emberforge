@@ -7,6 +7,7 @@ import { element } from './dom';
 import { className, heroDisplayName, listOf, materialName } from './displayNames';
 import { t } from './i18n';
 import { createMaterialIcon } from './iconArt';
+import { openMaterialView } from './itemModals';
 import { createMoneyDisplay } from './moneyDisplay';
 import { createPortrait } from './portraitArt';
 
@@ -32,10 +33,21 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
   return row;
 }
 
-function createStackChips(stacks: readonly MaterialStack[]): HTMLElement[] {
+// A big box for each loot stack. Hover shows the details at once. A tap opens the same details on a touch screen.
+function createLootBoxes(stacks: readonly MaterialStack[]): HTMLElement[] {
   return stacks.map((stack) => {
     const material = requireById(MATERIALS, stack.materialId);
-    return element('span', 'loot-chip', createMaterialIcon(material.id, material.category, 2), `${materialName(material.id)} x${stack.quantity}`);
+    const tooltip = element(
+      'span',
+      'loot-tooltip',
+      element('strong', '', materialName(material.id)),
+      element('span', 'card-text small', t('inventory.materialInfo', { tier: material.tier, category: t(`category.${material.category}`) })),
+      createMoneyDisplay(material.sellValueCopper),
+    );
+    const box = element('button', 'loot-box', createMaterialIcon(material.id, material.category, 4), element('span', 'loot-quantity', `x${stack.quantity}`), tooltip);
+    box.type = 'button';
+    box.addEventListener('click', () => openMaterialView(material.id));
+    return box;
   });
 }
 
@@ -45,7 +57,7 @@ export function createEncounterResultCard(result: EncounterResult, company: read
   );
   const loot = element('div', 'result-loot');
   if (result.copperGained === 0 && result.materials.length === 0) loot.append(element('span', 'card-text small', t('result.noLoot')));
-  else loot.append(createMoneyDisplay(result.copperGained), ...createStackChips(result.materials));
+  else loot.append(element('div', 'loot-money', createMoneyDisplay(result.copperGained)), ...createLootBoxes(result.materials));
   const card = element(
     'div',
     'result-card',

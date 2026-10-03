@@ -32,6 +32,7 @@ export function createPanelHost(store: GameStore): PanelHost {
     const toast = host.querySelector('.toast');
     const definition = PANEL_CATALOG.find((panel) => panel.id === activeId);
     host.replaceChildren();
+    host.classList.toggle('open', definition !== undefined);
     if (definition) {
       const context: PanelContext = {
         store,
@@ -61,6 +62,15 @@ export function createPanelHost(store: GameStore): PanelHost {
     render();
     changeListeners.forEach((listener) => listener());
   };
+
+  // A click on the empty space around the panel closes it. A drag that starts inside the panel must not.
+  let pressStartedOutsidePanel = false;
+  host.addEventListener('pointerdown', (event) => {
+    pressStartedOutsidePanel = event.target === host;
+  });
+  host.addEventListener('click', (event) => {
+    if (pressStartedOutsidePanel && event.target === host) setActive(null);
+  });
 
   store.subscribe(render);
   onLanguageChange(render);

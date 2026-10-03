@@ -33,6 +33,19 @@ export const PALETTE = {
   lamp: '#ffd46a',
   void: '#0c0a10',
   awningCream: '#efe2b8',
+  grassLight: '#6a9a47',
+  mossDark: '#254328',
+  bush: '#3a7a3c',
+  bushLight: '#5a9a48',
+  water: '#3f6fb0',
+  waterLight: '#7fb0e0',
+  reed: '#7a8a3a',
+  petalPink: '#e58fb0',
+  petalBlue: '#8fb0f0',
+  hay: '#d8b04a',
+  hayDark: '#a8822c',
+  rock: '#7a7c88',
+  shadowSoft: '#1f3a24',
 } as const;
 
 export type PaletteColor = keyof typeof PALETTE;

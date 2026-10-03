@@ -52,6 +52,7 @@ interface BaseItem extends Identified {
   mainCategory: string;
   secondaryCategory: string;
   gearType: string;
+  armourWeight: string | null;
   profession: string;
   width: number;
   height: number;
@@ -63,6 +64,7 @@ interface HeroClass extends Identified {
   spriteKey: string;
   weaponTypes: string[];
   offHandTypes: string[];
+  armourWeight: string;
 }
 interface Affix extends Identified {
   displayName: string;
@@ -86,7 +88,7 @@ const affixes = load<Affix[]>('affixes.json');
 const heroNames = load<string[]>('hero-names.json');
 const professions = load<Record<string, string>>('professions.json');
 const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
-const buildings = load<Array<Identified & { label: string; panelId: string | null }>>('buildings.json');
+const buildings = load<Array<Identified & { label: string | null; panelId: string | null; style: string }>>('buildings.json');
 const languages = load<Array<{ id: string; nativeName: string }>>('i18n/languages.json');
 const translationsByLanguage: Record<string, Record<string, string>> = {};
 for (const language of languages) translationsByLanguage[language.id] = load<Record<string, string>>(`i18n/${language.id}.json`);
@@ -172,6 +174,11 @@ for (const dungeon of dungeons) {
   if (dungeon.bossMonsterId && monstersById.get(dungeon.bossMonsterId)?.rank !== 'boss') report(`dungeons.json: '${dungeon.id}' bossMonsterId must be a boss monster`);
 }
 
+const droppedMaterialIds = new Set(monsters.flatMap((monster) => (monster as unknown as { drops: Array<{ materialId: string }> }).drops.map((drop) => drop.materialId)));
+for (const material of materials) {
+  if (material.category !== 'catalyst' && !droppedMaterialIds.has(material.id)) report(`monsters.json: no monster drops material '${material.id}'`);
+}
+
 const tiersWithMaterials = [...new Set(materials.map((material) => material.tier))];
 for (const base of baseItems) {
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
@@ -188,6 +195,9 @@ for (const base of baseItems) {
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
   if (!(heroClass.recoveryRate > 0)) report(`classes.json: '${heroClass.id}' needs a recoveryRate above 0`);
+  const startingRecipes = baseItems.filter((base) => base.craftLevelOffset === 1);
+  if (!startingRecipes.some((base) => heroClass.weaponTypes.includes(base.gearType))) report(`base-items.json: class '${heroClass.id}' has no weapon it can craft at crafter level 1`);
+  if (!startingRecipes.some((base) => base.armourWeight === heroClass.armourWeight)) report(`base-items.json: class '${heroClass.id}' has no armour it can craft at crafter level 1`);
   for (const gearType of [...heroClass.weaponTypes, ...heroClass.offHandTypes]) {
     if (!gearTypes.has(gearType)) report(`classes.json: '${heroClass.id}' allows gear type '${gearType}' that no base item has`);
   }
@@ -200,7 +210,7 @@ for (const affix of affixes) {
 const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tavern', 'workshop', 'merchant'];
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
   quality: ['common', 'magic', 'rare', 'unique'],
-  stat: STAT_NAMES,
+  statname: ['hp', 'health', 'mana', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'],
   slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
   category: ['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'essence', 'catalyst'],
   armourweight: ['heavy', 'medium', 'light'],
@@ -219,7 +229,7 @@ function expectedEnglishNames(): Array<[string, string]> {
   }
   for (const dungeon of dungeons) expected.push([`dungeon.${dungeon.id}`, dungeon.name]);
   for (const town of townsFile.towns) expected.push([`town.${town.id}`, town.name], [`town.${town.id}.region`, town.region]);
-  for (const building of buildings) expected.push([`building.${building.id}`, building.label]);
+  for (const building of buildings) if (building.label !== null) expected.push([`building.${building.id}`, building.label]);
   for (const base of baseItems) expected.push([`base.${base.id}`, base.name]);
   for (const affix of affixes) expected.push([`affix.${affix.id}`, affix.displayName]);
   for (const [professionId, label] of Object.entries(professions)) expected.push([`profession.${professionId}`, label]);

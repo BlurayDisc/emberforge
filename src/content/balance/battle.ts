@@ -14,3 +14,4 @@ export const DAMAGE_VARIANCE_FRACTION = data.damageVarianceFraction;
 
 export const HEAL_BELOW_HEALTH_FRACTION = data.healBelowHealthFraction;
 export const HEAL_POWER_MULTIPLIER = data.healPowerMultiplier;
+export const LOG_TURN_SECONDS = data.logTurnSeconds;

@@ -1,6 +1,6 @@
 import { Group, Sprite, SpriteMaterial, type CanvasTexture } from 'three';
 import { createRandom, type Random } from '../kernel/random';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from './pixelStage';
+import { LOGICAL_HEIGHT, TOWN_WIDTH } from '../kernel/stageSize';
 import { addOutline, createPixelCanvas } from './pixelCanvas';
 import { createPixelTexture } from './pixelSprites';
 import type { Point, Road } from './townLayout';
@@ -9,6 +9,13 @@ const SKIN_TONES = ['#f2c9a0', '#e0a878', '#b97b52', '#8a5636'] as const;
 const HAIR_COLORS = ['#3a2a1e', '#6a4a2a', '#c9a24e', '#a63a2a', '#d8d4cc'] as const;
 const SHIRT_COLORS = ['#a03a32', '#3b6fd6', '#6a8a3a', '#8a5a9a', '#c9a24e', '#58607a'] as const;
 const PANTS_COLORS = ['#4a3322', '#3b2a1d', '#2f3b57'] as const;
+
+const MINIMUM_WALKING_ROUTE_PIXELS = 30;
+const SPEECH_SECONDS = 6;
+const VISIBLE_MARGIN_PIXELS = 60;
+const SECONDS_BETWEEN_SPEECHES_MINIMUM = 7;
+const SECONDS_BETWEEN_SPEECHES_MAXIMUM = 14;
+const SPEECH_ANCHOR_ABOVE_FEET_PIXELS = 20;
 
 type BystanderKind = 'villager' | 'guard';
 type HexColor = `#${string}`;
@@ -22,6 +29,12 @@ interface Walker {
   direction: 1 | -1;
   speedPixelsPerSecond: number;
   pausedUntilSeconds: number;
+}
+
+// Where a speech bubble goes, in stage pixels. The caller picks the words. null means the bubble ends.
+export interface BystanderSpeech {
+  x: number;
+  y: number;
 }
 
 export interface Bystanders {
@@ -78,10 +91,26 @@ function depthFor(logicalY: number): number {
   return logicalY * 0.01 - 3;
 }
 
-export function createBystanders(root: Group, roads: readonly Road[], seed: number): Bystanders {
+export interface VisibleRange {
+  from: number;
+  to: number;
+}
+
+// Only a villager that the player can see starts a speech.
+export function createBystanders(
+  root: Group,
+  roads: readonly Road[],
+  seed: number,
+  onSpeech: (speech: BystanderSpeech | null) => void,
+  visibleRange: () => VisibleRange,
+): Bystanders {
   const random = createRandom(seed).fork('bystanders');
-  const walkers: Walker[] = roads.map((road, index) => {
-    const kind: BystanderKind = index === 3 ? 'guard' : 'villager';
+  const walkingRoads = roads.filter((road) => routeLength(road.points) >= MINIMUM_WALKING_ROUTE_PIXELS);
+  const walkerPlans = walkingRoads.flatMap((road) => [
+    ...Array.from({ length: road.guardCount ?? 0 }, () => ({ road, kind: 'guard' as BystanderKind })),
+    ...Array.from({ length: road.villagerCount ?? 0 }, () => ({ road, kind: 'villager' as BystanderKind })),
+  ]);
+  const walkers: Walker[] = walkerPlans.map(({ road, kind }) => {
     const appearance = {
       skin: random.pick(SKIN_TONES),
       hair: random.pick(HAIR_COLORS),
@@ -108,11 +137,40 @@ export function createBystanders(root: Group, roads: readonly Road[], seed: numb
     };
   });
   let previousSeconds: number | null = null;
+  let speaker: Walker | null = null;
+  let speechEndsAtSeconds = 0;
+  let nextSpeechAtSeconds = SECONDS_BETWEEN_SPEECHES_MINIMUM;
+
+  const startSpeech = (walker: Walker, elapsedSeconds: number): void => {
+    speaker = walker;
+    speechEndsAtSeconds = elapsedSeconds + SPEECH_SECONDS;
+    walker.pausedUntilSeconds = speechEndsAtSeconds;
+    const position = pointAtDistance(walker.route, walker.distance);
+    onSpeech({ x: position.x, y: position.y - SPEECH_ANCHOR_ABOVE_FEET_PIXELS });
+  };
+
+  // One villager at a time stops and talks. The walker stands still, so the bubble needs no tracking.
+  const updateSpeech = (elapsedSeconds: number): void => {
+    if (speaker && elapsedSeconds >= speechEndsAtSeconds) {
+      speaker = null;
+      onSpeech(null);
+      nextSpeechAtSeconds = elapsedSeconds + random.nextInt(SECONDS_BETWEEN_SPEECHES_MINIMUM, SECONDS_BETWEEN_SPEECHES_MAXIMUM);
+    }
+    if (speaker || elapsedSeconds < nextSpeechAtSeconds) return;
+    const { from, to } = visibleRange();
+    const visibleWalkers = walkers.filter((walker) => {
+      const { x } = pointAtDistance(walker.route, walker.distance);
+      return x > from + VISIBLE_MARGIN_PIXELS && x < to - VISIBLE_MARGIN_PIXELS;
+    });
+    if (visibleWalkers.length === 0) nextSpeechAtSeconds = elapsedSeconds + 1;
+    else startSpeech(random.pick(visibleWalkers), elapsedSeconds);
+  };
 
   return {
     update: (elapsedSeconds) => {
       const deltaSeconds = previousSeconds === null ? 0 : Math.min(0.1, elapsedSeconds - previousSeconds);
       previousSeconds = elapsedSeconds;
+      updateSpeech(elapsedSeconds);
       for (const walker of walkers) {
         const isPaused = elapsedSeconds < walker.pausedUntilSeconds;
         if (!isPaused) {
@@ -126,7 +184,7 @@ export function createBystanders(root: Group, roads: readonly Road[], seed: numb
         const position = pointAtDistance(walker.route, walker.distance);
         const frameIndex = isPaused ? 0 : Math.floor(elapsedSeconds * 4) % 2;
         walker.sprite.material.map = walker.frames[frameIndex as 0 | 1];
-        walker.sprite.position.set(Math.round(position.x - LOGICAL_WIDTH / 2), Math.round(LOGICAL_HEIGHT / 2 - position.y + 9), depthFor(position.y));
+        walker.sprite.position.set(Math.round(position.x - TOWN_WIDTH / 2), Math.round(LOGICAL_HEIGHT / 2 - position.y + 9), depthFor(position.y));
       }
     },
   };

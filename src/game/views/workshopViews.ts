@@ -1,12 +1,13 @@
 import { BASE_ITEMS } from '../../content/baseItems';
-import { CATALYST_MATERIAL_ID, ITEM_LEVEL_ABOVE_HIGHEST_HERO } from '../../content/balance/items';
-import { PROFESSION_IDS } from '../../content/baseItems';
+import { ITEM_LEVEL_ABOVE_HIGHEST_HERO } from '../../content/balance/items';
+import { PROFESSION_IDS, type ProfessionId } from '../../content/baseItems';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import type { GameState } from '../../model/gameState';
+import type { ClassId } from '../../model/hero';
 import type { Item } from '../../model/item';
 import { craftSeconds, craftingExperienceToNextLevel, listRecipes } from '../../systems/crafting';
-import { findEquipProblem, type EquipProblem } from '../../systems/equipment';
+import { classIdsThatCanUse, findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
 import { previewBaseStatRanges } from '../../systems/items';
 import { highestUnlockedTier } from '../unlockedTier';
@@ -26,6 +27,9 @@ export interface WorkshopRecipeView {
   ingredients: IngredientView[];
   hasMaterials: boolean;
   requiredCraftLevel: number;
+  feeCopper: number;
+  canAffordFee: boolean;
+  usableByClassIds: ClassId[];
   isUnlocked: boolean;
   craftSeconds: number;
   isCrafterBusy: boolean;
@@ -33,7 +37,7 @@ export interface WorkshopRecipeView {
 }
 
 export interface CrafterView {
-  professionId: string;
+  professionId: ProfessionId;
   level: number;
   experience: number;
   experienceToNextLevel: number;
@@ -73,6 +77,9 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         ingredients,
         hasMaterials: ingredients.every((ingredient) => ingredient.owned >= ingredient.needed),
         requiredCraftLevel: recipe.requiredCraftLevel,
+        feeCopper: recipe.feeCopper,
+        canAffordFee: state.copper >= recipe.feeCopper,
+        usableByClassIds: classIdsThatCanUse(base),
         isUnlocked: crafterLevel >= recipe.requiredCraftLevel,
         craftSeconds: craftSeconds(recipe.requiredCraftLevel),
         isCrafterBusy: state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession),
@@ -80,10 +87,6 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
       };
     }),
   );
-}
-
-export function countCatalysts(state: GameState): number {
-  return countMaterial(state.backpack, CATALYST_MATERIAL_ID);
 }
 
 export function listEquipOptions(state: GameState, item: Item): EquipOption[] {

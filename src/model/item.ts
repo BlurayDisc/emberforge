@@ -31,7 +31,10 @@ export type GearType =
 export type ArmourWeight = 'heavy' | 'medium' | 'light';
 export type ItemQuality = 'common' | 'magic' | 'rare' | 'unique';
 export type AffixKind = 'prefix' | 'suffix';
-export type StatBonuses = Partial<StatBlock>;
+export interface StatBonuses extends Partial<StatBlock> {
+  physicalDamage?: number;
+  magicalDamage?: number;
+}
 
 export interface ItemAffix {
   affixId: string;

@@ -29,10 +29,12 @@ export function createBottomBar(store: GameStore, panelHost: PanelHost): HTMLEle
     });
   };
   const refreshBadges = (): void => {
-    const fightCount = store.getState().dungeonRuns.length;
+    const { dungeonRuns, reports } = store.getState();
+    const badgeCount = dungeonRuns.length + reports.length;
     buttons.forEach(({ id, badge }) => {
-      badge.textContent = id === 'dungeons' && fightCount > 0 ? String(fightCount) : '';
-      badge.style.display = id === 'dungeons' && fightCount > 0 ? 'inline-block' : 'none';
+      badge.textContent = id === 'dungeons' && badgeCount > 0 ? String(badgeCount) : '';
+      badge.style.display = id === 'dungeons' && badgeCount > 0 ? 'inline-block' : 'none';
+      badge.classList.toggle('has-results', reports.length > 0);
     });
   };
   const refreshMoney = (): void => {

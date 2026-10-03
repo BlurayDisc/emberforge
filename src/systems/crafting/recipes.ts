@@ -1,4 +1,5 @@
 import { BASE_ITEMS, type BaseItemDefinition, type ProfessionId } from '../../content/baseItems';
+import { CRAFT_FEE_BASE_COPPER, CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER } from '../../content/balance/crafting';
 import {
   LARGE_ITEM_CELL_THRESHOLD,
   LEVELS_PER_BRACKET,
@@ -19,11 +20,17 @@ export interface Recipe {
   tier: number;
   profession: ProfessionId;
   requiredCraftLevel: number;
+  feeCopper: number;
   ingredients: RecipeIngredient[];
 }
 
 function materialOfTier(tier: number, category: MaterialCategory): MaterialDefinition | undefined {
   return MATERIALS.find((material) => material.tier === tier && material.category === category);
+}
+
+// The crafter takes a fee in copper for every item. It grows with the level the recipe needs.
+export function craftFeeCopper(requiredCraftLevel: number): number {
+  return Math.round(CRAFT_FEE_BASE_COPPER + CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER * requiredCraftLevel);
 }
 
 function createRecipe(base: BaseItemDefinition, tier: number): Recipe | null {
@@ -32,6 +39,7 @@ function createRecipe(base: BaseItemDefinition, tier: number): Recipe | null {
   if (!mainMaterial || !secondaryMaterial) return null;
 
   const cells = base.width * base.height;
+  const requiredCraftLevel = (tier - 1) * LEVELS_PER_BRACKET + base.craftLevelOffset;
   const mainQuantity = Math.max(1, Math.ceil(cells / MAIN_INGREDIENT_CELLS_PER_UNIT));
   const secondaryQuantity =
     cells >= LARGE_ITEM_CELL_THRESHOLD ? SECONDARY_INGREDIENT_LARGE_ITEM : SECONDARY_INGREDIENT_SMALL_ITEM;
@@ -39,7 +47,8 @@ function createRecipe(base: BaseItemDefinition, tier: number): Recipe | null {
     baseId: base.id,
     tier,
     profession: base.profession,
-    requiredCraftLevel: (tier - 1) * LEVELS_PER_BRACKET + base.craftLevelOffset,
+    requiredCraftLevel,
+    feeCopper: craftFeeCopper(requiredCraftLevel),
     ingredients: [
       { materialId: mainMaterial.id, quantity: mainQuantity },
       { materialId: secondaryMaterial.id, quantity: secondaryQuantity },

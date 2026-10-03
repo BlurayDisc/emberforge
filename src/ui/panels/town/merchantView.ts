@@ -1,7 +1,7 @@
 import { BASE_ITEMS } from '../../../content/baseItems';
 import { requireById } from '../../../content/lookup';
 import { MATERIALS } from '../../../content/materials';
-import { buyMaterialCommand, listMaterialOffers, listSaleJobs, saleDurationSeconds, sellBackpackEntryCommand } from '../../../game';
+import { listSaleJobs, saleDurationSeconds, sellBackpackEntryCommand } from '../../../game';
 import { MERCHANT_SALE_SLOTS } from '../../../content/balance/economy';
 import type { SaleJob } from '../../../model/timedJob';
 import { formatDuration } from '../../liveUpdate';
@@ -15,10 +15,6 @@ import { openItemView, openMaterialView } from '../../itemModals';
 import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
 import type { PanelContext, PanelRenderer } from '../panelContext';
-
-type MerchantTab = 'sell' | 'buy';
-
-let activeTab: MerchantTab = 'sell';
 
 function sell(context: PanelContext, entry: BackpackEntry): void {
   const result = context.store.execute(sellBackpackEntryCommand({ column: entry.column, row: entry.row }, Date.now()));
@@ -100,44 +96,5 @@ function renderSellTab(context: PanelContext): HTMLElement {
   );
 }
 
-function buy(context: PanelContext, materialId: string, quantity: number): void {
-  const result = context.store.execute(buyMaterialCommand(materialId, quantity));
-  context.notify(result.accepted ? t('merchant.bought', { name: materialName(materialId), count: quantity }) : describeRejection(result.rejection));
-}
-
-function renderBuyTab(context: PanelContext): HTMLElement {
-  const rows = listMaterialOffers(context.store.getState()).map((offer) => {
-    const material = requireById(MATERIALS, offer.materialId);
-    return makeClickable(
-      createListRow({
-        art: createMaterialIcon(material.id, material.category, 3),
-        title: materialName(material.id),
-        lines: [element('div', 'card-row', createMoneyDisplay(offer.unitPrice), element('span', 'card-text small', t('merchant.each')))],
-        actions: [
-          actionButton(t('merchant.buyOne'), () => buy(context, material.id, 1), { className: 'action-button small-button' }),
-          actionButton(t('merchant.buyFive'), () => buy(context, material.id, 5), { className: 'action-button small-button' }),
-        ],
-      }),
-      () => openMaterialView(material.id),
-    );
-  });
-  return element('div', 'panel-body', element('p', 'hint', t('merchant.buyHint')), createList(...rows));
-}
-
-export const renderMerchantPanel: PanelRenderer = (context) => {
-  const tab = (id: MerchantTab, label: string): HTMLElement => {
-    const button = actionButton(label, () => {
-      activeTab = id;
-      context.requestRender();
-    });
-    button.classList.toggle('active', activeTab === id);
-    return button;
-  };
-  return element(
-    'div',
-    'panel-body',
-    element('div', 'tab-row', tab('sell', t('merchant.tabSell')), tab('buy', t('merchant.tabBuy'))),
-    activeTab === 'sell' ? renderSellTab(context) : renderBuyTab(context),
-    actionButton(t('merchant.leave'), context.closePanel),
-  );
-};
+export const renderMerchantPanel: PanelRenderer = (context) =>
+  element('div', 'panel-body', renderSellTab(context), actionButton(t('merchant.leave'), context.closePanel));

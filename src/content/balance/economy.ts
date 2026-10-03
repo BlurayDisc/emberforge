@@ -14,10 +14,6 @@ export const COPPER_DROP_SPREAD_FRACTION = data.copperDropSpreadFraction;
 
 export const COPPER_DROP_RANK_MULTIPLIER: Record<UnitRank, number> = data.copperDropRankMultiplier;
 
-export const MATERIAL_BUY_PRICE_MULTIPLIER = data.materialBuyPriceMultiplier;
-export const TRAINING_EXPERIENCE_FRACTION = data.trainingExperienceFraction;
-export const TRAINING_COST_PER_EXPERIENCE_BASE = data.trainingCostPerExperienceBase;
-export const TRAINING_COST_PER_EXPERIENCE_GROWTH = data.trainingCostPerExperienceGrowth;
 
 export const MERCHANT_SALE_SLOTS = data.merchantSaleSlots;
 export const SALE_SECONDS_MINIMUM = data.saleSecondsMinimum;

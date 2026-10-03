@@ -6,10 +6,12 @@ import {
   MITIGATION_BASE,
   MITIGATION_PER_ATTACKER_LEVEL,
 } from '../../content/balance/battle';
+import { MANA_BASE, MANA_PER_MAGIC } from '../../content/balance/heroSheet';
 import { CLASSES } from '../../content/classes';
 import { requireById } from '../../content/lookup';
 import type { BattleUnit } from '../../model/battle';
 import type { Hero } from '../../model/hero';
+import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
 
 function statAtLevel(base: number, growthPerLevel: number, level: number): number {
@@ -35,9 +37,31 @@ export function computeHeroStats(hero: Hero): StatBlock {
   return stats;
 }
 
+function gearDamage(hero: Hero, damageKey: 'physicalDamage' | 'magicalDamage'): number {
+  return Object.values(hero.equipment).reduce((total, item) => total + (item.baseStats[damageKey] ?? 0), 0);
+}
+
+// Damage is the attribute plus the weapon damage. Mana is shown only: no skill spends it yet.
+export function computeHeroSheet(hero: Hero): HeroSheet {
+  const stats = computeHeroStats(hero);
+  return {
+    health: stats.hp,
+    mana: MANA_BASE + MANA_PER_MAGIC * stats.magic,
+    physicalDamage: stats.strength + gearDamage(hero, 'physicalDamage'),
+    magicalDamage: stats.magic + gearDamage(hero, 'magicalDamage'),
+    armour: stats.defence,
+    resistance: stats.resistance,
+    speed: stats.speed,
+    strength: stats.strength,
+    skill: stats.skill,
+    magic: stats.magic,
+  };
+}
+
 export function heroToBattleUnit(hero: Hero): BattleUnit {
   const classDefinition = requireById(CLASSES, hero.classId);
   const stats = computeHeroStats(hero);
+  const sheet = computeHeroSheet(hero);
   return {
     id: hero.id,
     definitionId: hero.classId,
@@ -48,7 +72,7 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     level: hero.level,
     maxHp: stats.hp,
     hp: Math.max(1, Math.round(stats.hp * hero.healthFraction)),
-    attack: classDefinition.attackKind === 'magic' ? stats.magic : stats.strength,
+    attack: classDefinition.attackKind === 'magic' ? sheet.magicalDamage : sheet.physicalDamage,
     attackKind: classDefinition.attackKind,
     defence: stats.defence,
     resistance: stats.resistance,

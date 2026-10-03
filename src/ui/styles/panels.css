@@ -272,14 +272,70 @@
 .result-loot {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  gap: 12px;
+  min-height: 112px;
+  padding: 10px;
+  background: var(--wood-900);
+  box-shadow: var(--outline-2);
 }
 
-.loot-chip {
-  display: inline-flex;
+.loot-money {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  padding: 0 8px;
+  font-size: 16px;
+}
+
+.loot-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  background: var(--wood-700);
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--wood-600), inset -2px -2px 0 var(--wood-900);
+  cursor: pointer;
+}
+
+.loot-box:hover,
+.loot-box:focus-visible {
+  background: var(--wood-600);
+  z-index: 5;
+}
+
+.loot-quantity {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  font-size: 16px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.loot-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--parchment);
+  background: var(--ink);
+  box-shadow: var(--outline-2);
+  pointer-events: none;
+}
+
+.loot-box:hover .loot-tooltip,
+.loot-box:focus-visible .loot-tooltip {
+  display: flex;
 }
 
 .grid-entry img {
@@ -320,6 +376,8 @@
   color: #ff8a7a;
   font-weight: 700;
 }
+
+.fight-status.won { color: var(--green); }
 
 .modal-columns {
   display: flex;
@@ -618,4 +676,14 @@
   font-style: italic;
   color: var(--parchment-dim);
   line-height: 1.4;
+}
+
+.crafter-intro {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.crafter-intro .crafter-header {
+  flex: 1;
 }

@@ -1,4 +1,5 @@
 import type { Hero } from '../../model/hero';
+import { migrateWeaponDamageAndSmiths } from './migrateWeaponDamageAndSmiths';
 
 // A save is never dropped because the game changed. Each migration upgrades a save by one version.
 // To change the shape of GameState: raise CURRENT_SAVE_VERSION and add one migration here.
@@ -17,5 +18,9 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
       jobs: save.jobs ?? [],
       jobsStarted: save.jobsStarted ?? 0,
     }),
+  },
+  {
+    fromVersion: 7,
+    migrate: migrateWeaponDamageAndSmiths,
   },
 ];

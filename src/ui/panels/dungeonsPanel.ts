@@ -1,7 +1,7 @@
 import { DUNGEONS, type DungeonDefinition } from '../../content/dungeons';
 import { requireById } from '../../content/lookup';
 import { describeHero, isDungeonUnlocked, runInDungeon, runOfHero, startDungeonRunCommand, stopDungeonRunCommand } from '../../game';
-import type { DungeonRun } from '../../model/gameState';
+import type { DungeonRun, RunReport } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
 import { actionButton, element } from '../dom';
 import { createExperienceBar, createLiveHealthBar } from '../liveBars';
@@ -13,6 +13,7 @@ import { createList, createListRow } from '../listRow';
 import { createPortrait } from '../portraitArt';
 import { focusRun } from '../runFocus';
 import { createRunProgressBar } from '../runProgress';
+import { openRunReport } from '../runReportModal';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
 let selectedHeroIds: string[] = [];
@@ -95,6 +96,26 @@ function renderLockedDungeon(context: PanelContext, dungeon: DungeonDefinition):
   }), dungeon.id);
 }
 
+// A finished fight waits for the player. The stats open first, and only then the dungeon can start again.
+function renderFinishedDungeon(context: PanelContext, dungeon: DungeonDefinition, report: RunReport): HTMLElement {
+  const open = (): void => openRunReport(context.store, report);
+  const row = createListRow({
+    art: element('div', 'fight-art', createDungeonIcon(dungeon.id, 3), element('span', 'fight-badge', createFightIcon(2))),
+    title: dungeonTitle(dungeon),
+    lines: [
+      element('div', `fight-status ${report.result.won ? 'won' : 'lost'}`, t('dungeons.resultsReady', { outcome: report.result.won ? t('result.victory') : t('result.defeat') })),
+      element('div', 'card-text small', t('dungeons.resultsHint')),
+    ],
+    actions: [actionButton(t('dungeons.viewResults'), open, { className: 'action-button primary' })],
+    className: 'clickable finished',
+  });
+  row.addEventListener('click', (event) => {
+    if (event.target instanceof Element && event.target.closest('button')) return;
+    open();
+  });
+  return row;
+}
+
 function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
   const isCleared = context.store.getState().clearedDungeonIds.includes(dungeon.id);
   const hasValidSelection = selectedHeroIds.length > 0 && selectedHeroIds.length <= dungeon.maxPartySize;
@@ -154,6 +175,8 @@ export const renderDungeonsPanel: PanelRenderer = (context) => {
       ...dungeons.map((dungeon) => {
         const run = runInDungeon(state, dungeon.id);
         if (run) return renderBusyDungeon(context, dungeon, run);
+        const unreadReport = state.reports.find((report) => report.dungeonId === dungeon.id);
+        if (unreadReport) return renderFinishedDungeon(context, dungeon, unreadReport);
         return isDungeonUnlocked(state, dungeon) ? renderFreeDungeon(context, dungeon) : renderLockedDungeon(context, dungeon);
       }),
     ),

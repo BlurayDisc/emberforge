@@ -1,8 +1,8 @@
 import type { GameState } from '../../model/gameState';
 import type { EquipmentSlot, Item } from '../../model/item';
-import type { StatBlock } from '../../model/statBlock';
+import type { HeroSheet } from '../../model/heroSheet';
 import { equipItem, findEquipProblem, slotsForItem, type EquipProblem } from '../../systems/equipment';
-import { computeHeroPower, computeHeroStats } from '../../systems/stats';
+import { computeHeroPower, computeHeroSheet } from '../../systems/stats';
 
 export interface SlotCandidate {
   item: Item;
@@ -10,8 +10,8 @@ export interface SlotCandidate {
 }
 
 export interface EquipComparison {
-  before: StatBlock;
-  after: StatBlock;
+  before: HeroSheet;
+  after: HeroSheet;
   powerBefore: number;
   powerAfter: number;
 }
@@ -33,8 +33,8 @@ export function compareEquip(state: GameState, heroId: string, item: Item, slot:
   if (!hero) return null;
   const { hero: equipped } = equipItem(hero, item, slot);
   return {
-    before: computeHeroStats(hero),
-    after: computeHeroStats(equipped),
+    before: computeHeroSheet(hero),
+    after: computeHeroSheet(equipped),
     powerBefore: computeHeroPower(hero),
     powerAfter: computeHeroPower(equipped),
   };

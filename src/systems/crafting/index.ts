@@ -1,2 +1,2 @@
 export { applyCraftingExperience, craftSeconds, craftingExperienceForCraft, craftingExperienceToNextLevel } from './crafterProgress';
-export { findRecipe, listRecipes, type Recipe, type RecipeIngredient } from './recipes';
+export { craftFeeCopper, findRecipe, listRecipes, type Recipe, type RecipeIngredient } from './recipes';

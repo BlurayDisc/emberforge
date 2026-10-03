@@ -1,51 +1,29 @@
-import { BUILDINGS } from '../content/buildings';
+import { LOGICAL_HEIGHT, TOWN_WIDTH } from '../kernel/stageSize';
 import { createRandom, type Random } from '../kernel/random';
 import { createPixelCanvas, type PixelCanvas } from './pixelCanvas';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from './pixelStage';
-import { PLAZA_CENTER, PLAZA_RADIUS, TOWN_ROADS, type Point, type Road } from './townLayout';
+import { POND_CENTER, drawGroundTexture, drawTownDecorations } from './townDecorationArt';
+import { isOpenGround } from './townPlacement';
+import { WELL_POSITIONS, type Point } from './townLayout';
+import { roadCoverage } from './townRoadCoverage';
 
-function distanceToSegment(point: Point, start: Point, end: Point): number {
-  const lengthSquared = (end.x - start.x) ** 2 + (end.y - start.y) ** 2;
-  const progress = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / lengthSquared));
-  return Math.hypot(point.x - (start.x + progress * (end.x - start.x)), point.y - (start.y + progress * (end.y - start.y)));
-}
-
-function roadCoverage(): Uint8Array {
-  const coverage = new Uint8Array(LOGICAL_WIDTH * LOGICAL_HEIGHT);
-  for (let y = 0; y < LOGICAL_HEIGHT; y++) {
-    for (let x = 0; x < LOGICAL_WIDTH; x++) {
-      const point = { x, y };
-      const onPlaza = Math.hypot(x - PLAZA_CENTER.x, (y - PLAZA_CENTER.y) * 1.25) < PLAZA_RADIUS;
-      const onRoad = TOWN_ROADS.some((road: Road) =>
-        road.points.some((start, index) => {
-          const end = road.points[index + 1];
-          if (!end) return false;
-          const wobble = Math.sin((x + y) * 0.09) * 1.2;
-          return distanceToSegment(point, start, end) <= road.width / 2 + wobble;
-        }),
-      );
-      coverage[y * LOGICAL_WIDTH + x] = onPlaza || onRoad ? 1 : 0;
-    }
-  }
-  return coverage;
-}
+const TREE_MARGIN = 10;
 
 function drawGrass(art: PixelCanvas, random: Random): void {
-  art.fill('moss', 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-  for (let speckle = 0; speckle < 2200; speckle++) {
+  art.fill('moss', 0, 0, TOWN_WIDTH, LOGICAL_HEIGHT);
+  for (let speckle = 0; speckle < 6600; speckle++) {
     const color = random.chance(0.6) ? 'grass' : 'soil';
-    art.fill(color, random.nextInt(0, LOGICAL_WIDTH - 1), random.nextInt(0, LOGICAL_HEIGHT - 1), 1, 1);
+    art.fill(color, random.nextInt(0, TOWN_WIDTH - 1), random.nextInt(0, LOGICAL_HEIGHT - 1), 1, 1);
   }
-  for (let flower = 0; flower < 70; flower++) {
+  for (let flower = 0; flower < 210; flower++) {
     const color = random.pick(['gold', 'blood', 'parchment'] as const);
-    art.fill(color, random.nextInt(4, LOGICAL_WIDTH - 5), random.nextInt(4, LOGICAL_HEIGHT - 5), 1, 1);
+    art.fill(color, random.nextInt(4, TOWN_WIDTH - 5), random.nextInt(4, LOGICAL_HEIGHT - 5), 1, 1);
   }
 }
 
 function drawRoads(art: PixelCanvas, coverage: Uint8Array, random: Random): void {
-  const isRoad = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < LOGICAL_WIDTH && y < LOGICAL_HEIGHT && coverage[y * LOGICAL_WIDTH + x] === 1;
+  const isRoad = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < TOWN_WIDTH && y < LOGICAL_HEIGHT && coverage[y * TOWN_WIDTH + x] === 1;
   for (let y = 0; y < LOGICAL_HEIGHT; y++) {
-    for (let x = 0; x < LOGICAL_WIDTH; x++) {
+    for (let x = 0; x < TOWN_WIDTH; x++) {
       if (!isRoad(x, y)) continue;
       const isEdge = !isRoad(x - 1, y) || !isRoad(x + 1, y) || !isRoad(x, y - 1) || !isRoad(x, y + 1);
       const rowOffset = (y >> 2) % 2 === 0 ? 0 : 4;
@@ -76,30 +54,32 @@ function drawWell(art: PixelCanvas, centerX: number, baseY: number): void {
   art.fill('roofRedDark', centerX - 13, baseY - 26, 26, 1);
 }
 
-function isFreeForTree(x: number, y: number, coverage: Uint8Array): boolean {
-  const nearRoad = [-10, 0, 10].some((dx) => [-6, 0, 6].some((dy) => coverage[Math.max(0, Math.min(LOGICAL_HEIGHT - 1, y + dy)) * LOGICAL_WIDTH + Math.max(0, Math.min(LOGICAL_WIDTH - 1, x + dx))] === 1));
-  const nearBuilding = BUILDINGS.some((building) => x > building.x - building.width / 2 - 12 && x < building.x + building.width / 2 + 12 && y > building.y - building.height - 8 && y < building.y + 14);
-  return !nearRoad && !nearBuilding;
+// A line of trees along the north edge closes the town and hides the sky.
+function drawForestEdge(art: PixelCanvas, random: Random): void {
+  for (let x = 6; x < TOWN_WIDTH; x += 20) drawTree(art, x + random.nextInt(-4, 4), random.nextInt(26, 36));
 }
 
 function scatterTrees(art: PixelCanvas, coverage: Uint8Array, random: Random): void {
   const trees: Point[] = [];
-  for (let attempt = 0; attempt < 400 && trees.length < 16; attempt++) {
-    const x = random.nextInt(10, LOGICAL_WIDTH - 10);
+  for (let attempt = 0; attempt < 1400 && trees.length < 46; attempt++) {
+    const x = random.nextInt(10, TOWN_WIDTH - 10);
     const y = random.nextInt(60, LOGICAL_HEIGHT - 2);
-    const crowded = trees.some((tree) => Math.hypot(tree.x - x, tree.y - y) < 26);
-    if (!crowded && isFreeForTree(x, y, coverage)) trees.push({ x, y });
+    const crowded = Math.hypot(POND_CENTER.x - x, POND_CENTER.y - y) < 34 || trees.some((tree) => Math.hypot(tree.x - x, tree.y - y) < 26);
+    if (!crowded && isOpenGround(x, y, coverage, TREE_MARGIN)) trees.push({ x, y });
   }
   trees.sort((first, second) => first.y - second.y).forEach((tree) => drawTree(art, tree.x, tree.y));
 }
 
 export function drawTownGroundArt(): HTMLCanvasElement {
-  const art = createPixelCanvas(LOGICAL_WIDTH, LOGICAL_HEIGHT);
+  const art = createPixelCanvas(TOWN_WIDTH, LOGICAL_HEIGHT);
   const random = createRandom(11).fork('town-ground');
   const coverage = roadCoverage();
   drawGrass(art, random);
+  drawGroundTexture(art, random.fork('texture'));
   drawRoads(art, coverage, random);
+  drawTownDecorations(art, coverage, random.fork('decor'));
   scatterTrees(art, coverage, random);
-  drawWell(art, PLAZA_CENTER.x, PLAZA_CENTER.y + 8);
+  WELL_POSITIONS.forEach((position) => drawWell(art, position.x, position.y));
+  drawForestEdge(art, random.fork('forest-edge'));
   return art.canvas;
 }

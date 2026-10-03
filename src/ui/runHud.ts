@@ -1,22 +1,25 @@
 import { findActiveRun, stopDungeonRunCommand, type GameStore } from '../game';
+import { createLogLine, type LogEntry } from './battleLogLines';
 import { actionButton, element } from './dom';
 import { onLanguageChange, t } from './i18n';
 import { focusRun, focusedRunNumber, onRunFocusChange } from './runFocus';
 
-const MAXIMUM_LOG_LINES = 6;
+const MAXIMUM_LOG_LINES = 80;
 
 // The run bar goes above the battlefield and the log below it, so nothing covers the picture on a small screen.
 export interface RunHud {
   element: HTMLElement;
   logElement: HTMLElement;
-  appendLogLine(text: string): void;
+  appendLogEntry(entry: LogEntry): void;
   clearLog(): void;
 }
 
 export function createRunHud(store: GameStore): RunHud {
   const bar = element('div', 'run-bar');
   const title = element('div', 'hud-title');
-  const log = element('div', 'battle-log');
+  const logTitle = element('div', 'log-title');
+  const logLines = element('div', 'log-lines');
+  const log = element('div', 'battle-log', logTitle, logLines);
   const stopButton = actionButton('', () => {
     const runNumber = focusedRunNumber();
     if (runNumber !== null) store.execute(stopDungeonRunCommand(runNumber));
@@ -28,11 +31,13 @@ export function createRunHud(store: GameStore): RunHud {
     const runNumber = focusedRunNumber();
     const run = runNumber === null ? undefined : findActiveRun(store.getState(), runNumber);
     bar.style.display = run ? 'flex' : 'none';
-    log.style.display = run ? 'block' : 'none';
+    log.style.display = run ? 'flex' : 'none';
+    bar.parentElement?.classList.toggle('run-active', run !== undefined);
     if (!run) return;
     title.textContent = t(`dungeon.${run.dungeonId}`);
     stopButton.textContent = t('dungeons.stop');
     townButton.textContent = t('hud.backToTown');
+    logTitle.textContent = t('log.title');
   };
 
   store.subscribe(refresh);
@@ -43,10 +48,11 @@ export function createRunHud(store: GameStore): RunHud {
   return {
     element: bar,
     logElement: log,
-    appendLogLine: (text) => {
-      log.append(element('div', 'log-line', text));
-      while (log.childElementCount > MAXIMUM_LOG_LINES) log.firstElementChild?.remove();
+    appendLogEntry: (entry) => {
+      logLines.append(createLogLine(entry));
+      while (logLines.childElementCount > MAXIMUM_LOG_LINES) logLines.firstElementChild?.remove();
+      logLines.scrollTop = logLines.scrollHeight;
     },
-    clearLog: () => log.replaceChildren(),
+    clearLog: () => logLines.replaceChildren(),
   };
 }

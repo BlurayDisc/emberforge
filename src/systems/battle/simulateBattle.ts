@@ -36,7 +36,8 @@ function act(actor: BattleUnit, combatants: readonly Combatant[], timeSeconds: n
   const allies = livingUnitsOf(combatants, actor.side);
   const opponents = livingUnitsOf(combatants, actor.side === 'party' ? 'enemy' : 'party');
 
-  const healTarget = actor.behavior === 'healer' ? findHealTarget(allies) : undefined;
+  // A healer never heals itself. A lone healer would never fall, so it would win every fight.
+  const healTarget = actor.behavior === 'healer' ? findHealTarget(allies.filter((ally) => ally.id !== actor.id)) : undefined;
   if (healTarget) {
     const healedAmount = Math.min(
       healTarget.maxHp - healTarget.hp,

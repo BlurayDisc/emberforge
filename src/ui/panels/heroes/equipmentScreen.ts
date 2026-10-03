@@ -3,18 +3,19 @@ import { requireById } from '../../../content/lookup';
 import { compareEquip, equipItemCommand, listItemsForSlot, unequipItemCommand, type SlotCandidate } from '../../../game';
 import type { Hero } from '../../../model/hero';
 import type { EquipmentSlot, Item } from '../../../model/item';
-import type { StatBlock } from '../../../model/statBlock';
+import type { HeroSheet } from '../../../model/heroSheet';
 import { actionButton, element } from '../../dom';
 import { heroDisplayName, itemDisplayName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
 import { createItemIcon } from '../../iconArt';
 import { openItemView } from '../../itemModals';
-import { createItemCard, slotLabel, statLabel } from '../../itemText';
+import { statName } from '../../itemStatTable';
+import { createItemCard, slotLabel } from '../../itemText';
 import { openModal, type ModalHandle } from '../../modal';
 import { createPortrait } from '../../portraitArt';
 import type { PanelContext } from '../panelContext';
 
-const COMPARED_STATS: readonly (keyof StatBlock)[] = ['hp', 'strength', 'magic', 'skill', 'speed', 'defence', 'resistance'];
+const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'mana', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'];
 const SLOTS: readonly EquipmentSlot[] = ['helm', 'amulet', 'gloves', 'belt', 'mainHand', 'offHand', 'ringOne', 'ringTwo', 'boots', 'armour'];
 
 function iconOf(item: Item): HTMLImageElement {
@@ -32,7 +33,7 @@ function renderComparison(context: PanelContext, hero: Hero, slot: EquipmentSlot
   const equipped = hero.equipment[slot];
   const rows = comparison
     ? [
-        ...COMPARED_STATS.map((stat) => element('div', 'compare-row', element('span', 'stat-name', statLabel(stat)), element('span', '', String(comparison.before[stat])), element('span', '', '>'), element('span', '', String(comparison.after[stat])), deltaCell(comparison.before[stat], comparison.after[stat]))),
+        ...COMPARED_STATS.map((stat) => element('div', 'compare-row', element('span', 'stat-name', statName(stat)), element('span', '', String(comparison.before[stat])), element('span', '', '>'), element('span', '', String(comparison.after[stat])), deltaCell(comparison.before[stat], comparison.after[stat]))),
         element('div', 'compare-row', element('span', 'stat-name', t('equip.power')), element('span', '', String(comparison.powerBefore)), element('span', '', '>'), element('span', '', String(comparison.powerAfter)), deltaCell(comparison.powerBefore, comparison.powerAfter)),
       ]
     : [];

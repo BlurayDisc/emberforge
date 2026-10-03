@@ -4,8 +4,7 @@ import {
   BASE_STAT_SPREAD_FRACTION,
   ITEM_LEVEL_ROLLS_KEEP_HIGHEST,
   LEVELS_PER_BRACKET,
-  QUALITY_WEIGHTS_WITHOUT_CATALYST,
-  QUALITY_WEIGHTS_WITH_CATALYST,
+  QUALITY_WEIGHTS,
   RARE_NAME_FIRST_PARTS,
   RARE_NAME_SECOND_PARTS,
   SELL_GROWTH_PER_ITEM_LEVEL,
@@ -23,16 +22,14 @@ export interface CraftedItemRequest {
   baseId: string;
   tier: number;
   maximumItemLevel: number;
-  usesCatalyst: boolean;
-  ingredientValueCopper: number;
+  craftingCostCopper: number;
 }
 
 type CraftableQuality = 'common' | 'magic' | 'rare';
 
-function rollQuality(usesCatalyst: boolean, random: Random): CraftableQuality {
-  const weights = usesCatalyst ? QUALITY_WEIGHTS_WITH_CATALYST : QUALITY_WEIGHTS_WITHOUT_CATALYST;
-  const qualities = Object.keys(weights) as CraftableQuality[];
-  return random.pickWeighted(qualities, (quality) => weights[quality]);
+function rollQuality(random: Random): CraftableQuality {
+  const qualities = Object.keys(QUALITY_WEIGHTS) as CraftableQuality[];
+  return random.pickWeighted(qualities, (quality) => QUALITY_WEIGHTS[quality]);
 }
 
 function rollBaseStats(base: BaseItemDefinition, itemLevel: number, random: Random): StatBonuses {
@@ -50,9 +47,10 @@ function rollRareNameParts(quality: CraftableQuality, random: Random): [string, 
   return [random.pick(RARE_NAME_FIRST_PARTS), random.pick(RARE_NAME_SECOND_PARTS)];
 }
 
-function computeSellValue(ingredientValueCopper: number, quality: CraftableQuality, itemLevel: number): number {
+// The cost is the ingredients plus the crafter fee. A better quality item sells for a multiple of it.
+function computeSellValue(craftingCostCopper: number, quality: CraftableQuality, itemLevel: number): number {
   const levelFactor = 1 + SELL_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
-  return Math.max(1, Math.round(ingredientValueCopper * SELL_QUALITY_FACTOR[quality] * levelFactor));
+  return Math.max(1, Math.round(craftingCostCopper * SELL_QUALITY_FACTOR[quality] * levelFactor));
 }
 
 export function generateCraftedItem(request: CraftedItemRequest, random: Random): Item {
@@ -67,7 +65,7 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
   const mainMaterial = MATERIALS.find((material) => material.tier === request.tier && material.category === base.mainCategory);
   if (!mainMaterial) throw new Error(`Tier ${request.tier} has no ${base.mainCategory} material for ${base.id}`);
 
-  const quality = rollQuality(request.usesCatalyst, random);
+  const quality = rollQuality(random);
   const affixes = rollAffixes(quality, itemLevel, random);
   return {
     id: request.itemId,
@@ -84,7 +82,7 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
     height: base.height,
     baseStats: rollBaseStats(base, itemLevel, random),
     affixes,
-    sellValueCopper: computeSellValue(request.ingredientValueCopper, quality, itemLevel),
+    sellValueCopper: computeSellValue(request.craftingCostCopper, quality, itemLevel),
   };
 }
 

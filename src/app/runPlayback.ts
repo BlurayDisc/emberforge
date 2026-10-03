@@ -1,4 +1,5 @@
 import { playMusic, playSound } from '../audio';
+import { LOG_TURN_SECONDS } from '../content/balance/battle';
 import { ARMOUR_HIT_SOUNDS, CLASS_ATTACK_SOUNDS, MONSTER_ATTACK_SOUNDS, MONSTER_HURT_SOUNDS } from '../content/audio';
 import { CLASSES } from '../content/classes';
 import { DUNGEONS } from '../content/dungeons';
@@ -9,6 +10,7 @@ import type { ClassId } from '../model/hero';
 import type { BattleView } from '../render/battleView';
 import type { PixelStage } from '../render/pixelStage';
 import type { TownView } from '../render/townView';
+import type { LogEntry, LogUnit } from '../ui/battleLogLines';
 import { listOf, unitDisplayName } from '../ui/displayNames';
 import { t } from '../ui/i18n';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
@@ -33,6 +35,7 @@ interface EncounterPlayback {
   nextEventIndex: number;
   elapsedSeconds: number;
   hasAnnouncedResult: boolean;
+  lastLoggedTurn: number;
 }
 
 // One player for each active run. Every player advances in time, so a run that is not
@@ -43,14 +46,28 @@ interface RunPlayer {
   encounter: EncounterPlayback | null;
 }
 
-function describeEvent(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>): string {
-  const actor = unitsById.get(event.actorId);
-  const target = unitsById.get(event.targetId);
-  const actorName = actor ? unitDisplayName(actor) : t('log.someone');
-  const targetName = target ? unitDisplayName(target) : t('log.someone');
-  if (event.kind === 'heal') return t('log.heal', { actor: actorName, target: targetName, amount: event.amount });
-  const critical = event.isCritical ? t('log.crit') : '';
-  return `${t('log.hit', { actor: actorName, target: targetName, amount: event.amount })}${critical}`;
+function logUnitOf(unit: BattleUnit | undefined): LogUnit {
+  return unit ? { name: unitDisplayName(unit), side: unit.side } : { name: t('log.someone'), side: 'enemy' };
+}
+
+// A turn is a fixed span of battle time, so a long fight reads as a list of numbered turns.
+function turnOf(event: BattleEvent): number {
+  return Math.floor(event.timeSeconds / LOG_TURN_SECONDS) + 1;
+}
+
+function logEntriesForEvent(event: BattleEvent, encounter: EncounterPlayback): LogEntry[] {
+  const entries: LogEntry[] = [];
+  const turn = turnOf(event);
+  if (turn !== encounter.lastLoggedTurn) {
+    encounter.lastLoggedTurn = turn;
+    entries.push({ kind: 'turn', turn });
+  }
+  const actor = logUnitOf(encounter.unitsById.get(event.actorId));
+  const targetUnit = encounter.unitsById.get(event.targetId);
+  const target = logUnitOf(targetUnit);
+  entries.push(event.kind === 'heal' ? { kind: 'heal', actor, target, amount: event.amount } : { kind: 'hit', actor, target, amount: event.amount, isCritical: event.isCritical });
+  if (targetUnit && event.targetHpAfter === 0) entries.push({ kind: 'defeated', unit: target });
+  return entries;
 }
 
 // A hero attack sounds as the weapon plus the monster's cry. A monster attack sounds as its own
@@ -87,11 +104,8 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount, event.isCritical);
     else view.playHeal(event.actorId, event.targetId, event.amount);
     playEventSounds(event, encounter.unitsById);
-    hud.appendLogLine(describeEvent(event, encounter.unitsById));
-    if (target && event.targetHpAfter === 0) {
-      view.markDefeated(target.id);
-      hud.appendLogLine(t('log.defeated', { name: unitDisplayName(target) }));
-    }
+    logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
+    if (target && event.targetHpAfter === 0) view.markDefeated(target.id);
   };
 
   // Rebuild the stage for a fight that is already in progress. Past events only set
@@ -106,8 +120,10 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       return;
     }
     view.showUnits([...encounter.partyUnits, ...encounter.monsterUnits]);
-    hud.appendLogLine(t('log.fight', { monsters: listOf(encounter.monsterUnits.map((unit) => unitDisplayName(unit))) }));
+    hud.appendLogEntry({ kind: 'fight', monsters: listOf(encounter.monsterUnits.map((unit) => unitDisplayName(unit))) });
+    encounter.lastLoggedTurn = 0;
     for (const event of encounter.events.slice(0, encounter.nextEventIndex)) {
+      logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
       const target = encounter.unitsById.get(event.targetId);
       if (!target) continue;
       view.setUnitHealth(target.id, event.targetHpAfter);
@@ -131,6 +147,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       nextEventIndex: 0,
       elapsedSeconds: 0,
       hasAnnouncedResult: false,
+      lastLoggedTurn: 0,
     };
     if (focusedRunNumber() === player.runNumber) presentEncounter(player);
   };
@@ -186,7 +203,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     }
     if (isFocused && !encounter.hasAnnouncedResult && encounter.elapsedSeconds >= encounter.durationSeconds) {
       encounter.hasAnnouncedResult = true;
-      hud.appendLogLine(encounter.partyWon ? t('log.victory') : t('log.defeat'));
+      hud.appendLogEntry({ kind: 'result', won: encounter.partyWon });
     }
     if (encounter.elapsedSeconds >= encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS) {
       player.encounter = null;

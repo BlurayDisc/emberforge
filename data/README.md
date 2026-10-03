@@ -10,6 +10,7 @@ All game data lives in these JSON files. The game loads them through `src/conten
 | `monsters.json` | Monsters: rank, sprite, stat factors, drop table |
 | `materials.json` | Materials: tier, category, sell value, crafted item name prefix |
 | `base-items.json` | Item bases: slot, gear type, size, profession, ingredient categories, base stats |
+| `balance/hero-sheet.json` | Mana numbers and the size of the attribute bars on the hero screen |
 | `professions.json` | Profession ids and display names |
 | `affixes.json` | Item prefixes and suffixes: stat and value range |
 | `classes.json` | Hero classes: stats, growth per level, allowed gear |
@@ -18,7 +19,7 @@ All game data lives in these JSON files. The game loads them through `src/conten
 | `audio/music.json` | Music tracks (town, battle, boss): tempo and note strings for each voice |
 | `audio/sound-effects.json` | Sound recipes (layers of tones and noise) and which sound each class, monster and armour type uses |
 | `i18n/en.json`, `i18n/zh.json` | All player text and content names, one flat key per text. `languages.json` lists the languages. |
-| `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring, buying, training), crafting levels and times, hero recovery, sale times, dungeon runs, monster scaling, backpack, item generation |
+| `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring, buying), crafting levels and times, hero recovery, sale times, dungeon runs, monster scaling, backpack, item generation |
 
 Rules:
 - Ids are stable strings. Other files refer to them.

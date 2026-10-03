@@ -12,7 +12,10 @@
       { "materialId": "rawhide", "chance": 0.35, "minQuantity": 1, "maxQuantity": 1 },
       { "materialId": "sharp-fang", "chance": 0.35, "minQuantity": 1, "maxQuantity": 1 },
       { "materialId": "coarse-sinew", "chance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
-      { "materialId": "faint-essence", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+      { "materialId": "faint-essence", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "copper-ore", "chance": 0.4, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "bone-shard", "chance": 0.3, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "pine-wood", "chance": 0.25, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
   {
@@ -28,7 +31,11 @@
       { "materialId": "rawhide", "chance": 0.5, "minQuantity": 1, "maxQuantity": 2 },
       { "materialId": "sharp-fang", "chance": 0.45, "minQuantity": 1, "maxQuantity": 1 },
       { "materialId": "coarse-sinew", "chance": 0.4, "minQuantity": 1, "maxQuantity": 1 },
-      { "materialId": "faint-essence", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 }
+      { "materialId": "faint-essence", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "copper-ore", "chance": 0.4, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "pine-wood", "chance": 0.35, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "linen", "chance": 0.3, "minQuantity": 1, "maxQuantity": 1 },
+      { "materialId": "bone-shard", "chance": 0.3, "minQuantity": 1, "maxQuantity": 1 }
     ]
   },
   {
@@ -102,8 +109,8 @@
     "name": "Goblin Chief",
     "rank": "boss",
     "spriteKey": "monster-goblin-chief",
-    "hpFactor": 14,
-    "attackFactor": 0.75,
+    "hpFactor": 11,
+    "attackFactor": 0.14,
     "defenceFactor": 1.3,
     "speed": 95,
     "drops": [

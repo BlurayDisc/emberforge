@@ -2,6 +2,7 @@
   position: relative;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background-color: var(--wood-900);
@@ -10,9 +11,12 @@
   background-position: 0 0, 4px 4px;
 }
 
+/* min-height 0 lets the stage shrink when the run bar and the log appear. Without it the page grows and pushes the bottom menu off the screen. */
 .stage-canvas-host {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -38,6 +42,69 @@
 .town-overlay {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Three stage screens wide. The overlay moves it to follow the camera. */
+.town-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300%;
+  height: 100%;
+  will-change: transform;
+}
+
+.town-arrow {
+  position: absolute;
+  top: 50%;
+  width: calc(var(--u) * 22);
+  height: calc(var(--u) * 34);
+  margin-top: calc(var(--u) * -17);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wood-700);
+  box-shadow: var(--outline-4), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-900);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.town-arrow-left { left: calc(var(--u) * 6); }
+.town-arrow-right { right: calc(var(--u) * 6); }
+.town-arrow:hover { background: var(--wood-500); }
+
+.town-arrow-shape {
+  width: calc(var(--u) * 10);
+  height: calc(var(--u) * 16);
+  background: var(--gold);
+  clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+
+.town-arrow-right .town-arrow-shape {
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.town-arrow.attention {
+  animation: arrow-pulse 0.9s steps(1) infinite;
+}
+
+@keyframes arrow-pulse {
+  50% { background: var(--crimson); }
+}
+
+.town-screen-title {
+  position: absolute;
+  top: calc(var(--u) * 4);
+  left: calc(var(--u) * 4);
+  padding: calc(var(--u) * 2) calc(var(--u) * 10);
+  font-family: var(--font-title);
+  font-size: calc(var(--u) * 9);
+  color: var(--gold);
+  text-shadow: var(--u) var(--u) 0 var(--ink);
+  background: rgba(36, 25, 18, 0.8);
   pointer-events: none;
 }
 
@@ -230,42 +297,73 @@
 .battle-log {
   display: none;
   flex: none;
-  min-height: 7.5em;
-  max-height: 9em;
-  overflow: hidden;
-  padding: 8px 12px;
+  flex-direction: column;
+  gap: 4px;
+  height: 10em;
+  padding: 6px 12px 8px;
   font-size: 14px;
   color: var(--parchment-dim);
   background: rgba(36, 25, 18, 0.96);
   box-shadow: inset 0 4px 0 var(--ink);
 }
 
-.notification-stack {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 25;
+.log-title {
+  flex: none;
+  font-family: var(--font-title);
+  font-size: 22px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.log-lines {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: min(360px, 92%);
+  gap: 2px;
 }
 
-.notification {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: calc(100% - 4px);
-  text-align: left;
+.log-lines > * {
+  flex-shrink: 0;
 }
 
-.notification.won { background: #2f5a2f; }
-.notification.lost { background: #6a2a2a; }
-
-.notification-text {
-  display: flex;
-  flex-direction: column;
+.log-turn {
+  margin-top: 4px;
+  padding-top: 2px;
+  font-size: 12px;
+  color: var(--parchment-dim);
+  border-top: 2px solid var(--wood-700);
 }
+
+.log-hero { color: var(--log-hero); }
+.log-monster { color: var(--log-monster); }
+
+.log-amount {
+  font-weight: 700;
+  color: var(--log-damage);
+}
+
+.log-amount.taken { color: var(--log-taken); }
+.log-amount.heal { color: var(--log-heal); }
+.log-amount.crit { color: var(--log-crit); }
+
+.log-crit-text {
+  margin-left: 4px;
+  font-weight: 700;
+  color: var(--log-crit);
+}
+
+.log-defeated { color: var(--log-monster); }
+.log-fight { color: var(--parchment); }
+
+.log-result {
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.log-result.won { color: var(--green); }
+.log-result.lost { color: var(--log-taken); }
 
 .modal-host {
   position: absolute;
@@ -306,6 +404,54 @@
   pointer-events: none;
 }
 
-.clear-notifications {
-  align-self: flex-end;
+
+.speech-bubble {
+  position: absolute;
+  width: max-content;
+  max-width: calc(var(--stage-scale, 1) * 90px);
+  padding: 6px 10px;
+  transform: translate(-50%, -100%);
+  font-family: var(--font-readable);
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ink);
+  background: var(--parchment);
+  box-shadow: var(--outline-2);
+  pointer-events: none;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  margin-left: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--parchment);
+}
+
+/* On a wide screen the log stands beside the stage. That keeps the stage tall enough for a bigger whole-number scale. */
+@media (min-width: 900px) and (min-aspect-ratio: 5/4) {
+  .stage-area.run-active {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .stage-area.run-active .run-bar {
+    grid-column: 1 / -1;
+  }
+
+  .stage-area.run-active .stage-canvas-host {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .stage-area.run-active .battle-log {
+    grid-column: 2;
+    grid-row: 2;
+    height: auto;
+    min-height: 0;
+    box-shadow: inset 4px 0 0 var(--ink);
+  }
 }

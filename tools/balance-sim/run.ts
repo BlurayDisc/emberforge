@@ -11,6 +11,7 @@ const BATTLES_PER_CASE = 300;
 const SHORT_FIGHT_SECONDS_AT_LEVEL_ONE = 7;
 const SECONDS_ADDED_PER_LEVEL = 0.535;
 const LEVELS_PER_TIER = 10;
+const BOSS_DURATION_MULTIPLIER = 10;
 
 type GearMode = 'no gear' | 'crafted gear';
 
@@ -31,7 +32,7 @@ const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
   warrior: ['sword', 'shield', 'helm-heavy', 'armour-heavy', 'gloves-heavy', 'boots-heavy', 'belt', 'amulet', 'ring', 'ring'],
   archer: ['bow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
   mage: ['staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
-  priest: ['mace', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  priest: ['wand', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
   thief: ['dagger', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
 };
 
@@ -48,8 +49,7 @@ function equipCraftedGear(hero: Hero, random: Random): Hero {
         baseId,
         tier,
         maximumItemLevel: hero.level,
-        usesCatalyst: false,
-        ingredientValueCopper: 10,
+        craftingCostCopper: 10,
       },
       random.fork(`${hero.id}-${index}`),
     );
@@ -86,14 +86,15 @@ function measure(partyCase: PartyCase, dungeon: DungeonDefinition, gearMode: Gea
   const winRate = Math.round((wins / BATTLES_PER_CASE) * 100);
   const seconds = (totalSeconds / BATTLES_PER_CASE).toFixed(1);
   const healthLost = Math.round((totalHealthLost / BATTLES_PER_CASE) * 100);
-  const target = targetDurationSeconds(dungeon.level).toFixed(1);
+  const targetMultiplier = dungeon.bossMonsterId === null ? 1 : BOSS_DURATION_MULTIPLIER;
+  const target = (targetDurationSeconds(dungeon.level) * targetMultiplier).toFixed(1);
   const label = `${partyCase.label} / ${gearMode}`;
   return `${label.padEnd(34)} win ${String(winRate).padStart(3)}%  duration ${seconds.padStart(6)}s (target ${target}s)  hp lost ${String(healthLost).padStart(3)}%`;
 }
 
 for (const dungeon of DUNGEONS) {
   console.log(`\n${dungeon.name} (monster level ${dungeon.level}, heroes at level ${dungeon.level}, party size ${dungeon.maxPartySize})`);
-  for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : DUO_CASES) {
+  for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : [...SOLO_CASES, ...DUO_CASES]) {
     for (const gearMode of ['no gear', 'crafted gear'] as const) {
       console.log(`  ${measure(partyCase, dungeon, gearMode)}`);
     }

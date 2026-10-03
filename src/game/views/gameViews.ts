@@ -2,15 +2,17 @@ import { CLASSES } from '../../content/classes';
 import type { GameState } from '../../model/gameState';
 import type { ClassId, Hero } from '../../model/hero';
 import type { MoneyBreakdown } from '../../model/money';
+import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
 import { hireCostForCompanySize, splitCopper } from '../../systems/economy';
 import { experienceToNextLevel } from '../../systems/progression';
 import { healthFractionAt, isDowned, secondsToFullHealth } from '../../systems/recovery';
 import { runOfHero } from '../runStatus';
-import { computeHeroPower, computeHeroStats } from '../../systems/stats';
+import { computeHeroPower, computeHeroSheet, computeHeroStats } from '../../systems/stats';
 
 export interface HeroView {
   stats: StatBlock;
+  sheet: HeroSheet;
   currentHp: number;
   healthFraction: number;
   isDowned: boolean;
@@ -39,6 +41,7 @@ export function describeHero(state: GameState, hero: Hero, nowMs: number): HeroV
   const downed = !isAway && isDowned(hero, nowMs);
   return {
     stats,
+    sheet: computeHeroSheet(hero),
     currentHp: Math.round(stats.hp * healthFraction),
     healthFraction,
     isDowned: downed,

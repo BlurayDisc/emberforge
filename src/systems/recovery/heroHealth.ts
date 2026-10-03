@@ -1,13 +1,20 @@
-import { BASE_REGEN_FRACTION_PER_MINUTE, REVIVE_BASE_SECONDS, REVIVE_HEALTH_FRACTION, REVIVE_SECONDS_PER_LEVEL } from '../../content/balance/recovery';
+import { REGEN_SECONDS_TO_FULL_AT_LEVEL_ONE, REGEN_SECONDS_TO_FULL_AT_MAX_LEVEL, REVIVE_BASE_SECONDS, REVIVE_HEALTH_FRACTION, REVIVE_SECONDS_PER_LEVEL } from '../../content/balance/recovery';
+import { LEVEL_CAP } from '../../content/balance/progression';
 import { CLASSES } from '../../content/classes';
 import { requireById } from '../../content/lookup';
 import type { Hero } from '../../model/hero';
 
 // Health is stored with the time it was true (healthAsOfMs) and is worked out from the clock when needed.
 // Callers pass the time in, so this code never reads the clock and stays testable.
+// A new hero has little health and heals in a minute. A high level hero has much more health and needs longer.
+function regenSecondsToFull(level: number): number {
+  const levelProgress = (level - 1) / (LEVEL_CAP - 1);
+  return REGEN_SECONDS_TO_FULL_AT_LEVEL_ONE + (REGEN_SECONDS_TO_FULL_AT_MAX_LEVEL - REGEN_SECONDS_TO_FULL_AT_LEVEL_ONE) * levelProgress;
+}
+
 function regenFractionPerMillisecond(hero: Hero): number {
   const classRate = requireById(CLASSES, hero.classId).recoveryRate;
-  return (BASE_REGEN_FRACTION_PER_MINUTE * classRate) / 60000;
+  return classRate / (regenSecondsToFull(hero.level) * 1000);
 }
 
 export function isDowned(hero: Hero, nowMs: number): boolean {

@@ -1,28 +1,25 @@
-import { CATALYST_MATERIAL_ID, ITEM_LEVEL_ABOVE_HIGHEST_HERO } from '../../content/balance/items';
+import { ITEM_LEVEL_ABOVE_HIGHEST_HERO } from '../../content/balance/items';
 import { BASE_ITEMS } from '../../content/baseItems';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import { createRandom } from '../../kernel/random';
 import type { BackpackEntry } from '../../model/backpack';
 import { craftSeconds, craftingExperienceForCraft, findRecipe, type Recipe } from '../../systems/crafting';
-import { countMaterial, removeMaterials } from '../../systems/inventory';
+import { removeMaterials } from '../../systems/inventory';
 import { generateCraftedItem } from '../../systems/items';
 import { CommandRejected, type Command } from '../gameStore';
 import { highestUnlockedTier } from '../unlockedTier';
 
-function consumeIngredients(entries: readonly BackpackEntry[], recipe: Recipe, usesCatalyst: boolean): BackpackEntry[] {
-  const required = usesCatalyst
-    ? [...recipe.ingredients, { materialId: CATALYST_MATERIAL_ID, quantity: 1 }]
-    : recipe.ingredients;
+function consumeIngredients(entries: readonly BackpackEntry[], recipe: Recipe): BackpackEntry[] {
   let remaining: BackpackEntry[] | null = [...entries];
-  for (const ingredient of required) {
+  for (const ingredient of recipe.ingredients) {
     remaining = removeMaterials(remaining, ingredient.materialId, ingredient.quantity);
     if (remaining === null) throw new CommandRejected('reject.missingMaterials');
   }
   return remaining;
 }
 
-export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boolean, nowMs: number): Command {
+export function craftItemCommand(baseId: string, tier: number, nowMs: number): Command {
   return (state) => {
     const recipe = findRecipe(baseId, tier);
     if (!recipe) throw new CommandRejected('reject.noRecipe');
@@ -34,15 +31,14 @@ export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boo
     if (state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession)) {
       throw new CommandRejected('reject.crafterBusy', { profession: recipe.profession });
     }
-    if (usesCatalyst && countMaterial(state.backpack, CATALYST_MATERIAL_ID) < 1) {
-      throw new CommandRejected('reject.noCatalyst');
-    }
+    if (state.copper < recipe.feeCopper) throw new CommandRejected('reject.notEnoughMoney');
 
-    const backpackAfterPayment = consumeIngredients(state.backpack, recipe, usesCatalyst);
+    const backpackAfterPayment = consumeIngredients(state.backpack, recipe);
     const ingredientValueCopper = recipe.ingredients.reduce(
       (total, ingredient) => total + requireById(MATERIALS, ingredient.materialId).sellValueCopper * ingredient.quantity,
       0,
     );
+    const craftingCostCopper = ingredientValueCopper + recipe.feeCopper;
     const highestHeroLevel = state.company.reduce((highest, hero) => Math.max(highest, hero.level), 1);
     const itemNumber = state.itemsCrafted + 1;
 
@@ -52,8 +48,7 @@ export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boo
         baseId: requireById(BASE_ITEMS, baseId).id,
         tier,
         maximumItemLevel: highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO,
-        usesCatalyst,
-        ingredientValueCopper,
+        craftingCostCopper,
       },
       createRandom(state.seed).fork(`craft-${itemNumber}`),
     );
@@ -61,6 +56,7 @@ export function craftItemCommand(baseId: string, tier: number, usesCatalyst: boo
     const jobNumber = state.jobsStarted + 1;
     return {
       ...state,
+      copper: state.copper - recipe.feeCopper,
       backpack: backpackAfterPayment,
       itemsCrafted: itemNumber,
       jobsStarted: jobNumber,

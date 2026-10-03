@@ -1,6 +1,6 @@
 import { CLASSES } from '../../content/classes';
 import { requireById } from '../../content/lookup';
-import type { Hero } from '../../model/hero';
+import type { ClassId, Hero } from '../../model/hero';
 import type { EquipmentSlot, Item } from '../../model/item';
 
 export interface EquipProblem {
@@ -26,6 +26,15 @@ export function findEquipProblem(hero: Hero, item: Item): EquipProblem | null {
     return { key: 'equip.wearsArmour', params: { classId: hero.classId, armourWeight: classDefinition.armourWeight } };
   }
   return null;
+}
+
+// The classes that may wear or wield an item of this base. The Workshop shows them before the player crafts.
+export function classIdsThatCanUse(base: Pick<Item, 'slot' | 'gearType' | 'armourWeight'>): ClassId[] {
+  return CLASSES.filter((classDefinition) => {
+    if (base.slot === 'mainHand' && !classDefinition.weaponTypes.includes(base.gearType)) return false;
+    if (base.slot === 'offHand' && !classDefinition.offHandTypes.includes(base.gearType)) return false;
+    return base.armourWeight === null || base.armourWeight === classDefinition.armourWeight;
+  }).map((classDefinition) => classDefinition.id);
 }
 
 export function slotsForItem(item: Item): EquipmentSlot[] {

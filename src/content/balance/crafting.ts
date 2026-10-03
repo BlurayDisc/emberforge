@@ -9,3 +9,5 @@ export const CRAFTING_LEVEL_GAP_STEP = data.levelGapStep;
 export const CRAFTING_LEVEL_GAP_FACTOR_MINIMUM = data.levelGapFactorMinimum;
 export const CRAFT_SECONDS_BASE = data.craftSecondsBase;
 export const CRAFT_SECONDS_PER_REQUIRED_LEVEL = data.craftSecondsPerRequiredLevel;
+export const CRAFT_FEE_BASE_COPPER = data.craftFeeBaseCopper;
+export const CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER = data.craftFeePerRequiredLevelCopper;

@@ -7,6 +7,8 @@ export { LOGICAL_HEIGHT, LOGICAL_WIDTH };
 export interface PixelStage {
   readonly scene: Scene;
   readonly overlay: HTMLElement;
+  // Moves the camera along x, in scene pixels. The town scrolls with it. Battle scenes keep it at 0.
+  setCameraX(sceneX: number): void;
   onFrame(update: (elapsedSeconds: number) => void): void;
 }
 
@@ -56,6 +58,9 @@ export function createPixelStage(container: HTMLElement): PixelStage {
   return {
     scene,
     overlay,
+    setCameraX: (sceneX) => {
+      camera.position.x = Math.round(sceneX);
+    },
     onFrame: (update) => {
       frameListeners.push(update);
     },
