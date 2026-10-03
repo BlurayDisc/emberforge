@@ -89,6 +89,21 @@ const DRAW_GEAR: Record<ClassId, (drawing: PixelDrawing, look: ClassLook, hair: 
     drawing.fill(look.clothShade, 10, 16, 12, 1);
     drawing.fill(look.trim, 12, 21, 8, 1);
   },
+  barbarian: (drawing, look) => {
+    drawing.fill(look.cloth, 9, 4, 14, 4);
+    drawing.fill(look.clothShade, 9, 7, 14, 1);
+    drawing.fill('#c0c8d0', 6, 1, 3, 6);
+    drawing.fill('#c0c8d0', 23, 1, 3, 6);
+    drawing.fill(look.clothShade, 8, 20, 16, 3);
+    drawing.fill(look.trim, 10, 21, 12, 1);
+  },
+  fighter: (drawing, look) => {
+    drawing.fill('#b23a3a', 9, 6, 14, 2);
+    drawing.fill('#b23a3a', 22, 7, 3, 6);
+    drawing.fill(look.cloth, 9, 20, 14, 3);
+    drawing.fill(look.clothShade, 9, 22, 14, 1);
+    drawing.fill(look.trim, 14, 20, 4, 1);
+  },
 };
 
 function drawBorder(drawing: PixelDrawing): void {

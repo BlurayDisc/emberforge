@@ -2,7 +2,7 @@
   --cell: min(46px, 7.5vw);
   display: grid;
   grid-template-columns: repeat(10, var(--cell));
-  grid-template-rows: repeat(8, var(--cell));
+  grid-auto-rows: var(--cell);
   gap: 2px;
   align-self: center;
   padding: 4px;
@@ -36,10 +36,6 @@
 .grid-entry.selected {
   outline: 2px solid #fff6d6;
   outline-offset: -2px;
-}
-
-.grid-entry .cell-count {
-  color: var(--gold);
 }
 
 .category-ore { background: #4a4d5c; }
@@ -472,7 +468,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 240px;
 }
 
 .chooser {
@@ -686,4 +681,97 @@
 
 .crafter-intro .crafter-header {
   flex: 1;
+}
+
+/* Tiles: a grid of cards that wrap to the width of the panel. */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.crafter-tile {
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  margin: 0;
+}
+
+.crafter-tile .row-art {
+  display: flex;
+  justify-content: center;
+}
+
+.crafter-tile .row-body {
+  width: 100%;
+}
+
+/* A dungeon row shows its battle picture as a background. The shade keeps the text easy to read. */
+.list-row.has-backdrop {
+  position: relative;
+  overflow: hidden;
+  min-height: 84px;
+}
+
+.row-backdrop-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.row-backdrop-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(23, 17, 13, 0.9) 0%, rgba(23, 17, 13, 0.6) 50%, rgba(23, 17, 13, 0.12) 100%);
+}
+
+.list-row.has-backdrop > .row-art,
+.list-row.has-backdrop > .row-body,
+.list-row.has-backdrop > .row-actions {
+  position: relative;
+}
+
+.list-row.has-backdrop.locked .row-backdrop-art {
+  filter: grayscale(1) brightness(0.6);
+}
+
+.castle-story {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.castle-portrait {
+  flex: none;
+  padding: 8px;
+  background: var(--wood-900);
+  box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 3px var(--wood-700);
+}
+
+.castle-portrait canvas {
+  display: block;
+  width: 112px;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.castle-story-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.castle-tale {
+  line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .castle-story {
+    flex-direction: column;
+    align-items: center;
+  }
 }

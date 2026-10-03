@@ -3,6 +3,7 @@ import { renderHeroesPanel } from './panels/heroesPanel';
 import { renderInventoryPanel, resetInventorySelection } from './panels/inventoryPanel';
 import type { PanelRenderer } from './panels/panelContext';
 import { renderSettingsPanel } from './panels/settingsPanel';
+import { renderBankPanel } from './panels/town/bankView';
 import { renderMerchantPanel } from './panels/town/merchantView';
 import { renderTavernPanel } from './panels/town/tavernView';
 import { renderWorkshopPanel, resetWorkshopSelection } from './panels/town/workshopView';
@@ -25,6 +26,7 @@ export const PANEL_CATALOG: readonly PanelDefinition[] = [
   { id: 'tavern', barIcon: null, render: renderTavernPanel },
   { id: 'workshop', barIcon: null, render: renderWorkshopPanel, onClose: resetWorkshopSelection },
   { id: 'merchant', barIcon: null, render: renderMerchantPanel },
+  { id: 'bank', barIcon: null, render: renderBankPanel },
 ];
 
 export function panelTitleKey(panelId: string): string {

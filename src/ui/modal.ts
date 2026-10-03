@@ -10,9 +10,17 @@ export function getModalHost(): HTMLElement {
   return modalHost;
 }
 
-// Modals stack: a menu can open a chooser on top of itself. Clicking the dark backdrop closes the top one.
-export function openModal(title: string, content: HTMLElement, onClose?: () => void): ModalHandle {
-  const backdrop = element('div', 'modal-backdrop');
+export interface ScreenPoint {
+  x: number;
+  y: number;
+}
+
+const NEAR_POINTER_MARGIN_PIXELS = 8;
+
+// Modals stack: a menu can open a chooser on top of itself. Clicking outside the modal closes the top one.
+// A short menu passes the point of the click. It opens as a narrow panel at that point, and the screen stays undimmed.
+export function openModal(title: string, content: HTMLElement, onClose?: () => void, nearPoint?: ScreenPoint): ModalHandle {
+  const backdrop = element('div', `modal-backdrop${nearPoint ? ' modal-backdrop-near' : ''}`);
   const close = (): void => {
     backdrop.remove();
     onClose?.();
@@ -24,7 +32,19 @@ export function openModal(title: string, content: HTMLElement, onClose?: () => v
     if (event.target === backdrop) close();
   });
   modalHost.append(backdrop);
+  if (nearPoint) placeNearPoint(modal, nearPoint);
   return { close };
+}
+
+// The point is in screen coordinates. The panel is moved to it, then kept inside the host.
+function placeNearPoint(modal: HTMLElement, point: ScreenPoint): void {
+  const hostBox = modalHost.getBoundingClientRect();
+  const largestLeft = Math.max(NEAR_POINTER_MARGIN_PIXELS, hostBox.width - modal.offsetWidth - NEAR_POINTER_MARGIN_PIXELS);
+  const largestTop = Math.max(NEAR_POINTER_MARGIN_PIXELS, hostBox.height - modal.offsetHeight - NEAR_POINTER_MARGIN_PIXELS);
+  const left = Math.min(Math.max(point.x - hostBox.left + NEAR_POINTER_MARGIN_PIXELS, NEAR_POINTER_MARGIN_PIXELS), largestLeft);
+  const top = Math.min(Math.max(point.y - hostBox.top, NEAR_POINTER_MARGIN_PIXELS), largestTop);
+  modal.style.left = `${Math.round(left)}px`;
+  modal.style.top = `${Math.round(top)}px`;
 }
 
 export function closeAllModals(): void {

@@ -1,4 +1,4 @@
-// What the town overlay needs from the town view. The app layer connects the two, because ui may not import render.
+// What an overlay needs from a sliding scene, the town or the castle. The app layer connects the two, because ui may not import render.
 export interface TownNavigation {
   screenCount: number;
   currentScreen(): number;

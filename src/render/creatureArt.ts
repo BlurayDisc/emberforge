@@ -101,6 +101,39 @@ function drawGoblin(): HTMLCanvasElement {
   return art.canvas;
 }
 
+function drawSpider(): HTMLCanvasElement {
+  const art = createPixelCanvas(38, 26);
+  const shell: Tones = { base: '#4a3a5a', light: '#6f5a86', dark: '#2a2036' };
+  for (const [legX, legY] of [[3, 4], [7, 2], [27, 2], [31, 4]] as const) {
+    art.fill(shell.dark, legX, legY, 2, 12);
+    art.fill(shell.dark, legX + (legX < 19 ? 1 : -1), legY + 10, 2, 8);
+  }
+  shadedBlob(art, 24, 14, 9, 7, shell);
+  art.fill('#c0392b', 22, 10, 2, 2);
+  art.fill('#c0392b', 26, 10, 2, 2);
+  shadedBlob(art, 10, 14, 6, 5, shell);
+  art.fill('#c0392b', 5, 11, 2, 2);
+  art.fill('#c0392b', 9, 10, 2, 2);
+  art.fill('#ffd75e', 6, 14, 1, 1);
+  art.fill('#ead9a8', 4, 18, 1, 3);
+  art.fill('#ead9a8', 8, 18, 1, 3);
+  addOutline(art, 'outline');
+  return art.canvas;
+}
+
+function drawHobgoblin(): HTMLCanvasElement {
+  const art = createPixelCanvas(30, 32);
+  drawGoblinBody(art, { base: '#b0743a', light: '#d09858', dark: '#7a4a24' }, '#585866', 1);
+  art.fill('#6f7a8c', 6, 1, 10, 4);
+  art.fill('#c0c8d0', 7, 1, 8, 1);
+  art.fill('#8a6340', 22, 8, 2, 16);
+  art.fill('#c0c8d0', 20, 4, 6, 5);
+  art.fill('#6a4a2a', 0, 14, 5, 9);
+  art.fill('#c9a24e', 2, 17, 1, 3);
+  addOutline(art, 'outline');
+  return art.canvas;
+}
+
 function drawGoblinChief(): HTMLCanvasElement {
   const art = createPixelCanvas(48, 62);
   drawGoblinBody(art, { base: '#5f9a45', light: '#86c46a', dark: '#356a28' }, '#8a2a2a', 2);
@@ -123,5 +156,7 @@ export const CREATURE_DRAWERS: Readonly<Record<string, () => HTMLCanvasElement>>
   'monster-rat': drawRat,
   'monster-wolf': drawWolf,
   'monster-goblin': drawGoblin,
+  'monster-spider': drawSpider,
+  'monster-hobgoblin': drawHobgoblin,
   'monster-goblin-chief': drawGoblinChief,
 };

@@ -13,7 +13,8 @@ All game data lives in these JSON files. The game loads them through `src/conten
 | `balance/hero-sheet.json` | Mana numbers and the size of the attribute bars on the hero screen |
 | `professions.json` | Profession ids and display names |
 | `affixes.json` | Item prefixes and suffixes: stat and value range |
-| `classes.json` | Hero classes: stats, growth per level, allowed gear |
+| `classes.json` | Hero classes: stats, growth per level, allowed gear, and the dungeon to clear before the class can be hired (`unlockAfterDungeonId`, null = open at the start) |
+| `advancements.json` | Promotion classes. Each base class has 2 branches (level 20) and each branch has 1 master class (level 50). Data only: the game has no promotion command yet. |
 | `hero-names.json` | Names for new heroes |
 | `hero-appearance.json` | Skin, hair and eye colors, and the colors of each class. A hero name picks its look, for the portrait and the battle sprite. |
 | `audio/music.json` | Music tracks (town, battle, boss): tempo and note strings for each voice |

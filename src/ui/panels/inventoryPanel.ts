@@ -1,8 +1,8 @@
-import { BACKPACK_COLUMNS, BACKPACK_ROWS } from '../../content/balance/backpack';
+import { BACKPACK_COLUMNS } from '../../content/balance/backpack';
 import { BASE_ITEMS } from '../../content/baseItems';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
-import { equipItemCommand, listEquipOptions } from '../../game';
+import { backpackRowsOf, describeStorage, equipItemCommand, listEquipOptions, sizeOfBackpackEntry } from '../../game';
 import type { BackpackEntry } from '../../model/backpack';
 import type { Item } from '../../model/item';
 import { actionButton, element } from '../dom';
@@ -30,8 +30,7 @@ function placeInGrid(target: HTMLElement, column: number, row: number, width: nu
 
 function renderEntry(context: PanelContext, entry: BackpackEntry): HTMLElement {
   const content = entry.content;
-  const width = content.kind === 'item' ? content.item.width : 1;
-  const height = content.kind === 'item' ? content.item.height : 1;
+  const { width, height } = sizeOfBackpackEntry(entry);
   const cell = element('button', 'grid-entry');
   cell.type = 'button';
   placeInGrid(cell, entry.column, entry.row, width, height);
@@ -45,7 +44,7 @@ function renderEntry(context: PanelContext, entry: BackpackEntry): HTMLElement {
     const material = requireById(MATERIALS, content.materialId);
     cell.classList.add(`category-${material.category}`);
     cell.title = materialName(material.id);
-    cell.append(createMaterialIcon(material.id, material.category, 2), element('span', 'cell-count', String(content.quantity)));
+    cell.append(createMaterialIcon(material.id, material.category, 2));
   }
   if (selectedPosition?.column === entry.column && selectedPosition.row === entry.row) cell.classList.add('selected');
   cell.addEventListener('click', () => {
@@ -85,7 +84,7 @@ function renderDetail(context: PanelContext, entry: BackpackEntry | undefined): 
     'hint',
     t('inventory.materialDetail', {
       name: materialName(material.id),
-      count: entry.content.quantity,
+      cells: material.width * material.height,
       tier: material.tier,
       category: t(`category.${material.category}`),
       price: material.sellValueCopper,
@@ -95,8 +94,10 @@ function renderDetail(context: PanelContext, entry: BackpackEntry | undefined): 
 
 export const renderInventoryPanel: PanelRenderer = (context) => {
   const entries = context.store.getState().backpack;
+  const storage = describeStorage(context.store.getState());
   const grid = element('div', 'backpack-grid');
-  for (let row = 0; row < BACKPACK_ROWS; row++) {
+  const state = context.store.getState();
+  for (let row = 0; row < backpackRowsOf(state); row++) {
     for (let column = 0; column < BACKPACK_COLUMNS; column++) {
       const emptyCell = element('div', 'grid-empty');
       placeInGrid(emptyCell, column, row, 1, 1);
@@ -107,6 +108,6 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
 
   const selected = entries.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
   const body = element('div', 'panel-body');
-  body.append(element('p', 'hint', t('inventory.hint')), grid, renderDetail(context, selected));
+  body.append(element('p', 'hint', t('inventory.hint')), element('p', 'hint', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })), grid, renderDetail(context, selected));
   return body;
 };

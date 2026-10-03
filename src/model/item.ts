@@ -17,6 +17,9 @@ export type ItemSlot = Exclude<EquipmentSlot, 'ringOne' | 'ringTwo'> | 'ring';
 export type GearType =
   | 'sword'
   | 'axe'
+  | 'greataxe'
+  | 'maul'
+  | 'knuckles'
   | 'mace'
   | 'dagger'
   | 'bow'

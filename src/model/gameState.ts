@@ -51,6 +51,9 @@ export interface GameState {
   company: Hero[];
   heroesHired: number;
   backpack: BackpackEntry[];
+  // Bought upgrades at the Bank: more backpack rows, and more sale slots at the merchant.
+  backpackExpansions: number;
+  merchantExtraSlots: number;
   itemsCrafted: number;
   runsStarted: number;
   dungeonRuns: DungeonRun[];

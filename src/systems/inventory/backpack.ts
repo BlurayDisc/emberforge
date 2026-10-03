@@ -1,4 +1,7 @@
-import { BACKPACK_COLUMNS, BACKPACK_ROWS, MATERIAL_STACK_LIMIT } from '../../content/balance/backpack';
+import { findFreeGridSpot } from '../../kernel/gridPacking';
+import { BACKPACK_BASE_ROWS, BACKPACK_COLUMNS, BACKPACK_ROWS_PER_EXPANSION } from '../../content/balance/backpack';
+import { requireById } from '../../content/lookup';
+import { MATERIALS } from '../../content/materials';
 import type { BackpackEntry } from '../../model/backpack';
 import type { Item } from '../../model/item';
 import type { MaterialStack } from '../../model/material';
@@ -13,66 +16,53 @@ export interface AddMaterialsResult {
   overflow: MaterialStack[];
 }
 
-function sizeOf(entry: BackpackEntry): { width: number; height: number } {
-  if (entry.content.kind === 'item') return { width: entry.content.item.width, height: entry.content.item.height };
-  return { width: 1, height: 1 };
+export function backpackRowCount(expansionsBought: number): number {
+  return BACKPACK_BASE_ROWS + BACKPACK_ROWS_PER_EXPANSION * expansionsBought;
 }
 
-function occupiedCellKeys(entries: readonly BackpackEntry[]): Set<string> {
-  const keys = new Set<string>();
-  for (const entry of entries) {
-    const { width, height } = sizeOf(entry);
-    for (let column = entry.column; column < entry.column + width; column++) {
-      for (let row = entry.row; row < entry.row + height; row++) keys.add(`${column},${row}`);
-    }
-  }
-  return keys;
+export function sizeOfContent(content: BackpackEntry['content']): { width: number; height: number } {
+  if (content.kind === 'item') return { width: content.item.width, height: content.item.height };
+  const { width, height } = requireById(MATERIALS, content.materialId);
+  return { width, height };
 }
 
-export function findFreePosition(entries: readonly BackpackEntry[], width: number, height: number): GridPosition | null {
-  const occupied = occupiedCellKeys(entries);
-  for (let row = 0; row + height <= BACKPACK_ROWS; row++) {
-    for (let column = 0; column + width <= BACKPACK_COLUMNS; column++) {
-      const isFree = Array.from({ length: width * height }).every(
-        (_, offset) => !occupied.has(`${column + (offset % width)},${row + Math.floor(offset / width)}`),
-      );
-      if (isFree) return { column, row };
-    }
-  }
-  return null;
+export function usedCellCount(entries: readonly BackpackEntry[]): number {
+  return entries.reduce((total, entry) => {
+    const { width, height } = sizeOfContent(entry.content);
+    return total + width * height;
+  }, 0);
 }
 
+export function findFreePosition(entries: readonly BackpackEntry[], width: number, height: number, rowCount: number): GridPosition | null {
+  const placed = entries.map((entry) => ({ column: entry.column, row: entry.row, ...sizeOfContent(entry.content) }));
+  return findFreeGridSpot(placed, width, height, BACKPACK_COLUMNS, rowCount);
+}
+
+// Materials do not stack: every unit takes its own place in the backpack. A unit that finds no room is returned as overflow.
 export function addMaterials(
   currentEntries: readonly BackpackEntry[],
   additions: readonly MaterialStack[],
+  rowCount: number,
 ): AddMaterialsResult {
   const entries = currentEntries.map((entry) => structuredClone(entry));
   const overflow: MaterialStack[] = [];
 
   for (const addition of additions) {
+    const { width, height } = requireById(MATERIALS, addition.materialId);
     let remaining = addition.quantity;
-    for (const entry of entries) {
-      const content = entry.content;
-      if (remaining === 0) break;
-      if (content.kind !== 'material' || content.materialId !== addition.materialId) continue;
-      const moved = Math.min(remaining, MATERIAL_STACK_LIMIT - content.quantity);
-      content.quantity += moved;
-      remaining -= moved;
-    }
     while (remaining > 0) {
-      const position = findFreePosition(entries, 1, 1);
+      const position = findFreePosition(entries, width, height, rowCount);
       if (position === null) break;
-      const moved = Math.min(remaining, MATERIAL_STACK_LIMIT);
-      entries.push({ ...position, content: { kind: 'material', materialId: addition.materialId, quantity: moved } });
-      remaining -= moved;
+      entries.push({ ...position, content: { kind: 'material', materialId: addition.materialId, quantity: 1 } });
+      remaining -= 1;
     }
     if (remaining > 0) overflow.push({ materialId: addition.materialId, quantity: remaining });
   }
   return { entries, overflow };
 }
 
-export function addItem(entries: readonly BackpackEntry[], item: Item): BackpackEntry[] | null {
-  const position = findFreePosition(entries, item.width, item.height);
+export function addItem(entries: readonly BackpackEntry[], item: Item, rowCount: number): BackpackEntry[] | null {
+  const position = findFreePosition(entries, item.width, item.height, rowCount);
   if (position === null) return null;
   return [...entries, { ...position, content: { kind: 'item', item } }];
 }

@@ -15,12 +15,15 @@ function hire(context: PanelContext, classId: ClassId): void {
 }
 
 function renderOffer(context: PanelContext, offer: TavernOffer): HTMLElement {
+  const isLocked = offer.lockedUntilDungeonId !== null;
+  const roleLine = element('div', 'card-text', t(`class.${offer.classId}.role`));
+  const lockLine = offer.lockedUntilDungeonId === null ? null : element('div', 'card-text small', t('tavern.locked', { dungeon: t(`dungeon.${offer.lockedUntilDungeonId}`) }));
   const price = offer.cost === 0 ? element('span', 'money-free', t('tavern.free')) : createMoneyDisplay(offer.cost);
   return createListRow({
     art: createPortrait(offer.classId, className(offer.classId), 2),
     title: className(offer.classId),
-    lines: [element('div', 'card-text', t(`class.${offer.classId}.role`))],
-    actions: [price, actionButton(t('tavern.hire'), () => hire(context, offer.classId), { disabled: !offer.isAffordable })],
+    lines: lockLine ? [roleLine, lockLine] : [roleLine],
+    actions: [price, actionButton(t('tavern.hire'), () => hire(context, offer.classId), { disabled: !offer.isAffordable || isLocked })],
   });
 }
 

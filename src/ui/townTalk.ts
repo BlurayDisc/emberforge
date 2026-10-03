@@ -51,6 +51,9 @@ const TOWN_TALKS: readonly TownTalk[] = [
   { key: 'talk.farmers', paramsFor: (state) => ({ region: t(`town.${state.townId}.region`) }) },
   { key: 'talk.smith', paramsFor: () => ALWAYS },
   { key: 'talk.keep', paramsFor: () => ALWAYS },
+  { key: 'talk.princess', paramsFor: () => ALWAYS },
+  { key: 'talk.castleBell', paramsFor: () => ALWAYS },
+  { key: 'talk.castleOpen', paramsFor: () => ALWAYS },
   { key: 'talk.rats', paramsFor: () => ALWAYS },
   { key: 'talk.southRoad', paramsFor: () => ALWAYS },
 ];

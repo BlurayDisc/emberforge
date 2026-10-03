@@ -132,6 +132,20 @@ function drawStall(art: PixelCanvas, width: number, height: number): void {
   for (let index = 0; index < width - 8; index += 7) art.fill(goods[(index / 7) % goods.length] as (typeof goods)[number], 4 + index, height - 16, 5, 5);
 }
 
+function drawBank(art: PixelCanvas, width: number, height: number): void {
+  const roofHeight = Math.round(height * 0.34);
+  drawBrickWalls(art, 3, roofHeight, width - 6, height - roofHeight, STONE_COLORS);
+  drawRoof(art, 0, 0, width, roofHeight + 2, { wall: 'stone', wallDark: 'stoneDark', roof: 'stoneLight', roofDark: 'stoneDark' });
+  art.fill('gold', 3, roofHeight, width - 6, 2);
+  for (const pillarX of [8, width - 12]) {
+    art.fill('stoneLight', pillarX, roofHeight + 2, 4, height - roofHeight - 2);
+    art.fill('stoneDark', pillarX + 3, roofHeight + 2, 1, height - roofHeight - 2);
+  }
+  art.fill('gold', width / 2 - 4, roofHeight + 6, 8, 8);
+  art.fill('hayDark', width / 2 - 4, roofHeight + 12, 8, 2);
+  drawDoor(art, width / 2, height - 1, 12, 20, 'timber');
+}
+
 export const DECORATIVE_DRAWERS: Record<DecorativeStyle, Drawer> = {
   cottage: drawCottage,
   townhouse: drawTownhouse,
@@ -141,4 +155,5 @@ export const DECORATIVE_DRAWERS: Record<DecorativeStyle, Drawer> = {
   barracks: drawBarracks,
   watchtower: drawWatchtower,
   stall: drawStall,
+  bank: drawBank,
 };

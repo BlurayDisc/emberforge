@@ -7,6 +7,7 @@ import type { StatBlock } from '../../model/statBlock';
 import { hireCostForCompanySize, splitCopper } from '../../systems/economy';
 import { experienceToNextLevel } from '../../systems/progression';
 import { healthFractionAt, isDowned, secondsToFullHealth } from '../../systems/recovery';
+import { isClassUnlocked } from '../classUnlocks';
 import { runOfHero } from '../runStatus';
 import { computeHeroPower, computeHeroSheet, computeHeroStats } from '../../systems/stats';
 
@@ -27,6 +28,8 @@ export interface TavernOffer {
   classId: ClassId;
   cost: number;
   isAffordable: boolean;
+  // The dungeon to clear before this class can be hired. Null when the class is open.
+  lockedUntilDungeonId: string | null;
 }
 
 export function describeMoney(totalCopper: number): MoneyBreakdown {
@@ -60,5 +63,6 @@ export function listTavernOffers(state: GameState): TavernOffer[] {
     classId: classDefinition.id,
     cost,
     isAffordable: state.copper >= cost,
+    lockedUntilDungeonId: isClassUnlocked(state, classDefinition.id) ? null : classDefinition.unlockAfterDungeonId,
   }));
 }

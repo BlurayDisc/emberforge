@@ -9,6 +9,7 @@ import {
   RARE_NAME_SECOND_PARTS,
   SELL_GROWTH_PER_ITEM_LEVEL,
   SELL_QUALITY_FACTOR,
+  UNSCALED_BASE_STATS,
 } from '../../content/balance/items';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
@@ -36,6 +37,10 @@ function rollBaseStats(base: BaseItemDefinition, itemLevel: number, random: Rand
   const levelFactor = 1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
   const rolled: StatBonuses = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[keyof StatBonuses, number]>) {
+    if (UNSCALED_BASE_STATS.includes(stat)) {
+      rolled[stat] = value;
+      continue;
+    }
     const spread = 1 + (random.nextFloat() * 2 - 1) * BASE_STAT_SPREAD_FRACTION;
     rolled[stat] = Math.max(1, Math.round(value * levelFactor * spread));
   }
@@ -92,6 +97,10 @@ export function previewBaseStatRanges(baseId: string, tier: number, maximumItemL
   const highestLevel = clamp(maximumItemLevel, bracketStart, tier * LEVELS_PER_BRACKET);
   const ranges: Record<string, [number, number]> = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[string, number]>) {
+    if (UNSCALED_BASE_STATS.includes(stat)) {
+      ranges[stat] = [value, value];
+      continue;
+    }
     const lowest = value * (1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (bracketStart - 1)) * (1 - BASE_STAT_SPREAD_FRACTION);
     const highest = value * (1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (highestLevel - 1)) * (1 + BASE_STAT_SPREAD_FRACTION);
     ranges[stat] = [Math.max(1, Math.round(lowest)), Math.max(1, Math.round(highest))];

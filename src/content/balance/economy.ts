@@ -15,7 +15,8 @@ export const COPPER_DROP_SPREAD_FRACTION = data.copperDropSpreadFraction;
 export const COPPER_DROP_RANK_MULTIPLIER: Record<UnitRank, number> = data.copperDropRankMultiplier;
 
 
-export const MERCHANT_SALE_SLOTS = data.merchantSaleSlots;
+export const MERCHANT_BASE_SALE_SLOTS = data.merchantSaleSlots;
+export const MERCHANT_EXTRA_SLOT_COSTS_COPPER: readonly number[] = data.merchantExtraSlotCostsCopper;
 export const SALE_SECONDS_MINIMUM = data.saleSecondsMinimum;
 export const SALE_SECONDS_PER_COPPER = data.saleSecondsPerCopper;
 export const SALE_SECONDS_MAXIMUM = data.saleSecondsMaximum;

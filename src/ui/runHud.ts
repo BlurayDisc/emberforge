@@ -1,8 +1,9 @@
-import { findActiveRun, stopDungeonRunCommand, type GameStore } from '../game';
+import { findActiveRun, runAwayCommand, type GameStore } from '../game';
 import { createLogLine, type LogEntry } from './battleLogLines';
 import { actionButton, element } from './dom';
 import { onLanguageChange, t } from './i18n';
 import { focusRun, focusedRunNumber, onRunFocusChange } from './runFocus';
+import { elapsedSecondsOfRun } from './runProgress';
 
 const MAXIMUM_LOG_LINES = 80;
 
@@ -22,7 +23,7 @@ export function createRunHud(store: GameStore): RunHud {
   const log = element('div', 'battle-log', logTitle, logLines);
   const stopButton = actionButton('', () => {
     const runNumber = focusedRunNumber();
-    if (runNumber !== null) store.execute(stopDungeonRunCommand(runNumber));
+    if (runNumber !== null) store.execute(runAwayCommand(runNumber, elapsedSecondsOfRun(runNumber), Date.now()));
   }, { className: 'action-button danger' });
   const townButton = actionButton('', () => focusRun(null));
   bar.append(title, element('div', 'hud-controls', townButton, stopButton));
@@ -35,7 +36,7 @@ export function createRunHud(store: GameStore): RunHud {
     bar.parentElement?.classList.toggle('run-active', run !== undefined);
     if (!run) return;
     title.textContent = t(`dungeon.${run.dungeonId}`);
-    stopButton.textContent = t('dungeons.stop');
+    stopButton.textContent = t('dungeons.runAway');
     townButton.textContent = t('hud.backToTown');
     logTitle.textContent = t('log.title');
   };

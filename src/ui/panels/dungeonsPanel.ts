@@ -1,6 +1,6 @@
 import { DUNGEONS, type DungeonDefinition } from '../../content/dungeons';
 import { requireById } from '../../content/lookup';
-import { describeHero, isDungeonUnlocked, runInDungeon, runOfHero, startDungeonRunCommand, stopDungeonRunCommand } from '../../game';
+import { describeHero, isDungeonUnlocked, runInDungeon, runOfHero, runAwayCommand, startDungeonRunCommand } from '../../game';
 import type { DungeonRun, RunReport } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
 import { actionButton, element } from '../dom';
@@ -10,9 +10,10 @@ import { describeRejection, t } from '../i18n';
 import { openDungeonView } from '../dungeonModal';
 import { createDungeonIcon, createFightIcon, createLockIcon } from '../iconArt';
 import { createList, createListRow } from '../listRow';
+import { addDungeonBackdrop } from '../dungeonBackdrop';
 import { createPortrait } from '../portraitArt';
 import { focusRun } from '../runFocus';
-import { createRunProgressBar } from '../runProgress';
+import { createRunProgressBar, elapsedSecondsOfRun } from '../runProgress';
 import { openRunReport } from '../runReportModal';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
@@ -69,6 +70,7 @@ function renderHeroChoice(context: PanelContext, hero: Hero): HTMLElement {
 // The whole row opens the dungeon details. Buttons inside the row keep their own action.
 function makeDetailsClickable(row: HTMLElement, dungeonId: string): HTMLElement {
   row.classList.add('clickable');
+  addDungeonBackdrop(row, dungeonId);
   row.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('button')) return;
     openDungeonView(dungeonId);
@@ -109,6 +111,7 @@ function renderFinishedDungeon(context: PanelContext, dungeon: DungeonDefinition
     actions: [actionButton(t('dungeons.viewResults'), open, { className: 'action-button primary' })],
     className: 'clickable finished',
   });
+  addDungeonBackdrop(row, dungeon.id);
   row.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('button')) return;
     open();
@@ -150,7 +153,7 @@ function renderBusyDungeon(context: PanelContext, dungeon: DungeonDefinition, ru
         focusRun(run.runNumber);
         context.closePanel();
       }, { className: 'action-button primary' }),
-      actionButton(t('dungeons.stop'), () => context.store.execute(stopDungeonRunCommand(run.runNumber)), { className: 'action-button danger' }),
+      actionButton(t('dungeons.runAway'), () => context.store.execute(runAwayCommand(run.runNumber, elapsedSecondsOfRun(run.runNumber), Date.now())), { className: 'action-button danger' }),
     ],
     className: 'fighting',
   }), dungeon.id);

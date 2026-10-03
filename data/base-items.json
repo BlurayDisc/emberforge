@@ -62,7 +62,7 @@
     "secondaryCategory": "fang",
     "baseStats": {
       "physicalDamage": 4,
-      "speed": 4,
+      "speed": 1,
       "skill": 2
     },
     "armourWeight": null,
@@ -113,7 +113,7 @@
     "secondaryCategory": "bone",
     "baseStats": {
       "magicalDamage": 5,
-      "speed": 2
+      "speed": 1
     },
     "armourWeight": null,
     "craftLevelOffset": 1
@@ -182,7 +182,7 @@
     "baseStats": {
       "physicalDamage": 2,
       "skill": 2,
-      "speed": 2
+      "speed": 1
     },
     "armourWeight": null,
     "craftLevelOffset": 9
@@ -453,5 +453,76 @@
       "speed": 1
     },
     "craftLevelOffset": 5
+  },
+  {
+    "id": "greataxe",
+    "name": "Greataxe",
+    "slot": "mainHand",
+    "gearType": "greataxe",
+    "width": 2,
+    "height": 3,
+    "profession": "weaponsmithing",
+    "mainCategory": "ore",
+    "secondaryCategory": "bone",
+    "baseStats": {
+      "physicalDamage": 12,
+      "speed": -1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 8
+  },
+  {
+    "id": "maul",
+    "name": "Maul",
+    "slot": "mainHand",
+    "gearType": "maul",
+    "width": 2,
+    "height": 3,
+    "profession": "weaponsmithing",
+    "mainCategory": "ore",
+    "secondaryCategory": "bone",
+    "baseStats": {
+      "physicalDamage": 10,
+      "defence": 1,
+      "speed": -1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
+  },
+  {
+    "id": "knuckles",
+    "name": "Knuckles",
+    "slot": "mainHand",
+    "gearType": "knuckles",
+    "width": 1,
+    "height": 2,
+    "profession": "weaponsmithing",
+    "mainCategory": "ore",
+    "secondaryCategory": "bone",
+    "baseStats": {
+      "physicalDamage": 4,
+      "speed": 1,
+      "skill": 1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
+  },
+  {
+    "id": "cestus",
+    "name": "Cestus",
+    "slot": "offHand",
+    "gearType": "knuckles",
+    "width": 1,
+    "height": 2,
+    "profession": "weaponsmithing",
+    "mainCategory": "ore",
+    "secondaryCategory": "hide",
+    "baseStats": {
+      "physicalDamage": 3,
+      "speed": 1,
+      "skill": 1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 6
   }
 ]

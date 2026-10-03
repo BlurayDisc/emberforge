@@ -195,7 +195,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     if (!encounter) return;
     encounter.elapsedSeconds += deltaSeconds;
     const totalSeconds = encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS;
-    publishRunProgress(player.runNumber, encounter.elapsedSeconds / totalSeconds, totalSeconds - encounter.elapsedSeconds);
+    publishRunProgress(player.runNumber, encounter.elapsedSeconds / totalSeconds, totalSeconds - encounter.elapsedSeconds, encounter.elapsedSeconds);
     const isFocused = focusedRunNumber() === player.runNumber;
     for (let event = encounter.events[encounter.nextEventIndex]; event && event.timeSeconds <= encounter.elapsedSeconds; event = encounter.events[encounter.nextEventIndex]) {
       if (isFocused) applyEventToView(event, encounter);

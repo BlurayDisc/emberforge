@@ -45,7 +45,7 @@ Heroes fight automatically. The player sends one hero (two for a boss) into a du
 
 - Level cap 100. Stats: HP, Strength, Magic, Skill (crit), Speed, Defence, Resistance. Players read them as Strength (Str), Intelligence (Int = Magic) and Agility (Agi = Skill).
 - **Hero sheet:** Physical damage = Strength + weapon physical damage. Magical damage = Magic + weapon magical damage. A hero attacks with the damage of its class kind. Mana = base + a number for each Magic point. Mana is shown only: no skill spends it yet.
-- The company starts empty. The player hires the **first hero for free** at the town tavern (any of the 5 classes). More heroes cost gold: 1s, 3s, 9s, 27s … (×3 each).
+- The company starts empty. The player hires the **first hero for free** at the town tavern (any open class). More heroes cost gold: 7s 50c (750 copper), 22s 50c, 67s 50c … (×3 each). The balance simulator shows a solo hero holds about 680 copper from drops at level 6 and about 840 at level 7, so the second hero is a goal for level 6 to 7.
 - **Money:** 100 copper = 1 silver, 100 silver = 1 gold. The game stores copper only. The bottom bar always shows the amount.
 - **Statistics:** each hero records monsters defeated, damage dealt, damage taken, healing done, fight time, and battles won and lost. The Heroes screen shows them, with damage per second and a **Power** number (the square root of damage output times durability). Power tells how strong the hero is.
 - Each class has growth rates and one active skill per tier. The AI uses the skill when it is ready.
@@ -58,13 +58,26 @@ Heroes fight automatically. The player sends one hero (two for a boss) into a du
 | Mage | Ranged magic | Sorcerer / Warlock | Archmage / Voidcaller | Staff, Wand | Tome | Light |
 | Priest | Healer, support | Cleric / Druid | Saint / Wildwarden | Mace, Wand | Tome | Light |
 | Thief | Fast melee, crit | Assassin / Trickster | Nightblade / Shadowmaster | Dagger | Dagger | Medium |
+| Barbarian | Two-handed brute | Marauder / Totem Warrior | Ravager / Spirit Chieftain | Greataxe, Maul | None (two-handed) | Medium |
+| Fighter | Bare-handed brawler | Brawler / Disciple | Champion / Grandmaster | Knuckles | Knuckles (Cestus) | Medium |
+
+- **Hiring lock:** Warrior, Archer and Mage are open from the start. The other classes unlock when the player clears a dungeon for the first time. The rule is data (`unlockAfterDungeonId` in `classes.json`). The tavern shows a locked class with the dungeon to clear, and the hire command rejects it.
+
+| Class | Unlocks after clearing |
+|---|---|
+| Thief | Wolf Trail |
+| Priest | Goblin Camp |
+| Fighter | Old Wood Hollow |
+| Barbarian | Goblin Chief's Lair |
+
+- **Advancement classes** are in `data/advancements.json`: 2 branches for each base class (level 20) and 1 master class for each branch (level 50), so 4 for each base class. The game data and the texts exist. The promotion command and screen are not built yet.
 
 ## 5. Items
 
 An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level ≥ ilvl to equip it.
 
 - **Slots (10):** Main hand, Off hand, Helm, Armour, Gloves, Boots, Belt, Amulet, Ring ×2.
-- **Base stats** roll inside a range (±15%) and grow with ilvl. Weapons give Physical damage and Magical damage (and sometimes Attack speed). Armour gives Defence (Armour) and Resistance.
+- **Base stats** roll inside a range (±15%) and grow with ilvl. Weapons give Physical damage and Magical damage (and sometimes Attack speed). Attack speed is a flat number: it does not grow with ilvl and does not roll a range. Light weapons give +1. Two-handed weapons (Greataxe, Maul) give -1. Armour gives Defence (Armour) and Resistance.
 - **Item stat table:** every item shows one fixed table first. Weapons: Physical damage, Magical damage, Attack speed. Armour, shields, belts and jewellery: Health, Armour, Magic resist. Below the table come the other stats (Strength, Agility, Intelligence) and the affixes, prefixes in blue and suffixes in gold.
 - **Quality:**
   - Common: 0 affixes.
@@ -78,11 +91,11 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 |---|---|
 | 1×1 | Ring, Amulet, Material (stacks to 99) |
 | 2×1 | Belt |
-| 1×2 | Dagger, Wand, Quiver |
+| 1×2 | Dagger, Wand, Quiver, Knuckles, Cestus |
 | 1×3 | Sword, Axe, Mace |
 | 1×4 | Staff |
 | 2×2 | Helm, Gloves, Boots, Tome |
-| 2×3 | Armour, Shield, Bow |
+| 2×3 | Armour, Shield, Bow, Greataxe, Maul |
 
 ## 6. Materials and crafting
 
@@ -97,7 +110,7 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 
 | Profession | Makes | Ingredients (same tier) |
 |---|---|---|
-| Weaponsmithing | Sword, Axe, Dagger, Parrying Dagger / Mace | Ore + Fang / Ore + Bone |
+| Weaponsmithing | Sword, Axe, Dagger, Parrying Dagger / Mace, Greataxe, Maul, Knuckles / Cestus | Ore + Fang / Ore + Bone / Ore + Hide |
 | Armoursmithing | Heavy armour, Shield | Ore + Bone |
 | Fletching | Bow, Quiver | Wood + Sinew |
 | Woodworking | Staff, Wand | Wood + Bone |
@@ -108,20 +121,22 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 - **Craft:** pay the materials. The result is instant. Ingredient count = half the item cells (rounded up) of the main material, plus 1 beast part (2 for items of 6 cells or more).
 - **Item level:** random from the bracket start up to your best hero's level (capped by the bracket end). The game rolls twice and keeps the higher result. So a crafted item is always usable by your best hero. Base stats, Quality and Affixes are random.
 - **Quality odds** (Common / Magic / Rare): 55 / 35 / 10. A craft never uses a Catalyst.
-- **Crafter fee:** every craft costs materials (from monster drops) and a gold fee paid to the crafter: 3 copper + 0.5 copper for each level the recipe needs. A crafter cannot start a craft when the player cannot pay. Every tier 1 material drops from the normal monsters of the first two dungeons, so the first crafts need no purchase.
+- **Crafter fee:** every craft costs materials (from monster drops) and a gold fee paid to the crafter: 3 copper + 0.5 copper for each level the recipe needs. A crafter cannot start a craft when the player cannot pay. The first two dungeons drop Rawhide, Bone Shard, Copper Ore, Sharp Fang, Coarse Sinew and Pine Wood. Linen first drops in the Goblin Camp, and Quartz drops there too. The merchant sells every material, so a hero can craft before it reaches those dungeons.
 - **Enchanting actions:** Reroll the values of one affix. Add an affix (up to the quality limit). Reforge all affixes (needs a Catalyst).
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
 - **Starter gear:** every class can craft a weapon and an armour piece at crafter level 1 (the validator checks this). Harder bases need a higher offset inside the bracket. Offsets spread over 1-10 inside each profession, so a crafter at level 10 can make every base of the tier. A hero still needs level ≥ ilvl to equip what the crafter makes.
 - **Crafter levels:** each profession is a crafter with level 1-100 and XP. Every craft gives XP (more for higher recipes, less for recipes far below the crafter level). A recipe needs level (tier - 1) x 10 + the base item's offset. Locked recipes show the needed level.
 - The Workshop is in town. It lists the crafters, each with a portrait, level and job. Click a crafter to see only the recipes that crafter can make now (recipes above the crafter level stay hidden, with a note for the next level). Click a recipe to see a big portrait and the stat ranges.
-- **Timed jobs:** selling and crafting take time (real clock, also while the page is closed). A sale takes 5 s + 0.6 s per copper of value, up to 10 minutes. The merchant runs 3 sales at once. A crafter makes one item at a time, 5 s + 1.5 s per required level. Jobs show a progress bar. A finished craft waits for backpack room.
-- **Merchant:** it only buys items and materials from the player. It never sells loot materials, so materials come from monster drops only. Item value = (ingredient value + crafter fee) × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)). A smith who uses dropped materials earns a small profit on each craft (on average the sale is about 1.6 times the cost). The smoke tool checks this.
+- **Timed jobs:** selling and crafting take time (real clock, also while the page is closed). A sale takes 5 s + 0.6 s per copper of value, up to 10 minutes. The merchant runs 3 sales at once, and the Bank sells up to 4 more sale slots. A crafter makes one item at a time, 5 s + 1.5 s per required level. Jobs show a progress bar. A finished craft waits for backpack room.
+- **Merchant:** a sale in progress can be cancelled. The goods return to the backpack (if it has room). It only buys items and materials from the player. It never sells loot materials, so materials come from monster drops only. Item value = (ingredient value + crafter fee) × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)). A smith who uses dropped materials earns a small profit on each craft (on average the sale is about 1.6 times the cost). The smoke tool checks this.
 - Enchanting is not built yet.
 
 ## 7. Backpack
 
-- Grid 10 × 8 per tab, in the style of Diablo 2. Drag and drop. Auto-sort button.
-- The company starts with 1 tab and can have up to 8. Buy a tab with gold (cost doubles each time) or craft a Satchel with Tailoring.
+- Grid 10 columns by 8 rows, in the style of Diablo 2.
+- **Nothing stacks.** Every item and every material unit takes its own place. Bulky materials (Pine Wood, Rawhide, Linen) fill 2 cells (1 by 2). Other materials fill 1 cell. The size of a material is `width` and `height` in `data/materials.json`.
+- **Bank upgrades:** the Bank sells more backpack space (2 rows, which is 20 cells, for each upgrade: 150, 400, 1000, 2500, 6000, 15000 copper) and more sale slots at the merchant (200, 600, 1800, 5400 copper). The prices are in `data/balance/backpack.json` and `economy.json`. The bought counts are saved in `backpackExpansions` and `merchantExtraSlots`.
+- A save from before this rule is migrated: old stacks split into single units, and the backpack grows by whole upgrades until everything fits.
 - A tooltip compares the item with the equipped item. On touch screens, a tap shows the tooltip.
 - If the backpack is full, the dungeon run pauses until the player makes space.
 
@@ -166,7 +181,7 @@ Ten brackets. Each bracket has one town.
 
 | # | Levels | Town | Region | Monster families | Boss |
 |---|---|---|---|---|---|
-| 1 | 1-10 | Hollowbrook | Farmland, Old Wood | goblins, rats, wolves | Goblin Chief |
+| 1 | 1-10 | Hollowbrook | Farmland, Old Wood | rats, wolves, goblins, spiders, hobgoblins | Goblin Chief |
 | 2 | 11-20 | Barrowgate | Barrow Downs | skeletons, wights, clay golems | Barrow Lord |
 | 3 | 21-30 | Mirewatch | Marshes | lizardfolk, bog wraiths, giant spiders | Bog Hag |
 | 4 | 31-40 | Deepdelve | Ruined mines | cave goblins, stone golems, trolls | Troll Chieftain |
@@ -180,10 +195,11 @@ Ten brackets. Each bracket has one town.
 - **Town:** workshop (craft, enchant), merchant (sell items and materials for gold), tavern (hire heroes), dungeon board.
 - **Travel:** the army marker moves on the world map. Time = 2 s + 1 s per bracket crossed. Going back is always allowed. The next town opens when the player beats the boss of the current bracket.
 - **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
-- **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters.
+- **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters. **Every dungeon has its own monsters.** A monster id and a sprite key appear in one dungeon only (the validator checks it). Hollowbrook: Rat Cellar (Cave Rat, Rat King), Wolf Trail (Wolf, Alpha Wolf), Goblin Camp (Goblin, Goblin Captain), Old Wood Hollow (Bark Spider, Hollow Broodmother), Goblin Chief's Lair (Goblin Chief, Hobgoblin adds).
 - **Run:** one run is one fight. Wounds stay after it (see Recovery).
 - **Recovery:** heroes regenerate health by the clock. A level 1 hero heals from empty to full in 1 minute. The time grows in a straight line to 5 minutes at level 100 (a high level hero has more health). The class rate speeds it up or slows it down (thief 1.75, priest 1.25, warrior and archer 1, mage 0.8). A hero at 0 health is down for (60 s + 5 s per level) divided by the class rate, then returns at 30% health. A down hero cannot start a run. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
 - **Locks and levels:** each dungeon shows a recommended level range. Only the first dungeon is open. Clearing a dungeon opens the next.
+- **Drop tables:** every dungeon has its own materials. A normal monster drops 3 crafting materials. Two dungeons share at most 1 crafting material between their normal monsters (the validator checks it). Rare monsters and bosses drop more of their dungeon materials, plus Faint Essence and Catalysts. Hollowbrook: Rat Cellar (Rawhide, Bone Shard, Copper Ore), Wolf Trail (Sharp Fang, Coarse Sinew, Pine Wood), Goblin Camp (Linen, Copper Ore, Quartz), Old Wood Hollow (Coarse Sinew, Linen, Bone Shard), Goblin Chief's Lair (Rawhide, Quartz, Faint Essence). A material the dungeons do not drop can be bought at the merchant.
 - **Drops per fight:** gold; at least 1 crafting material (guaranteed); each other drop rolls its own chance, so lucky fights give more. All are of the bracket tier.
 - **Sell value** = 10 × ilvl × quality factor (Common 1, Magic 2, Rare 4, Unique 10). Materials sell at a fixed price per tier.
 
@@ -205,11 +221,15 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 
 - **Town screen** is the main stage when no run is active. The town is three stage screens wide (480 pixels each). The player moves between them with the arrow buttons on the sides (or the left and right keys). The view slides. The screen name shows in the top left corner. The new game starts on the middle screen. The arrow that points to the Tavern pulses until the first hero is hired.
   - **Market Quarter (west):** Tavern, Merchant, a market square with a well and three stalls, a mill, cottages and town houses.
-  - **Lord's Square (middle):** Lord's Keep (decoration), Workshop, a chapel, a keep square with a well, cottages and town houses.
+  - **Lord's Square (middle):** Lord's Keep (decoration), Workshop, the Bank (sells storage upgrades), a chapel, a keep square with a well, cottages and town houses.
   - **East Gate (east):** Barracks, Stables, a watchtower, the Dungeons gate, cottages and town houses.
-  - Only the Tavern, Workshop, Merchant and Dungeons gate open a panel. Chapel, Mill, Barracks and Stables have a name sign only. Houses, stalls and the tower have no function. All buildings are in `data/buildings.json` (`label` is null for a building without a sign).
+  - The Tavern, Workshop, Bank (sells backpack space and merchant sale slots), Merchant, Barracks (opens the Heroes screen), Stables (opens the World map) and Dungeons gate open a panel. Chapel and Mill have a name sign only. Houses, stalls and the tower have no function. All buildings are in `data/buildings.json` (`label` is null for a building without a sign).
   - A main street and a south street cross all three screens. Short lanes join each door to a street. Villagers and guards walk on the roads, and now and then a villager on the visible screen stops and says a full sentence in a speech bubble about the player, the heroes or the town. Heroes do not stand in town.
 - **Lore:** an opening story shows before the first hero is hired (and after a reset). Every town, monster and material has a short lore text (`town.<id>.lore`, `monster.<id>.lore`, `material.<id>.lore` in `data/i18n/`). The text shows in the world map town popup, the dungeon popup and the material popup. The validator requires lore for all new content.
+- **Castle:** the Castle in the middle town screen (Castle Square) opens when the player clicks it. Inside there are two screens that slide like the town: the **Throne Hall** (screen 4) and the **Ramparts** (screen 5). The arrows (or left and right keys) move between them. The Leave button (or Escape) goes back to the town. The castle is a place to visit, not a game rule, so nothing in it is saved.
+  - People and places are in `data/castle.json`. Each has a screen, a position, a size and a number of tales. A click opens a story popup with a portrait and the tales (`castle.<id>.name`, `.title`, `.tale.<n>` in `data/i18n/`). A gold mark floats over a spot the player has not heard yet in this session.
+  - The Throne Hall has King Aldric, Queen Isolde, a knight commander, a young knight, a bishop, a steward, a jester and a chronicler, plus the princess's little throne, her portrait, the Forge window and the founding tapestry. The Ramparts have a captain, an archer, a falconer and a lamplighter, plus the north tower, the Old Wood and the far spire. The Ramparts show a blue sky, mountains, farmland in perspective, the curtain wall and the gatehouse.
+  - **Story:** nine nights ago, at midsummer, Princess Elowen was taken from the north tower by a winged creature that left cold black feathers. The creature flew east. The clues point to Blackspire (the unseen king) and to the Ember Forge: Elowen may carry the blood of the first Smith-Queen. The villagers in town talk about it too.
 - **World map:** the World screen draws a pixel map of the land. Every town has a place on it (`mapX`, `mapY`, `biome` in `data/towns.json`). Land, biomes and roads are drawn from the town list. Tap a town for details. Travel is not built yet.
 - **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
 - **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.
@@ -217,7 +237,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 - **Dungeon details:** click a dungeon row to open a popup with a big dungeon picture, a short story, the monsters (with their pictures) and each monster's loot table with chances. A busy dungeon row shows a progress bar and the seconds left. The start button says Fight!.
 - **Build label:** the build number (git commit count) and commit hash show in the Settings screen, in the corner of the page and in the browser tab title.
 - **Hero bars:** hero lists show a live health bar and an experience bar.
-- **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Stop run. Locked dungeons show a lock and the dungeon to clear first.
+- **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Run away. Running away gives no loot, XP or report. The hero keeps the wounds taken until that moment (the same seeded fight is replayed up to it) and heals from there. Locked dungeons show a lock and the dungeon to clear first.
 - **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
 - **After a run:** there is no pop-up notice in the corner. If the player watches the run, the report opens at once. A run in the background leaves a report: its dungeon row shows "Fight over" and View results, and the Dungeons button shows a gold badge. The player reads the stats first, then the dungeon can start again. The report shows result, damage, XP, level-ups and loot. Buttons are large for touch.
 - **Combat log:** it has a title and groups lines into numbered turns (one turn is one second of battle). Hero names are blue, monster names red. Damage is a gold chip, damage taken red, a critical hit orange, healing green.
@@ -225,7 +245,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 - **Loot boxes:** the report shows each loot stack in a big box. Hover shows its details, and a tap opens them.
 - **Menu always free:** the bottom menu stays on the screen during a fight. On a wide screen the combat log stands beside the stage.
 - **Close anywhere:** the player can click the empty space around a panel or a modal to close it, not only the x button.
-- **Heroes:** the Stats tab shows the portrait, the main stats (Health, Mana, Physical damage, Magical damage, Armour, Magic resist, Attack speed), the attributes as bars (Str red, Agi green, Int blue), Power and the battle record. The Equipment tab shows a paper doll with slots around the portrait. Click a slot: Equip new item (side by side compare, green for better, red for worse), View item (big portrait and stats) or Unequip.
+- **Heroes:** the Stats tab shows the portrait, the main stats (Health, Mana, Physical damage, Magical damage, Armour, Magic resist, Attack speed), the attributes as bars (Str red, Agi green, Int blue), and Power. The Equipment tab shows a paper doll with slots around the portrait. Click a slot: Equip new item (side by side compare, green for better, red for worse), View item (big portrait and stats) or Unequip. The Battle record tab shows kills, damage, healing and battles won and lost.
 - **Sound:** all sound is made in the browser, so the game has no sound files. A music track plays for the town, for battles and for bosses. Combat sounds depend on who hits: a hero attack is the weapon plus the monster cry; a monster attack is its strike plus a hit on the armour of the hero (heavy metal clang, medium leather thud, light cloth thump). There are sounds for criticals, heals, defeats, victory, level-up and button clicks. The Settings screen has music volume, effects volume and mute. Music and sound recipes are in `data/audio/`.
 - **Reset:** the Settings screen has a red Danger zone with RESET GAME. It needs a second click to confirm.
 - **Style:** pixel art, wood and parchment menus, blackletter panel titles (Jacquard 12). English body text and row titles use Atkinson Hyperlegible for easy reading. Chinese keeps the pixel fonts (Pixelify Sans, Fusion Pixel).

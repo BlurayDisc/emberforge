@@ -51,7 +51,7 @@ const DOOR_LANES: readonly Road[] = BUILDINGS.filter((building) => building.styl
 const CROSS_LANES: readonly Road[] = CROSS_LANE_X.map((x) => ({ width: 10, points: [{ x, y: streetYAt(MAIN_STREET, x) }, { x: x + 2, y: streetYAt(SOUTH_STREET, x) }] }));
 
 // The keep road runs from the main street to the keep gate. The south road leaves the town.
-const KEEP_ROAD: Road = { width: 16, guardCount: 1, points: [{ x: 720, y: MAIN_STREET_Y }, { x: 721, y: 136 }, { x: 720, y: 118 }] };
+const KEEP_ROAD: Road = { width: 16, guardCount: 1, points: [{ x: 720, y: MAIN_STREET_Y }, { x: 721, y: 136 }, { x: 720, y: 130 }] };
 const LEAVING_ROAD: Road = { width: 14, points: [{ x: 720, y: MAIN_STREET_Y }, { x: 718, y: 214 }, { x: 722, y: 274 }] };
 
 export const TOWN_ROADS: readonly Road[] = [MAIN_STREET, SOUTH_STREET, KEEP_ROAD, LEAVING_ROAD, ...DOOR_LANES, ...CROSS_LANES];

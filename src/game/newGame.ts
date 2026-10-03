@@ -12,6 +12,8 @@ export function createNewGameState(seed: number): GameState {
     company: [],
     heroesHired: 0,
     backpack: [],
+    backpackExpansions: 0,
+    merchantExtraSlots: 0,
     itemsCrafted: 0,
     runsStarted: 0,
     dungeonRuns: [],

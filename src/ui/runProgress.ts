@@ -7,6 +7,7 @@ import { t } from './i18n';
 interface RunProgress {
   fraction: number;
   remainingSeconds: number;
+  elapsedSeconds: number;
 }
 
 const progressByRun = new Map<number, RunProgress>();
@@ -18,10 +19,15 @@ function paint(bar: HTMLElement, progress: RunProgress): void {
   if (label) label.textContent = t('dungeons.timeLeft', { seconds: Math.max(0, Math.ceil(progress.remainingSeconds)) });
 }
 
-export function publishRunProgress(runNumber: number, fraction: number, remainingSeconds: number): void {
-  const progress = { fraction: Math.max(0, Math.min(1, fraction)), remainingSeconds };
+export function publishRunProgress(runNumber: number, fraction: number, remainingSeconds: number, elapsedSeconds: number): void {
+  const progress = { fraction: Math.max(0, Math.min(1, fraction)), remainingSeconds, elapsedSeconds };
   progressByRun.set(runNumber, progress);
   document.querySelectorAll<HTMLElement>(`[data-run-progress="${runNumber}"]`).forEach((bar) => paint(bar, progress));
+}
+
+// How long the player has watched this fight. Running away uses it to work out the wounds.
+export function elapsedSecondsOfRun(runNumber: number): number {
+  return progressByRun.get(runNumber)?.elapsedSeconds ?? 0;
 }
 
 export function forgetRunProgress(runNumber: number): void {
@@ -31,6 +37,6 @@ export function forgetRunProgress(runNumber: number): void {
 export function createRunProgressBar(runNumber: number): HTMLElement {
   const bar = element('div', 'run-progress bar bar-experience', element('div', 'bar-fill'), element('span', 'progress-label'));
   bar.dataset.runProgress = String(runNumber);
-  paint(bar, progressByRun.get(runNumber) ?? { fraction: 0, remainingSeconds: 0 });
+  paint(bar, progressByRun.get(runNumber) ?? { fraction: 0, remainingSeconds: 0, elapsedSeconds: 0 });
   return bar;
 }

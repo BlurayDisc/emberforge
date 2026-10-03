@@ -2,6 +2,7 @@ import { BUILDINGS, type BuildingDefinition } from '../content/buildings';
 import type { GameStore } from '../game';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_WIDTH } from '../kernel/stageSize';
 import { element } from './dom';
+import { isInCastle, onCastleVisitChange, setInCastle } from './castleVisit';
 import { onLanguageChange, t } from './i18n';
 import { focusedRunNumber, onRunFocusChange } from './runFocus';
 import type { TownNavigation } from './townNavigation';
@@ -22,13 +23,15 @@ function screenOf(building: BuildingDefinition): number {
 
 function createHotspot(building: BuildingDefinition, onSelect: (panelId: string) => void): HTMLElement {
   const panelId = building.panelId;
-  const hotspot = element(panelId === null ? 'div' : 'button', panelId === null ? 'building-hotspot static' : 'building-hotspot', element('span', 'building-label'));
+  const isClickable = panelId !== null || building.opens === 'castle';
+  const hotspot = element(isClickable ? 'button' : 'div', isClickable ? 'building-hotspot' : 'building-hotspot static', element('span', 'building-label'));
   if (hotspot instanceof HTMLButtonElement) hotspot.type = 'button';
   hotspot.style.left = percentOf(building.x - building.width / 2, TOWN_WIDTH);
   hotspot.style.top = percentOf(building.y - building.height, LOGICAL_HEIGHT);
   hotspot.style.width = percentOf(building.width, TOWN_WIDTH);
   hotspot.style.height = percentOf(building.height, LOGICAL_HEIGHT);
   if (panelId !== null) hotspot.addEventListener('click', () => onSelect(panelId));
+  if (building.opens === 'castle') hotspot.addEventListener('click', () => setInCastle(true));
   return hotspot;
 }
 
@@ -67,7 +70,7 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
 
   const refresh = (): void => {
     const state = store.getState();
-    overlay.style.display = focusedRunNumber() === null ? 'block' : 'none';
+    overlay.style.display = focusedRunNumber() === null && !isInCastle() ? 'block' : 'none';
     const hasNoHeroes = state.company.length === 0;
     const isReadyForFirstRun = !hasNoHeroes && state.runsStarted === 0;
 
@@ -97,6 +100,7 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
 
   store.subscribe(refresh);
   onRunFocusChange(refresh);
+  onCastleVisitChange(refresh);
   onLanguageChange(refresh);
   refresh();
   return { element: overlay, world };

@@ -7,6 +7,8 @@ export interface MaterialDefinition {
   tier: number;
   category: MaterialCategory;
   sellValueCopper: number;
+  width: number;
+  height: number;
   craftedItemPrefix?: string;
 }
 

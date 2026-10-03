@@ -6,7 +6,7 @@ import { t } from './i18n';
 
 const WEAPON_TABLE_STATS: readonly string[] = ['physicalDamage', 'magicalDamage', 'speed'];
 const DEFENCE_TABLE_STATS: readonly string[] = ['hp', 'defence', 'resistance'];
-const WEAPON_GEAR_TYPES: readonly GearType[] = ['sword', 'axe', 'mace', 'dagger', 'bow', 'staff', 'wand', 'quiver', 'tome'];
+const WEAPON_GEAR_TYPES: readonly GearType[] = ['sword', 'axe', 'greataxe', 'mace', 'maul', 'dagger', 'knuckles', 'bow', 'staff', 'wand', 'quiver', 'tome'];
 
 export function statName(stat: string): string {
   return t(`statname.${stat}`);
@@ -16,8 +16,9 @@ function tableStatsFor(gearType: GearType): readonly string[] {
   return WEAPON_GEAR_TYPES.includes(gearType) ? WEAPON_TABLE_STATS : DEFENCE_TABLE_STATS;
 }
 
+// A stat the item does not give shows 0, dimmed, so every item of a kind has the same rows and the same look.
 function tableRow(stat: string, value: string | undefined): HTMLElement {
-  return element('div', `stat-table-row${value === undefined ? ' empty' : ''}`, element('span', 'stat-name', statName(stat)), element('span', 'stat-value', value ?? '-'));
+  return element('div', `stat-table-row${value === undefined ? ' empty' : ''}`, element('span', 'stat-name', statName(stat)), element('span', 'stat-value', value ?? '0'));
 }
 
 // Every item shows the same table for its kind. Weapons: damage and speed. Everything else: health and defences.

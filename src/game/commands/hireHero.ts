@@ -2,10 +2,12 @@ import { createRandom } from '../../kernel/random';
 import type { ClassId } from '../../model/hero';
 import { hireCostForCompanySize } from '../../systems/economy';
 import { createHero } from '../../systems/heroes';
+import { isClassUnlocked } from '../classUnlocks';
 import { CommandRejected, type Command } from '../gameStore';
 
 export function hireHeroCommand(classId: ClassId): Command {
   return (state) => {
+    if (!isClassUnlocked(state, classId)) throw new CommandRejected('reject.classLocked');
     const cost = hireCostForCompanySize(state.company.length);
     if (cost === null) throw new CommandRejected('reject.companyFull');
     if (state.copper < cost) throw new CommandRejected('reject.notEnoughMoney');
