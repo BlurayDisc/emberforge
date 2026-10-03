@@ -1,1 +1,1 @@
-export { generateCraftedItem, type CraftedItemRequest } from './craftedItem';
+export { generateCraftedItem, previewBaseStatRanges, type CraftedItemRequest } from './craftedItem';

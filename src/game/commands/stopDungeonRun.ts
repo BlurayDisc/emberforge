@@ -1,10 +1,14 @@
 import { CommandRejected, type Command } from '../gameStore';
 import { findActiveRun } from '../runStatus';
-import { endDungeonRun } from './endDungeonRun';
 
+// Stopping a run drops the fight: no loot, no experience, no report.
 export function stopDungeonRunCommand(runNumber: number): Command {
   return (state) => {
-    if (!findActiveRun(state, runNumber)) throw new CommandRejected('reject.noActiveRun');
-    return endDungeonRun(state, runNumber, 'stopped');
+    const run = findActiveRun(state, runNumber);
+    if (!run) throw new CommandRejected('reject.noActiveRun');
+    return {
+      ...state,
+      dungeonRuns: state.dungeonRuns.filter((candidate) => candidate.runNumber !== runNumber),
+    };
   };
 }

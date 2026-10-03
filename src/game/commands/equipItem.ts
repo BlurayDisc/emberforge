@@ -19,7 +19,7 @@ function replaceHero(state: GameState, updatedHero: Hero): Hero[] {
   return state.company.map((hero) => (hero.id === updatedHero.id ? updatedHero : hero));
 }
 
-export function equipItemCommand(heroId: string, itemId: string): Command {
+export function equipItemCommand(heroId: string, itemId: string, slot?: EquipmentSlot): Command {
   return (state) => {
     const hero = requireEditableHero(state, heroId);
     const item = findItem(state.backpack, itemId);
@@ -27,7 +27,7 @@ export function equipItemCommand(heroId: string, itemId: string): Command {
     const problem = findEquipProblem(hero, item);
     if (problem !== null) throw new CommandRejected(problem.key, problem.params);
 
-    const { hero: equippedHero, replacedItem } = equipItem(hero, item);
+    const { hero: equippedHero, replacedItem } = equipItem(hero, item, slot);
     const backpackWithoutItem = removeItem(state.backpack, itemId);
     const finalBackpack = replacedItem ? addItem(backpackWithoutItem, replacedItem) : backpackWithoutItem;
     if (finalBackpack === null) throw new CommandRejected('reject.backpackFullForReplaced');

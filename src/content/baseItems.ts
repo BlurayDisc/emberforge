@@ -16,6 +16,9 @@ export interface BaseItemDefinition {
   mainCategory: MaterialCategory;
   secondaryCategory: MaterialCategory;
   baseStats: StatBonuses;
+  craftLevelOffset: number;
 }
 
 export const BASE_ITEMS = baseItemsData as unknown as readonly BaseItemDefinition[];
+
+export const PROFESSION_IDS: readonly ProfessionId[] = ['blacksmithing', 'fletching', 'woodworking', 'tailoring', 'jewelcrafting'];

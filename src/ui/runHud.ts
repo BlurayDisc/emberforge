@@ -1,96 +1,52 @@
 import { findActiveRun, stopDungeonRunCommand, type GameStore } from '../game';
-import type { EncounterResult } from '../model/gameState';
 import { actionButton, element } from './dom';
-import { createEncounterResultCard } from './encounterResultCard';
 import { onLanguageChange, t } from './i18n';
 import { focusRun, focusedRunNumber, onRunFocusChange } from './runFocus';
 
 const MAXIMUM_LOG_LINES = 6;
-const PLAYBACK_SPEEDS = [1, 2, 4] as const;
 
+// The run bar goes above the battlefield and the log below it, so nothing covers the picture on a small screen.
 export interface RunHud {
   element: HTMLElement;
+  logElement: HTMLElement;
   appendLogLine(text: string): void;
   clearLog(): void;
-  playbackSpeed(): number;
-  showResult(result: EncounterResult): void;
-  hideResult(): void;
 }
 
 export function createRunHud(store: GameStore): RunHud {
-  const root = element('div', 'hud-root');
-  const container = element('div', 'run-hud');
-  const resultSlot = element('div', 'result-slot');
+  const bar = element('div', 'run-bar');
   const title = element('div', 'hud-title');
-  const log = element('div', 'hud-log');
+  const log = element('div', 'battle-log');
   const stopButton = actionButton('', () => {
     const runNumber = focusedRunNumber();
     if (runNumber !== null) store.execute(stopDungeonRunCommand(runNumber));
-  });
+  }, { className: 'action-button danger' });
   const townButton = actionButton('', () => focusRun(null));
-  let speed: number = PLAYBACK_SPEEDS[0];
-  let shownResult: EncounterResult | null = null;
-
-  const speedButtons = PLAYBACK_SPEEDS.map((candidate) =>
-    actionButton(
-      `${candidate}x`,
-      () => {
-        speed = candidate;
-        refreshSpeedButtons();
-      },
-      { className: 'action-button small-button' },
-    ),
-  );
-  const refreshSpeedButtons = (): void => {
-    speedButtons.forEach((button, index) => button.classList.toggle('active', PLAYBACK_SPEEDS[index] === speed));
-  };
-
-  container.append(title, log, element('div', 'hud-controls', ...speedButtons, townButton, stopButton));
-  root.append(container, resultSlot);
-
-  const renderResult = (): void => {
-    resultSlot.replaceChildren();
-    if (shownResult) resultSlot.append(createEncounterResultCard(shownResult, store.getState().company));
-  };
+  bar.append(title, element('div', 'hud-controls', townButton, stopButton));
 
   const refresh = (): void => {
     const runNumber = focusedRunNumber();
     const run = runNumber === null ? undefined : findActiveRun(store.getState(), runNumber);
-    root.style.display = run ? 'block' : 'none';
-    if (!run) {
-      shownResult = null;
-      resultSlot.replaceChildren();
-      return;
-    }
-    title.textContent = t('hud.title', { name: t(`dungeon.${run.dungeonId}`), count: run.encountersWon });
+    bar.style.display = run ? 'flex' : 'none';
+    log.style.display = run ? 'block' : 'none';
+    if (!run) return;
+    title.textContent = t(`dungeon.${run.dungeonId}`);
     stopButton.textContent = t('dungeons.stop');
     townButton.textContent = t('hud.backToTown');
   };
 
   store.subscribe(refresh);
   onRunFocusChange(refresh);
-  onLanguageChange(() => {
-    refresh();
-    renderResult();
-  });
+  onLanguageChange(refresh);
   refresh();
-  refreshSpeedButtons();
 
   return {
-    element: root,
+    element: bar,
+    logElement: log,
     appendLogLine: (text) => {
       log.append(element('div', 'log-line', text));
       while (log.childElementCount > MAXIMUM_LOG_LINES) log.firstElementChild?.remove();
     },
     clearLog: () => log.replaceChildren(),
-    playbackSpeed: () => speed,
-    showResult: (result) => {
-      shownResult = result;
-      renderResult();
-    },
-    hideResult: () => {
-      shownResult = null;
-      resultSlot.replaceChildren();
-    },
   };
 }

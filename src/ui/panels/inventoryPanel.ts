@@ -10,7 +10,6 @@ import { heroDisplayName, itemDisplayName, materialName } from '../displayNames'
 import { describeRejection, t } from '../i18n';
 import { createItemIcon, createMaterialIcon } from '../iconArt';
 import { createItemCard } from '../itemText';
-import { createGoToHeroesButton, createRunSummaryCard } from '../runSummary';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
 interface SelectedPosition {
@@ -107,11 +106,7 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
   entries.forEach((entry) => grid.append(renderEntry(context, entry)));
 
   const selected = entries.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
-  const lastRun = context.store.getState().lastEndedRun;
   const body = element('div', 'panel-body');
-  if (lastRun) {
-    body.append(createRunSummaryCard(lastRun, [createGoToHeroesButton(context.openPanel)]));
-  }
   body.append(element('p', 'hint', t('inventory.hint')), grid, renderDetail(context, selected));
   return body;
 };

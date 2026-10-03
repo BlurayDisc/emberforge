@@ -2,8 +2,6 @@ import type { BackpackEntry } from './backpack';
 import type { Hero } from './hero';
 import type { MaterialStack } from './material';
 
-export type RunEndReason = 'stopped' | 'party-defeated' | 'party-weakened' | 'backpack-full';
-
 export interface HeroEncounterResult {
   heroId: string;
   damageDealt: number;
@@ -20,20 +18,28 @@ export interface EncounterResult {
   monsterIds: string[];
   copperGained: number;
   materials: MaterialStack[];
+  materialsLost: MaterialStack[];
   heroes: HeroEncounterResult[];
 }
 
+// A run is one fight in one dungeon. It ends when the fight ends and leaves a report.
 export interface DungeonRun {
+  runNumber: number;
   dungeonId: string;
   heroIds: string[];
+}
+
+// The notice of a finished run. It stays in state until the player reads it.
+export interface RunReport {
   runNumber: number;
-  encounterNumber: number;
-  status: 'active' | 'ended';
-  endReason: RunEndReason | null;
-  encountersWon: number;
-  copperGained: number;
-  materialsGained: MaterialStack[];
-  lastEncounter: EncounterResult | null;
+  dungeonId: string;
+  result: EncounterResult;
+  firstClear: boolean;
+}
+
+export interface CrafterProgress {
+  level: number;
+  experience: number;
 }
 
 export interface GameState {
@@ -47,5 +53,7 @@ export interface GameState {
   itemsCrafted: number;
   runsStarted: number;
   dungeonRuns: DungeonRun[];
-  lastEndedRun: DungeonRun | null;
+  reports: RunReport[];
+  clearedDungeonIds: string[];
+  crafters: Record<string, CrafterProgress>;
 }

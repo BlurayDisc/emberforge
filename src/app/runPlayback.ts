@@ -3,7 +3,7 @@ import { ARMOUR_HIT_SOUNDS, CLASS_ATTACK_SOUNDS, MONSTER_ATTACK_SOUNDS, MONSTER_
 import { CLASSES } from '../content/classes';
 import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
-import { finishEncounterCommand, findActiveRun, planNextEncounter, type GameStore } from '../game';
+import { completeRunCommand, findActiveRun, planNextEncounter, type GameStore } from '../game';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { ClassId } from '../model/hero';
 import type { BattleView } from '../render/battleView';
@@ -15,9 +15,7 @@ import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
 import type { RunHud } from '../ui/runHud';
 
 const MAXIMUM_FRAME_SECONDS = 0.1;
-const PAUSE_AFTER_ENCOUNTER_SECONDS = 1;
-const RESULT_DISPLAY_SECONDS = 3.5;
-const BACKGROUND_PAUSE_SECONDS = 1;
+const PAUSE_AFTER_FIGHT_SECONDS = 1.5;
 
 export interface SceneViews {
   battleView: BattleView;
@@ -31,7 +29,6 @@ interface EncounterPlayback {
   unitsById: ReadonlyMap<string, BattleUnit>;
   durationSeconds: number;
   partyWon: boolean;
-  fightNumber: number;
   nextEventIndex: number;
   elapsedSeconds: number;
   hasAnnouncedResult: boolean;
@@ -43,7 +40,6 @@ interface RunPlayer {
   runNumber: number;
   dungeonId: string;
   encounter: EncounterPlayback | null;
-  resultPauseRemainingSeconds: number;
 }
 
 function describeEvent(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>): string {
@@ -109,7 +105,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       return;
     }
     view.showUnits([...encounter.partyUnits, ...encounter.monsterUnits]);
-    hud.appendLogLine(t('log.fight', { number: encounter.fightNumber, monsters: listOf(encounter.monsterUnits.map((unit) => unitDisplayName(unit))) }));
+    hud.appendLogLine(t('log.fight', { monsters: listOf(encounter.monsterUnits.map((unit) => unitDisplayName(unit))) }));
     for (const event of encounter.events.slice(0, encounter.nextEventIndex)) {
       const target = encounter.unitsById.get(event.targetId);
       if (!target) continue;
@@ -131,7 +127,6 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       unitsById: new Map(units.map((unit) => [unit.id, unit])),
       durationSeconds: plan.report.durationSeconds,
       partyWon: plan.report.winner === 'party',
-      fightNumber: run.encounterNumber + 1,
       nextEventIndex: 0,
       elapsedSeconds: 0,
       hasAnnouncedResult: false,
@@ -162,42 +157,19 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     for (const runNumber of [...players.keys()]) if (!activeNumbers.has(runNumber)) players.delete(runNumber);
     for (const run of state.dungeonRuns) {
       if (players.has(run.runNumber)) continue;
-      players.set(run.runNumber, { runNumber: run.runNumber, dungeonId: run.dungeonId, encounter: null, resultPauseRemainingSeconds: 0 });
+      players.set(run.runNumber, { runNumber: run.runNumber, dungeonId: run.dungeonId, encounter: null });
       const isNewRunFromThisSession = hasLoaded && run.runNumber === state.runsStarted;
       if (isNewRunFromThisSession) focusRun(run.runNumber);
     }
     const focused = focusedRunNumber();
     if (focused !== null && !activeNumbers.has(focused)) focusRun(null);
     for (const player of players.values()) {
-      if (!player.encounter && player.resultPauseRemainingSeconds <= 0) beginEncounter(player);
+      if (!player.encounter) beginEncounter(player);
     }
     synchronizeScene();
   };
 
-  const finishEncounter = (player: RunPlayer): void => {
-    const wasFocused = focusedRunNumber() === player.runNumber;
-    player.encounter = null;
-    // Set the pause before the command runs: the command triggers reconcilePlayers, which must not start the next fight yet.
-    player.resultPauseRemainingSeconds = wasFocused ? RESULT_DISPLAY_SECONDS : BACKGROUND_PAUSE_SECONDS;
-    store.execute(finishEncounterCommand(player.runNumber));
-    const run = findActiveRun(store.getState(), player.runNumber);
-    if (run && wasFocused && run.lastEncounter) {
-      hud.showResult(run.lastEncounter);
-      if (run.lastEncounter.heroes.some((heroResult) => heroResult.reachedLevel !== null)) playSound('level-up', 0.4);
-    }
-    if (!run) player.resultPauseRemainingSeconds = 0;
-  };
-
   const advancePlayer = (player: RunPlayer, deltaSeconds: number): void => {
-    if (player.resultPauseRemainingSeconds > 0) {
-      player.resultPauseRemainingSeconds -= deltaSeconds;
-      if (player.resultPauseRemainingSeconds <= 0) {
-        player.resultPauseRemainingSeconds = 0;
-        if (focusedRunNumber() === player.runNumber) hud.hideResult();
-        beginEncounter(player);
-      }
-      return;
-    }
     const encounter = player.encounter;
     if (!encounter) return;
     encounter.elapsedSeconds += deltaSeconds;
@@ -209,16 +181,18 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     if (isFocused && !encounter.hasAnnouncedResult && encounter.elapsedSeconds >= encounter.durationSeconds) {
       encounter.hasAnnouncedResult = true;
       hud.appendLogLine(encounter.partyWon ? t('log.victory') : t('log.defeat'));
-      playSound(encounter.partyWon ? 'victory' : 'defeat-hero');
     }
-    if (encounter.elapsedSeconds >= encounter.durationSeconds + PAUSE_AFTER_ENCOUNTER_SECONDS) finishEncounter(player);
+    if (encounter.elapsedSeconds >= encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS) {
+      player.encounter = null;
+      store.execute(completeRunCommand(player.runNumber));
+    }
   };
 
   stage.onFrame((elapsedSeconds) => {
     // A hidden browser tab stops animation frames. The cap keeps a long gap from skipping whole fights.
     const frameSeconds = previousFrameSeconds === null ? 0 : Math.min(MAXIMUM_FRAME_SECONDS, elapsedSeconds - previousFrameSeconds);
     previousFrameSeconds = elapsedSeconds;
-    const deltaSeconds = frameSeconds * hud.playbackSpeed();
+    const deltaSeconds = frameSeconds;
     for (const player of [...players.values()]) advancePlayer(player, deltaSeconds);
   });
 

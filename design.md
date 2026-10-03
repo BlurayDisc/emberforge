@@ -107,8 +107,9 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 - **Quality odds** (Common / Magic / Rare): 55 / 35 / 10. With 1 Catalyst: 25 / 45 / 30.
 - **Enchanting actions:** Reroll the values of one affix. Add an affix (up to the quality limit). Reforge all affixes (needs a Catalyst).
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
-- Recipes of a tier unlock when the company reaches that town. The Workshop is in town.
-- **Merchant:** sells nothing yet. It buys items and materials. Item value = ingredient value × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)).
+- **Crafter levels:** each profession is a crafter with level 1-100 and XP. Every craft gives XP (more for higher recipes, less for recipes far below the crafter level). A recipe needs level (tier - 1) x 10 + the base item's offset. Locked recipes show the needed level.
+- The Workshop is in town. Click a recipe to see a big portrait and the stat ranges.
+- **Merchant:** has a Sell tab and a Buy tab. It buys items and materials. It sells materials at 4 times the sell price, so buying is a gold sink and not a profit loop. Item value = ingredient value × quality factor (1, 2, 4, 10) × (1 + 0.1 × (ilvl − 1)).
 - Enchanting is not built yet.
 
 ## 7. Backpack
@@ -172,8 +173,10 @@ Ten brackets. Each bracket has one town.
 - **Travel:** the army marker moves on the world map. Time = 2 s + 1 s per bracket crossed. Going back is always allowed. The next town opens when the player beats the boss of the current bracket.
 - **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
 - **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters.
-- **Run:** encounters repeat until the player stops the run, the party average HP drops below 30%, or the backpack is full. Heroes heal 30% of max HP between encounters. A town visit heals fully.
-- **Drops per kill:** gold; 1-2 main materials; a beast part (60%); an essence (15%). All are of the bracket tier.
+- **Run:** one run is one fight. The heroes heal fully after it. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
+- **Locks and levels:** each dungeon shows a recommended level range. Only the first dungeon is open. Clearing a dungeon opens the next.
+- **Drops per fight:** gold; at least 1 crafting material (guaranteed); each other drop rolls its own chance, so lucky fights give more. All are of the bracket tier.
+- **Hero training:** the tavern sells XP for gold. The cost per XP grows with the hero level.
 - **Sell value** = 10 × ilvl × quality factor (Common 1, Magic 2, Rare 4, Unique 10). Materials sell at a fixed price per tier.
 
 ## 10. Save
@@ -194,10 +197,10 @@ Ten brackets. Each bracket has one town.
 - **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
 - **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.
 - **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player picks the hero (1 for normal dungeons, up to 2 for bosses) and starts a run.
-- **Several runs:** the Dungeons panel shows a dungeon that is in use as "Under fight", with a fight icon, the hero names, fights won, and the buttons Watch battle and Stop run. Heroes that are away show "Away: dungeon" and cannot be chosen. The Dungeons button in the bar shows how many runs are active. Runs that are not watched still fight, loot and level up. The HUD button "Back to town" returns to the town while the runs go on.
+- **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Stop run. Locked dungeons show a lock and the dungeon to clear first.
 - **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
-- **After each fight:** a results card shows fight time, damage, damage per second, damage taken, XP, level-ups and the loot. The next fight starts after a short pause.
-- **After a run:** the Inventory opens with the run summary and loot. The button "Equip gear (Heroes)" opens Heroes. In Heroes, the Stats tab shows the portrait, attributes, Power and the battle record. The Items tab shows the slots and the backpack items that the hero can equip.
+- **After a run:** a notification appears. Click it to read the report: result, damage, XP, level-ups and loot. Buttons are large for touch.
+- **Heroes:** the Stats tab shows the portrait, attributes, Power and the battle record. The Equipment tab shows a paper doll with slots around the portrait. Click a slot: Equip new item (side by side compare, green for better, red for worse), View item (big portrait and stats) or Unequip.
 - **Sound:** all sound is made in the browser, so the game has no sound files. A music track plays for the town, for battles and for bosses. Combat sounds depend on who hits: a hero attack is the weapon plus the monster cry; a monster attack is its strike plus a hit on the armour of the hero (heavy metal clang, medium leather thud, light cloth thump). There are sounds for criticals, heals, defeats, victory, level-up and button clicks. The Settings screen has music volume, effects volume and mute. Music and sound recipes are in `data/audio/`.
 - **Reset:** the Settings screen has a red Danger zone with RESET GAME. It needs a second click to confirm.
 - **Style:** pixel art, wood and parchment menus, blackletter titles (Jacquard 12), pixel text (Pixelify Sans).

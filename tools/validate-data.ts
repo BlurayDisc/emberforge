@@ -30,6 +30,9 @@ interface Monster extends Identified {
 }
 interface Dungeon extends Identified {
   name: string;
+  unlockAfter: string | null;
+  recommendedMinLevel: number;
+  recommendedMaxLevel: number;
   maxPartySize: number;
   townId: string;
   level: number;
@@ -45,6 +48,7 @@ interface Town extends Identified {
 }
 interface BaseItem extends Identified {
   name: string;
+  craftLevelOffset: number;
   mainCategory: string;
   secondaryCategory: string;
   gearType: string;
@@ -158,6 +162,8 @@ for (const dungeon of dungeons) {
       }
     }
   }
+  if (dungeon.unlockAfter !== null && !dungeons.some((other) => other.id === dungeon.unlockAfter)) report(`dungeons.json: '${dungeon.id}' unlocks after unknown dungeon '${dungeon.unlockAfter}'`);
+  if (dungeon.recommendedMinLevel > dungeon.recommendedMaxLevel) report(`dungeons.json: '${dungeon.id}' has a bad recommended level range`);
   if (dungeon.maxPartySize < 1) report(`dungeons.json: '${dungeon.id}' needs maxPartySize of at least 1`);
   if (dungeon.bossMonsterId && dungeon.maxPartySize !== 2) report(`dungeons.json: boss dungeon '${dungeon.id}' must have maxPartySize 2`);
   if (!dungeon.bossMonsterId && dungeon.maxPartySize !== 1) report(`dungeons.json: normal dungeon '${dungeon.id}' must have maxPartySize 1`);
@@ -168,6 +174,7 @@ for (const dungeon of dungeons) {
 const tiersWithMaterials = [...new Set(materials.map((material) => material.tier))];
 for (const base of baseItems) {
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
+  if (base.craftLevelOffset < 1 || base.craftLevelOffset > itemBalance.levelsPerBracket) report(`base-items.json: '${base.id}' needs a craftLevelOffset from 1 to ${itemBalance.levelsPerBracket}`);
   if (base.width < 1 || base.height < 1) report(`base-items.json: '${base.id}' has an invalid size`);
   for (const tier of tiersWithMaterials) {
     for (const category of [base.mainCategory, base.secondaryCategory]) {
@@ -250,6 +257,11 @@ function checkAudio(): void {
 }
 
 checkAudio();
+
+for (const town of townsFile.towns) {
+  const townDungeons = dungeons.filter((dungeon) => dungeon.townId === town.id);
+  if (townDungeons.length > 0 && townDungeons.filter((dungeon) => dungeon.unlockAfter === null).length !== 1) report(`dungeons.json: town '${town.id}' must have exactly one dungeon that is open from the start`);
+}
 
 function checkTranslations(): void {
   const english = translationsByLanguage.en;

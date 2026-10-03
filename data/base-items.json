@@ -9,8 +9,12 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "fang",
-    "baseStats": { "strength": 6, "skill": 1 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 6,
+      "skill": 1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 3
   },
   {
     "id": "axe",
@@ -22,8 +26,11 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "fang",
-    "baseStats": { "strength": 8 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 8
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 5
   },
   {
     "id": "mace",
@@ -35,8 +42,13 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "bone",
-    "baseStats": { "strength": 5, "magic": 2, "resistance": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 5,
+      "magic": 2,
+      "resistance": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 6
   },
   {
     "id": "dagger",
@@ -48,8 +60,13 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "fang",
-    "baseStats": { "strength": 4, "speed": 4, "skill": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 4,
+      "speed": 4,
+      "skill": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
   },
   {
     "id": "bow",
@@ -61,8 +78,12 @@
     "profession": "fletching",
     "mainCategory": "wood",
     "secondaryCategory": "sinew",
-    "baseStats": { "strength": 6, "skill": 3 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 6,
+      "skill": 3
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 4
   },
   {
     "id": "staff",
@@ -74,8 +95,11 @@
     "profession": "woodworking",
     "mainCategory": "wood",
     "secondaryCategory": "bone",
-    "baseStats": { "magic": 8 },
-    "armourWeight": null
+    "baseStats": {
+      "magic": 8
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 4
   },
   {
     "id": "wand",
@@ -87,8 +111,12 @@
     "profession": "woodworking",
     "mainCategory": "wood",
     "secondaryCategory": "bone",
-    "baseStats": { "magic": 5, "speed": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "magic": 5,
+      "speed": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
   },
   {
     "id": "shield",
@@ -100,8 +128,12 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "bone",
-    "baseStats": { "defence": 4, "resistance": 1 },
-    "armourWeight": null
+    "baseStats": {
+      "defence": 4,
+      "resistance": 1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 8
   },
   {
     "id": "quiver",
@@ -113,8 +145,12 @@
     "profession": "fletching",
     "mainCategory": "wood",
     "secondaryCategory": "sinew",
-    "baseStats": { "strength": 2, "skill": 3 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 2,
+      "skill": 3
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
   },
   {
     "id": "tome",
@@ -126,8 +162,12 @@
     "profession": "tailoring",
     "mainCategory": "cloth",
     "secondaryCategory": "sinew",
-    "baseStats": { "magic": 3, "resistance": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "magic": 3,
+      "resistance": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 8
   },
   {
     "id": "parrying-dagger",
@@ -139,8 +179,13 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "fang",
-    "baseStats": { "strength": 2, "skill": 2, "speed": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "strength": 2,
+      "skill": 2,
+      "speed": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 4
   },
   {
     "id": "belt",
@@ -152,8 +197,12 @@
     "profession": "tailoring",
     "mainCategory": "hide",
     "secondaryCategory": "sinew",
-    "baseStats": { "hp": 6, "defence": 1 },
-    "armourWeight": null
+    "baseStats": {
+      "hp": 6,
+      "defence": 1
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
   },
   {
     "id": "ring",
@@ -165,8 +214,12 @@
     "profession": "jewelcrafting",
     "mainCategory": "gem",
     "secondaryCategory": "ore",
-    "baseStats": { "skill": 2, "hp": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "skill": 2,
+      "hp": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 1
   },
   {
     "id": "amulet",
@@ -178,8 +231,12 @@
     "profession": "jewelcrafting",
     "mainCategory": "gem",
     "secondaryCategory": "ore",
-    "baseStats": { "hp": 4, "resistance": 2 },
-    "armourWeight": null
+    "baseStats": {
+      "hp": 4,
+      "resistance": 2
+    },
+    "armourWeight": null,
+    "craftLevelOffset": 4
   },
   {
     "id": "helm-heavy",
@@ -192,7 +249,12 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "bone",
-    "baseStats": { "defence": 3, "resistance": 1, "hp": 4 }
+    "baseStats": {
+      "defence": 3,
+      "resistance": 1,
+      "hp": 4
+    },
+    "craftLevelOffset": 5
   },
   {
     "id": "helm-medium",
@@ -205,7 +267,12 @@
     "profession": "tailoring",
     "mainCategory": "hide",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 2, "resistance": 2, "hp": 4 }
+    "baseStats": {
+      "defence": 2,
+      "resistance": 2,
+      "hp": 4
+    },
+    "craftLevelOffset": 2
   },
   {
     "id": "helm-light",
@@ -218,7 +285,12 @@
     "profession": "tailoring",
     "mainCategory": "cloth",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 1, "resistance": 3, "hp": 4 }
+    "baseStats": {
+      "defence": 1,
+      "resistance": 3,
+      "hp": 4
+    },
+    "craftLevelOffset": 3
   },
   {
     "id": "armour-heavy",
@@ -231,7 +303,12 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "bone",
-    "baseStats": { "defence": 6, "resistance": 2, "hp": 10 }
+    "baseStats": {
+      "defence": 6,
+      "resistance": 2,
+      "hp": 10
+    },
+    "craftLevelOffset": 9
   },
   {
     "id": "armour-medium",
@@ -244,7 +321,12 @@
     "profession": "tailoring",
     "mainCategory": "hide",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 4, "resistance": 3, "hp": 10 }
+    "baseStats": {
+      "defence": 4,
+      "resistance": 3,
+      "hp": 10
+    },
+    "craftLevelOffset": 6
   },
   {
     "id": "armour-light",
@@ -257,7 +339,12 @@
     "profession": "tailoring",
     "mainCategory": "cloth",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 2, "resistance": 6, "hp": 10 }
+    "baseStats": {
+      "defence": 2,
+      "resistance": 6,
+      "hp": 10
+    },
+    "craftLevelOffset": 7
   },
   {
     "id": "gloves-heavy",
@@ -270,7 +357,12 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "bone",
-    "baseStats": { "defence": 2, "resistance": 1, "skill": 1 }
+    "baseStats": {
+      "defence": 2,
+      "resistance": 1,
+      "skill": 1
+    },
+    "craftLevelOffset": 6
   },
   {
     "id": "gloves-medium",
@@ -283,7 +375,12 @@
     "profession": "tailoring",
     "mainCategory": "hide",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 1, "resistance": 1, "skill": 1 }
+    "baseStats": {
+      "defence": 1,
+      "resistance": 1,
+      "skill": 1
+    },
+    "craftLevelOffset": 3
   },
   {
     "id": "gloves-light",
@@ -296,7 +393,12 @@
     "profession": "tailoring",
     "mainCategory": "cloth",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 1, "resistance": 2, "skill": 1 }
+    "baseStats": {
+      "defence": 1,
+      "resistance": 2,
+      "skill": 1
+    },
+    "craftLevelOffset": 4
   },
   {
     "id": "boots-heavy",
@@ -309,7 +411,12 @@
     "profession": "blacksmithing",
     "mainCategory": "ore",
     "secondaryCategory": "bone",
-    "baseStats": { "defence": 2, "resistance": 1, "speed": 1 }
+    "baseStats": {
+      "defence": 2,
+      "resistance": 1,
+      "speed": 1
+    },
+    "craftLevelOffset": 7
   },
   {
     "id": "boots-medium",
@@ -322,7 +429,12 @@
     "profession": "tailoring",
     "mainCategory": "hide",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 1, "resistance": 1, "speed": 1 }
+    "baseStats": {
+      "defence": 1,
+      "resistance": 1,
+      "speed": 1
+    },
+    "craftLevelOffset": 4
   },
   {
     "id": "boots-light",
@@ -335,6 +447,11 @@
     "profession": "tailoring",
     "mainCategory": "cloth",
     "secondaryCategory": "sinew",
-    "baseStats": { "defence": 1, "resistance": 2, "speed": 1 }
+    "baseStats": {
+      "defence": 1,
+      "resistance": 2,
+      "speed": 1
+    },
+    "craftLevelOffset": 5
   }
 ]

@@ -7,6 +7,8 @@ import { createTownView } from '../render/townView';
 import { createBottomBar } from '../ui/bottomBar';
 import { element } from '../ui/dom';
 import { createPanelHost } from '../ui/panelHost';
+import { getModalHost } from '../ui/modal';
+import { createNotificationCenter } from '../ui/notifications';
 import { createRunHud } from '../ui/runHud';
 import { createTownOverlay } from '../ui/townOverlay';
 import { startFlowController } from './flowController';
@@ -15,12 +17,12 @@ import { startRunPlayback } from './runPlayback';
 export function mountApp(root: HTMLElement, store: GameStore): void {
   const canvasHost = element('div', 'stage-canvas-host');
   const panelHost = createPanelHost(store);
-  const stageArea = element('div', 'stage-area', canvasHost, panelHost.element);
+  const hud = createRunHud(store);
+  const stageArea = element('div', 'stage-area', hud.element, canvasHost, hud.logElement, panelHost.element, getModalHost(), createNotificationCenter(store));
   root.replaceChildren(stageArea, createBottomBar(store, panelHost));
 
   const stage = createPixelStage(canvasHost);
-  const hud = createRunHud(store);
-  stage.overlay.append(createTownOverlay(store, (panelId) => panelHost.open(panelId)), hud.element);
+  stage.overlay.append(createTownOverlay(store, (panelId) => panelHost.open(panelId)));
 
   const battleView = createBattleView(stage);
   const townView = createTownView(stage, BUILDINGS);

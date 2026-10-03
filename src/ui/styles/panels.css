@@ -320,3 +320,178 @@
   color: #ff8a7a;
   font-weight: 700;
 }
+
+.modal-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.item-portrait {
+  flex: none;
+  padding: 14px;
+  background: var(--wood-900);
+  box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--wood-700);
+}
+
+.item-portrait.quality-border-magic { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-magic); }
+.item-portrait.quality-border-rare { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-rare); }
+.item-portrait.quality-border-unique { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-unique); }
+
+.list-row.clickable .row-art,
+.list-row.clickable .row-body {
+  cursor: pointer;
+}
+
+.level-ok { color: var(--green); }
+.level-low,
+.locked-note { color: #ff8a7a; }
+
+.crafter-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paperdoll {
+  display: grid;
+  grid-template-columns: 84px 1fr 84px;
+  grid-template-rows: repeat(5, 84px);
+  grid-template-areas:
+    'helm portrait amulet'
+    'gloves portrait belt'
+    'mainHand portrait offHand'
+    'ringOne portrait ringTwo'
+    'boots armour .';
+  gap: 8px;
+  justify-items: center;
+  align-items: center;
+}
+
+.doll-portrait {
+  align-self: center;
+}
+
+.slot-box {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font: inherit;
+  color: var(--parchment);
+  background: var(--wood-900);
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px var(--ink), inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--wood-700);
+}
+
+.slot-box.quality-border-magic { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-magic); }
+.slot-box.quality-border-rare { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-rare); }
+.slot-box.quality-border-unique { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-unique); }
+.slot-box:hover { background: var(--wood-700); }
+
+.slot-empty {
+  font-size: 12px;
+  color: var(--wood-500);
+  text-align: center;
+}
+
+.slot-caption {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  font-size: 11px;
+  text-align: center;
+  color: var(--parchment-dim);
+}
+
+.slot-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.chooser {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 2fr;
+  gap: 12px;
+}
+
+.chooser-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.chooser-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 8px;
+  cursor: pointer;
+  background: var(--leather);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.chooser-row.selected { background: var(--wood-700); box-shadow: 0 0 0 2px var(--gold); }
+.chooser-row.disabled { opacity: 0.55; }
+
+.chooser-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compare-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.compare-card .item-card {
+  min-width: 0;
+}
+
+.compare-row {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr 0.3fr 0.7fr 0.8fr;
+  gap: 4px;
+  padding: 2px 0;
+  border-bottom: 2px solid var(--wood-800);
+}
+
+.delta { font-weight: 700; }
+.delta-up { color: #6adf6a; }
+.delta-down { color: #ff6a5a; }
+.delta-same { color: var(--parchment-dim); }
+
+@media (max-width: 640px) {
+  .chooser,
+  .compare-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .paperdoll {
+    grid-template-columns: 64px 1fr 64px;
+    grid-template-rows: repeat(5, 64px);
+  }
+
+  .slot-box {
+    width: 64px;
+    height: 64px;
+  }
+
+  .doll-portrait img {
+    width: 120px;
+    height: 120px;
+  }
+}

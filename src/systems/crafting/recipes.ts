@@ -1,6 +1,7 @@
-import { BASE_ITEMS, type BaseItemDefinition } from '../../content/baseItems';
+import { BASE_ITEMS, type BaseItemDefinition, type ProfessionId } from '../../content/baseItems';
 import {
   LARGE_ITEM_CELL_THRESHOLD,
+  LEVELS_PER_BRACKET,
   MAIN_INGREDIENT_CELLS_PER_UNIT,
   SECONDARY_INGREDIENT_LARGE_ITEM,
   SECONDARY_INGREDIENT_SMALL_ITEM,
@@ -16,6 +17,8 @@ export interface RecipeIngredient {
 export interface Recipe {
   baseId: string;
   tier: number;
+  profession: ProfessionId;
+  requiredCraftLevel: number;
   ingredients: RecipeIngredient[];
 }
 
@@ -35,6 +38,8 @@ function createRecipe(base: BaseItemDefinition, tier: number): Recipe | null {
   return {
     baseId: base.id,
     tier,
+    profession: base.profession,
+    requiredCraftLevel: (tier - 1) * LEVELS_PER_BRACKET + base.craftLevelOffset,
     ingredients: [
       { materialId: mainMaterial.id, quantity: mainQuantity },
       { materialId: secondaryMaterial.id, quantity: secondaryQuantity },

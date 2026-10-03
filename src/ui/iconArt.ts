@@ -122,6 +122,12 @@ function crossedSwordsRows(): string[] {
   });
 }
 
+const LOCK_ROWS: Rows = ['............', '....oooo....', '...oSSSSo...', '...oS..So...', '...oS..So...', '..oooooooo..', '..oggggggo..', '..oggooggo..', '..oggooggo..', '..oggggggo..', '..oooooooo..', '............'];
+
+export function createLockIcon(scale = 3): HTMLImageElement {
+  return cachedImage('lock', scale, LOCK_ROWS, BASE_LEGEND);
+}
+
 export function createFightIcon(scale = 2): HTMLImageElement {
   return cachedImage('fight', scale, crossedSwordsRows(), BASE_LEGEND);
 }

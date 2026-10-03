@@ -2,6 +2,7 @@ import { requireById } from '../content/lookup';
 import { MATERIALS } from '../content/materials';
 import type { EncounterResult } from '../model/gameState';
 import type { Hero } from '../model/hero';
+import type { MaterialStack } from '../model/material';
 import { element } from './dom';
 import { className, heroDisplayName, listOf, materialName } from './displayNames';
 import { t } from './i18n';
@@ -31,28 +32,31 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
   return row;
 }
 
-function createLootRow(result: EncounterResult): HTMLElement {
-  const loot = element('div', 'result-loot');
-  if (result.copperGained === 0 && result.materials.length === 0) return element('div', 'card-text small', t('result.noLoot'));
-  loot.append(createMoneyDisplay(result.copperGained));
-  for (const stack of result.materials) {
+function createStackChips(stacks: readonly MaterialStack[]): HTMLElement[] {
+  return stacks.map((stack) => {
     const material = requireById(MATERIALS, stack.materialId);
-    loot.append(element('span', 'loot-chip', createMaterialIcon(material.id, material.category, 2), `${materialName(material.id)} x${stack.quantity}`));
-  }
-  return loot;
+    return element('span', 'loot-chip', createMaterialIcon(material.id, material.category, 2), `${materialName(material.id)} x${stack.quantity}`);
+  });
 }
 
 export function createEncounterResultCard(result: EncounterResult, company: readonly Hero[]): HTMLElement {
   const heroRows = result.heroes.map((heroResult) =>
     createHeroResultRow(heroResult, company.find((hero) => hero.id === heroResult.heroId), result.durationSeconds),
   );
-  return element(
+  const loot = element('div', 'result-loot');
+  if (result.copperGained === 0 && result.materials.length === 0) loot.append(element('span', 'card-text small', t('result.noLoot')));
+  else loot.append(createMoneyDisplay(result.copperGained), ...createStackChips(result.materials));
+  const card = element(
     'div',
     'result-card',
     element('div', 'result-title', result.won ? t('result.victory') : t('result.defeat')),
     element('div', 'card-text small', t('result.time', { seconds: formatNumber(result.durationSeconds), monsters: listOf(result.monsterIds.map((id) => t(`monster.${id}`))) })),
     ...heroRows,
     element('div', 'section-title', t('result.loot')),
-    createLootRow(result),
+    loot,
   );
+  if (result.materialsLost.length > 0) {
+    card.append(element('div', 'danger-text', t('report.materialsLost', { list: listOf(result.materialsLost.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`)) })));
+  }
+  return card;
 }

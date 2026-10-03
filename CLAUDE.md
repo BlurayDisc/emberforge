@@ -77,12 +77,15 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - Only the watched run makes combat sound. Runs in the background are silent.
 - Volumes are saved apart from the game save (`emberforge.settings`).
 
-## Several runs at once
+## Runs, reports and crafters
 
-- A dungeon hosts one run. A hero is in one run. `state.dungeonRuns` holds the active runs. `state.lastEndedRun` holds the newest ended run for the summary.
-- Every run command takes the run number: `finishEncounterCommand(runNumber)`, `stopDungeonRunCommand(runNumber)`.
-- `app/runPlayback.ts` keeps one player for each run. All players advance. Only the run in focus (`ui/runFocus.ts`) draws on the stage.
-- Ending a run heals only the heroes of that run.
+- A run is one fight. A dungeon hosts one run. A hero is in one run. `state.dungeonRuns` holds the active runs.
+- Every run command takes the run number: `completeRunCommand(runNumber)`, `stopDungeonRunCommand(runNumber)`. Completion re-plans the same seeded fight, so the result matches the screen. It heals the heroes, rolls loot, adds a report to `state.reports` and clears the dungeon on the first win.
+- `app/runPlayback.ts` keeps one player for each run. Only the run in focus (`ui/runFocus.ts`) draws on the stage. Reports stay until the player reads them (`ui/notifications.ts`).
+- Dungeons are locked until the one in `unlockAfter` is cleared. Recipes are locked by crafter level (`state.crafters`, level 1-100). Every craft gives crafting XP.
+- Gold sinks: merchant Buy tab and tavern hero training. Numbers are in `data/balance/economy.json`.
+- Item and recipe details open in modals (`ui/modal.ts`, `ui/itemModals.ts`). The hero equipment screen is `ui/panels/heroes/equipmentScreen.ts`.
+- Layout is mobile first: the run bar is above the battlefield and the battle log is below it.
 
 ## Languages (English and Chinese)
 

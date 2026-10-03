@@ -87,3 +87,16 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
     sellValueCopper: computeSellValue(request.ingredientValueCopper, quality, itemLevel),
   };
 }
+
+export function previewBaseStatRanges(baseId: string, tier: number, maximumItemLevel: number): Record<string, [number, number]> {
+  const base = requireById(BASE_ITEMS, baseId);
+  const bracketStart = (tier - 1) * LEVELS_PER_BRACKET + 1;
+  const highestLevel = clamp(maximumItemLevel, bracketStart, tier * LEVELS_PER_BRACKET);
+  const ranges: Record<string, [number, number]> = {};
+  for (const [stat, value] of Object.entries(base.baseStats) as Array<[string, number]>) {
+    const lowest = value * (1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (bracketStart - 1)) * (1 - BASE_STAT_SPREAD_FRACTION);
+    const highest = value * (1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (highestLevel - 1)) * (1 + BASE_STAT_SPREAD_FRACTION);
+    ranges[stat] = [Math.max(1, Math.round(lowest)), Math.max(1, Math.round(highest))];
+  }
+  return ranges;
+}

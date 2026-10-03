@@ -15,7 +15,7 @@ export interface PlannedEncounter {
 }
 
 export function encounterRandomFor(state: GameState, run: DungeonRun): Random {
-  return createRandom(state.seed).fork(`run-${run.runNumber}`).fork(`encounter-${run.encounterNumber}`);
+  return createRandom(state.seed).fork(`run-${run.runNumber}`);
 }
 
 export function planNextEncounter(state: GameState, runNumber: number): PlannedEncounter {

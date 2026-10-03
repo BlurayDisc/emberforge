@@ -18,7 +18,7 @@ All game data lives in these JSON files. The game loads them through `src/conten
 | `audio/music.json` | Music tracks (town, battle, boss): tempo and note strings for each voice |
 | `audio/sound-effects.json` | Sound recipes (layers of tones and noise) and which sound each class, monster and armour type uses |
 | `i18n/en.json`, `i18n/zh.json` | All player text and content names, one flat key per text. `languages.json` lists the languages. |
-| `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring), dungeon runs, monster scaling, backpack, item generation |
+| `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring, buying, training), crafting levels, dungeon runs, monster scaling, backpack, item generation |
 
 Rules:
 - Ids are stable strings. Other files refer to them.

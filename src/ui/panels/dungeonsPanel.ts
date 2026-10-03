@@ -1,11 +1,12 @@
 import { DUNGEONS, type DungeonDefinition } from '../../content/dungeons';
-import { activeRunsOf, runInDungeon, runOfHero, startDungeonRunCommand, stopDungeonRunCommand } from '../../game';
+import { requireById } from '../../content/lookup';
+import { isDungeonUnlocked, runInDungeon, runOfHero, startDungeonRunCommand, stopDungeonRunCommand } from '../../game';
 import type { DungeonRun } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
 import { actionButton, element, percentBar } from '../dom';
 import { className, heroDisplayName, listOf } from '../displayNames';
 import { describeRejection, t } from '../i18n';
-import { createDungeonIcon, createFightIcon } from '../iconArt';
+import { createDungeonIcon, createFightIcon, createLockIcon } from '../iconArt';
 import { createList, createListRow } from '../listRow';
 import { createPortrait } from '../portraitArt';
 import { focusRun } from '../runFocus';
@@ -39,7 +40,6 @@ function start(context: PanelContext, dungeonId: string): void {
 
 function renderHeroChoice(context: PanelContext, hero: Hero): HTMLElement {
   const run = runOfHero(context.store.getState(), hero.id);
-  const isSelected = selectedHeroIds.includes(hero.id);
   const status = run
     ? element('div', 'card-text small busy-note', t('heroes.awayIn', { dungeon: t(`dungeon.${run.dungeonId}`) }))
     : percentBar(hero.healthFraction, 'bar-health');
@@ -47,7 +47,7 @@ function renderHeroChoice(context: PanelContext, hero: Hero): HTMLElement {
     art: createPortrait(hero.classId, hero.name, 2),
     title: heroDisplayName(hero.name),
     lines: [element('div', 'card-text small', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })), status],
-    className: `hero-choice${isSelected ? ' selected' : ''}${run ? ' busy' : ''}`,
+    className: `hero-choice${selectedHeroIds.includes(hero.id) ? ' selected' : ''}${run ? ' busy' : ''}`,
   });
   if (!run) {
     entry.addEventListener('click', () => {
@@ -58,19 +58,36 @@ function renderHeroChoice(context: PanelContext, hero: Hero): HTMLElement {
   return entry;
 }
 
-function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
-  const title = t('dungeons.title', {
-    name: t(`dungeon.${dungeon.id}`),
-    boss: dungeon.bossMonsterId ? t('dungeons.bossTag') : '',
-    level: dungeon.level,
+function dungeonTitle(dungeon: DungeonDefinition): string {
+  return t('dungeons.title', { name: t(`dungeon.${dungeon.id}`), boss: dungeon.bossMonsterId ? t('dungeons.bossTag') : '', level: dungeon.level });
+}
+
+function levelRangeLine(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
+  const highestHeroLevel = context.store.getState().company.reduce((highest, hero) => Math.max(highest, hero.level), 0);
+  const className = highestHeroLevel >= dungeon.recommendedMinLevel ? 'level-ok' : 'level-low';
+  return element('div', `card-text small ${className}`, t('dungeons.recommended', { min: dungeon.recommendedMinLevel, max: dungeon.recommendedMaxLevel }));
+}
+
+function renderLockedDungeon(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
+  const before = dungeon.unlockAfter ? t(`dungeon.${requireById(DUNGEONS, dungeon.unlockAfter).id}`) : '';
+  return createListRow({
+    art: createLockIcon(3),
+    title: dungeonTitle(dungeon),
+    lines: [levelRangeLine(context, dungeon), element('div', 'card-text small locked-note', t('dungeons.locked', { dungeon: before }))],
+    className: 'locked',
   });
+}
+
+function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
+  const isCleared = context.store.getState().clearedDungeonIds.includes(dungeon.id);
   const hasValidSelection = selectedHeroIds.length > 0 && selectedHeroIds.length <= dungeon.maxPartySize;
   return createListRow({
     art: createDungeonIcon(dungeon.id, 3),
-    title,
+    title: dungeonTitle(dungeon),
     lines: [
       element('div', 'card-text', monsterNamesOf(dungeon)),
-      element('div', 'card-text small', t('dungeons.maxHeroes', { max: dungeon.maxPartySize })),
+      levelRangeLine(context, dungeon),
+      element('div', 'card-text small', `${t('dungeons.maxHeroes', { max: dungeon.maxPartySize })}${isCleared ? ` | ${t('dungeons.cleared')}` : ''}`),
     ],
     actions: [actionButton(t('dungeons.start'), () => start(context, dungeon.id), { disabled: !hasValidSelection })],
   });
@@ -82,15 +99,10 @@ function renderBusyDungeon(context: PanelContext, dungeon: DungeonDefinition, ru
     const hero = state.company.find((candidate) => candidate.id === heroId);
     return hero ? [heroDisplayName(hero.name)] : [];
   });
-  const art = element('div', 'fight-art', createDungeonIcon(dungeon.id, 3), element('span', 'fight-badge', createFightIcon(2)));
   return createListRow({
-    art,
-    title: t('dungeons.title', { name: t(`dungeon.${dungeon.id}`), boss: dungeon.bossMonsterId ? t('dungeons.bossTag') : '', level: dungeon.level }),
-    lines: [
-      element('div', 'fight-status', t('dungeons.underFight')),
-      element('div', 'card-text small', t('dungeons.fightingHeroes', { heroes: listOf(heroNames) })),
-      element('div', 'card-text small', t('run.fightsWon', { count: run.encountersWon })),
-    ],
+    art: element('div', 'fight-art', createDungeonIcon(dungeon.id, 3), element('span', 'fight-badge', createFightIcon(2))),
+    title: dungeonTitle(dungeon),
+    lines: [element('div', 'fight-status', t('dungeons.underFight')), element('div', 'card-text small', t('dungeons.fightingHeroes', { heroes: listOf(heroNames) }))],
     actions: [
       actionButton(t('dungeons.watch'), () => {
         focusRun(run.runNumber);
@@ -112,20 +124,18 @@ export const renderDungeonsPanel: PanelRenderer = (context) => {
   if (state.company.length === 0) {
     body.append(element('p', 'hint', t('dungeons.noHeroes')));
   } else {
-    body.append(
-      element('div', 'section-title', t('dungeons.pickHero')),
-      createList(...state.company.map((hero) => renderHeroChoice(context, hero))),
-    );
+    body.append(element('div', 'section-title', t('dungeons.pickHero')), createList(...state.company.map((hero) => renderHeroChoice(context, hero))));
   }
   const dungeons = DUNGEONS.filter((dungeon) => dungeon.townId === state.townId);
   body.append(
+    element('p', 'hint', t('dungeons.oneFightHint')),
     createList(
       ...dungeons.map((dungeon) => {
         const run = runInDungeon(state, dungeon.id);
-        return run ? renderBusyDungeon(context, dungeon, run) : renderFreeDungeon(context, dungeon);
+        if (run) return renderBusyDungeon(context, dungeon, run);
+        return isDungeonUnlocked(state, dungeon) ? renderFreeDungeon(context, dungeon) : renderLockedDungeon(context, dungeon);
       }),
     ),
   );
-  if (activeRunsOf(state).length > 0) body.append(element('p', 'hint', t('dungeons.multitaskHint')));
   return body;
 };

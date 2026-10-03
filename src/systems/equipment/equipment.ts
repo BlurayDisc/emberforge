@@ -28,13 +28,18 @@ export function findEquipProblem(hero: Hero, item: Item): EquipProblem | null {
   return null;
 }
 
-function chooseSlot(hero: Hero, item: Item): EquipmentSlot {
+export function slotsForItem(item: Item): EquipmentSlot[] {
+  return item.slot === 'ring' ? ['ringOne', 'ringTwo'] : [item.slot];
+}
+
+function chooseSlot(hero: Hero, item: Item, requestedSlot?: EquipmentSlot): EquipmentSlot {
+  if (requestedSlot && slotsForItem(item).includes(requestedSlot)) return requestedSlot;
   if (item.slot !== 'ring') return item.slot;
   return hero.equipment.ringOne && !hero.equipment.ringTwo ? 'ringTwo' : 'ringOne';
 }
 
-export function equipItem(hero: Hero, item: Item): EquipResult {
-  const slot = chooseSlot(hero, item);
+export function equipItem(hero: Hero, item: Item, requestedSlot?: EquipmentSlot): EquipResult {
+  const slot = chooseSlot(hero, item, requestedSlot);
   return {
     hero: { ...hero, equipment: { ...hero.equipment, [slot]: item } },
     replacedItem: hero.equipment[slot] ?? null,

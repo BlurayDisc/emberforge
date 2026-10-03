@@ -8,6 +8,9 @@ export interface DungeonDefinition {
   rareMonsterId: string | null;
   bossMonsterId: string | null;
   maxPartySize: number;
+  recommendedMinLevel: number;
+  recommendedMaxLevel: number;
+  unlockAfter: string | null;
 }
 
 export const DUNGEONS = dungeonsData as unknown as readonly DungeonDefinition[];

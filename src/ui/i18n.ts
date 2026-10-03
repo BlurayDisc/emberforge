@@ -35,6 +35,7 @@ function fillPlaceholders(template: string, params: MessageParams): string {
 function withDerivedParams(params: MessageParams): MessageParams {
   const derived = { ...params };
   if (typeof params.classId === 'string') derived.className = t(`class.${params.classId}.name`);
+  if (typeof params.profession === 'string') derived.professionName = t(`profession.${params.profession}`);
   if (typeof params.armourWeight === 'string') derived.armourWeightName = t(`armourweight.${params.armourWeight}`);
   return derived;
 }
