@@ -33,7 +33,7 @@ function healBetweenEncounters(hero: Hero): Hero {
 
 function applyVictory(state: GameState, plan: PlannedEncounter): GameState {
   const run = activeRunOf(state);
-  if (run === null) throw new CommandRejected('There is no active dungeon run.');
+  if (run === null) throw new CommandRejected('reject.noActiveRun');
 
   const lootRandom = encounterRandomFor(state, run).fork('loot');
   const loot = plan.monsterUnits.map((monster) => rollMonsterLoot(monster.definitionId, monster.level, lootRandom.fork(monster.id)));
@@ -70,7 +70,7 @@ function applyVictory(state: GameState, plan: PlannedEncounter): GameState {
 
 export function finishEncounterCommand(): Command {
   return (state) => {
-    if (activeRunOf(state) === null) throw new CommandRejected('There is no active dungeon run.');
+    if (activeRunOf(state) === null) throw new CommandRejected('reject.noActiveRun');
     const plan = planNextEncounter(state);
     if (plan.report.winner === 'enemy') return endDungeonRun(state, 'party-defeated');
     return applyVictory(state, plan);

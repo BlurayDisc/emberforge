@@ -1,1 +1,1 @@
-export { equipItem, findEquipProblem, unequipItem, type EquipResult } from './equipment';
+export { equipItem, findEquipProblem, unequipItem, type EquipProblem, type EquipResult } from './equipment';

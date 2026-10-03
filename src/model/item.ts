@@ -44,8 +44,8 @@ export interface ItemAffix {
 export interface Item {
   id: string;
   baseId: string;
-  name: string;
-  baseName: string;
+  materialId: string;
+  rareNameParts: [string, string] | null;
   slot: ItemSlot;
   gearType: GearType;
   armourWeight: ArmourWeight | null;

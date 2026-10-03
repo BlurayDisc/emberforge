@@ -14,9 +14,11 @@ All game data lives in these JSON files. The game loads them through `src/conten
 | `affixes.json` | Item prefixes and suffixes: stat and value range |
 | `classes.json` | Hero classes: stats, growth per level, allowed gear |
 | `hero-names.json` | Names for new heroes |
+| `i18n/en.json`, `i18n/zh.json` | All player text and content names, one flat key per text. `languages.json` lists the languages. |
 | `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring), dungeon runs, monster scaling, backpack, item generation |
 
 Rules:
 - Ids are stable strings. Other files refer to them.
 - A recipe uses materials of one tier only. Recipes are not stored. They come from `base-items.json` and `materials.json`: each base item needs one main and one second material category of the same tier.
+- Every key in `i18n/en.json` must exist in every other language file. Content names in `en.json` must match the data files.
 - Do not use em dashes in these files.

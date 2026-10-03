@@ -196,6 +196,7 @@ Ten brackets. Each bracket has one town.
 - **After a run:** the Inventory opens with the run summary and loot. The button "Equip gear (Heroes)" opens Heroes. In Heroes, the Items tab shows the slots and the backpack items that the hero can equip.
 - **Style:** pixel art, wood and parchment menus, blackletter titles (Jacquard 12), pixel text (Pixelify Sans).
 - **Data:** all game data is JSON in `data/`. A README there explains each file.
+- **Languages:** English and Simplified Chinese. The player picks the language in the Settings screen. The choice is saved apart from the game save. All text and content names are in `data/i18n/`. Item names are built from parts (material, base, affixes), so they change language too.
 
 ## 12. MVP scope
 

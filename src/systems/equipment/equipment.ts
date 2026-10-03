@@ -3,22 +3,27 @@ import { requireById } from '../../content/lookup';
 import type { Hero } from '../../model/hero';
 import type { EquipmentSlot, Item } from '../../model/item';
 
+export interface EquipProblem {
+  key: string;
+  params: Record<string, string | number>;
+}
+
 export interface EquipResult {
   hero: Hero;
   replacedItem: Item | null;
 }
 
-export function findEquipProblem(hero: Hero, item: Item): string | null {
-  if (hero.level < item.itemLevel) return `Needs level ${item.itemLevel}`;
+export function findEquipProblem(hero: Hero, item: Item): EquipProblem | null {
+  if (hero.level < item.itemLevel) return { key: 'equip.needsLevel', params: { level: item.itemLevel } };
   const classDefinition = requireById(CLASSES, hero.classId);
   if (item.slot === 'mainHand' && !classDefinition.weaponTypes.includes(item.gearType)) {
-    return `${classDefinition.displayName} cannot use this weapon`;
+    return { key: 'equip.cannotUseWeapon', params: { classId: hero.classId } };
   }
   if (item.slot === 'offHand' && !classDefinition.offHandTypes.includes(item.gearType)) {
-    return `${classDefinition.displayName} cannot use this off-hand item`;
+    return { key: 'equip.cannotUseOffHand', params: { classId: hero.classId } };
   }
   if (item.armourWeight !== null && item.armourWeight !== classDefinition.armourWeight) {
-    return `${classDefinition.displayName} wears ${classDefinition.armourWeight} armour`;
+    return { key: 'equip.wearsArmour', params: { classId: hero.classId, armourWeight: classDefinition.armourWeight } };
   }
   return null;
 }

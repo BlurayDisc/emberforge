@@ -1,14 +1,17 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SPRITE_ART } from '../src/render/spriteArt';
 
-const dataDirectory = join(resolve(dirname(fileURLToPath(import.meta.url)), '..'), 'data');
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const dataDirectory = join(projectRoot, 'data');
 
 interface Identified {
   id: string;
 }
 interface Material extends Identified {
+  name: string;
+  craftedItemPrefix?: string;
   tier: number;
   category: string;
   sellValueCopper: number;
@@ -20,11 +23,13 @@ interface Drop {
   maxQuantity: number;
 }
 interface Monster extends Identified {
+  name: string;
   rank: string;
   spriteKey: string;
   drops: Drop[];
 }
 interface Dungeon extends Identified {
+  name: string;
   townId: string;
   level: number;
   monsterIds: string[];
@@ -32,10 +37,13 @@ interface Dungeon extends Identified {
   bossMonsterId: string | null;
 }
 interface Town extends Identified {
+  name: string;
+  region: string;
   firstLevel: number;
   lastLevel: number;
 }
 interface BaseItem extends Identified {
+  name: string;
   mainCategory: string;
   secondaryCategory: string;
   gearType: string;
@@ -44,11 +52,14 @@ interface BaseItem extends Identified {
   height: number;
 }
 interface HeroClass extends Identified {
+  displayName: string;
+  roleDescription: string;
   spriteKey: string;
   weaponTypes: string[];
   offHandTypes: string[];
 }
 interface Affix extends Identified {
+  displayName: string;
   stat: string;
 }
 
@@ -68,7 +79,11 @@ const classes = load<HeroClass[]>('classes.json');
 const affixes = load<Affix[]>('affixes.json');
 const heroNames = load<string[]>('hero-names.json');
 const professions = load<Record<string, string>>('professions.json');
-const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number }>('balance/items.json');
+const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
+const buildings = load<Array<Identified & { label: string; panelId: string }>>('buildings.json');
+const languages = load<Array<{ id: string; nativeName: string }>>('i18n/languages.json');
+const translationsByLanguage: Record<string, Record<string, string>> = {};
+for (const language of languages) translationsByLanguage[language.id] = load<Record<string, string>>(`i18n/${language.id}.json`);
 
 const problems: string[] = [];
 const report = (message: string): void => {
@@ -168,6 +183,80 @@ for (const heroClass of classes) {
 for (const affix of affixes) {
   if (!STAT_NAMES.includes(affix.stat)) report(`affixes.json: '${affix.id}' uses unknown stat '${affix.stat}'`);
 }
+
+
+const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tavern', 'workshop', 'merchant'];
+const FIXED_KEY_GROUPS: Record<string, string[]> = {
+  quality: ['common', 'magic', 'rare', 'unique'],
+  stat: STAT_NAMES,
+  slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
+  category: ['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'essence', 'catalyst'],
+  armourweight: ['heavy', 'medium', 'light'],
+  endreason: ['stopped', 'party-defeated', 'party-weakened', 'backpack-full'],
+};
+
+function expectedEnglishNames(): Array<[string, string]> {
+  const expected: Array<[string, string]> = [];
+  for (const heroClass of classes) {
+    expected.push([`class.${heroClass.id}.name`, heroClass.displayName], [`class.${heroClass.id}.role`, heroClass.roleDescription]);
+  }
+  for (const monster of monsters) expected.push([`monster.${monster.id}`, monster.name]);
+  for (const material of materials) {
+    expected.push([`material.${material.id}`, material.name]);
+    if (material.craftedItemPrefix) expected.push([`material.${material.id}.prefix`, material.craftedItemPrefix]);
+  }
+  for (const dungeon of dungeons) expected.push([`dungeon.${dungeon.id}`, dungeon.name]);
+  for (const town of townsFile.towns) expected.push([`town.${town.id}`, town.name], [`town.${town.id}.region`, town.region]);
+  for (const building of buildings) expected.push([`building.${building.id}`, building.label]);
+  for (const base of baseItems) expected.push([`base.${base.id}`, base.name]);
+  for (const affix of affixes) expected.push([`affix.${affix.id}`, affix.displayName]);
+  for (const [professionId, label] of Object.entries(professions)) expected.push([`profession.${professionId}`, label]);
+  for (const name of heroNames) expected.push([`heroname.${name}`, name]);
+  for (const part of itemBalance.rareNameFirstParts) expected.push([`rarename.first.${part}`, part]);
+  for (const part of itemBalance.rareNameSecondParts) expected.push([`rarename.second.${part}`, part]);
+  return expected;
+}
+
+function expectedKeysWithoutEnglishSource(): string[] {
+  const keys = PANEL_IDS.map((panelId) => `panel.${panelId}`);
+  for (const [group, values] of Object.entries(FIXED_KEY_GROUPS)) keys.push(...values.map((value) => `${group}.${value}`));
+  return keys;
+}
+
+function listSourceFiles(directory: string): string[] {
+  return readdirSync(directory, { recursive: true, encoding: 'utf8' })
+    .filter((entry) => entry.endsWith('.ts'))
+    .map((entry) => join(directory, entry));
+}
+
+function checkTranslations(): void {
+  const english = translationsByLanguage.en;
+  if (!english) return report('i18n: English translations are required');
+  for (const [languageId, table] of Object.entries(translationsByLanguage)) {
+    for (const key of Object.keys(english)) if (!(key in table)) report(`i18n/${languageId}.json: missing key '${key}'`);
+    for (const key of Object.keys(table)) if (!(key in english)) report(`i18n/${languageId}.json: key '${key}' is not in en.json`);
+    for (const [key, value] of Object.entries(table)) {
+      if (value.includes('\u2014')) report(`i18n/${languageId}.json: '${key}' contains an em dash`);
+      if (value === '' && key !== 'format.nameJoiner') report(`i18n/${languageId}.json: '${key}' is empty`);
+    }
+  }
+  for (const [key, expectedValue] of expectedEnglishNames()) {
+    if (english[key] !== expectedValue) report(`i18n/en.json: '${key}' should be '${expectedValue}' (same as the data file)`);
+  }
+  for (const key of expectedKeysWithoutEnglishSource()) if (!(key in english)) report(`i18n/en.json: missing key '${key}'`);
+
+  const usedKeyPattern = /\bt\('([^'$`]+)'/g;
+  for (const directory of ['src/ui', 'src/app']) {
+    for (const file of listSourceFiles(join(projectRoot, directory))) {
+      for (const match of readFileSync(file, 'utf8').matchAll(usedKeyPattern)) {
+        const key = match[1] as string;
+        if (!(key in english)) report(`${directory}: code uses unknown translation key '${key}' (${file.replace(projectRoot, '')})`);
+      }
+    }
+  }
+}
+
+checkTranslations();
 
 if (problems.length > 0) {
   console.error(problems.join('\n'));

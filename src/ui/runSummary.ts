@@ -1,34 +1,27 @@
-import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
-import { MATERIALS } from '../content/materials';
-import type { DungeonRun, RunEndReason } from '../model/gameState';
+import { DUNGEONS } from '../content/dungeons';
+import type { DungeonRun } from '../model/gameState';
 import { actionButton, element } from './dom';
+import { listOf, materialName } from './displayNames';
+import { t } from './i18n';
 import { createMoneyDisplay } from './moneyDisplay';
-
-const END_REASON_TEXT: Record<RunEndReason, string> = {
-  stopped: 'You stopped the run.',
-  'party-defeated': 'The party was defeated and retreated to town.',
-  'party-weakened': 'The party was too weak to go on.',
-  'backpack-full': 'The backpack is full.',
-};
 
 export function createRunSummaryCard(run: DungeonRun, actions: HTMLElement[] = []): HTMLElement {
   const dungeon = requireById(DUNGEONS, run.dungeonId);
-  const status = run.status === 'active' ? 'In progress.' : END_REASON_TEXT[run.endReason ?? 'stopped'];
-  const materialText = run.materialsGained
-    .map((stack) => `${requireById(MATERIALS, stack.materialId).name} x${stack.quantity}`)
-    .join(', ');
+  const status = run.status === 'active' ? t('run.inProgress') : t(`endreason.${run.endReason ?? 'stopped'}`);
+  const materialList = listOf(run.materialsGained.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`));
+  const titleKey = run.status === 'active' ? 'run.current' : 'run.last';
   return element(
     'div',
     'card',
-    element('div', 'card-title', `${run.status === 'active' ? 'Current' : 'Last'} run: ${dungeon.name}`),
-    element('div', 'card-text', `${status} Fights won: ${run.encountersWon}.`),
-    element('div', 'card-row', 'Money found: ', createMoneyDisplay(run.copperGained)),
-    element('div', 'card-text small', materialText === '' ? 'No materials found.' : `Materials: ${materialText}`),
+    element('div', 'card-title', t(titleKey, { name: t(`dungeon.${dungeon.id}`) })),
+    element('div', 'card-text', `${status} ${t('run.fightsWon', { count: run.encountersWon })}`),
+    element('div', 'card-row', t('run.moneyFound'), createMoneyDisplay(run.copperGained)),
+    element('div', 'card-text small', materialList === '' ? t('run.noMaterials') : t('run.materials', { list: materialList })),
     ...actions,
   );
 }
 
 export function createGoToHeroesButton(openPanel: (panelId: string) => void): HTMLElement {
-  return actionButton('Equip gear (Heroes)', () => openPanel('heroes'), { className: 'action-button primary' });
+  return actionButton(t('run.equipGear'), () => openPanel('heroes'), { className: 'action-button primary' });
 }

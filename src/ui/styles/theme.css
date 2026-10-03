@@ -22,8 +22,9 @@
   --outline-4: 0 -4px 0 0 var(--ink), 0 4px 0 0 var(--ink), -4px 0 0 0 var(--ink), 4px 0 0 0 var(--ink);
   --outline-2: 0 -2px 0 0 var(--ink), 0 2px 0 0 var(--ink), -2px 0 0 0 var(--ink), 2px 0 0 0 var(--ink);
   --checker: linear-gradient(45deg, rgba(0, 0, 0, 0.14) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.14) 75%);
-  --font-body: 'Pixelify Sans', ui-monospace, monospace;
-  --font-title: 'Jacquard 12', 'Pixelify Sans', serif;
+  --font-cjk: 'Fusion Pixel 12px Proportional SC';
+  --font-body: 'Pixelify Sans', var(--font-cjk), ui-monospace, monospace;
+  --font-title: 'Jacquard 12', var(--font-cjk), 'Pixelify Sans', serif;
 }
 
 html,
@@ -65,4 +66,11 @@ p {
 ::selection {
   background: var(--gold-dark);
   color: var(--ink);
+}
+
+:lang(zh-Hans) .card-text.small,
+:lang(zh-Hans) .grid-entry,
+:lang(zh-Hans) .hud-log,
+:lang(zh-Hans) .run-hud {
+  font-size: 12px;
 }

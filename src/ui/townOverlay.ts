@@ -2,15 +2,15 @@ import { BUILDINGS, type BuildingDefinition } from '../content/buildings';
 import { activeRunOf, type GameStore } from '../game';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
 import { element } from './dom';
+import { onLanguageChange, t } from './i18n';
 
 function percentOf(value: number, total: number): string {
   return `${(value / total) * 100}%`;
 }
 
 function createHotspot(building: BuildingDefinition, onSelect: (panelId: string) => void): HTMLButtonElement {
-  const hotspot = element('button', 'building-hotspot', element('span', 'building-label', building.label));
+  const hotspot = element('button', 'building-hotspot', element('span', 'building-label'));
   hotspot.type = 'button';
-  hotspot.setAttribute('aria-label', building.label);
   hotspot.style.left = percentOf(building.x - building.width / 2, LOGICAL_WIDTH);
   hotspot.style.top = percentOf(building.y - building.height, LOGICAL_HEIGHT);
   hotspot.style.width = percentOf(building.width, LOGICAL_WIDTH);
@@ -29,14 +29,24 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
     const state = store.getState();
     overlay.style.display = activeRunOf(state) === null ? 'block' : 'none';
     const hasNoHeroes = state.company.length === 0;
-    hotspots.forEach(({ building, hotspot }) => hotspot.classList.toggle('attention', hasNoHeroes && building.id === 'tavern'));
-    if (hasNoHeroes) hint.textContent = 'Welcome! Enter the Tavern to hire your first hero. It is free.';
-    else if (state.partyHeroIds.length === 0) hint.textContent = 'Your party is empty. Open Heroes and press "Join party".';
-    else if (state.runsStarted === 0) hint.textContent = 'Your hero is ready. Enter the Dungeons to find loot.';
-    hint.style.display = hint.textContent === '' || (!hasNoHeroes && state.partyHeroIds.length > 0 && state.runsStarted > 0) ? 'none' : 'block';
+    const hasEmptyParty = !hasNoHeroes && state.partyHeroIds.length === 0;
+    const isReadyForFirstRun = !hasNoHeroes && !hasEmptyParty && state.runsStarted === 0;
+
+    hotspots.forEach(({ building, hotspot }) => {
+      hotspot.classList.toggle('attention', hasNoHeroes && building.id === 'tavern');
+      const label = t(`building.${building.id}`);
+      hotspot.setAttribute('aria-label', label);
+      const labelElement = hotspot.querySelector('.building-label');
+      if (labelElement) labelElement.textContent = label;
+    });
+    if (hasNoHeroes) hint.textContent = t('hint.noHeroes');
+    else if (hasEmptyParty) hint.textContent = t('hint.emptyParty');
+    else hint.textContent = t('hint.heroReady');
+    hint.style.display = hasNoHeroes || hasEmptyParty || isReadyForFirstRun ? 'block' : 'none';
   };
 
   store.subscribe(refresh);
+  onLanguageChange(refresh);
   refresh();
   return overlay;
 }

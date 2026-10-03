@@ -9,6 +9,8 @@ import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { BattleView } from '../render/battleView';
 import type { TownView } from '../render/townView';
 import type { PixelStage } from '../render/pixelStage';
+import { listOf, unitDisplayName } from '../ui/displayNames';
+import { t } from '../ui/i18n';
 import type { RunHud } from '../ui/runHud';
 
 const MAXIMUM_FRAME_SECONDS = 0.1;
@@ -25,11 +27,13 @@ interface EncounterPlayback {
 }
 
 function describeEvent(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>): string {
-  const actorName = unitsById.get(event.actorId)?.name ?? 'Someone';
-  const targetName = unitsById.get(event.targetId)?.name ?? 'someone';
-  if (event.kind === 'heal') return `${actorName} heals ${targetName} for ${event.amount}.`;
-  const critical = event.isCritical ? ' Critical hit!' : '';
-  return `${actorName} hits ${targetName} for ${event.amount}.${critical}`;
+  const actor = unitsById.get(event.actorId);
+  const target = unitsById.get(event.targetId);
+  const actorName = actor ? unitDisplayName(actor) : t('log.someone');
+  const targetName = target ? unitDisplayName(target) : t('log.someone');
+  if (event.kind === 'heal') return t('log.heal', { actor: actorName, target: targetName, amount: event.amount });
+  const critical = event.isCritical ? t('log.crit') : '';
+  return `${t('log.hit', { actor: actorName, target: targetName, amount: event.amount })}${critical}`;
 }
 
 export interface SceneViews {
@@ -49,8 +53,8 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     const plan = planNextEncounter(state);
     if (run.encounterNumber === 0) hud.clearLog();
     view.showUnits([...plan.partyUnits, ...plan.monsterUnits]);
-    const monsterNames = plan.monsterUnits.map((unit) => unit.name).join(', ');
-    hud.appendLogLine(`Fight ${run.encounterNumber + 1}: ${monsterNames}.`);
+    const monsterNames = listOf(plan.monsterUnits.map((unit) => unitDisplayName(unit)));
+    hud.appendLogLine(t('log.fight', { number: run.encounterNumber + 1, monsters: monsterNames }));
     playback = {
       events: plan.report.events,
       unitsById: new Map([...plan.partyUnits, ...plan.monsterUnits].map((unit) => [unit.id, unit])),
@@ -83,7 +87,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     hud.appendLogLine(describeEvent(event, current.unitsById));
     if (target && event.targetHpAfter === 0) {
       view.markDefeated(target.id);
-      hud.appendLogLine(`${target.name} is defeated.`);
+      hud.appendLogLine(t('log.defeated', { name: unitDisplayName(target) }));
     }
   };
 
@@ -104,7 +108,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
 
     if (!current.hasAnnouncedResult && current.elapsedSeconds >= current.durationSeconds) {
       current.hasAnnouncedResult = true;
-      hud.appendLogLine(current.partyWon ? 'Victory!' : 'Defeat. The party retreats to town.');
+      hud.appendLogLine(current.partyWon ? t('log.victory') : t('log.defeat'));
     }
     if (current.elapsedSeconds >= current.durationSeconds + PAUSE_AFTER_ENCOUNTER_SECONDS) {
       playback = null;

@@ -1,5 +1,4 @@
 import baseItemsData from '../../data/base-items.json';
-import professionsData from '../../data/professions.json';
 import type { ArmourWeight, GearType, ItemSlot, StatBonuses } from '../model/item';
 import type { MaterialCategory } from '../model/material';
 
@@ -20,5 +19,3 @@ export interface BaseItemDefinition {
 }
 
 export const BASE_ITEMS = baseItemsData as unknown as readonly BaseItemDefinition[];
-
-export const PROFESSION_LABELS = professionsData as Record<ProfessionId, string>;

@@ -12,7 +12,7 @@ function valueOf(entry: BackpackEntry): number {
 export function sellBackpackEntryCommand(position: GridPosition): Command {
   return (state) => {
     const entry = findEntryAt(state.backpack, position);
-    if (!entry) throw new CommandRejected('There is nothing to sell there.');
+    if (!entry) throw new CommandRejected('reject.nothingToSell');
     return { ...state, copper: state.copper + valueOf(entry), backpack: removeEntryAt(state.backpack, position) };
   };
 }
@@ -20,7 +20,7 @@ export function sellBackpackEntryCommand(position: GridPosition): Command {
 export function sellAllMaterialsCommand(): Command {
   return (state) => {
     const materialEntries = state.backpack.filter((entry) => entry.content.kind === 'material');
-    if (materialEntries.length === 0) throw new CommandRejected('You have no materials to sell.');
+    if (materialEntries.length === 0) throw new CommandRejected('reject.noMaterialsToSell');
     const total = materialEntries.reduce((sum, entry) => sum + valueOf(entry), 0);
     return { ...state, copper: state.copper + total, backpack: state.backpack.filter((entry) => entry.content.kind === 'item') };
   };

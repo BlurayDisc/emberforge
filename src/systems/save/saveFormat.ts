@@ -1,6 +1,6 @@
 import type { GameState } from '../../model/gameState';
 
-export const CURRENT_SAVE_VERSION = 2;
+export const CURRENT_SAVE_VERSION = 3;
 
 export function serializeGameState(state: GameState): string {
   return JSON.stringify(state);

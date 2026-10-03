@@ -45,7 +45,6 @@ function equipCraftedGear(hero: Hero, random: Random): Hero {
         itemId: `sim-item-${hero.id}-${index}`,
         baseId,
         tier,
-        materialPrefix: 'Sim',
         maximumItemLevel: hero.level,
         usesCatalyst: false,
         ingredientValueCopper: 10,

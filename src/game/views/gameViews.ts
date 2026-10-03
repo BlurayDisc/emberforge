@@ -1,5 +1,4 @@
 import { CLASSES } from '../../content/classes';
-import { requireById } from '../../content/lookup';
 import type { BattleUnit } from '../../model/battle';
 import type { GameState } from '../../model/gameState';
 import type { ClassId, Hero } from '../../model/hero';
@@ -13,13 +12,10 @@ export interface HeroView {
   stats: StatBlock;
   currentHp: number;
   experienceToNextLevel: number;
-  className: string;
 }
 
 export interface TavernOffer {
   classId: ClassId;
-  className: string;
-  roleDescription: string;
   cost: number;
   isAffordable: boolean;
 }
@@ -34,7 +30,6 @@ export function describeHero(hero: Hero): HeroView {
     stats,
     currentHp: Math.round(stats.hp * hero.healthFraction),
     experienceToNextLevel: experienceToNextLevel(hero.level),
-    className: requireById(CLASSES, hero.classId).displayName,
   };
 }
 
@@ -43,8 +38,6 @@ export function listTavernOffers(state: GameState): TavernOffer[] {
   if (cost === null) return [];
   return CLASSES.map((classDefinition) => ({
     classId: classDefinition.id,
-    className: classDefinition.displayName,
-    roleDescription: classDefinition.roleDescription,
     cost,
     isAffordable: state.copper >= cost,
   }));

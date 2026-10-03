@@ -1,3 +1,4 @@
+import { CATALYST_MATERIAL_ID } from '../../../content/balance/items';
 import {
   countCatalysts,
   craftItemCommand,
@@ -7,6 +8,8 @@ import {
 } from '../../../game';
 import type { Item } from '../../../model/item';
 import { actionButton, element } from '../../dom';
+import { craftedBaseName, itemDisplayName, materialName, qualityName } from '../../displayNames';
+import { describeRejection, t } from '../../i18n';
 import type { PanelContext, PanelRenderer } from '../panelContext';
 
 let usesCatalyst = false;
@@ -16,7 +19,7 @@ function describeIngredients(ingredients: readonly IngredientView[]): HTMLElemen
     element(
       'span',
       ingredient.owned >= ingredient.needed ? 'ingredient' : 'ingredient missing',
-      `${ingredient.materialName} ${ingredient.owned}/${ingredient.needed}`,
+      `${materialName(ingredient.materialId)} ${ingredient.owned}/${ingredient.needed}`,
     ),
   );
 }
@@ -32,11 +35,13 @@ function findCraftedItem(context: PanelContext): Item | undefined {
 function craft(context: PanelContext, recipe: WorkshopRecipeView): void {
   const result = context.store.execute(craftItemCommand(recipe.baseId, recipe.tier, usesCatalyst));
   if (!result.accepted) {
-    context.notify(result.rejectionReason ?? 'Crafting failed.');
+    context.notify(describeRejection(result.rejection));
     return;
   }
   const item = findCraftedItem(context);
-  context.notify(item ? `Crafted: ${item.name} (${item.quality}, item level ${item.itemLevel}).` : 'Crafted an item.');
+  if (item) {
+    context.notify(t('workshop.crafted', { name: itemDisplayName(item), quality: qualityName(item.quality), level: item.itemLevel }));
+  }
 }
 
 function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView, catalystCount: number): HTMLElement {
@@ -44,9 +49,9 @@ function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView, catalys
   return element(
     'div',
     'card',
-    element('div', 'card-title', `${recipe.itemName} (${recipe.sizeText})`),
+    element('div', 'card-title', `${craftedBaseName(recipe.mainMaterialId, recipe.baseId)} (${recipe.sizeText})`),
     element('div', 'card-text small', ...describeIngredients(recipe.ingredients)),
-    actionButton('Craft', () => craft(context, recipe), { disabled: !canCraft }),
+    actionButton(t('workshop.craft'), () => craft(context, recipe), { disabled: !canCraft }),
   );
 }
 
@@ -54,7 +59,7 @@ export const renderWorkshopPanel: PanelRenderer = (context) => {
   const state = context.store.getState();
   const catalystCount = countCatalysts(state);
   const recipes = listWorkshopRecipes(state);
-  const professions = [...new Set(recipes.map((recipe) => recipe.professionLabel))];
+  const professionIds = [...new Set(recipes.map((recipe) => recipe.professionId))];
 
   const catalystToggle = element('input', '');
   catalystToggle.type = 'checkbox';
@@ -67,19 +72,16 @@ export const renderWorkshopPanel: PanelRenderer = (context) => {
   const body = element(
     'div',
     'panel-body',
-    element('p', 'hint', 'Materials come from monster drops. A recipe uses materials of one tier only. Item level depends on your best hero.'),
-    element('label', 'card-row', catalystToggle, `Use 1 Tarnished Catalyst for better quality (you have ${catalystCount})`),
+    element('p', 'hint', t('workshop.hint')),
+    element('label', 'card-row', catalystToggle, t('workshop.useCatalyst', { catalyst: materialName(CATALYST_MATERIAL_ID), count: catalystCount })),
   );
-  for (const profession of professions) {
+  for (const professionId of professionIds) {
+    const professionRecipes = recipes.filter((recipe) => recipe.professionId === professionId);
     body.append(
-      element('div', 'card-title', profession),
-      element(
-        'div',
-        'card-grid',
-        ...recipes.filter((recipe) => recipe.professionLabel === profession).map((recipe) => renderRecipe(context, recipe, catalystCount)),
-      ),
+      element('div', 'section-title', t(`profession.${professionId}`)),
+      element('div', 'card-grid', ...professionRecipes.map((recipe) => renderRecipe(context, recipe, catalystCount))),
     );
   }
-  body.append(actionButton('Leave the workshop', context.closePanel));
+  body.append(actionButton(t('workshop.leave'), context.closePanel));
   return body;
 };

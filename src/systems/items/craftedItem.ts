@@ -12,16 +12,16 @@ import {
   SELL_QUALITY_FACTOR,
 } from '../../content/balance/items';
 import { requireById } from '../../content/lookup';
+import { MATERIALS } from '../../content/materials';
 import { clamp } from '../../kernel/math';
 import type { Random } from '../../kernel/random';
-import type { Item, ItemAffix, ItemQuality, StatBonuses } from '../../model/item';
+import type { Item, StatBonuses } from '../../model/item';
 import { rollAffixes } from './rollAffixes';
 
 export interface CraftedItemRequest {
   itemId: string;
   baseId: string;
   tier: number;
-  materialPrefix: string;
   maximumItemLevel: number;
   usesCatalyst: boolean;
   ingredientValueCopper: number;
@@ -45,21 +45,12 @@ function rollBaseStats(base: BaseItemDefinition, itemLevel: number, random: Rand
   return rolled;
 }
 
-function composeName(
-  quality: ItemQuality,
-  materialPrefix: string,
-  base: BaseItemDefinition,
-  affixes: readonly ItemAffix[],
-  random: Random,
-): string {
-  const plainName = `${materialPrefix} ${base.name}`;
-  if (quality === 'rare') return `${random.pick(RARE_NAME_FIRST_PARTS)} ${random.pick(RARE_NAME_SECOND_PARTS)}`;
-  const prefix = affixes.find((affix) => affix.kind === 'prefix');
-  const suffix = affixes.find((affix) => affix.kind === 'suffix');
-  return [prefix?.displayName, plainName, suffix?.displayName].filter(Boolean).join(' ');
+function rollRareNameParts(quality: CraftableQuality, random: Random): [string, string] | null {
+  if (quality !== 'rare') return null;
+  return [random.pick(RARE_NAME_FIRST_PARTS), random.pick(RARE_NAME_SECOND_PARTS)];
 }
 
-function computeSellValue(ingredientValueCopper: number, quality: ItemQuality, itemLevel: number): number {
+function computeSellValue(ingredientValueCopper: number, quality: CraftableQuality, itemLevel: number): number {
   const levelFactor = 1 + SELL_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
   return Math.max(1, Math.round(ingredientValueCopper * SELL_QUALITY_FACTOR[quality] * levelFactor));
 }
@@ -73,13 +64,16 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
     ...Array.from({ length: ITEM_LEVEL_ROLLS_KEEP_HIGHEST }, () => random.nextInt(bracketStart, highestAllowedLevel)),
   );
 
+  const mainMaterial = MATERIALS.find((material) => material.tier === request.tier && material.category === base.mainCategory);
+  if (!mainMaterial) throw new Error(`Tier ${request.tier} has no ${base.mainCategory} material for ${base.id}`);
+
   const quality = rollQuality(request.usesCatalyst, random);
   const affixes = rollAffixes(quality, itemLevel, random);
   return {
     id: request.itemId,
     baseId: base.id,
-    name: composeName(quality, request.materialPrefix, base, affixes, random),
-    baseName: `${request.materialPrefix} ${base.name}`,
+    materialId: mainMaterial.id,
+    rareNameParts: rollRareNameParts(quality, random),
     slot: base.slot,
     gearType: base.gearType,
     armourWeight: base.armourWeight,

@@ -8,9 +8,9 @@ import { activeRunOf } from '../runStatus';
 
 function requireEditableHero(state: GameState, heroId: string): Hero {
   const hero = state.company.find((candidate) => candidate.id === heroId);
-  if (!hero) throw new CommandRejected('This hero does not exist.');
+  if (!hero) throw new CommandRejected('reject.heroMissing');
   if (activeRunOf(state) !== null && state.partyHeroIds.includes(heroId)) {
-    throw new CommandRejected('Stop the dungeon run before you change the gear of a party hero.');
+    throw new CommandRejected('reject.stopRunBeforeGearChange');
   }
   return hero;
 }
@@ -23,14 +23,14 @@ export function equipItemCommand(heroId: string, itemId: string): Command {
   return (state) => {
     const hero = requireEditableHero(state, heroId);
     const item = findItem(state.backpack, itemId);
-    if (!item) throw new CommandRejected('The item is not in the backpack.');
+    if (!item) throw new CommandRejected('reject.itemNotInBackpack');
     const problem = findEquipProblem(hero, item);
-    if (problem !== null) throw new CommandRejected(problem);
+    if (problem !== null) throw new CommandRejected(problem.key, problem.params);
 
     const { hero: equippedHero, replacedItem } = equipItem(hero, item);
     const backpackWithoutItem = removeItem(state.backpack, itemId);
     const finalBackpack = replacedItem ? addItem(backpackWithoutItem, replacedItem) : backpackWithoutItem;
-    if (finalBackpack === null) throw new CommandRejected('The backpack has no room for the replaced item.');
+    if (finalBackpack === null) throw new CommandRejected('reject.backpackFullForReplaced');
     return { ...state, company: replaceHero(state, equippedHero), backpack: finalBackpack };
   };
 }
@@ -41,7 +41,7 @@ export function unequipItemCommand(heroId: string, slot: EquipmentSlot): Command
     const { hero: unequippedHero, replacedItem } = unequipItem(hero, slot);
     if (!replacedItem) return state;
     const backpack = addItem(state.backpack, replacedItem);
-    if (backpack === null) throw new CommandRejected('The backpack has no room for this item.');
+    if (backpack === null) throw new CommandRejected('reject.backpackFullForItem');
     return { ...state, company: replaceHero(state, unequippedHero), backpack };
   };
 }

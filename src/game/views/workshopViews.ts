@@ -1,16 +1,16 @@
-import { BASE_ITEMS, PROFESSION_LABELS } from '../../content/baseItems';
+import { BASE_ITEMS } from '../../content/baseItems';
 import { CATALYST_MATERIAL_ID } from '../../content/balance/items';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import type { GameState } from '../../model/gameState';
 import type { Item } from '../../model/item';
 import { listRecipes } from '../../systems/crafting';
-import { findEquipProblem } from '../../systems/equipment';
+import { findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
 import { highestUnlockedTier } from '../unlockedTier';
 
 export interface IngredientView {
-  materialName: string;
+  materialId: string;
   needed: number;
   owned: number;
 }
@@ -18,8 +18,8 @@ export interface IngredientView {
 export interface WorkshopRecipeView {
   baseId: string;
   tier: number;
-  itemName: string;
-  professionLabel: string;
+  mainMaterialId: string;
+  professionId: string;
   sizeText: string;
   ingredients: IngredientView[];
   canCraft: boolean;
@@ -28,7 +28,7 @@ export interface WorkshopRecipeView {
 export interface EquipOption {
   heroId: string;
   heroName: string;
-  problem: string | null;
+  problem: EquipProblem | null;
 }
 
 export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
@@ -39,17 +39,16 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
       const ingredients = recipe.ingredients.map((ingredient) => {
         const material = requireById(MATERIALS, ingredient.materialId);
         return {
-          materialName: material.name,
+          materialId: material.id,
           needed: ingredient.quantity,
           owned: countMaterial(state.backpack, ingredient.materialId),
         };
       });
-      const mainMaterial = requireById(MATERIALS, recipe.ingredients[0]?.materialId ?? '');
       return {
         baseId: recipe.baseId,
         tier,
-        itemName: `${mainMaterial.craftedItemPrefix ?? mainMaterial.name} ${base.name}`,
-        professionLabel: PROFESSION_LABELS[base.profession],
+        mainMaterialId: recipe.ingredients[0]?.materialId ?? '',
+        professionId: base.profession,
         sizeText: `${base.width}×${base.height}`,
         ingredients,
         canCraft: ingredients.every((ingredient) => ingredient.owned >= ingredient.needed),
@@ -73,7 +72,7 @@ export function listEquipOptions(state: GameState, item: Item): EquipOption[] {
 
 export interface BackpackItemOption {
   item: Item;
-  problem: string | null;
+  problem: EquipProblem | null;
 }
 
 export function listBackpackItemsForHero(state: GameState, heroId: string): BackpackItemOption[] {

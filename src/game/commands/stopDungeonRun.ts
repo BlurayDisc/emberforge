@@ -4,7 +4,7 @@ import { endDungeonRun } from './endDungeonRun';
 
 export function stopDungeonRunCommand(): Command {
   return (state) => {
-    if (activeRunOf(state) === null) throw new CommandRejected('There is no active dungeon run.');
+    if (activeRunOf(state) === null) throw new CommandRejected('reject.noActiveRun');
     return endDungeonRun(state, 'stopped');
   };
 }

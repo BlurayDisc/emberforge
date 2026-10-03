@@ -7,7 +7,8 @@ export { startDungeonRunCommand } from './commands/startDungeonRun';
 export { stopDungeonRunCommand } from './commands/stopDungeonRun';
 export { togglePartyMemberCommand } from './commands/togglePartyMember';
 export { planNextEncounter, type PlannedEncounter } from './encounterPlanner';
-export { createGameStore, type CommandResult, type GameStore } from './gameStore';
+export { createGameStore, type CommandResult, type GameStore, type MessageParams, type Rejection } from './gameStore';
+export { loadLanguagePreference, saveLanguagePreference } from './settingsStorage';
 export { activeRunOf } from './runStatus';
 export { createBrowserSaveStorage } from './saveStorage';
 export {

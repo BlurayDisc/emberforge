@@ -12,7 +12,7 @@ Pixel-art, turn-based crafting RPG. Stack: three.js + TypeScript + Vite. Static 
 | Command | Use |
 |---|---|
 | `npm run dev` | Dev server with hot reload |
-| `npm run check` | Type check + architecture boundary check. Run it before you finish any task. |
+| `npm run check` | Type check + architecture boundary check + data and translation validation. Run it before you finish any task. |
 | `npm run build` | `check` + production build into `dist/` |
 | `npm run balance` | Balance simulator (`tools/balance-sim/run.ts`). Prints win rate, duration and HP lost per dungeon and party. |
 | `npm run validate` | Data validator (`tools/validate-data.ts`). `check` and `build` run it too. |
@@ -45,7 +45,7 @@ Rules:
 7. Content has stable string ids (`base.sword`). Never use array positions as ids.
 8. No magic numbers in systems. Game data and numbers live in `data/*.json` (balance numbers in `data/balance/`). `content/` only loads them with types.
 9. Every player move is a command in `game/commands/`. The command runner saves after each one. The UI never changes state by itself.
-10. Change the shape of saved data → raise `SAVE_VERSION` and add a migration.
+10. Change the shape of saved data → raise `SAVE_VERSION`. There are no migrations yet, so a save with an old version is dropped and a new game starts. Say this in your summary.
 
 Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the public functions and types. Keep the rest private.
 
@@ -67,6 +67,16 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
   Run `npm run validate` after you edit `data/`.
 - Never put an em dash in `data/` files. Use a normal hyphen - instead.
 
+## Languages (English and Chinese)
+
+- Every text that a player can see goes through `t('key', params)` from `ui/i18n.ts`. Never write player text in code.
+- Texts live in `data/i18n/en.json` and `data/i18n/zh.json` (flat keys). Content names use the content id: `monster.<id>`, `material.<id>`, `dungeon.<id>`, `base.<id>`, `affix.<id>`, `class.<id>.name`.
+- `game/` and `systems/` never return English sentences. A rejected command carries a message key (`CommandRejected('reject.partyEmpty')`). An equip problem is `{ key, params }`.
+- Saved data holds ids and parts, never display text. An item stores `baseId`, `materialId`, `affixes` and `rareNameParts`. `ui/displayNames.ts` builds the name in the current language.
+- The language choice is saved apart from the game save (`emberforge.settings`), so a new game keeps it. The player changes it in the Settings screen. The UI redraws at once.
+- Add a key to **both** files. `npm run validate` fails when a key is missing, empty or unknown, when a key used in code does not exist, or when a content name in `en.json` differs from the data file.
+- To add a language: add `data/i18n/<id>.json`, add it to `data/i18n/languages.json` and to `LanguageId` in `content/translations.ts`.
+
 ## Pixel-art rules
 
 - Logical resolution 480×270. Scale by whole numbers only. `image-rendering: pixelated`.
@@ -75,14 +85,14 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - Use colors from `render/palette.ts` (stage) and `ui/styles/theme.css` (menus) only. Add a color there first.
 - Draw all sprites at one pixel scale. Do not mix scales.
 - Load sprites into one atlas once. Do not create objects in the per-frame loop. Reuse them.
-- Fonts and assets are bundled in the repo. No CDN. Fonts: Jacquard 12 (titles, signs) and Pixelify Sans (text), from `@fontsource`.
+- Fonts and assets are bundled in the repo. No CDN. Fonts from `@fontsource`: Jacquard 12 (titles, signs), Pixelify Sans (text), Fusion Pixel 12px SC (Chinese). Chinese text uses full-width punctuation.
 - Menu frames use notched box-shadow outlines (no border radius). Buttons press down 2 px. Keep that look in new components.
 - Building labels are DOM text on top of the canvas (`ui/townOverlay.ts`). Their size follows the whole-number stage scale (`--stage-scale`).
 
 ## Web and platform rules
 
 - The build is a static folder. `base` is `'./'`. Use relative asset paths so it works on GitHub Pages and Vercel.
-- No server code. Saves live in the browser, with file export and import.
+- No server code. Saves live in the browser. File export and import is planned, not built yet.
 - Every action must work with touch. Do not hide information behind hover.
 - Add a dependency only when it removes real work. Prefer small code over a library.
 

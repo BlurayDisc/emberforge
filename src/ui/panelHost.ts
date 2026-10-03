@@ -1,6 +1,7 @@
 import type { GameStore } from '../game';
 import { actionButton, element } from './dom';
-import { PANEL_CATALOG } from './panelCatalog';
+import { t, onLanguageChange } from './i18n';
+import { PANEL_CATALOG, panelTitleKey } from './panelCatalog';
 import type { PanelContext } from './panels/panelContext';
 
 const TOAST_MILLISECONDS = 3000;
@@ -41,7 +42,7 @@ export function createPanelHost(store: GameStore): PanelHost {
       const header = element(
         'div',
         'panel-header',
-        element('span', 'panel-title', definition.label),
+        element('span', 'panel-title', t(panelTitleKey(definition.id))),
         actionButton('x', () => setActive(null), { className: 'action-button close-button' }),
       );
       host.append(element('div', 'panel', header, definition.render(context)));
@@ -56,6 +57,7 @@ export function createPanelHost(store: GameStore): PanelHost {
   };
 
   store.subscribe(render);
+  onLanguageChange(render);
 
   return {
     element: host,

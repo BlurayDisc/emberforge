@@ -5,6 +5,8 @@ import { equipItemCommand, listEquipOptions } from '../../game';
 import type { BackpackEntry } from '../../model/backpack';
 import type { Item } from '../../model/item';
 import { actionButton, element } from '../dom';
+import { heroDisplayName, itemBaseDisplayName, itemDisplayName, materialName } from '../displayNames';
+import { describeRejection, t } from '../i18n';
 import { createItemCard } from '../itemText';
 import { createGoToHeroesButton, createRunSummaryCard } from '../runSummary';
 import type { PanelContext, PanelRenderer } from './panelContext';
@@ -31,11 +33,11 @@ function renderEntry(context: PanelContext, entry: BackpackEntry): HTMLElement {
 
   if (content.kind === 'item') {
     cell.classList.add(`quality-border-${content.item.quality}`);
-    cell.append(element('span', 'cell-name', content.item.baseName));
+    cell.append(element('span', 'cell-name', itemBaseDisplayName(content.item)));
   } else {
     const material = requireById(MATERIALS, content.materialId);
     cell.classList.add(`category-${material.category}`);
-    cell.append(element('span', 'cell-name', material.name.split(' ')[0] ?? material.name), element('span', 'cell-count', String(content.quantity)));
+    cell.append(element('span', 'cell-name', materialName(material.id)), element('span', 'cell-count', String(content.quantity)));
   }
   if (selectedPosition?.column === entry.column && selectedPosition.row === entry.row) cell.classList.add('selected');
   cell.addEventListener('click', () => {
@@ -47,21 +49,25 @@ function renderEntry(context: PanelContext, entry: BackpackEntry): HTMLElement {
 
 function renderEquipButtons(context: PanelContext, item: Item): HTMLElement {
   const state = context.store.getState();
-  const buttons = listEquipOptions(state, item).map((option) =>
-    actionButton(
-      option.problem === null ? `Equip: ${option.heroName}` : `${option.heroName} (${option.problem})`,
+  const buttons = listEquipOptions(state, item).map((option) => {
+    const heroName = heroDisplayName(option.heroName);
+    const label = option.problem === null
+      ? t('inventory.equipOn', { hero: heroName })
+      : t('inventory.equipOnProblem', { hero: heroName, problem: t(option.problem.key, option.problem.params) });
+    return actionButton(
+      label,
       () => {
         const result = context.store.execute(equipItemCommand(option.heroId, item.id));
-        context.notify(result.accepted ? `${option.heroName} equips ${item.name}.` : (result.rejectionReason ?? 'Could not equip.'));
+        context.notify(result.accepted ? t('heroes.equips', { hero: heroName, item: itemDisplayName(item) }) : describeRejection(result.rejection));
       },
       { disabled: option.problem !== null, className: 'action-button small-button' },
-    ),
-  );
+    );
+  });
   return element('div', 'button-column', ...buttons);
 }
 
 function renderDetail(context: PanelContext, entry: BackpackEntry | undefined): HTMLElement {
-  if (!entry) return element('p', 'hint', 'Select an entry to see details.');
+  if (!entry) return element('p', 'hint', t('inventory.select'));
   if (entry.content.kind === 'item') {
     return element('div', 'detail-row', createItemCard(entry.content.item), renderEquipButtons(context, entry.content.item));
   }
@@ -69,7 +75,13 @@ function renderDetail(context: PanelContext, entry: BackpackEntry | undefined): 
   return element(
     'p',
     'hint',
-    `${material.name} ×${entry.content.quantity} - tier ${material.tier} ${material.category}. Sells for ${material.sellValueCopper}c each.`,
+    t('inventory.materialDetail', {
+      name: materialName(material.id),
+      count: entry.content.quantity,
+      tier: material.tier,
+      category: t(`category.${material.category}`),
+      price: material.sellValueCopper,
+    }),
   );
 }
 
@@ -91,6 +103,6 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
   if (lastRun && lastRun.status === 'ended') {
     body.append(createRunSummaryCard(lastRun, [createGoToHeroesButton(context.openPanel)]));
   }
-  body.append(element('p', 'hint', 'Backpack. Items fill several cells. Materials stack to 99.'), grid, renderDetail(context, selected));
+  body.append(element('p', 'hint', t('inventory.hint')), grid, renderDetail(context, selected));
   return body;
 };

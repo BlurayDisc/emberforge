@@ -5,11 +5,27 @@ import type { SaveStorage } from './saveStorage';
 
 export type Command = (state: GameState) => GameState;
 
-export class CommandRejected extends Error {}
+export type MessageParams = Record<string, string | number>;
+
+export class CommandRejected extends Error {
+  readonly key: string;
+  readonly params: MessageParams;
+
+  constructor(key: string, params: MessageParams = {}) {
+    super(key);
+    this.key = key;
+    this.params = params;
+  }
+}
+
+export interface Rejection {
+  key: string;
+  params: MessageParams;
+}
 
 export interface CommandResult {
   accepted: boolean;
-  rejectionReason: string | null;
+  rejection: Rejection | null;
 }
 
 export interface GameStore {
@@ -47,9 +63,9 @@ export function createGameStore(storage: SaveStorage): GameStore {
     execute: (command) => {
       try {
         commit(command(state));
-        return { accepted: true, rejectionReason: null };
+        return { accepted: true, rejection: null };
       } catch (error) {
-        if (error instanceof CommandRejected) return { accepted: false, rejectionReason: error.message };
+        if (error instanceof CommandRejected) return { accepted: false, rejection: { key: error.key, params: error.params } };
         throw error;
       }
     },
