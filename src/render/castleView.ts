@@ -1,6 +1,7 @@
 import { Group, Mesh, MeshBasicMaterial, PlaneGeometry, Sprite, SpriteMaterial, type CanvasTexture } from 'three';
 import { CASTLE_SPOTS, castleWorldX as spotWorldX, type CastleSpot } from '../content/castle';
 import { CASTLE_SCREEN_COUNT, CASTLE_WIDTH, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
+import { createCastlePets } from './castlePets';
 import { drawShadowOval } from './castleAmbientArt';
 import { FIGURE_DRAWERS } from './castleFigureArt';
 import { drawHallBackdrop } from './castleHallArt';
@@ -76,6 +77,7 @@ export function createCastleView(stage: PixelStage): CastleView {
   const shadowTexture = createPixelTexture(drawShadowOval(SHADOW_WIDTH));
   const figures = CASTLE_SPOTS.filter((spot) => spot.kind === 'person').map((spot) => addFigure(root, spot, figureTextures, shadowTexture));
   const scenery = createCastleScenery(root);
+  const pets = createCastlePets(root);
 
   const scroller = createScreenScroller(LOGICAL_WIDTH, CASTLE_SCREEN_COUNT, FIRST_SCREEN);
   scroller.onScroll((scrollLeft) => stage.setCameraX(scrollLeft + LOGICAL_WIDTH / 2 - CASTLE_WIDTH / 2));
@@ -87,6 +89,7 @@ export function createCastleView(stage: PixelStage): CastleView {
     previousSeconds = elapsedSeconds;
     scroller.advance(deltaSeconds);
     scenery.update(elapsedSeconds);
+    pets.update(elapsedSeconds);
     // A figure breathes: one whole pixel up for half of each cycle.
     for (const figure of figures) figure.sprite.position.y = figure.restingY + (((elapsedSeconds + figure.phase) % IDLE_BOB_SECONDS) < IDLE_BOB_SECONDS / 2 ? 0 : 1);
   });

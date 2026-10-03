@@ -1,5 +1,7 @@
 import type { BackpackEntry } from './backpack';
+import type { BankUnlockId } from './bankUnlock';
 import type { Hero } from './hero';
+import type { MillState } from './mill';
 import type { TimedJob } from './timedJob';
 import type { MaterialStack } from './material';
 
@@ -11,15 +13,18 @@ export interface HeroEncounterResult {
   monstersDefeated: number;
   experienceGained: number;
   reachedLevel: number | null;
+  // The hero's level and experience after the fight. The result card draws the experience bar from them.
+  levelAfter: number;
+  experienceAfter: number;
 }
 
 export interface EncounterResult {
   won: boolean;
   durationSeconds: number;
   monsterIds: string[];
-  copperGained: number;
   materials: MaterialStack[];
-  materialsLost: MaterialStack[];
+  // Drops that found no room. They wait at the dungeon (see GameState.pendingLoot).
+  materialsWaiting: MaterialStack[];
   heroes: HeroEncounterResult[];
 }
 
@@ -54,6 +59,8 @@ export interface GameState {
   // Bought upgrades at the Bank: more backpack rows, and more sale slots at the merchant.
   backpackExpansions: number;
   merchantExtraSlots: number;
+  // Features that the player bought at the Bank. Until then the game hides them.
+  bankUnlockIds: BankUnlockId[];
   itemsCrafted: number;
   runsStarted: number;
   dungeonRuns: DungeonRun[];
@@ -62,4 +69,7 @@ export interface GameState {
   crafters: Record<string, CrafterProgress>;
   jobs: TimedJob[];
   jobsStarted: number;
+  // Drops that did not fit in the backpack, by dungeon id. A dungeon with pending loot cannot start a run.
+  pendingLoot: Record<string, MaterialStack[]>;
+  mill: MillState;
 }

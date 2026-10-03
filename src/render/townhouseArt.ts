@@ -12,7 +12,7 @@ import {
 } from './buildingParts';
 import type { PixelCanvas } from './pixelCanvas';
 
-type DecorativeStyle = Exclude<BuildingStyle, 'tavern' | 'workshop' | 'merchant' | 'gate' | 'keep'>;
+type DecorativeStyle = Exclude<BuildingStyle, 'tavern' | 'workshop' | 'merchant' | 'gate' | 'keep' | 'academy'>;
 type Drawer = (art: PixelCanvas, width: number, height: number) => void;
 
 const THATCH: BuildingColors = { wall: 'plaster', wallDark: 'pathDark', roof: 'hay', roofDark: 'hayDark' };

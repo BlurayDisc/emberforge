@@ -1,7 +1,9 @@
 import { BASE_ITEMS } from '../content/baseItems';
+import { MATERIALS } from '../content/materials';
 import { requireById } from '../content/lookup';
 import type { GearType, Item, StatBonuses } from '../model/item';
 import { element } from './dom';
+import { materialName } from './displayNames';
 import { t } from './i18n';
 
 const WEAPON_TABLE_STATS: readonly string[] = ['physicalDamage', 'magicalDamage', 'speed'];
@@ -40,13 +42,20 @@ function extraBaseStatLines(stats: Record<string, string>, gearType: GearType): 
     .map(([stat, value]) => element('div', 'extra-stat', `+${value} ${statName(stat)}`));
 }
 
+// The fixed bonus that a set material gives to every piece made from it.
+export function createSetBonusLine(materialId: string): HTMLElement[] {
+  const bonus = requireById(MATERIALS, materialId).setBonus;
+  if (!bonus) return [];
+  return [element('div', 'affix-line affix-material', t('item.setBonus', { material: materialName(materialId), value: bonus.value, stat: statName(bonus.stat) }))];
+}
+
 export function createItemStatTable(item: Item): HTMLElement {
   const baseValues: Record<string, string> = {};
   for (const [stat, value] of Object.entries(item.baseStats as StatBonuses)) baseValues[stat] = String(value);
   const affixLines = item.affixes.map((affix) =>
-    element('div', `affix-line affix-${affix.kind}`, `${t(`affix.${affix.affixId}`)}: +${affix.value} ${statName(affix.stat)}`),
+    element('div', `affix-line affix-${affix.kind}`, `${t(`affix.${affix.affixId}.short`)}: +${affix.value} ${statName(affix.stat)}`),
   );
-  return createTableWithExtras(item.gearType, (stat) => baseValues[stat], [...extraBaseStatLines(baseValues, item.gearType), ...affixLines]);
+  return createTableWithExtras(item.gearType, (stat) => baseValues[stat], [...extraBaseStatLines(baseValues, item.gearType), ...createSetBonusLine(item.materialId), ...affixLines]);
 }
 
 function formatRange([low, high]: [number, number]): string {

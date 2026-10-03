@@ -7,6 +7,7 @@ import type { PixelStage } from './pixelStage';
 import { createScreenScroller } from './screenScroller';
 import type { SlidingView } from './slidingView';
 import { createBystanders, depthFor, type BystanderSpeech, type VisibleRange } from './bystanders';
+import { createTownAnimals } from './townAnimals';
 import { drawTownGroundArt } from './townGroundArt';
 import { TOWN_ROADS } from './townLayout';
 
@@ -46,12 +47,14 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
   let previousSeconds: number | null = null;
 
   const bystanders = createBystanders(root, TOWN_ROADS, 5, onSpeech, visibleRange);
+  const animals = createTownAnimals(root, TOWN_ROADS, 5);
   stage.onFrame((elapsedSeconds) => {
     if (!root.visible) return;
     const deltaSeconds = previousSeconds === null ? 0 : Math.min(0.1, elapsedSeconds - previousSeconds);
     previousSeconds = elapsedSeconds;
     scroller.advance(deltaSeconds);
     bystanders.update(elapsedSeconds);
+    animals.update(elapsedSeconds);
   });
 
   return {

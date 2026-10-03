@@ -22,7 +22,9 @@ export interface CraftedItemRequest {
   itemId: string;
   baseId: string;
   tier: number;
+  setMaterialId: string | null;
   maximumItemLevel: number;
+  upgradeLevel: number;
   craftingCostCopper: number;
 }
 
@@ -33,8 +35,9 @@ function rollQuality(random: Random): CraftableQuality {
   return random.pickWeighted(qualities, (quality) => QUALITY_WEIGHTS[quality]);
 }
 
-function rollBaseStats(base: BaseItemDefinition, itemLevel: number, random: Random): StatBonuses {
-  const levelFactor = 1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
+// Each upgrade level counts as one more item level for base stats and value. The item level that limits who can equip it does not change.
+function rollBaseStats(base: BaseItemDefinition, effectiveItemLevel: number, random: Random): StatBonuses {
+  const levelFactor = 1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (effectiveItemLevel - 1);
   const rolled: StatBonuses = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[keyof StatBonuses, number]>) {
     if (UNSCALED_BASE_STATS.includes(stat)) {
@@ -60,35 +63,41 @@ function computeSellValue(craftingCostCopper: number, quality: CraftableQuality,
 
 export function generateCraftedItem(request: CraftedItemRequest, random: Random): Item {
   const base = requireById(BASE_ITEMS, request.baseId);
-  const bracketStart = (request.tier - 1) * LEVELS_PER_BRACKET + 1;
-  const bracketEnd = request.tier * LEVELS_PER_BRACKET;
-  const highestAllowedLevel = clamp(request.maximumItemLevel, bracketStart, bracketEnd);
+  const { lowest: lowestItemLevel, highest: highestAllowedLevel } = craftableItemLevelRange(request.tier, request.maximumItemLevel);
   const itemLevel = Math.max(
-    ...Array.from({ length: ITEM_LEVEL_ROLLS_KEEP_HIGHEST }, () => random.nextInt(bracketStart, highestAllowedLevel)),
+    ...Array.from({ length: ITEM_LEVEL_ROLLS_KEEP_HIGHEST }, () => random.nextInt(lowestItemLevel, highestAllowedLevel)),
   );
 
   const mainMaterial = MATERIALS.find((material) => material.tier === request.tier && material.category === base.mainCategory);
   if (!mainMaterial) throw new Error(`Tier ${request.tier} has no ${base.mainCategory} material for ${base.id}`);
 
+  const setMaterial = request.setMaterialId === null ? undefined : requireById(MATERIALS, request.setMaterialId);
   const quality = rollQuality(random);
   const affixes = rollAffixes(quality, itemLevel, random);
   return {
     id: request.itemId,
     baseId: base.id,
-    materialId: mainMaterial.id,
+    materialId: setMaterial?.id ?? mainMaterial.id,
     rareNameParts: rollRareNameParts(quality, random),
     slot: base.slot,
     gearType: base.gearType,
     armourWeight: base.armourWeight,
     quality,
     itemLevel,
+    upgradeLevel: request.upgradeLevel,
     tier: request.tier,
     width: base.width,
     height: base.height,
-    baseStats: rollBaseStats(base, itemLevel, random),
+    baseStats: rollBaseStats(base, itemLevel + request.upgradeLevel, random),
     affixes,
-    sellValueCopper: computeSellValue(request.craftingCostCopper, quality, itemLevel),
+    sellValueCopper: computeSellValue(request.craftingCostCopper, quality, itemLevel + request.upgradeLevel),
   };
+}
+
+// The crafter rolls an item level inside the tier bracket, up to the cap that the best hero sets.
+export function craftableItemLevelRange(tier: number, maximumItemLevel: number): { lowest: number; highest: number } {
+  const lowest = (tier - 1) * LEVELS_PER_BRACKET + 1;
+  return { lowest, highest: clamp(maximumItemLevel, lowest, tier * LEVELS_PER_BRACKET) };
 }
 
 export function previewBaseStatRanges(baseId: string, tier: number, maximumItemLevel: number): Record<string, [number, number]> {

@@ -12,12 +12,18 @@ export interface PixelStage {
   onFrame(update: (elapsedSeconds: number) => void): void;
 }
 
+// The frame outline is a box-shadow outside the frame. This margin keeps it from being cut by the container.
+const FRAME_OUTLINE_MARGIN_PIXELS = 8;
+
+// The stage grows to fill the window, so the scale is not always a whole number. The canvas is
+// still drawn at 480x270 and scaled with nearest-neighbour, so pixels stay hard-edged.
 function fitFrameToContainer(frame: HTMLElement, container: HTMLElement): void {
-  const fittingScale = Math.min(container.clientWidth / LOGICAL_WIDTH, container.clientHeight / LOGICAL_HEIGHT);
-  const integerScale = Math.max(1, Math.floor(fittingScale));
-  frame.style.width = `${LOGICAL_WIDTH * integerScale}px`;
-  frame.style.height = `${LOGICAL_HEIGHT * integerScale}px`;
-  frame.style.setProperty('--stage-scale', String(integerScale));
+  const availableWidth = container.clientWidth - 2 * FRAME_OUTLINE_MARGIN_PIXELS;
+  const availableHeight = container.clientHeight - 2 * FRAME_OUTLINE_MARGIN_PIXELS;
+  const fittingScale = Math.max(1, Math.min(availableWidth / LOGICAL_WIDTH, availableHeight / LOGICAL_HEIGHT));
+  frame.style.width = `${Math.floor(LOGICAL_WIDTH * fittingScale)}px`;
+  frame.style.height = `${Math.floor(LOGICAL_HEIGHT * fittingScale)}px`;
+  frame.style.setProperty('--stage-scale', fittingScale.toFixed(3));
 }
 
 export function createPixelStage(container: HTMLElement): PixelStage {

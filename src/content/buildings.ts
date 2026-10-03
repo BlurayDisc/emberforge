@@ -1,6 +1,6 @@
 import buildingsData from '../../data/buildings.json';
 
-export type BuildingStyle = 'tavern' | 'workshop' | 'merchant' | 'gate' | 'keep' | 'cottage' | 'townhouse' | 'chapel' | 'barn' | 'mill' | 'barracks' | 'watchtower' | 'stall' | 'bank';
+export type BuildingStyle = 'tavern' | 'workshop' | 'merchant' | 'gate' | 'keep' | 'cottage' | 'townhouse' | 'chapel' | 'barn' | 'mill' | 'barracks' | 'watchtower' | 'stall' | 'bank' | 'academy';
 
 export interface BuildingDefinition {
   id: string;

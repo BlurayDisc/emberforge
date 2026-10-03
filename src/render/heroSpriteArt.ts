@@ -1,4 +1,4 @@
-import { pickHeroAppearance, type ClassLook } from '../content/heroAppearance';
+import { pickHeroAppearance, type ClassLook, type HeroGender } from '../content/heroAppearance';
 import type { ClassId } from '../model/hero';
 import { addOutline, createPixelCanvas, type PixelCanvas } from './pixelCanvas';
 
@@ -22,6 +22,27 @@ function drawBody(paint: Paint, look: ClassLook): void {
   paint(look.trim as Hex, 6, 21, 12, 1);
   paint(look.cloth as Hex, 3, 14, 3, 8);
   paint(look.cloth as Hex, 18, 14, 3, 8);
+}
+
+const LASH: Hex = '#2a1a14';
+const BLUSH: Hex = '#eaa0a0';
+
+// Girls get long hair beside the face, lashes, blush and fuller lips. Boys get a firm jaw line.
+function drawGenderDetails(paint: Paint, gender: HeroGender, skinShade: Hex, hair: Hex): void {
+  if (gender === 'female') {
+    paint(hair, 7, 5, 1, 12);
+    paint(hair, 16, 5, 1, 12);
+    paint(hair, 8, 6, 1, 5);
+    paint(hair, 15, 6, 1, 5);
+    paint(LASH, 8, 7, 1, 1);
+    paint(LASH, 15, 7, 1, 1);
+    paint(BLUSH, 9, 10, 1, 1);
+    paint(BLUSH, 14, 10, 1, 1);
+    paint('#c8505a', 12, 11, 3, 1);
+    return;
+  }
+  paint(skinShade, 8, 11, 1, 1);
+  paint(skinShade, 15, 11, 1, 1);
 }
 
 function drawHead(paint: Paint, skin: Hex, skinShade: Hex, eye: Hex, hair: Hex): void {
@@ -122,11 +143,12 @@ const DRAW_GEAR: Record<ClassId, (paint: Paint, look: ClassLook, hair: Hex) => v
 };
 
 export function drawHeroSprite(classId: ClassId, heroName: string): HTMLCanvasElement {
-  const { skin, skinShade, hair, eye, look } = pickHeroAppearance(classId, heroName);
+  const { gender, skin, skinShade, hair, eye, look } = pickHeroAppearance(classId, heroName);
   const art: PixelCanvas = createPixelCanvas(26, 36);
   const paint: Paint = (color, x, y, width, height) => art.fill(color, x + 1, y + 1, width, height);
   drawBody(paint, look);
   drawHead(paint, skin as Hex, skinShade as Hex, eye as Hex, hair as Hex);
+  drawGenderDetails(paint, gender, skinShade as Hex, hair as Hex);
   DRAW_GEAR[classId](paint, look, hair as Hex);
   addOutline(art, 'outline');
   return art.canvas;

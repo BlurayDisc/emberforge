@@ -1,7 +1,9 @@
 import { BASE_ITEMS, type ProfessionId } from '../../../content/baseItems';
 import { requireById } from '../../../content/lookup';
 import { MATERIALS } from '../../../content/materials';
+import { playSound } from '../../../audio';
 import {
+  collectWaitingCraftCommand,
   craftItemCommand,
   crafterJob,
   listCrafters,
@@ -11,13 +13,13 @@ import {
   type WorkshopRecipeView,
 } from '../../../game';
 import { actionButton, element, percentBar } from '../../dom';
-import { craftedBaseName, itemDisplayName, materialName } from '../../displayNames';
+import { craftedBaseName, itemBaseDisplayName, itemDisplayName, materialName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
 import { createItemIcon } from '../../iconArt';
 import { createRecipePortrait } from '../../itemPortrait';
 import { createClassTags } from '../../classTags';
 import { createCrafterPortrait } from '../../crafterPortraitArt';
-import { createRecipeStatTable } from '../../itemStatTable';
+import { createRecipeStatTable, createSetBonusLine } from '../../itemStatTable';
 import { formatDuration } from '../../liveUpdate';
 import { createJobBar } from '../../liveBars';
 import { createList, createListRow } from '../../listRow';
@@ -38,12 +40,14 @@ function describeIngredients(ingredients: readonly IngredientView[]): HTMLElemen
 }
 
 function craft(context: PanelContext, recipe: WorkshopRecipeView): boolean {
-  const result = context.store.execute(craftItemCommand(recipe.baseId, recipe.tier, Date.now()));
+  const result = context.store.execute(craftItemCommand(recipe.baseId, recipe.tier, recipe.setMaterialId, Date.now()));
   if (!result.accepted) {
     context.notify(describeRejection(result.rejection));
     return false;
   }
-  context.notify(t('workshop.started', { name: craftedBaseName(recipe.mainMaterialId, recipe.baseId) }));
+  context.notify(t('workshop.started', { name: craftedBaseName(recipe.resultMaterialId, recipe.baseId) }));
+  selectedProfessionId = null;
+  context.requestRender();
   return true;
 }
 
@@ -51,30 +55,43 @@ function openRecipe(context: PanelContext, recipe: WorkshopRecipeView): void {
   const details = element(
     'div',
     'item-card',
-    element('div', 'item-name', craftedBaseName(recipe.mainMaterialId, recipe.baseId)),
+    element('div', 'item-name', `${craftedBaseName(recipe.resultMaterialId, recipe.baseId)} (${recipeLevelText(recipe)})`),
+    itemLevelLine(recipe),
     createClassTags(recipe.usableByClassIds),
     createRecipeStatTable(recipe.baseId, recipe.statRanges),
+    ...(recipe.setMaterialId === null ? [] : createSetBonusLine(recipe.setMaterialId)),
     element('div', 'card-text small', t('workshop.craftTime', { time: formatDuration(recipe.craftSeconds) })),
     element('div', 'card-text small', ...describeIngredients(recipe.ingredients)),
     element('div', 'card-row', t('workshop.fee'), createMoneyDisplay(recipe.feeCopper)),
+    element('div', 'card-text small', t('workshop.upgradeChance', { percent: Math.round(recipe.upgradeChance * 100) })),
   );
-  const modal = openModal(t('modal.recipeTitle'), element('div', 'modal-columns', createRecipePortrait(recipe.baseId, recipe.mainMaterialId), details));
+  const modal = openModal(t('modal.recipeTitle'), element('div', 'modal-columns', createRecipePortrait(recipe.baseId, recipe.resultMaterialId), details));
   details.append(actionButton(t('workshop.craft'), () => {
     if (craft(context, recipe)) modal.close();
   }, { disabled: !recipe.hasMaterials || !recipe.canAffordFee || recipe.isCrafterBusy, className: 'action-button primary' }));
 }
 
+// The recipe level is the crafter level that opens the recipe. It differs from recipe to recipe, so a later recipe shows a higher number.
+function recipeLevelText({ requiredCraftLevel }: WorkshopRecipeView): string {
+  return t('workshop.recipeLevel', { level: requiredCraftLevel });
+}
+
+// The item level of a craft is rolled between these numbers. Every recipe of a tier shares the range.
+function itemLevelLine({ itemLevelRange }: WorkshopRecipeView): HTMLElement {
+  return element('div', 'card-text small', t('workshop.itemLevel', { first: itemLevelRange.lowest, last: itemLevelRange.highest }));
+}
+
 function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView): HTMLElement {
   const base = requireById(BASE_ITEMS, recipe.baseId);
-  const mainMaterial = requireById(MATERIALS, recipe.mainMaterialId);
-  const art = createItemIcon(recipe.baseId, mainMaterial.id, base.mainCategory, 3);
+  const resultMaterial = requireById(MATERIALS, recipe.resultMaterialId);
+  const art = createItemIcon(recipe.baseId, resultMaterial.id, base.mainCategory, 3);
   const info = element('div', 'card-text small', ...describeIngredients(recipe.ingredients));
   const classes = createClassTags(recipe.usableByClassIds);
   const fee = element('div', 'card-row', t('workshop.fee'), createMoneyDisplay(recipe.feeCopper));
   const row = createListRow({
     art,
-    title: `${craftedBaseName(recipe.mainMaterialId, recipe.baseId)} (${recipe.sizeText})`,
-    lines: [info, fee, classes],
+    title: `${craftedBaseName(recipe.resultMaterialId, recipe.baseId)} (${recipeLevelText(recipe)})`,
+    lines: [info, itemLevelLine(recipe), fee, classes],
     actions: [actionButton(t('workshop.craft'), () => craft(context, recipe), { disabled: !recipe.hasMaterials || !recipe.canAffordFee || recipe.isCrafterBusy })],
     className: 'clickable',
   });
@@ -83,10 +100,35 @@ function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView): HTMLEl
   return row;
 }
 
+function collectWaitingItem(context: PanelContext, crafter: CrafterView): void {
+  const levelBefore = context.store.getState().crafters[crafter.professionId]?.level ?? 1;
+  const result = context.store.execute(collectWaitingCraftCommand(crafter.professionId));
+  if (!result.accepted) {
+    context.notify(describeRejection(result.rejection));
+    return;
+  }
+  const levelAfter = context.store.getState().crafters[crafter.professionId]?.level ?? 1;
+  if (levelAfter > levelBefore) {
+    playSound('crafter-level-up');
+    context.notify(t('workshop.levelUp', { profession: t(`profession.${crafter.professionId}`), level: levelAfter }));
+  }
+}
+
 function renderCrafterStatus(context: PanelContext, crafter: CrafterView): HTMLElement {
   const job = crafterJob(context.store.getState(), crafter.professionId);
+  if (job?.isWaitingForCollection) {
+    return element(
+      'div',
+      'crafter-job',
+      element('div', 'card-text small danger-text', t('workshop.waitingForCollection', { name: itemDisplayName(job.item) })),
+      actionButton(t('workshop.collect'), (event) => {
+        event.stopPropagation();
+        collectWaitingItem(context, crafter);
+      }, { className: 'action-button primary small-button' }),
+    );
+  }
   return job
-    ? element('div', 'crafter-job', element('div', 'card-text small', t('workshop.crafting', { name: itemDisplayName(job.item) })), createJobBar(job, t('job.waitingForSpace')))
+    ? element('div', 'crafter-job', element('div', 'card-text small', t('workshop.crafting', { name: itemBaseDisplayName(job.item) })), createJobBar(job, t('job.waitingForSpace')))
     : element('div', 'card-text small', t('workshop.crafterIdle'));
 }
 

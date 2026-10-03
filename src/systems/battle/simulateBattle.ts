@@ -6,17 +6,11 @@ import {
   SECONDS_PER_TICK,
 } from '../../content/balance/battle';
 import type { Random } from '../../kernel/random';
-import type { BattleEvent, BattleReport, BattleSide, BattleUnit } from '../../model/battle';
+import type { BattleEvent, BattleReport, BattleUnit } from '../../model/battle';
+import { combatantOf, damageFactorBetween, livingUnitsOf, statusStrength, type Combatant } from './combatant';
 import { rollDamage } from './damage';
-
-interface Combatant {
-  unit: BattleUnit;
-  charge: number;
-}
-
-function livingUnitsOf(combatants: readonly Combatant[], side: BattleSide): BattleUnit[] {
-  return combatants.filter((combatant) => combatant.unit.side === side && combatant.unit.hp > 0).map((c) => c.unit);
-}
+import { gainResourceFromHit, regenerateResource } from './resourcePool';
+import { tryCastSpell } from './spellCasting';
 
 function healthFractionOf(unit: BattleUnit): number {
   return unit.hp / unit.maxHp;
@@ -32,7 +26,10 @@ function chooseAttackTarget(actor: BattleUnit, opponents: readonly BattleUnit[],
   return [...opponents].sort((first, second) => first.hp - second.hp)[0] as BattleUnit;
 }
 
-function act(actor: BattleUnit, combatants: readonly Combatant[], timeSeconds: number, random: Random): BattleEvent {
+function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeSeconds: number, random: Random): BattleEvent[] {
+  const actor = actingCombatant.unit;
+  const spellEvents = tryCastSpell(actingCombatant, combatants, timeSeconds, random);
+  if (spellEvents) return spellEvents;
   const allies = livingUnitsOf(combatants, actor.side);
   const opponents = livingUnitsOf(combatants, actor.side === 'party' ? 'enemy' : 'party');
 
@@ -44,7 +41,7 @@ function act(actor: BattleUnit, combatants: readonly Combatant[], timeSeconds: n
       Math.round(actor.attack * HEAL_POWER_MULTIPLIER),
     );
     healTarget.hp += healedAmount;
-    return {
+    return [{
       timeSeconds,
       kind: 'heal',
       actorId: actor.id,
@@ -52,13 +49,16 @@ function act(actor: BattleUnit, combatants: readonly Combatant[], timeSeconds: n
       amount: healedAmount,
       isCritical: false,
       targetHpAfter: healTarget.hp,
-    };
+      actorResourceAfter: actor.resource,
+      targetResourceAfter: healTarget.resource,
+    }];
   }
 
   const target = chooseAttackTarget(actor, opponents, random);
-  const damage = rollDamage(actor, target, random);
+  const damage = rollDamage(actor, target, random, { statusFactor: damageFactorBetween(actingCombatant, combatantOf(combatants, target), timeSeconds) });
   target.hp = Math.max(0, target.hp - damage.amount);
-  return {
+  gainResourceFromHit(actor, target);
+  return [{
     timeSeconds,
     kind: 'attack',
     actorId: actor.id,
@@ -66,13 +66,15 @@ function act(actor: BattleUnit, combatants: readonly Combatant[], timeSeconds: n
     amount: damage.amount,
     isCritical: damage.isCritical,
     targetHpAfter: target.hp,
-  };
+    actorResourceAfter: actor.resource,
+    targetResourceAfter: target.resource,
+  }];
 }
 
 // The whole fight is simulated at once from a seed, then replayed by the screen.
 // This keeps results identical after a reload and lets the balance tool run without a screen.
 export function simulateBattle(units: readonly BattleUnit[], random: Random): BattleReport {
-  const combatants: Combatant[] = units.map((unit) => ({ unit: { ...unit }, charge: 0 }));
+  const combatants: Combatant[] = units.map((unit) => ({ unit: { ...unit }, charge: 0, statuses: [], spellReadyAtSeconds: {} }));
   const events: BattleEvent[] = [];
   const maximumTicks = Math.round(MAXIMUM_BATTLE_SECONDS / SECONDS_PER_TICK);
   let tick = 0;
@@ -83,7 +85,9 @@ export function simulateBattle(units: readonly BattleUnit[], random: Random): Ba
     const timeSeconds = Math.round(tick * SECONDS_PER_TICK * 10) / 10;
 
     for (const combatant of combatants) {
-      if (combatant.unit.hp > 0) combatant.charge += combatant.unit.speed * SECONDS_PER_TICK;
+      if (combatant.unit.hp <= 0) continue;
+      combatant.charge += combatant.unit.speed * (1 + statusStrength(combatant, 'haste', timeSeconds)) * SECONDS_PER_TICK;
+      regenerateResource(combatant.unit, SECONDS_PER_TICK);
     }
     const readyCombatants = combatants
       .filter((combatant) => combatant.unit.hp > 0 && combatant.charge >= ACTION_THRESHOLD)
@@ -94,7 +98,7 @@ export function simulateBattle(units: readonly BattleUnit[], random: Random): Ba
       const hasOpponents = livingUnitsOf(combatants, combatant.unit.side === 'party' ? 'enemy' : 'party').length > 0;
       if (!hasOpponents) break;
       combatant.charge -= ACTION_THRESHOLD;
-      events.push(act(combatant.unit, combatants, timeSeconds, random));
+      events.push(...act(combatant, combatants, timeSeconds, random));
     }
   }
 

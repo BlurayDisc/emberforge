@@ -4,7 +4,7 @@ import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import { createRandom } from '../../kernel/random';
 import type { BackpackEntry } from '../../model/backpack';
-import { craftSeconds, craftingExperienceForCraft, findRecipe, type Recipe } from '../../systems/crafting';
+import { craftSeconds, craftingExperienceForCraft, findRecipe, rollUpgradeLevel, type Recipe } from '../../systems/crafting';
 import { removeMaterials } from '../../systems/inventory';
 import { generateCraftedItem } from '../../systems/items';
 import { CommandRejected, type Command } from '../gameStore';
@@ -19,9 +19,9 @@ function consumeIngredients(entries: readonly BackpackEntry[], recipe: Recipe): 
   return remaining;
 }
 
-export function craftItemCommand(baseId: string, tier: number, nowMs: number): Command {
+export function craftItemCommand(baseId: string, tier: number, setMaterialId: string | null, nowMs: number): Command {
   return (state) => {
-    const recipe = findRecipe(baseId, tier);
+    const recipe = findRecipe(baseId, tier, setMaterialId);
     if (!recipe) throw new CommandRejected('reject.noRecipe');
     if (tier > highestUnlockedTier(state)) throw new CommandRejected('reject.recipeLocked');
     const crafter = state.crafters[recipe.profession] ?? { level: 1, experience: 0 };
@@ -42,12 +42,15 @@ export function craftItemCommand(baseId: string, tier: number, nowMs: number): C
     const highestHeroLevel = state.company.reduce((highest, hero) => Math.max(highest, hero.level), 1);
     const itemNumber = state.itemsCrafted + 1;
 
+    const upgradeLevel = rollUpgradeLevel(crafter.level - recipe.requiredCraftLevel, createRandom(state.seed).fork(`craft-${itemNumber}-upgrade`));
     const item = generateCraftedItem(
       {
         itemId: `item-${itemNumber}`,
         baseId: requireById(BASE_ITEMS, baseId).id,
         tier,
+        setMaterialId,
         maximumItemLevel: highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO,
+        upgradeLevel,
         craftingCostCopper,
       },
       createRandom(state.seed).fork(`craft-${itemNumber}`),
@@ -70,6 +73,7 @@ export function craftItemCommand(baseId: string, tier: number, nowMs: number): C
           professionId: recipe.profession,
           item,
           crafterExperience: craftingExperienceForCraft(recipe.requiredCraftLevel, crafter.level),
+          isWaitingForCollection: false,
         },
       ],
     };

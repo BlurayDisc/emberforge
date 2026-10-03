@@ -248,6 +248,18 @@
 
 .bar-health .bar-fill { background: var(--green); }
 .bar-experience .bar-fill { background: var(--blue); }
+.bar-experience .bar-gain {
+  position: absolute;
+  top: 0;
+  background: var(--gold);
+  transform-origin: left;
+  animation: gain-grow 0.8s steps(8) both;
+}
+
+@keyframes gain-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
 
 .toast {
   position: absolute;
@@ -287,8 +299,10 @@
 }
 
 .danger-title {
-  font-family: var(--font-title);
-  font-size: 24px;
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
   color: #ff6a5a;
   text-shadow: 2px 2px 0 var(--ink);
 }
@@ -346,6 +360,10 @@
 
 .extra-stat {
   color: var(--parchment);
+}
+
+.affix-line.affix-material {
+  color: var(--gold);
 }
 
 .affix-line.affix-prefix {

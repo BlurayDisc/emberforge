@@ -16,6 +16,7 @@ export function summariseHeroPerformance(report: BattleReport, heroIds: readonly
   for (const event of report.events) {
     const actorPerformance = performanceByHero.get(event.actorId);
     const targetPerformance = performanceByHero.get(event.targetId);
+    if (event.kind === 'effect') continue;
     if (event.kind === 'heal') {
       if (actorPerformance) actorPerformance.healingDone += event.amount;
       continue;

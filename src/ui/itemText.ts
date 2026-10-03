@@ -1,6 +1,7 @@
 import type { EquipmentSlot, Item } from '../model/item';
 import { element } from './dom';
-import { itemBaseDisplayName, itemDisplayName, qualityName } from './displayNames';
+import { itemBaseDisplayName, qualityName } from './displayNames';
+import { createItemNameElement } from './itemNameElement';
 import { t } from './i18n';
 import { createItemStatTable } from './itemStatTable';
 import { createMoneyDisplay } from './moneyDisplay';
@@ -32,7 +33,7 @@ export function createItemCard(item: Item): HTMLElement {
   const card = element(
     'div',
     'item-card',
-    element('div', `item-name quality-${item.quality}`, itemDisplayName(item)),
+    createItemNameElement(item, 'item-name'),
     element('div', 'card-text small', meta),
     createItemStatTable(item),
   );

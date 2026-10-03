@@ -16,6 +16,8 @@ const MATERIAL_ROWS: Readonly<Record<MaterialCategory, Rows>> = {
   bone: ['............', '............', '............', '............', '..oo....oo..', '.oppooooppo.', '.oppppppppo.', '..oooooooo..', '............', '............', '............', '............'],
   sinew: ['............', '............', '...oooooo...', '..oprprpro..', '.oprooooorpo', '.orpo....opo', '.oprooooorpo', '..oprprpro..', '...oooooo...', '............', '............', '............'],
   essence: ['....oooo....', '....owwo....', '....obbo....', '...obbbbo...', '..obblbbbo..', '..obbbbbbo..', '..obbbbbbo..', '..obbbbbbo..', '...obbbbo...', '....oooo....', '............', '............'],
+  skin: ['............', '..oooooooo..', '.oaaaaaaaao.', 'oaalaaaaaaao', 'oaaaadaaaaao', 'oaaaaaaadaao', '.oaaaaaaaao.', '..oaaaaaao..', '...oooooo...', '............', '............', '............'],
+  silk: ['............', '............', '.oooooooooo.', '.oaaaaaaaao.', '.ollllllllo.', '.oaaaaaaaao.', '.ollllllllo.', '.oaaaaaaaao.', '.oooooooooo.', '............', '............', '............'],
   catalyst: ['............', '....oooo....', '...oggggo...', '..ogglggdo..', '..oglggggdo.', '..ogggggggdo', '..ogggggggdo', '..oggggggdo.', '...oggggdo..', '....oooo....', '............', '............'],
 };
 
@@ -23,6 +25,7 @@ const DUNGEON_ROWS: Readonly<Record<string, Rows>> = {
   'rat-cellar': ['...oooooo...', '..oWWWWWWo..', '.owwwwwwwwo.', '.oggggggggo.', '.owwwwwwwwo.', '.owwWwwwwwo.', '.owwwwwwwwo.', '.oggggggggo.', '.owwwwwwwwo.', '..oWWWWWWo..', '...oooooo...', '............'],
   'scarecrow-field': ['....oooo....', '..oowwwwoo..', '...oppppo...', '...opoopo...', '...oppppo...', 'ogoowwwwoogo', 'o..owwwwo..o', '...owrrwo...', '...owrrwo...', '....owwo....', '....owwo....', '....oWWo....'],
   'wolf-trail': ['............', '...oooo.....', '..oggggo....', '.oggggo.....', '.ogggo......', '.ogggo......', '.ogggo......', '.oggggo.....', '..oggggooo..', '...oggggggo.', '....oooooo..', '............'],
+  'sunken-mill': ['o..........o', '.o...oo...o.', '..o.owwo.o..', '...oowwoo...', '...owwwwo...', '....owwo....', '...owWWwo...', '...owWWwo...', '..owwwwwwo..', '.bbbbbbbbbb.', 'bbbFbbbbFbbb', '............'],
   'goblin-camp': ['.....rr.....', '.....oo.....', '....oaao....', '...oaaaao...', '..oaaaaaao..', '.oaaooooaao.', '.oaaooooaao.', '.oaaooooaao.', 'oooooooooooo', '............', '............', '............'],
   'old-wood-hollow': ['....oooo....', '..oofFfFoo..', '.offFfffFfo.', 'offfFffffFfo', 'offfffFfffo.', '.offfffffffo', '..oofffoo...', '....owwo....', '....owwo....', '....owwo....', '...oowwoo...', '............'],
   'goblin-chief-lair': ['..g..g..g...', '..gggggggg..', '..oooooooo..', '.oppppppppo.', '.opooppoopo.', '.opooppoopo.', '.opppoopppo.', '..oppppppo..', '..opopopopo.', '..oooooooo..', '............', '............'],
@@ -46,6 +49,11 @@ const TINT_BY_MATERIAL: Readonly<Record<string, Tint>> = {
   rawhide: { a: '#a8754a', d: '#6a4a2a', l: '#cfa070' },
   linen: { a: '#e0d4b0', d: '#a89c78', l: '#fff6d8' },
   quartz: { a: '#b08ae0', d: '#7a4aa8', l: '#e0c8ff' },
+  'sharp-fang': { a: '#ddd2b0', d: '#9a8e6a', l: '#fff6d8' },
+  toadskin: { a: '#6b8e3a', d: '#43601f', l: '#93b856' },
+  'bone-shard': { a: '#d9d2bc', d: '#8f8870', l: '#f4f0e0' },
+  'spider-silk': { a: '#d8d8e8', d: '#9a9ab8', l: '#ffffff' },
+  'coarse-sinew': { a: '#b86a5a', d: '#7a3a30', l: '#e0968a' },
 };
 
 const TINT_BY_CATEGORY: Readonly<Record<string, Tint>> = {

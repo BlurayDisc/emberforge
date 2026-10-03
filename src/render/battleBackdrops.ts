@@ -166,6 +166,25 @@ function drawHollow(art: PixelCanvas, random: Random): void {
   for (let root = 0; root < 60; root++) art.fill('#3a2a1e', random.nextInt(0, WIDTH), random.nextInt(130, HEIGHT), 5, 2);
 }
 
+function drawMill(art: PixelCanvas, random: Random): void {
+  verticalGradient(art, 0, 128, [74, 104, 112], [158, 176, 150]);
+  art.fill('#2f4a3a', 0, 112, WIDTH, 18);
+  art.fill('#7a6a58', 60, 36, 52, 84);
+  art.fill('#5a4c3e', 60, 36, 8, 84);
+  art.fill('#58607a', 54, 24, 64, 14);
+  art.fill('#3b4258', 54, 36, 64, 2);
+  art.fill('#17110d', 80, 92, 12, 28);
+  for (const [bladeX, bladeY, bladeWidth, bladeHeight] of [[30, 56, 28, 3], [114, 56, 28, 3], [84, 6, 3, 18], [84, 70, 3, 18]] as const) art.fill('timber', bladeX, bladeY, bladeWidth, bladeHeight);
+  art.fill('#2d4f5f', 0, 128, WIDTH, HEIGHT - 128);
+  for (let ripple = 0; ripple < 70; ripple++) art.fill(random.chance(0.5) ? '#3f6f80' : '#1f3a46', random.nextInt(0, WIDTH), random.nextInt(130, HEIGHT), 8, 1);
+  for (let reed = 0; reed < 26; reed++) {
+    const x = random.nextInt(0, WIDTH);
+    art.fill('#4a6a2a', x, 100 + random.nextInt(0, 24), 2, 22);
+    art.fill('timber', x, 98, 2, 6);
+  }
+  for (let pad = 0; pad < 14; pad++) art.fill('#4f7a3a', random.nextInt(0, WIDTH), random.nextInt(150, HEIGHT - 4), 9, 3);
+}
+
 function drawLair(art: PixelCanvas, random: Random): void {
   verticalGradient(art, 0, HEIGHT, [24, 14, 26], [44, 28, 36]);
   for (let spike = 0; spike < WIDTH; spike += 16) {
@@ -198,6 +217,7 @@ const DRAWERS: Readonly<Record<string, (art: PixelCanvas, random: Random) => voi
   'rat-cellar': drawCellar,
   'scarecrow-field': drawField,
   'wolf-trail': drawTrail,
+  'sunken-mill': drawMill,
   'goblin-camp': drawCamp,
   'old-wood-hollow': drawHollow,
   'goblin-chief-lair': drawLair,

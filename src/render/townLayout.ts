@@ -1,5 +1,6 @@
 import { BUILDINGS } from '../content/buildings';
 import { TOWN_WIDTH } from '../kernel/stageSize';
+import type { AnimalKind } from './animalArt';
 
 export interface Point {
   x: number;
@@ -12,6 +13,7 @@ export interface Road {
   // How many guards and villagers walk this road. Roads with neither stay empty.
   guardCount?: number;
   villagerCount?: number;
+  animals?: Partial<Record<AnimalKind, number>>;
 }
 
 export interface Square {
@@ -38,8 +40,8 @@ function streetYAt(road: Road, x: number): number {
   return start.y + ((end.y - start.y) * (x - start.x)) / (end.x - start.x);
 }
 
-const MAIN_STREET = streetAcross(MAIN_STREET_Y, 4, 16, { villagerCount: 6, guardCount: 2 });
-const SOUTH_STREET = streetAcross(SOUTH_STREET_Y, 2, 10, { villagerCount: 3 });
+const MAIN_STREET = streetAcross(MAIN_STREET_Y, 4, 16, { villagerCount: 6, guardCount: 2, animals: { cat: 1, dog: 1 } });
+const SOUTH_STREET = streetAcross(SOUTH_STREET_Y, 2, 10, { villagerCount: 3, animals: { cat: 1, hen: 1 } });
 
 // A short lane joins each door to a street. North buildings face the main street. South buildings face the south street.
 const DOOR_LANES: readonly Road[] = BUILDINGS.filter((building) => building.style !== 'stall' && building.id !== 'keep').map((building) =>

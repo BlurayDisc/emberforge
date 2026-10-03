@@ -4,7 +4,8 @@ import type { Hero } from '../../model/hero';
 import { addMaterials } from '../../systems/inventory';
 import { rollMonsterLoot, type LootRoll } from '../../systems/loot';
 import { heroAfterFight } from '../../systems/recovery';
-import { applyExperience, experienceForKill } from '../../systems/progression';
+import { applyExperience } from '../../systems/progression';
+import { experienceForDefeatedMonsters } from '../encounterExperience';
 import { encounterRandomFor, planNextEncounter, type PlannedEncounter } from '../encounterPlanner';
 import { summariseHeroPerformance, type HeroPerformance } from '../encounterStatistics';
 import { CommandRejected, type Command } from '../gameStore';
@@ -23,9 +24,7 @@ function finalHealthFractionOf(hero: Hero, plan: PlannedEncounter): number {
 }
 
 function applyOutcomeToHero(hero: Hero, performance: HeroPerformance, plan: PlannedEncounter, won: boolean, nowMs: number): HeroOutcome {
-  const experienceGained = won
-    ? plan.monsterUnits.reduce((total, monster) => total + experienceForKill(monster.level, hero.level, monster.rank), 0)
-    : 0;
+  const experienceGained = won ? experienceForDefeatedMonsters(plan.monsterUnits, hero.level) : 0;
   const leveledHero = applyExperience(hero, experienceGained);
   const statistics = hero.statistics;
   return {
@@ -50,13 +49,15 @@ function applyOutcomeToHero(hero: Hero, performance: HeroPerformance, plan: Plan
       monstersDefeated: performance.monstersDefeated,
       experienceGained,
       reachedLevel: leveledHero.level > hero.level ? leveledHero.level : null,
+      levelAfter: leveledHero.level,
+      experienceAfter: leveledHero.experience,
     },
   };
 }
 
 function rollRunLoot(state: GameState, run: DungeonRun, monsters: readonly BattleUnit[]): LootRoll[] {
   const lootRandom = encounterRandomFor(state, run).fork('loot');
-  return monsters.map((monster) => rollMonsterLoot(monster.definitionId, monster.level, lootRandom.fork(monster.id)));
+  return monsters.map((monster) => rollMonsterLoot(monster.definitionId, lootRandom.fork(monster.id)));
 }
 
 export function completeRunCommand(runNumber: number, nowMs: number): Command {
@@ -69,7 +70,6 @@ export function completeRunCommand(runNumber: number, nowMs: number): Command {
     const won = plan.report.winner === 'party';
     const performanceByHero = summariseHeroPerformance(plan.report, run.heroIds, plan.monsterUnits);
     const loot = won ? rollRunLoot(state, run, plan.monsterUnits) : [];
-    const copperGained = loot.reduce((sum, drop) => sum + drop.copper, 0);
     const materialsDropped = loot.flatMap((drop) => drop.materials);
     const backpack = addMaterials(state.backpack, materialsDropped, backpackRowsOf(state));
 
@@ -82,17 +82,16 @@ export function completeRunCommand(runNumber: number, nowMs: number): Command {
       won,
       durationSeconds: plan.report.durationSeconds,
       monsterIds: plan.monsterUnits.map((monster) => monster.definitionId),
-      copperGained,
       materials: materialsDropped,
-      materialsLost: backpack.overflow,
+      materialsWaiting: backpack.overflow,
       heroes: outcomes.map((outcome) => outcome.result),
     };
     const firstClear = won && !state.clearedDungeonIds.includes(run.dungeonId);
     return {
       ...state,
-      copper: state.copper + copperGained,
       company: state.company.map((hero) => outcomeByHeroId.get(hero.id)?.hero ?? hero),
       backpack: backpack.entries,
+      pendingLoot: backpack.overflow.length > 0 ? { ...state.pendingLoot, [run.dungeonId]: backpack.overflow } : state.pendingLoot,
       dungeonRuns: state.dungeonRuns.filter((candidate) => candidate.runNumber !== runNumber),
       reports: [...state.reports, { runNumber, dungeonId: run.dungeonId, result, firstClear }],
       clearedDungeonIds: firstClear ? [...state.clearedDungeonIds, run.dungeonId] : state.clearedDungeonIds,

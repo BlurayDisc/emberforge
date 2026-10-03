@@ -33,5 +33,9 @@ export function createMonsterUnit(monsterId: string, level: number, unitId: stri
     speed: definition.speed,
     critChance: MONSTER_CRITICAL_CHANCE,
     behavior: 'fighter',
+    resourceId: 'mana',
+    maxResource: 0,
+    resource: 0,
+    spells: [],
   };
 }

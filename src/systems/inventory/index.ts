@@ -1,12 +1,15 @@
+export { sortBackpackEntries } from './sortBackpack';
 export {
   addItem,
   addMaterials,
+  backpackExpansionCostCopper,
   backpackRowCount,
   combineMaterialQuantities,
   countMaterial,
   findEntryAt,
   findItem,
   findFreePosition,
+  moveEntry,
   removeEntryAt,
   removeItem,
   removeMaterials,

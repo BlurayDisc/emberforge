@@ -26,5 +26,9 @@ export interface Hero {
   // Set while the hero is down. The hero returns at this time.
   downedUntilMs: number | null;
   equipment: HeroEquipment;
+  learnedSpellIds: string[];
+  // One entry for each normal slot, in priority order. An empty slot is null. Ultimate spells go in equippedUltimateId only.
+  equippedSpellIds: Array<string | null>;
+  equippedUltimateId: string | null;
   statistics: HeroStatistics;
 }

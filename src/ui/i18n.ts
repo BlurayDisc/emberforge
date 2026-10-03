@@ -36,7 +36,8 @@ function withDerivedParams(params: MessageParams): MessageParams {
   const derived = { ...params };
   if (typeof params.classId === 'string') derived.className = t(`class.${params.classId}.name`);
   if (typeof params.profession === 'string') derived.professionName = t(`profession.${params.profession}`);
-  if (typeof params.armourWeight === 'string') derived.armourWeightName = t(`armourweight.${params.armourWeight}`);
+  // A class may wear several weights. They arrive as one comma list.
+  if (typeof params.armourWeight === 'string') derived.armourWeightName = params.armourWeight.split(',').map((weight) => t(`armourweight.${weight}`)).join(' / ');
   return derived;
 }
 

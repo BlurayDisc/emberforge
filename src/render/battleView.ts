@@ -23,6 +23,7 @@ export interface BattleView {
   setBackdrop(dungeonId: string): void;
   showUnits(units: readonly BattleUnit[]): void;
   setUnitHealth(unitId: string, hp: number): void;
+  setUnitResource(unitId: string, value: number): void;
   playHit(actorId: string, targetId: string, amount: number, isCritical: boolean): void;
   playHeal(actorId: string, targetId: string, amount: number): void;
   markDefeated(unitId: string): void;
@@ -188,7 +189,7 @@ export function createBattleView(stage: PixelStage): BattleView {
           shadow.position.set(worldX, feetWorldY + 1, -0.5);
           (shadow.material as MeshBasicMaterial).opacity = 0.35;
           const barWidth = Math.max(32, Math.min(56, Math.round(sprite.scale.x) + 8));
-          const healthBar = createHealthBar({ hp: unit.hp, maxHp: unit.maxHp, level: unit.level, side, rank: unit.rank, barWidth });
+          const healthBar = createHealthBar({ hp: unit.hp, maxHp: unit.maxHp, level: unit.level, side, rank: unit.rank, barWidth, resource: side === 'party' && unit.maxResource > 0 ? { id: unit.resourceId, value: unit.resource, max: unit.maxResource } : undefined });
           healthBar.sprite.position.set(worldX, Math.round(feetWorldY + sprite.scale.y + HEALTH_BAR_GAP_ABOVE_HEAD), 3);
           const visual: UnitVisual = {
             sprite, shadow, healthBar, baseColor, spriteHeight: sprite.scale.y, worldX, feetWorldY, side,
@@ -205,6 +206,9 @@ export function createBattleView(stage: PixelStage): BattleView {
     setUnitHealth: (unitId, hp) => {
       const visual = visualsByUnitId.get(unitId);
       if (visual) visual.healthBar.setHealth(hp, latestElapsedSeconds);
+    },
+    setUnitResource: (unitId, value) => {
+      visualsByUnitId.get(unitId)?.healthBar.setResource(value);
     },
     playHit: (actorId, targetId, amount, isCritical) => {
       const actor = visualsByUnitId.get(actorId);

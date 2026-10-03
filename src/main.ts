@@ -1,6 +1,4 @@
 import '@fontsource/jacquard-12/latin-400.css';
-import '@fontsource/atkinson-hyperlegible/latin-400.css';
-import '@fontsource/atkinson-hyperlegible/latin-700.css';
 import '@fontsource/pixelify-sans/latin-400.css';
 import '@fontsource/pixelify-sans/latin-700.css';
 import '@fontsource/fusion-pixel-12px-proportional-sc/latin-400.css';

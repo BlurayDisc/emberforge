@@ -8,7 +8,8 @@ export interface DungeonDefinition {
   rareMonsterId: string | null;
   bossMonsterId: string | null;
   maxPartySize: number;
-  recommendedMinLevel: number;
+  // A hero below this level cannot enter. The recommended range ends at recommendedMaxLevel.
+  minimumHeroLevel: number;
   recommendedMaxLevel: number;
   unlockAfter: string | null;
 }

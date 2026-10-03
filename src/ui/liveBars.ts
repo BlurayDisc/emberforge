@@ -33,6 +33,19 @@ export function createExperienceBar(current: number, next: number): HTMLElement 
   return bar;
 }
 
+// Experience after a fight: blue is what the hero had, gold is what the fight gave. A level up leaves only the gold part.
+export function createExperienceGainBar(experienceBefore: number, experienceGained: number, experienceToNext: number): HTMLElement {
+  const toFraction = (experience: number): number => (experienceToNext > 0 ? Math.max(0, Math.min(1, experience / experienceToNext)) : 0);
+  const gainStart = toFraction(experienceBefore);
+  const gainEnd = toFraction(experienceBefore + experienceGained);
+  const base = element('div', 'bar-fill');
+  base.style.width = `${Math.round(gainStart * 100)}%`;
+  const gain = element('div', 'bar-fill bar-gain');
+  gain.style.left = `${Math.round(gainStart * 100)}%`;
+  gain.style.width = `${Math.round((gainEnd - gainStart) * 100)}%`;
+  return element('div', 'bar run-progress bar-experience', base, gain);
+}
+
 // Progress bar of a sale or craft job.
 export function createJobBar(job: TimedJob, waitingText: string): HTMLElement {
   const { bar, fill, label } = createBar('bar-experience');

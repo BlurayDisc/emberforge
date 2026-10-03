@@ -1,9 +1,10 @@
 import { BUILDINGS, type BuildingDefinition } from '../content/buildings';
 import type { GameStore } from '../game';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_WIDTH } from '../kernel/stageSize';
+import { LOGICAL_HEIGHT, TOWN_WIDTH } from '../kernel/stageSize';
 import { element } from './dom';
 import { isInCastle, onCastleVisitChange, setInCastle } from './castleVisit';
 import { onLanguageChange, t } from './i18n';
+import { createMillStatus } from './millStatus';
 import { focusedRunNumber, onRunFocusChange } from './runFocus';
 import type { TownNavigation } from './townNavigation';
 
@@ -15,10 +16,6 @@ export interface TownOverlay {
 
 function percentOf(value: number, total: number): string {
   return `${(value / total) * 100}%`;
-}
-
-function screenOf(building: BuildingDefinition): number {
-  return Math.floor(building.x / LOGICAL_WIDTH);
 }
 
 function createHotspot(building: BuildingDefinition, onSelect: (panelId: string) => void): HTMLElement {
@@ -42,7 +39,7 @@ function createArrow(direction: 'left' | 'right', onPress: () => void): HTMLButt
   return arrow;
 }
 
-export function createTownOverlay(store: GameStore, onSelect: (panelId: string) => void, navigation: TownNavigation): TownOverlay {
+export function createTownOverlay(store: GameStore, onSelect: (panelId: string) => void, navigation: TownNavigation, notify: (message: string) => void): TownOverlay {
   const overlay = element('div', 'town-overlay');
   const world = element('div', 'town-world');
   const namedBuildings = BUILDINGS.filter((building) => building.label !== null || building.panelId !== null);
@@ -56,6 +53,8 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
   const leftArrow = createArrow('left', () => goTo(navigation.currentScreen() - 1));
   const rightArrow = createArrow('right', () => goTo(navigation.currentScreen() + 1));
   world.append(...hotspots.map((entry) => entry.hotspot));
+  const mill = BUILDINGS.find((building) => building.id === 'mill');
+  if (mill) world.append(createMillStatus(store, mill, notify));
   overlay.append(world, leftArrow, rightArrow, title, hint);
 
   const refreshArrows = (): void => {
@@ -63,9 +62,6 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
     leftArrow.style.visibility = screen > 0 ? 'visible' : 'hidden';
     rightArrow.style.visibility = screen < navigation.screenCount - 1 ? 'visible' : 'hidden';
     title.textContent = t(`town.screen.${screen}`);
-    const attentionScreen = store.getState().company.length === 0 ? screenOf(BUILDINGS.find((building) => building.id === 'tavern') ?? namedBuildings[0] as BuildingDefinition) : null;
-    leftArrow.classList.toggle('attention', attentionScreen !== null && attentionScreen < screen);
-    rightArrow.classList.toggle('attention', attentionScreen !== null && attentionScreen > screen);
   };
 
   const refresh = (): void => {
@@ -75,7 +71,6 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
     const isReadyForFirstRun = !hasNoHeroes && state.runsStarted === 0;
 
     hotspots.forEach(({ building, hotspot }) => {
-      hotspot.classList.toggle('attention', hasNoHeroes && building.id === 'tavern');
       const label = building.label === null ? '' : t(`building.${building.id}`);
       hotspot.setAttribute('aria-label', label);
       const labelElement = hotspot.querySelector('.building-label');

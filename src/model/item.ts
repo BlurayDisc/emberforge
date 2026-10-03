@@ -57,6 +57,7 @@ export interface Item {
   armourWeight: ArmourWeight | null;
   quality: ItemQuality;
   itemLevel: number;
+  upgradeLevel: number;
   tier: number;
   width: number;
   height: number;

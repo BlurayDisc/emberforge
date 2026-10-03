@@ -4,15 +4,17 @@ import { ARMOUR_HIT_SOUNDS, CLASS_ATTACK_SOUNDS, MONSTER_ATTACK_SOUNDS, MONSTER_
 import { CLASSES } from '../content/classes';
 import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
-import { completeRunCommand, findActiveRun, planNextEncounter, type GameStore } from '../game';
+import { completeRunCommand, experienceForDefeatedMonsters, findActiveRun, planNextEncounter, type GameStore } from '../game';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { ClassId } from '../model/hero';
 import type { BattleView } from '../render/battleView';
 import type { PixelStage } from '../render/pixelStage';
 import type { TownView } from '../render/townView';
 import type { LogEntry, LogUnit } from '../ui/battleLogLines';
-import { listOf, unitDisplayName } from '../ui/displayNames';
+import type { ArmourWeight } from '../model/item';
+import { listOf, resourceName, unitDisplayName } from '../ui/displayNames';
 import { t } from '../ui/i18n';
+import { spellName as spellNameOf } from '../ui/spellText';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
 import { forgetRunProgress, publishRunProgress } from '../ui/runProgress';
 import type { RunHud } from '../ui/runHud';
@@ -65,7 +67,12 @@ function logEntriesForEvent(event: BattleEvent, encounter: EncounterPlayback): L
   const actor = logUnitOf(encounter.unitsById.get(event.actorId));
   const targetUnit = encounter.unitsById.get(event.targetId);
   const target = logUnitOf(targetUnit);
-  entries.push(event.kind === 'heal' ? { kind: 'heal', actor, target, amount: event.amount } : { kind: 'hit', actor, target, amount: event.amount, isCritical: event.isCritical });
+  const spellName = event.spellId === undefined ? undefined : spellNameOf(event.spellId);
+  const actorUnit = encounter.unitsById.get(event.actorId);
+  const resourceSpent = event.resourceSpent !== undefined && actorUnit ? { resourceName: resourceName(actorUnit.resourceId), amount: event.resourceSpent } : undefined;
+  if (event.kind === 'effect') entries.push({ kind: 'effect', actor, target, spellName: spellName ?? '', resourceSpent });
+  else if (event.kind === 'heal') entries.push({ kind: 'heal', actor, target, amount: event.amount, spellName, resourceSpent });
+  else entries.push({ kind: 'hit', actor, target, amount: event.amount, isCritical: event.isCritical, spellName, resourceSpent });
   if (targetUnit && event.targetHpAfter === 0) entries.push({ kind: 'defeated', unit: target });
   return entries;
 }
@@ -76,7 +83,7 @@ function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, Batt
   const actor = unitsById.get(event.actorId);
   const target = unitsById.get(event.targetId);
   if (!actor || !target) return;
-  if (event.kind === 'heal') {
+  if (event.kind === 'heal' || event.kind === 'effect') {
     playSound('heal-chime');
     return;
   }
@@ -85,7 +92,7 @@ function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, Batt
     playSound(MONSTER_HURT_SOUNDS[target.spriteKey] ?? '', 0.05);
   } else {
     playSound(MONSTER_ATTACK_SOUNDS[actor.spriteKey] ?? '');
-    playSound(ARMOUR_HIT_SOUNDS[requireById(CLASSES, target.definitionId).armourWeight], 0.04);
+    playSound(ARMOUR_HIT_SOUNDS[requireById(CLASSES, target.definitionId).armourWeights[0] as ArmourWeight], 0.04);
   }
   if (event.isCritical) playSound('critical-ping', 0.05);
   if (event.targetHpAfter === 0) playSound(target.rank === 'hero' ? 'defeat-hero' : 'defeat-monster', 0.12);
@@ -98,11 +105,17 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   let displayedRunNumber: number | null = null;
   let hasLoaded = false;
 
+  const showResourcesAfterEvent = (event: BattleEvent): void => {
+    view.setUnitResource(event.actorId, event.actorResourceAfter);
+    view.setUnitResource(event.targetId, event.targetResourceAfter);
+  };
+
   const applyEventToView = (event: BattleEvent, encounter: EncounterPlayback): void => {
     const target = encounter.unitsById.get(event.targetId);
     if (target) view.setUnitHealth(target.id, event.targetHpAfter);
+    showResourcesAfterEvent(event);
     if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount, event.isCritical);
-    else view.playHeal(event.actorId, event.targetId, event.amount);
+    else if (event.kind === 'heal') view.playHeal(event.actorId, event.targetId, event.amount);
     playEventSounds(event, encounter.unitsById);
     logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
     if (target && event.targetHpAfter === 0) view.markDefeated(target.id);
@@ -124,6 +137,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     encounter.lastLoggedTurn = 0;
     for (const event of encounter.events.slice(0, encounter.nextEventIndex)) {
       logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
+      showResourcesAfterEvent(event);
       const target = encounter.unitsById.get(event.targetId);
       if (!target) continue;
       view.setUnitHealth(target.id, event.targetHpAfter);
@@ -204,6 +218,11 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     if (isFocused && !encounter.hasAnnouncedResult && encounter.elapsedSeconds >= encounter.durationSeconds) {
       encounter.hasAnnouncedResult = true;
       hud.appendLogEntry({ kind: 'result', won: encounter.partyWon });
+      if (encounter.partyWon) {
+        for (const hero of encounter.partyUnits) {
+          hud.appendLogEntry({ kind: 'experience', hero: logUnitOf(hero), amount: experienceForDefeatedMonsters(encounter.monsterUnits, hero.level) });
+        }
+      }
     }
     if (encounter.elapsedSeconds >= encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS) {
       player.encounter = null;

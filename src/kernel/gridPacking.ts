@@ -10,6 +10,14 @@ export interface GridSpot {
   row: number;
 }
 
+export function isGridSpotFree(placed: readonly GridRectangle[], wanted: GridRectangle, columnCount: number, rowCount: number): boolean {
+  const isInsideGrid = wanted.column >= 0 && wanted.row >= 0 && wanted.column + wanted.width <= columnCount && wanted.row + wanted.height <= rowCount;
+  const overlapsPlaced = placed.some((other) =>
+    wanted.column < other.column + other.width && other.column < wanted.column + wanted.width &&
+    wanted.row < other.row + other.height && other.row < wanted.row + wanted.height);
+  return isInsideGrid && !overlapsPlaced;
+}
+
 // First fit, row by row. Used by the backpack and by the save migration.
 export function findFreeGridSpot(placed: readonly GridRectangle[], width: number, height: number, columnCount: number, rowCount: number): GridSpot | null {
   const occupied = new Set<string>();

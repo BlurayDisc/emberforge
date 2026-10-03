@@ -1,7 +1,10 @@
 import { CanvasTexture, NearestFilter, SRGBColorSpace, Sprite, SpriteMaterial } from 'three';
 import type { BattleSide, UnitRank } from '../model/battle';
+import type { ResourceId } from '../model/resource';
+import { RESOURCE_BAR_COLORS } from './resourceColors';
 
 const BAR_HEIGHT = 9;
+const RESOURCE_STRIP_EXTRA_HEIGHT = 2;
 const GHOST_HOLD_SECONDS = 0.35;
 const GHOST_DRAIN_PER_SECOND = 1.2;
 const TICK_UNIT_CANDIDATES = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
@@ -39,11 +42,14 @@ export interface HealthBarOptions {
   side: BattleSide;
   rank: UnitRank;
   barWidth: number;
+  // A strip under the health bar. Left out for a unit with no resource pool.
+  resource?: { id: ResourceId; value: number; max: number };
 }
 
 export interface HealthBar {
   sprite: Sprite;
   setHealth(hp: number, nowSeconds: number): void;
+  setResource(value: number): void;
   update(nowSeconds: number, deltaSeconds: number): void;
   setVisible(isVisible: boolean): void;
   dispose(): void;
@@ -72,7 +78,7 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
   const barLeft = badgeWidth + 1;
   const canvas = document.createElement('canvas');
   canvas.width = barLeft + options.barWidth;
-  canvas.height = BAR_HEIGHT;
+  canvas.height = options.resource ? BAR_HEIGHT + RESOURCE_STRIP_EXTRA_HEIGHT : BAR_HEIGHT;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('2D canvas is not available');
 
@@ -90,6 +96,7 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
   let hp = options.hp;
   let ghostHp = options.hp;
   let ghostHoldUntilSeconds = 0;
+  let resourceValue = options.resource?.value ?? 0;
 
   const widthOf = (value: number): number => Math.round((Math.max(0, value) / options.maxHp) * innerWidth);
 
@@ -121,6 +128,14 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
       const isMajor = tick % MAJOR_TICK_EVERY === 0;
       context.fillRect(x, isMajor ? 2 : 4, 1, isMajor ? 5 : 3);
     }
+    if (options.resource) {
+      context.fillStyle = '#17110d';
+      context.fillRect(barLeft, 7, options.barWidth, 4);
+      context.fillStyle = '#3a2e24';
+      context.fillRect(barLeft + 1, 8, innerWidth, 2);
+      context.fillStyle = RESOURCE_BAR_COLORS[options.resource.id];
+      context.fillRect(barLeft + 1, 8, Math.round((Math.min(options.resource.max, Math.max(0, resourceValue)) / options.resource.max) * innerWidth), 2);
+    }
     texture.needsUpdate = true;
   };
   draw();
@@ -131,6 +146,11 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
       if (newHp < hp) ghostHoldUntilSeconds = nowSeconds + GHOST_HOLD_SECONDS;
       else ghostHp = newHp;
       hp = newHp;
+      draw();
+    },
+    setResource: (value) => {
+      if (!options.resource || value === resourceValue) return;
+      resourceValue = value;
       draw();
     },
     update: (nowSeconds, deltaSeconds) => {

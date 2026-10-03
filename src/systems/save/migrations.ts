@@ -1,4 +1,11 @@
 import type { Hero } from '../../model/hero';
+import { migrateMill } from './migrateMill';
+import { migrateExperienceBars } from './migrateExperienceBars';
+import { migrateBackpackGrid } from './migrateBackpackGrid';
+import { migrateWaitingLoot } from './migrateWaitingLoot';
+import { migrateRenamedBases } from './migrateRenamedBases';
+import { migrateSpells } from './migrateSpells';
+import { migrateUpgradeLevels } from './migrateUpgradeLevels';
 import { migrateUnstackedMaterials } from './migrateUnstackedMaterials';
 import { migrateWeaponDamageAndSmiths } from './migrateWeaponDamageAndSmiths';
 
@@ -28,5 +35,50 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
     // Version 9: materials no longer stack, and the Bank sells backpack rows and merchant sale slots.
     fromVersion: 8,
     migrate: migrateUnstackedMaterials,
+  },
+  {
+    // Version 10: monsters no longer drop money, so a report holds no copperGained.
+    fromVersion: 9,
+    migrate: (save) => ({
+      ...save,
+      reports: ((save.reports ?? []) as { result: Record<string, unknown> }[]).map((report) => {
+        const { copperGained: _removedMoney, ...resultWithoutMoney } = report.result;
+        return { ...report, result: resultWithoutMoney };
+      }),
+    }),
+  },
+  {
+    fromVersion: 10,
+    migrate: migrateUpgradeLevels,
+  },
+  {
+    fromVersion: 11,
+    migrate: migrateSpells,
+  },
+  {
+    fromVersion: 12,
+    migrate: migrateBackpackGrid,
+  },
+  {
+    fromVersion: 13,
+    migrate: migrateWaitingLoot,
+  },
+  {
+    // Version 15: a hero result holds the level and experience after the fight.
+    fromVersion: 14,
+    migrate: migrateExperienceBars,
+  },
+  {
+    fromVersion: 15,
+    migrate: migrateRenamedBases,
+  },
+  {
+    // Version 17: the Bank sells features (sorting, monster statistics, drop rates). A saved game owns none.
+    fromVersion: 16,
+    migrate: (save) => ({ ...save, bankUnlockIds: [] }),
+  },
+  {
+    fromVersion: 17,
+    migrate: migrateMill,
   },
 ];

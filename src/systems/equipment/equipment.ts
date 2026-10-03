@@ -22,8 +22,8 @@ export function findEquipProblem(hero: Hero, item: Item): EquipProblem | null {
   if (item.slot === 'offHand' && !classDefinition.offHandTypes.includes(item.gearType)) {
     return { key: 'equip.cannotUseOffHand', params: { classId: hero.classId } };
   }
-  if (item.armourWeight !== null && item.armourWeight !== classDefinition.armourWeight) {
-    return { key: 'equip.wearsArmour', params: { classId: hero.classId, armourWeight: classDefinition.armourWeight } };
+  if (item.armourWeight !== null && !classDefinition.armourWeights.includes(item.armourWeight)) {
+    return { key: 'equip.wearsArmour', params: { classId: hero.classId, armourWeight: classDefinition.armourWeights.join(',') } };
   }
   return null;
 }
@@ -33,7 +33,7 @@ export function classIdsThatCanUse(base: Pick<Item, 'slot' | 'gearType' | 'armou
   return CLASSES.filter((classDefinition) => {
     if (base.slot === 'mainHand' && !classDefinition.weaponTypes.includes(base.gearType)) return false;
     if (base.slot === 'offHand' && !classDefinition.offHandTypes.includes(base.gearType)) return false;
-    return base.armourWeight === null || base.armourWeight === classDefinition.armourWeight;
+    return base.armourWeight === null || classDefinition.armourWeights.includes(base.armourWeight);
   }).map((classDefinition) => classDefinition.id);
 }
 

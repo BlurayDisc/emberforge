@@ -16,6 +16,7 @@ import {
   type BuildingColors,
 } from './buildingParts';
 import { addOutline, createPixelCanvas, type PixelCanvas } from './pixelCanvas';
+import { drawAcademy } from './academyArt';
 import { drawKeep } from './keepArt';
 import { DECORATIVE_DRAWERS } from './townhouseArt';
 
@@ -83,6 +84,7 @@ const DRAWERS: Record<BuildingStyle, (art: PixelCanvas, width: number, height: n
   merchant: drawMerchant,
   gate: drawGate,
   keep: drawKeep,
+  academy: drawAcademy,
 };
 
 export function drawBuildingArt(style: BuildingStyle, width: number, height: number): HTMLCanvasElement {

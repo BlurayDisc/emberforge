@@ -56,12 +56,13 @@
   will-change: transform;
 }
 
-/* The arrow is a tall strip on the screen edge. It shows when the pointer is near. Touch screens have no hover, so it stays visible there. */
+/* The arrow is a tall strip on the screen edge. It shows when the pointer is near. Touch screens have no hover, so it stays visible there.
+   The strip is only as wide as the arrow, so it does not cover a building near the edge. */
 .town-arrow {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: calc(var(--u) * 56);
+  width: calc(var(--u) * 16);
   height: auto;
   margin: 0;
   padding: 0;
@@ -79,8 +80,7 @@
 .town-arrow-left { left: 0; }
 .town-arrow-right { right: 0; }
 .town-arrow:hover,
-.town-arrow:focus-visible,
-.town-arrow.attention { opacity: 1; }
+.town-arrow:focus-visible { opacity: 1; }
 
 @media (hover: none) {
   .town-arrow { opacity: 1; }
@@ -95,14 +95,6 @@
 
 .town-arrow-right .town-arrow-shape {
   clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-
-.town-arrow.attention {
-  animation: arrow-pulse 0.9s steps(1) infinite;
-}
-
-@keyframes arrow-pulse {
-  50% { background: var(--crimson); }
 }
 
 .town-screen-title {
@@ -173,15 +165,6 @@
   background-color: var(--wood-500);
 }
 
-.building-hotspot.attention .building-label {
-  animation: attention-bounce 0.9s steps(1) infinite;
-}
-
-@keyframes attention-bounce {
-  0% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(calc(var(--u) * -3)); }
-}
-
 .stage-hint {
   position: absolute;
   left: 50%;
@@ -240,6 +223,49 @@
   bottom: calc(var(--u) * 6);
   transform: translateX(-50%);
   width: min(560px, 94%);
+}
+
+.mill-status {
+  position: absolute;
+  margin-top: calc(var(--u) * 3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  pointer-events: none;
+}
+
+.mill-timer,
+.mill-collect {
+  font-family: var(--font-title);
+  font-size: calc(var(--u) * 9);
+  line-height: 1;
+  padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  white-space: nowrap;
+  color: var(--gold);
+  text-shadow: var(--u) var(--u) 0 var(--ink);
+  background-color: var(--wood-700);
+  box-shadow: 0 calc(var(--u) * -1) 0 var(--ink), 0 var(--u) 0 var(--ink), calc(var(--u) * -1) 0 0 var(--ink), var(--u) 0 0 var(--ink);
+}
+
+.mill-collect {
+  display: none;
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  color: var(--ink);
+  text-shadow: none;
+  background-color: var(--gold);
+}
+
+.mill-collect:hover,
+.mill-collect:focus-visible {
+  background-color: #fff6d6;
+}
+
+.mill-collect:active {
+  transform: translateY(calc(var(--u) * 2));
 }
 
 .building-hotspot.static {
@@ -347,6 +373,8 @@
 }
 
 .log-hero { color: var(--log-hero); }
+.log-spell { color: var(--gold); font-weight: 700; }
+.log-resource { color: var(--parchment-dim); }
 .log-monster { color: var(--log-monster); }
 
 .log-amount {
@@ -357,6 +385,7 @@
 .log-amount.taken { color: var(--log-taken); }
 .log-amount.heal { color: var(--log-heal); }
 .log-amount.crit { color: var(--log-crit); }
+.log-amount.experience { color: var(--gold); }
 
 .log-crit-text {
   margin-left: 4px;

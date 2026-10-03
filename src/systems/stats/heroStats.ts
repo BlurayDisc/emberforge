@@ -6,13 +6,15 @@ import {
   MITIGATION_BASE,
   MITIGATION_PER_ATTACKER_LEVEL,
 } from '../../content/balance/battle';
-import { MANA_BASE, MANA_PER_MAGIC } from '../../content/balance/heroSheet';
 import { CLASSES } from '../../content/classes';
 import { requireById } from '../../content/lookup';
+import { MATERIALS } from '../../content/materials';
+import { findSpell } from '../../content/spells';
 import type { BattleUnit } from '../../model/battle';
 import type { Hero } from '../../model/hero';
 import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
+import { maximumResourceOf, startingResourceOf } from './maximumResource';
 
 function statAtLevel(base: number, growthPerLevel: number, level: number): number {
   return Math.round(base + growthPerLevel * (level - 1));
@@ -24,7 +26,9 @@ function gearBonusForStat(hero: Hero, stat: keyof StatBlock): number {
   return Object.values(hero.equipment).reduce((total, item) => {
     const fromBase = item.baseStats[stat] ?? 0;
     const fromAffixes = item.affixes.reduce((sum, affix) => (affix.stat === stat ? sum + affix.value : sum), 0);
-    return total + fromBase + fromAffixes;
+    const setBonus = MATERIALS.find((material) => material.id === item.materialId)?.setBonus;
+    const fromSetMaterial = setBonus?.stat === stat ? setBonus.value : 0;
+    return total + fromBase + fromAffixes + fromSetMaterial;
   }, 0);
 }
 
@@ -41,12 +45,12 @@ function gearDamage(hero: Hero, damageKey: 'physicalDamage' | 'magicalDamage'): 
   return Object.values(hero.equipment).reduce((total, item) => total + (item.baseStats[damageKey] ?? 0), 0);
 }
 
-// Damage is the attribute plus the weapon damage. Mana is shown only: no skill spends it yet.
+// Damage is the attribute plus the weapon damage. The class resource (mana, stamina, hatred or rage) pays for spells.
 export function computeHeroSheet(hero: Hero): HeroSheet {
   const stats = computeHeroStats(hero);
   return {
     health: stats.hp,
-    mana: MANA_BASE + MANA_PER_MAGIC * stats.magic,
+    resource: maximumResourceOf(requireById(CLASSES, hero.classId).resourceId, stats, hero.level),
     physicalDamage: stats.strength + gearDamage(hero, 'physicalDamage'),
     magicalDamage: stats.magic + gearDamage(hero, 'magicalDamage'),
     armour: stats.defence,
@@ -79,6 +83,11 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     speed: stats.speed,
     critChance: Math.min(MAXIMUM_CRITICAL_CHANCE, stats.skill * CRITICAL_CHANCE_PER_SKILL_POINT),
     behavior: classDefinition.behavior,
+    resourceId: classDefinition.resourceId,
+    maxResource: sheet.resource,
+    resource: startingResourceOf(classDefinition.resourceId, sheet.resource),
+    // The ultimate comes first, so the AI tries it before the normal slots.
+    spells: [hero.equippedUltimateId, ...hero.equippedSpellIds].flatMap((id) => (id === null ? [] : (findSpell(id) ?? []))),
   };
 }
 

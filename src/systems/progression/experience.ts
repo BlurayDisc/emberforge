@@ -1,4 +1,6 @@
 import {
+  EARLY_EXPERIENCE_BONUS,
+  EARLY_EXPERIENCE_FADE_LEVELS,
   EXPERIENCE_RANK_MULTIPLIER,
   EXPERIENCE_TO_NEXT_LEVEL_BASE,
   EXPERIENCE_TO_NEXT_LEVEL_EXPONENT,
@@ -17,6 +19,11 @@ export function experienceToNextLevel(level: number): number {
   return Math.round(EXPERIENCE_TO_NEXT_LEVEL_BASE * level ** EXPERIENCE_TO_NEXT_LEVEL_EXPONENT);
 }
 
+// New heroes level fast. The bonus is largest at level 1 and fades in a straight line to nothing.
+function earlyExperienceFactor(heroLevel: number): number {
+  return 1 + EARLY_EXPERIENCE_BONUS * clamp(1 - (heroLevel - 1) / EARLY_EXPERIENCE_FADE_LEVELS, 0, 1);
+}
+
 export function experienceForKill(monsterLevel: number, heroLevel: number, monsterRank: UnitRank): number {
   const killsPerLevel = KILLS_PER_LEVEL_BASE + KILLS_PER_LEVEL_GROWTH * monsterLevel;
   const experienceAtMatchedLevel = experienceToNextLevel(monsterLevel) / killsPerLevel;
@@ -25,7 +32,7 @@ export function experienceForKill(monsterLevel: number, heroLevel: number, monst
     LEVEL_GAP_FACTOR_MINIMUM,
     LEVEL_GAP_FACTOR_MAXIMUM,
   );
-  const experience = experienceAtMatchedLevel * levelGapFactor * EXPERIENCE_RANK_MULTIPLIER[monsterRank];
+  const experience = experienceAtMatchedLevel * levelGapFactor * earlyExperienceFactor(heroLevel) * EXPERIENCE_RANK_MULTIPLIER[monsterRank];
   return Math.max(1, Math.round(experience));
 }
 

@@ -10,6 +10,7 @@ export interface SlotCandidate {
 }
 
 export interface EquipComparison {
+  slot: EquipmentSlot;
   before: HeroSheet;
   after: HeroSheet;
   powerBefore: number;
@@ -28,11 +29,15 @@ export function listItemsForSlot(state: GameState, heroId: string, slot: Equipme
 }
 
 // The hero stats before and after the item would replace what is in the slot.
-export function compareEquip(state: GameState, heroId: string, item: Item, slot: EquipmentSlot): EquipComparison | null {
+// Without a requested slot the equipment system picks the slot, and the result names it.
+export function compareEquip(state: GameState, heroId: string, item: Item, requestedSlot?: EquipmentSlot): EquipComparison | null {
   const hero = state.company.find((candidate) => candidate.id === heroId);
   if (!hero) return null;
-  const { hero: equipped } = equipItem(hero, item, slot);
+  const { hero: equipped } = equipItem(hero, item, requestedSlot);
+  const slot = (Object.keys(equipped.equipment) as EquipmentSlot[]).find((candidate) => equipped.equipment[candidate]?.id === item.id);
+  if (!slot) return null;
   return {
+    slot,
     before: computeHeroSheet(hero),
     after: computeHeroSheet(equipped),
     powerBefore: computeHeroPower(hero),

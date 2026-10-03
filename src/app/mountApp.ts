@@ -43,7 +43,7 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
     currentScreen: townView.currentScreen,
     goToScreen: townView.goToScreen,
     onScroll: townView.onScroll,
-  });
+  }, panelHost.notify);
   townOverlay.world.append(townSpeech.element);
   const castleView = createCastleView(stage);
   const castleOverlay = createCastleOverlay({

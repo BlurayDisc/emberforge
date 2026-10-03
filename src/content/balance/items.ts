@@ -22,8 +22,10 @@ export const SELL_GROWTH_PER_ITEM_LEVEL = data.sellGrowthPerItemLevel;
 
 export const MAIN_INGREDIENT_CELLS_PER_UNIT = data.mainIngredientCellsPerUnit;
 export const LARGE_ITEM_CELL_THRESHOLD = data.largeItemCellThreshold;
-export const SECONDARY_INGREDIENT_SMALL_ITEM = data.secondaryIngredientSmallItem;
-export const SECONDARY_INGREDIENT_LARGE_ITEM = data.secondaryIngredientLargeItem;
+export const SET_MATERIAL_SMALL_ITEM = data.setMaterialSmallItem;
+export const SET_MATERIAL_LARGE_ITEM = data.setMaterialLargeItem;
+export const SET_RECIPE_LEVEL_STEP = data.setRecipeLevelStep;
+export const SET_RECIPE_SLOTS: readonly string[] = data.setRecipeSlots;
 
 export const RARE_NAME_FIRST_PARTS: readonly string[] = data.rareNameFirstParts;
 export const RARE_NAME_SECOND_PARTS: readonly string[] = data.rareNameSecondParts;

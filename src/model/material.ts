@@ -8,6 +8,8 @@ export type MaterialCategory =
   | 'scale'
   | 'bone'
   | 'sinew'
+  | 'skin'
+  | 'silk'
   | 'essence'
   | 'catalyst';
 

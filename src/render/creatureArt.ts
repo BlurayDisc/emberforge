@@ -149,6 +149,27 @@ function drawSpider(): HTMLCanvasElement {
   return art.canvas;
 }
 
+function drawToad(): HTMLCanvasElement {
+  const art = createPixelCanvas(34, 24);
+  const skin: Tones = { base: '#6b8e3a', light: '#93b856', dark: '#43601f' };
+  shadedBlob(art, 23, 16, 7, 5, skin);
+  art.fill(skin.dark, 26, 20, 7, 2);
+  shadedBlob(art, 17, 13, 12, 8, skin);
+  shadedBlob(art, 8, 12, 7, 6, skin);
+  art.fill(skin.dark, 8, 18, 3, 4);
+  art.fill(skin.dark, 12, 18, 3, 4);
+  art.fill(skin.base, 4, 4, 5, 4);
+  art.fill(skin.base, 10, 5, 4, 4);
+  art.fill('#ffd75e', 5, 5, 3, 3);
+  art.fill('#ffd75e', 11, 6, 2, 3);
+  art.fill('#17110d', 6, 6, 1, 2);
+  art.fill('#17110d', 12, 7, 1, 2);
+  art.fill('#17110d', 0, 14, 8, 1);
+  for (const [wartX, wartY] of [[14, 8], [19, 9], [22, 12], [16, 14]] as const) art.fill(skin.dark, wartX, wartY, 2, 2);
+  addOutline(art, 'outline');
+  return art.canvas;
+}
+
 function drawHobgoblin(): HTMLCanvasElement {
   const art = createPixelCanvas(30, 32);
   drawGoblinBody(art, { base: '#b0743a', light: '#d09858', dark: '#7a4a24' }, '#585866', 1);
@@ -186,6 +207,7 @@ export const CREATURE_DRAWERS: Readonly<Record<string, () => HTMLCanvasElement>>
   'monster-scarecrow': drawScarecrow,
   'monster-goblin': drawGoblin,
   'monster-spider': drawSpider,
+  'monster-toad': drawToad,
   'monster-hobgoblin': drawHobgoblin,
   'monster-goblin-chief': drawGoblinChief,
 };

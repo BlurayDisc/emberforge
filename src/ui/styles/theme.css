@@ -25,12 +25,19 @@
   --quality-magic: #7fa8ff;
   --quality-rare: #f2c14e;
   --quality-unique: #e08a4e;
+  --upgrade-1: #8fe08a;
+  --upgrade-2: #4fc3f7;
+  --upgrade-3: #5c8dff;
+  --upgrade-4: #b47cff;
+  --upgrade-5: #ff7ad1;
+  --upgrade-6: #ff9a3c;
+  --upgrade-7: #ff5a5a;
   --outline-4: 0 -4px 0 0 var(--ink), 0 4px 0 0 var(--ink), -4px 0 0 0 var(--ink), 4px 0 0 0 var(--ink);
   --outline-2: 0 -2px 0 0 var(--ink), 0 2px 0 0 var(--ink), -2px 0 0 0 var(--ink), 2px 0 0 0 var(--ink);
   --checker: linear-gradient(45deg, rgba(0, 0, 0, 0.14) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.14) 75%);
   --font-cjk: 'Fusion Pixel 12px Proportional SC';
   --font-body: 'Pixelify Sans', var(--font-cjk), ui-monospace, monospace;
-  --font-readable: 'Atkinson Hyperlegible', var(--font-cjk), system-ui, sans-serif;
+  --font-readable: var(--font-cjk), ui-monospace, monospace;
   --font-title: 'Jacquard 12', var(--font-cjk), 'Pixelify Sans', serif;
 }
 
@@ -78,24 +85,46 @@ p {
 :lang(zh-Hans) .card-text.small,
 :lang(zh-Hans) .grid-entry,
 :lang(zh-Hans) .hud-log,
-:lang(zh-Hans) .run-hud {
+:lang(zh-Hans) .run-hud,
+:lang(en) .card-text.small,
+:lang(en) .grid-entry,
+:lang(en) .hud-log,
+:lang(en) .run-hud {
   font-size: 12px;
 }
 
-/* English body text uses a plain readable font. Chinese keeps the pixel font. Headings keep the blackletter font. */
+/* The pixel fonts draw 2 and 5 in a way that is hard to read. Chinese text takes only its digits from the readable font. */
+@font-face {
+  font-family: 'Readable Digits';
+  font-weight: 400;
+  src: url(../../../node_modules/@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2');
+  unicode-range: U+0030-0039;
+}
+
+@font-face {
+  font-family: 'Readable Digits';
+  font-weight: 700;
+  src: url(../../../node_modules/@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2');
+  unicode-range: U+0030-0039;
+}
+
+html:lang(zh-Hans) {
+  --font-body: 'Readable Digits', 'Pixelify Sans', var(--font-cjk), ui-monospace, monospace;
+  --font-title: 'Readable Digits', 'Jacquard 12', var(--font-cjk), 'Pixelify Sans', serif;
+}
+
+/* English uses the same pixel font as Chinese (Fusion Pixel 12px). Its digits are clear, so it needs no separate digit font.
+   Headings keep the blackletter font. The font has one weight only, so titles use size and colour, not bold: a faked bold would blur the pixels. */
 html:lang(en),
 html:lang(en) body {
   font-family: var(--font-readable);
-  -webkit-font-smoothing: antialiased;
-  font-smooth: auto;
 }
 
-/* Row and section titles carry the information, so English uses the readable font there too. */
 html:lang(en) .card-title,
 html:lang(en) .section-title,
 html:lang(en) .item-name,
 html:lang(en) .result-title {
   font-family: var(--font-readable);
-  font-weight: 700;
+  font-weight: 400;
   font-size: 18px;
 }

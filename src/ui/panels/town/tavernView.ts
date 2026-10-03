@@ -35,6 +35,6 @@ export const renderTavernPanel: PanelRenderer = (context) => {
   content.append(element('p', 'hint', t('tavern.company', { count: state.company.length, max: MAXIMUM_COMPANY_SIZE })));
   if (offers.length === 0) content.append(element('p', 'hint', t('tavern.full')));
   content.append(createList(...offers.map((offer) => renderOffer(context, offer))));
-  content.append(actionButton(t('tavern.leave'), context.closePanel));
+  if (state.company.length > 0) content.append(actionButton(t('tavern.leave'), context.closePanel));
   return content;
 };

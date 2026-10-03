@@ -5,24 +5,13 @@ import { equipItem, findEquipProblem, unequipItem } from '../../systems/equipmen
 import { addItem, findItem, removeItem } from '../../systems/inventory';
 import { CommandRejected, type Command } from '../gameStore';
 import { backpackRowsOf } from '../storage';
-import { runOfHero } from '../runStatus';
+import { replaceHero, requireEditableHero } from './editableHero';
 
-function requireEditableHero(state: GameState, heroId: string): Hero {
-  const hero = state.company.find((candidate) => candidate.id === heroId);
-  if (!hero) throw new CommandRejected('reject.heroMissing');
-  if (runOfHero(state, heroId)) {
-    throw new CommandRejected('reject.stopRunBeforeGearChange');
-  }
-  return hero;
-}
-
-function replaceHero(state: GameState, updatedHero: Hero): Hero[] {
-  return state.company.map((hero) => (hero.id === updatedHero.id ? updatedHero : hero));
-}
+const requireEditableGearHero = (state: GameState, heroId: string): Hero => requireEditableHero(state, heroId, 'reject.stopRunBeforeGearChange');
 
 export function equipItemCommand(heroId: string, itemId: string, slot?: EquipmentSlot): Command {
   return (state) => {
-    const hero = requireEditableHero(state, heroId);
+    const hero = requireEditableGearHero(state, heroId);
     const item = findItem(state.backpack, itemId);
     if (!item) throw new CommandRejected('reject.itemNotInBackpack');
     const problem = findEquipProblem(hero, item);
@@ -38,7 +27,7 @@ export function equipItemCommand(heroId: string, itemId: string, slot?: Equipmen
 
 export function unequipItemCommand(heroId: string, slot: EquipmentSlot): Command {
   return (state) => {
-    const hero = requireEditableHero(state, heroId);
+    const hero = requireEditableGearHero(state, heroId);
     const { hero: unequippedHero, replacedItem } = unequipItem(hero, slot);
     if (!replacedItem) return state;
     const backpack = addItem(state.backpack, replacedItem, backpackRowsOf(state));

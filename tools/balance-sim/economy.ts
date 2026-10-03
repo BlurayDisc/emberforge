@@ -12,8 +12,7 @@ const RUNS_FOR_AVERAGE = 200;
 
 interface LevelMilestone {
   fights: number;
-  copperFromDrops: number;
-  copperIfMaterialsSold: number;
+  copperFromSoldMaterials: number;
 }
 
 function dungeonForLevel(heroLevel: number) {
@@ -28,22 +27,20 @@ function playUntilLevels(seed: number): Map<number, LevelMilestone> {
   let level = 1;
   let experience = 0;
   let fights = 0;
-  let copperFromDrops = 0;
-  let copperIfMaterialsSold = 0;
+  let copperFromSoldMaterials = 0;
   while (level < LAST_LEVEL) {
     const dungeon = dungeonForLevel(level);
     const monsters = createEncounter(dungeon, 1, random.fork(`encounter-${fights}`));
     fights += 1;
     for (const monster of monsters) {
-      const loot = rollMonsterLoot(monster.definitionId, monster.level, random.fork(`loot-${fights}-${monster.id}`));
-      copperFromDrops += loot.copper;
-      copperIfMaterialsSold += loot.copper + loot.materials.reduce((sum, stack) => sum + stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper, 0);
+      const loot = rollMonsterLoot(monster.definitionId, random.fork(`loot-${fights}-${monster.id}`));
+      copperFromSoldMaterials += loot.materials.reduce((sum, stack) => sum + stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper, 0);
       experience += experienceForKill(monster.level, level, monster.rank);
     }
     while (experience >= experienceToNextLevel(level) && level < LAST_LEVEL) {
       experience -= experienceToNextLevel(level);
       level += 1;
-      milestones.set(level, { fights, copperFromDrops, copperIfMaterialsSold });
+      milestones.set(level, { fights, copperFromSoldMaterials });
     }
   }
   return milestones;
@@ -55,6 +52,6 @@ export function printEconomy(): void {
   console.log(`\nEconomy: a solo hero wins every fight (average of ${RUNS_FOR_AVERAGE} games). The second hero costs ${secondHeroCost} copper.`);
   for (let level = 2; level <= LAST_LEVEL; level++) {
     const average = (pick: (milestone: LevelMilestone) => number): number => Math.round(runs.reduce((sum, run) => sum + pick(run.get(level)!), 0) / runs.length);
-    console.log(`  reaches level ${String(level).padStart(2)}: ${String(average((m) => m.fights)).padStart(4)} fights, ${String(average((m) => m.copperFromDrops)).padStart(5)} copper from drops, ${String(average((m) => m.copperIfMaterialsSold)).padStart(5)} with materials sold`);
+    console.log(`  reaches level ${String(level).padStart(2)}: ${String(average((m) => m.fights)).padStart(4)} fights, ${String(average((m) => m.copperFromSoldMaterials)).padStart(5)} copper if all materials are sold`);
   }
 }

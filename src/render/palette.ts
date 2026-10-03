@@ -9,6 +9,8 @@ export const PALETTE = {
   cobalt: '#3b6fd6',
   goblin: '#6aa84f',
   gold: '#ffd75e',
+  stamina: '#d9a441',
+  rage: '#e2641f',
   blood: '#c0392b',
   parchment: '#e8d9b0',
   forest: '#2d6a4f',

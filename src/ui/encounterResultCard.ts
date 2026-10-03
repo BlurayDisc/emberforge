@@ -8,11 +8,18 @@ import { className, heroDisplayName, listOf, materialName } from './displayNames
 import { t } from './i18n';
 import { createMaterialIcon } from './iconArt';
 import { openMaterialView } from './itemModals';
+import { experienceToNextLevel } from '../game';
+import { createExperienceGainBar } from './liveBars';
 import { createMoneyDisplay } from './moneyDisplay';
 import { createPortrait } from './portraitArt';
 
 function formatNumber(value: number): string {
   return value >= 100 ? String(Math.round(value)) : value.toFixed(1);
+}
+
+function createExperienceBarOf(result: EncounterResult['heroes'][number]): HTMLElement {
+  const experienceGainedInThisLevel = result.reachedLevel === null ? Math.min(result.experienceGained, result.experienceAfter) : result.experienceAfter;
+  return createExperienceGainBar(result.experienceAfter - experienceGainedInThisLevel, experienceGainedInThisLevel, experienceToNextLevel(result.levelAfter));
 }
 
 function createHeroResultRow(result: EncounterResult['heroes'][number], hero: Hero | undefined, durationSeconds: number): HTMLElement {
@@ -21,16 +28,11 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
   const lines = [
     t('result.damage', { damage: result.damageDealt, dps: formatNumber(dps) }),
     t('result.taken', { taken: result.damageTaken, healing: result.healingDone }),
-    t('result.xp', { xp: result.experienceGained }),
   ];
-  const row = element(
-    'div',
-    'result-hero',
-    hero ? createPortrait(hero.classId, hero.name, 2) : element('span', ''),
-    element('div', 'result-hero-text', element('div', 'card-title', hero ? `${name} (${className(hero.classId)})` : name), element('div', 'card-text small', listOf(lines))),
-  );
-  if (result.reachedLevel !== null) row.append(element('div', 'level-up', t('result.levelUp', { level: result.reachedLevel })));
-  return row;
+  const text = element('div', 'result-hero-text', element('div', 'card-title', hero ? `${name} (${className(hero.classId)})` : name), element('div', 'card-text small', listOf(lines)));
+  if (result.reachedLevel !== null) text.append(element('div', 'level-up', t('result.levelUp', { level: result.reachedLevel })));
+  text.append(createExperienceBarOf(result));
+  return element('div', 'result-hero', hero ? createPortrait(hero.classId, hero.name, 2) : element('span', ''), text);
 }
 
 // A big box for each loot stack. Hover shows the details at once. A tap opens the same details on a touch screen.
@@ -56,8 +58,8 @@ export function createEncounterResultCard(result: EncounterResult, company: read
     createHeroResultRow(heroResult, company.find((hero) => hero.id === heroResult.heroId), result.durationSeconds),
   );
   const loot = element('div', 'result-loot');
-  if (result.copperGained === 0 && result.materials.length === 0) loot.append(element('span', 'card-text small', t('result.noLoot')));
-  else loot.append(element('div', 'loot-money', createMoneyDisplay(result.copperGained)), ...createLootBoxes(result.materials));
+  if (result.materials.length === 0) loot.append(element('span', 'card-text small', t('result.noLoot')));
+  else loot.append(...createLootBoxes(result.materials));
   const card = element(
     'div',
     'result-card',
@@ -67,8 +69,8 @@ export function createEncounterResultCard(result: EncounterResult, company: read
     element('div', 'section-title', t('result.loot')),
     loot,
   );
-  if (result.materialsLost.length > 0) {
-    card.append(element('div', 'danger-text', t('report.materialsLost', { list: listOf(result.materialsLost.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`)) })));
+  if (result.materialsWaiting.length > 0) {
+    card.append(element('div', 'danger-text', t('report.materialsWaiting', { list: listOf(result.materialsWaiting.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`)) })));
   }
   return card;
 }

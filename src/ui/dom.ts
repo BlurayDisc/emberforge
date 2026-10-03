@@ -13,7 +13,7 @@ export function element<Tag extends keyof HTMLElementTagNameMap>(
 
 export function actionButton(
   label: string,
-  onClick: () => void,
+  onClick: (event: MouseEvent) => void,
   options: { disabled?: boolean; className?: string } = {},
 ): HTMLButtonElement {
   const created = element('button', options.className ?? 'action-button', label);

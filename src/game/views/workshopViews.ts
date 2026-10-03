@@ -6,10 +6,10 @@ import { MATERIALS } from '../../content/materials';
 import type { GameState } from '../../model/gameState';
 import type { ClassId } from '../../model/hero';
 import type { Item } from '../../model/item';
-import { craftSeconds, craftingExperienceToNextLevel, listRecipes } from '../../systems/crafting';
+import { craftSeconds, craftingExperienceToNextLevel, listRecipes, upgradeStepChance } from '../../systems/crafting';
 import { classIdsThatCanUse, findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
-import { previewBaseStatRanges } from '../../systems/items';
+import { craftableItemLevelRange, previewBaseStatRanges } from '../../systems/items';
 import { highestUnlockedTier } from '../unlockedTier';
 
 export interface IngredientView {
@@ -21,9 +21,10 @@ export interface IngredientView {
 export interface WorkshopRecipeView {
   baseId: string;
   tier: number;
-  mainMaterialId: string;
+  // The material that names the item and tints its icon: the set material of a set piece, else the main material.
+  resultMaterialId: string;
+  setMaterialId: string | null;
   professionId: string;
-  sizeText: string;
   ingredients: IngredientView[];
   hasMaterials: boolean;
   requiredCraftLevel: number;
@@ -33,7 +34,9 @@ export interface WorkshopRecipeView {
   isUnlocked: boolean;
   craftSeconds: number;
   isCrafterBusy: boolean;
+  itemLevelRange: { lowest: number; highest: number };
   statRanges: Record<string, [number, number]>;
+  upgradeChance: number;
 }
 
 export interface CrafterView {
@@ -71,9 +74,9 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
       return {
         baseId: recipe.baseId,
         tier,
-        mainMaterialId: recipe.ingredients[0]?.materialId ?? '',
+        resultMaterialId: recipe.setMaterialId ?? recipe.ingredients[0]?.materialId ?? '',
+        setMaterialId: recipe.setMaterialId,
         professionId: recipe.profession,
-        sizeText: `${base.width}x${base.height}`,
         ingredients,
         hasMaterials: ingredients.every((ingredient) => ingredient.owned >= ingredient.needed),
         requiredCraftLevel: recipe.requiredCraftLevel,
@@ -83,6 +86,8 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         isUnlocked: crafterLevel >= recipe.requiredCraftLevel,
         craftSeconds: craftSeconds(recipe.requiredCraftLevel),
         isCrafterBusy: state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession),
+        upgradeChance: upgradeStepChance(1, crafterLevel - recipe.requiredCraftLevel),
+        itemLevelRange: craftableItemLevelRange(tier, highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO),
         statRanges: previewBaseStatRanges(recipe.baseId, tier, highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO),
       };
     }),

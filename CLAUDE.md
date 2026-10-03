@@ -83,7 +83,7 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - Every run command takes the run number: `completeRunCommand(runNumber)`, `stopDungeonRunCommand(runNumber)`. Completion re-plans the same seeded fight, so the result matches the screen. It heals the heroes, rolls loot, adds a report to `state.reports` and clears the dungeon on the first win.
 - `app/runPlayback.ts` keeps one player for each run. Only the run in focus (`ui/runFocus.ts`) draws on the stage. Reports stay until the player reads them (`ui/notifications.ts`).
 - Dungeons are locked until the one in `unlockAfter` is cleared. Recipes are locked by crafter level (`state.crafters`, level 1-100). Every craft gives crafting XP.
-- Gold sinks: hero hiring and the crafter fee. The merchant never sells loot materials. Numbers are in `data/balance/economy.json`.
+- Gold sinks: hero hiring, the crafter fee and spell training at the Academy. A hero spell loadout (`learnedSpellIds`, `equippedSpellIds`, `equippedUltimateId`) is part of the hero, so it cannot change while the hero is in a run. The merchant never sells loot materials. Numbers are in `data/balance/economy.json`.
 - Item and recipe details open in modals (`ui/modal.ts`, `ui/itemModals.ts`). The hero equipment screen is `ui/panels/heroes/equipmentScreen.ts`.
 - Time rules: commands that depend on the clock take `nowMs` as the last argument. Systems never read the clock. Selling and crafting are `state.jobs` (`collectFinishedJobsCommand`, run by `app/jobTicker.ts`). Hero health is stored with `healthAsOfMs` and worked out by `systems/recovery`. UI timers use `ui/liveUpdate.ts`.
 - Layout is mobile first: the run bar is above the battlefield and the battle log is below it.
@@ -100,15 +100,15 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 
 ## Pixel-art rules
 
-- Logical resolution 480×270. Scale by whole numbers only. `image-rendering: pixelated`.
+- Logical resolution 480×270. The stage scales to fill the window, so the scale can be a fraction. `image-rendering: pixelated` keeps the pixels hard-edged.
 - Textures use `NearestFilter`, no mipmaps. The renderer has antialiasing off.
 - Put sprites and the camera on whole-pixel positions. No sub-pixel movement.
 - Use colors from `render/palette.ts` (stage) and `ui/styles/theme.css` (menus) only. Add a color there first.
-- Keep one pixel scale on the stage. Heroes and monsters are drawn in code (`render/heroSpriteArt.ts`, `render/creatureArt.ts`), backdrops in `render/battleBackdrops.ts`, the town in `render/townGroundArt.ts` and `render/buildingArt.ts`. Menu pictures are in `ui/iconArt.ts` and `ui/portraitArt.ts`.
+- Keep one pixel scale on the stage. Heroes and monsters are drawn in code (`render/heroSpriteArt.ts`, `render/creatureArt.ts`), backdrops in `render/battleBackdrops.ts`, the town in `render/townGroundArt.ts` and `render/buildingArt.ts`. Menu pictures are in `ui/iconArt.ts` and `ui/portraitArt.ts`. Full-body hero figures (one gear file per class) are in `ui/fullBody/`.
 - Cache every drawn sprite and texture. Do not create objects in the per-frame loop. Reuse them. A hero looks the same in the portrait and in battle, because both use `pickHeroAppearance`.
-- Fonts and assets are bundled in the repo. No CDN. Fonts from `@fontsource`: Jacquard 12 (titles, signs), Pixelify Sans (text), Fusion Pixel 12px SC (Chinese). Chinese text uses full-width punctuation.
+- Fonts and assets are bundled in the repo. No CDN. Fonts from `@fontsource`: Jacquard 12 (titles, signs), Pixelify Sans (text), Fusion Pixel 12px SC (English and Chinese text). Atkinson Hyperlegible supplies only the digits of the Chinese version. Chinese text uses full-width punctuation.
 - Menu frames use notched box-shadow outlines (no border radius). Buttons press down 2 px. Keep that look in new components.
-- Building labels are DOM text on top of the canvas (`ui/townOverlay.ts`). Their size follows the whole-number stage scale (`--stage-scale`).
+- Building labels are DOM text on top of the canvas (`ui/townOverlay.ts`). Their size follows the stage scale (`--stage-scale`).
 
 ## Web and platform rules
 

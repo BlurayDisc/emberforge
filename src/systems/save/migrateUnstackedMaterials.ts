@@ -6,7 +6,7 @@ import type { BackpackEntry } from '../../model/backpack';
 
 type SavedEntry = BackpackEntry;
 
-function sizeOf(content: SavedEntry['content']): { width: number; height: number } {
+export function sizeOf(content: SavedEntry['content']): { width: number; height: number } {
   if (content.kind === 'item') return { width: content.item.width, height: content.item.height };
   return requireById(MATERIALS, content.materialId);
 }
@@ -19,7 +19,7 @@ function splitStacks(entries: readonly SavedEntry[]): SavedEntry['content'][] {
   });
 }
 
-function packAll(contents: readonly SavedEntry['content'][], rowCount: number): SavedEntry[] | null {
+export function packAll(contents: readonly SavedEntry['content'][], rowCount: number): SavedEntry[] | null {
   const packed: SavedEntry[] = [];
   for (const content of contents) {
     const { width, height } = sizeOf(content);

@@ -33,6 +33,9 @@
   box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.18), inset -2px -2px 0 rgba(0, 0, 0, 0.4);
 }
 
+.move-target { cursor: pointer; }
+.move-target:hover { background: var(--wood-700); }
+
 .grid-entry.selected {
   outline: 2px solid #fff6d6;
   outline-offset: -2px;
@@ -104,6 +107,7 @@
 
 .tab-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -276,13 +280,6 @@
   box-shadow: var(--outline-2);
 }
 
-.loot-money {
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  font-size: 16px;
-}
-
 .loot-box {
   position: relative;
   display: flex;
@@ -382,6 +379,16 @@
   align-items: flex-start;
 }
 
+/* Each upgrade level has its own colour, from green at +1 to red at +7. The top levels glow. */
+.upgrade-suffix { font-weight: 700; }
+.upgrade-1 { color: var(--upgrade-1); }
+.upgrade-2 { color: var(--upgrade-2); }
+.upgrade-3 { color: var(--upgrade-3); }
+.upgrade-4 { color: var(--upgrade-4); }
+.upgrade-5 { color: var(--upgrade-5); text-shadow: 0 0 6px var(--upgrade-5); }
+.upgrade-6 { color: var(--upgrade-6); text-shadow: 0 0 6px var(--upgrade-6); }
+.upgrade-7 { color: var(--upgrade-7); text-shadow: 0 0 8px var(--upgrade-7); }
+
 .item-portrait {
   flex: none;
   padding: 14px;
@@ -471,9 +478,9 @@
 }
 
 .chooser {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) 2fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .chooser-list {
@@ -495,7 +502,6 @@
   box-shadow: 0 0 0 2px var(--ink);
 }
 
-.chooser-row.selected { background: var(--wood-700); box-shadow: 0 0 0 2px var(--gold); }
 .chooser-row.disabled { opacity: 0.55; }
 
 .chooser-compare {
@@ -510,8 +516,20 @@
   gap: 8px;
 }
 
+.compare-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .compare-card .item-card {
   min-width: 0;
+}
+
+/* The large picture sits in the middle of its card, so the two items face each other. */
+.compare-card .item-portrait {
+  align-self: center;
+  margin: 4px 0;
 }
 
 .compare-row {
@@ -528,7 +546,6 @@
 .delta-same { color: var(--parchment-dim); }
 
 @media (max-width: 640px) {
-  .chooser,
   .compare-cards {
     grid-template-columns: 1fr;
   }
@@ -545,7 +562,7 @@
 
   .doll-portrait img {
     width: 120px;
-    height: 120px;
+    height: 192px;
   }
 }
 
@@ -774,4 +791,95 @@
     flex-direction: column;
     align-items: center;
   }
+}
+
+.detail-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.selection-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 96px;
+  padding: 6px 8px;
+  background: var(--wood-800);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.hero-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spell-badge {
+  min-width: 48px;
+  padding: 6px 4px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--parchment-dim);
+  box-shadow: var(--outline-2);
+}
+
+.spell-badge.ultimate {
+  background: var(--gold);
+}
+
+.spell-learned {
+  color: var(--green);
+}
+
+.trainer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spell-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.spell-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 84px;
+  padding: 8px;
+  font: inherit;
+  color: var(--parchment);
+  text-align: left;
+  background: var(--wood-900);
+  border: 0;
+  box-shadow: var(--outline-2);
+  cursor: pointer;
+}
+
+.spell-slot:hover { background: var(--wood-700); }
+.spell-slot.ultimate { box-shadow: var(--outline-2), inset 0 0 0 2px var(--gold-dark); }
+.spell-slot-label { font-size: 12px; color: var(--parchment-dim); }
+.spell-slot-name { font-weight: 700; }
+.spell-slot-empty { color: var(--wood-500); }
+
+.spell-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spell-choice {
+  justify-content: space-between;
+  cursor: default;
+}
+
+.spell-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

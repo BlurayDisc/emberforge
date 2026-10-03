@@ -1,5 +1,12 @@
-import { findFreeGridSpot } from '../../kernel/gridPacking';
-import { BACKPACK_BASE_ROWS, BACKPACK_COLUMNS, BACKPACK_ROWS_PER_EXPANSION } from '../../content/balance/backpack';
+import { findFreeGridSpot, isGridSpotFree } from '../../kernel/gridPacking';
+import {
+  BACKPACK_BASE_ROWS,
+  BACKPACK_COLUMNS,
+  BACKPACK_EXPANSION_BASE_COST_COPPER,
+  BACKPACK_EXPANSION_COST_GROWTH,
+  BACKPACK_MAXIMUM_EXPANSIONS,
+  BACKPACK_ROWS_PER_EXPANSION,
+} from '../../content/balance/backpack';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import type { BackpackEntry } from '../../model/backpack';
@@ -20,6 +27,12 @@ export function backpackRowCount(expansionsBought: number): number {
   return BACKPACK_BASE_ROWS + BACKPACK_ROWS_PER_EXPANSION * expansionsBought;
 }
 
+// Each purchase costs more than the one before: a fixed growth factor, so the price rises exponentially.
+export function backpackExpansionCostCopper(expansionsBought: number): number | null {
+  if (expansionsBought >= BACKPACK_MAXIMUM_EXPANSIONS) return null;
+  return Math.round(BACKPACK_EXPANSION_BASE_COST_COPPER * BACKPACK_EXPANSION_COST_GROWTH ** expansionsBought);
+}
+
 export function sizeOfContent(content: BackpackEntry['content']): { width: number; height: number } {
   if (content.kind === 'item') return { width: content.item.width, height: content.item.height };
   const { width, height } = requireById(MATERIALS, content.materialId);
@@ -36,6 +49,16 @@ export function usedCellCount(entries: readonly BackpackEntry[]): number {
 export function findFreePosition(entries: readonly BackpackEntry[], width: number, height: number, rowCount: number): GridPosition | null {
   const placed = entries.map((entry) => ({ column: entry.column, row: entry.row, ...sizeOfContent(entry.content) }));
   return findFreeGridSpot(placed, width, height, BACKPACK_COLUMNS, rowCount);
+}
+
+// The entry keeps its content. Its top-left corner goes to the new spot. It may overlap its own old place.
+export function moveEntry(entries: readonly BackpackEntry[], from: GridPosition, to: GridPosition, rowCount: number): BackpackEntry[] | null {
+  const moving = findEntryAt(entries, from);
+  if (!moving) return null;
+  const others = entries.filter((entry) => entry !== moving);
+  const placed = others.map((entry) => ({ column: entry.column, row: entry.row, ...sizeOfContent(entry.content) }));
+  if (!isGridSpotFree(placed, { column: to.column, row: to.row, ...sizeOfContent(moving.content) }, BACKPACK_COLUMNS, rowCount)) return null;
+  return [...others, { ...moving, column: to.column, row: to.row }];
 }
 
 // Materials do not stack: every unit takes its own place in the backpack. A unit that finds no room is returned as overflow.

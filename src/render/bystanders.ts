@@ -3,6 +3,7 @@ import { createRandom, type Random } from '../kernel/random';
 import { LOGICAL_HEIGHT, TOWN_WIDTH } from '../kernel/stageSize';
 import { addOutline, createPixelCanvas } from './pixelCanvas';
 import { createPixelTexture } from './pixelSprites';
+import { pointAtDistance, routeLength } from './roadRoute';
 import type { Point, Road } from './townLayout';
 
 const SKIN_TONES = ['#f2c9a0', '#e0a878', '#b97b52', '#8a5636'] as const;
@@ -63,28 +64,6 @@ function drawBystanderFrame(random: Random, kind: BystanderKind, frame: 0 | 1, a
   if (random.chance(0.3) && kind === 'villager') art.fill('#6a4a2a', 3, 1, 6, 2);
   addOutline(art, 'outline');
   return art.canvas;
-}
-
-function routeLength(route: readonly Point[]): number {
-  return route.reduce((total, point, index) => {
-    const next = route[index + 1];
-    return next ? total + Math.hypot(next.x - point.x, next.y - point.y) : total;
-  }, 0);
-}
-
-function pointAtDistance(route: readonly Point[], distance: number): Point {
-  let remaining = distance;
-  for (let index = 0; index < route.length - 1; index++) {
-    const start = route[index] as Point;
-    const end = route[index + 1] as Point;
-    const length = Math.hypot(end.x - start.x, end.y - start.y);
-    if (remaining <= length || index === route.length - 2) {
-      const progress = length === 0 ? 0 : Math.min(1, remaining / length);
-      return { x: start.x + (end.x - start.x) * progress, y: start.y + (end.y - start.y) * progress };
-    }
-    remaining -= length;
-  }
-  return route[0] as Point;
 }
 
 function depthFor(logicalY: number): number {

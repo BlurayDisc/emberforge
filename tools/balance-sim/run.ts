@@ -6,6 +6,9 @@ import { simulateBattle } from '../../src/systems/battle';
 import { createEncounter } from '../../src/systems/dungeons';
 import { equipItem } from '../../src/systems/equipment';
 import { generateCraftedItem } from '../../src/systems/items';
+import { equipSpell, learnSpell } from '../../src/systems/spells';
+import { NORMAL_SPELL_SLOT_COUNT } from '../../src/content/balance/spells';
+import { spellsOfClass } from '../../src/content/spells';
 import { heroToBattleUnit } from '../../src/systems/stats';
 
 const BATTLES_PER_CASE = 300;
@@ -14,7 +17,7 @@ const SECONDS_ADDED_PER_LEVEL = 0.535;
 const LEVELS_PER_TIER = 10;
 const BOSS_DURATION_MULTIPLIER = 10;
 
-type GearMode = 'no gear' | 'best weapon only' | 'crafted gear';
+type GearMode = 'no gear' | 'best weapon only' | 'crafted gear' | 'gear + first spells' | 'gear + best spells';
 
 interface PartyCase {
   label: string;
@@ -53,7 +56,9 @@ function equipCraftedGear(hero: Hero, random: Random, gearMode: GearMode): Hero 
         itemId: `sim-item-${hero.id}-${index}`,
         baseId,
         tier,
+        setMaterialId: null,
         maximumItemLevel: hero.level,
+        upgradeLevel: 0,
         craftingCostCopper: 10,
       },
       random.fork(`${hero.id}-${index}`),
@@ -62,10 +67,23 @@ function equipCraftedGear(hero: Hero, random: Random, gearMode: GearMode): Hero 
   }, hero);
 }
 
+// First spells: the hero keeps the spells that were learned first, as when the player never changes the slots.
+// Best spells: the hero equips the highest level spells it can use and its highest ultimate.
+function learnSpellsFor(hero: Hero, gearMode: GearMode): Hero {
+  const available = spellsOfClass(hero.classId).filter((spell) => spell.unlockLevel <= hero.level);
+  const learned = available.reduce(learnSpell, hero);
+  if (gearMode === 'gear + first spells') return learned;
+  const bestNormal = available.filter((spell) => !spell.isUltimate).slice(-NORMAL_SPELL_SLOT_COUNT);
+  const bestUltimate = available.filter((spell) => spell.isUltimate).slice(-1);
+  return [...bestNormal, ...bestUltimate].reduce((equipped, spell, index) => equipSpell(equipped, spell, index), learned);
+}
+
 function createParty(classIds: readonly ClassId[], level: number, gearMode: GearMode, random: Random): Hero[] {
   return classIds.map((classId, index) => {
-    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, healthAsOfMs: 0, downedUntilMs: null, equipment: {}, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
-    return gearMode === 'no gear' ? hero : equipCraftedGear(hero, random.fork('gear'), gearMode);
+    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, healthAsOfMs: 0, downedUntilMs: null, equipment: {}, learnedSpellIds: [], equippedSpellIds: Array.from({ length: NORMAL_SPELL_SLOT_COUNT }, () => null), equippedUltimateId: null, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
+    if (gearMode === 'no gear') return hero;
+    const geared = equipCraftedGear(hero, random.fork('gear'), gearMode);
+    return gearMode === 'gear + first spells' || gearMode === 'gear + best spells' ? learnSpellsFor(geared, gearMode) : geared;
   });
 }
 
@@ -94,13 +112,13 @@ function measure(partyCase: PartyCase, dungeon: DungeonDefinition, gearMode: Gea
   const targetMultiplier = dungeon.bossMonsterId === null ? 1 : BOSS_DURATION_MULTIPLIER;
   const target = (targetDurationSeconds(dungeon.level) * targetMultiplier).toFixed(1);
   const label = `${partyCase.label} / ${gearMode}`;
-  return `${label.padEnd(34)} win ${String(winRate).padStart(3)}%  duration ${seconds.padStart(6)}s (target ${target}s)  hp lost ${String(healthLost).padStart(3)}%`;
+  return `${label.padEnd(40)} win ${String(winRate).padStart(3)}%  duration ${seconds.padStart(6)}s (target ${target}s)  hp lost ${String(healthLost).padStart(3)}%`;
 }
 
 for (const dungeon of DUNGEONS) {
   console.log(`\n${dungeon.name} (monster level ${dungeon.level}, heroes at level ${dungeon.level}, party size ${dungeon.maxPartySize})`);
   for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : [...SOLO_CASES, ...DUO_CASES]) {
-    for (const gearMode of ['no gear', 'best weapon only', 'crafted gear'] as const) {
+    for (const gearMode of ['no gear', 'best weapon only', 'crafted gear', 'gear + first spells', 'gear + best spells'] as const) {
       console.log(`  ${measure(partyCase, dungeon, gearMode)}`);
     }
   }
