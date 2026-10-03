@@ -6,6 +6,10 @@ export interface TownDefinition {
   region: string;
   firstLevel: number;
   lastLevel: number;
+  // Place on the world map, in percent of the map width and height.
+  mapX: number;
+  mapY: number;
+  biome: string;
 }
 
 export const STARTING_TOWN_ID: string = townsData.startingTownId;

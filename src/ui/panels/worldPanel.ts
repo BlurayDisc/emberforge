@@ -1,20 +1,35 @@
-import { TOWNS } from '../../content/towns';
-import { element } from '../dom';
+import { DUNGEONS } from '../../content/dungeons';
+import { TOWNS, type TownDefinition } from '../../content/towns';
+import { actionButton, element } from '../dom';
+import { listOf } from '../displayNames';
 import { t } from '../i18n';
-import { createTownIcon } from '../iconArt';
-import { createList, createListRow } from '../listRow';
-import type { PanelRenderer } from './panelContext';
+import { openModal } from '../modal';
+import { drawWorldMap } from '../worldMapArt';
+import type { PanelContext, PanelRenderer } from './panelContext';
 
-export const renderWorldPanel: PanelRenderer = (context) => {
+function openTownView(town: TownDefinition, isCurrent: boolean): void {
+  const dungeonNames = DUNGEONS.filter((dungeon) => dungeon.townId === town.id).map((dungeon) => t(`dungeon.${dungeon.id}`));
+  const content = element(
+    'div',
+    'panel-body',
+    element('div', 'card-text', t(`town.${town.id}.region`)),
+    element('div', 'card-text small', t('world.levels', { name: t(`town.${town.id}`), first: town.firstLevel, last: town.lastLevel })),
+    element('div', 'card-text small', dungeonNames.length > 0 ? t('world.dungeonsLabel', { names: listOf(dungeonNames) }) : t('world.unexplored')),
+    element('div', isCurrent ? 'card-text level-ok' : 'card-text small locked-note', isCurrent ? t('world.here') : t('world.locked')),
+  );
+  openModal(t(`town.${town.id}`), content);
+}
+
+function renderTownMarker(town: TownDefinition, isCurrent: boolean): HTMLElement {
+  const marker = actionButton('', () => openTownView(town, isCurrent), { className: `map-marker${isCurrent ? ' current' : ''}` });
+  marker.style.left = `${town.mapX}%`;
+  marker.style.top = `${town.mapY}%`;
+  marker.append(element('span', 'map-pin'), element('span', 'map-label', t(`town.${town.id}`)));
+  return marker;
+}
+
+export const renderWorldPanel: PanelRenderer = (context: PanelContext) => {
   const currentTownId = context.store.getState().townId;
-  const rows = TOWNS.map((town) => {
-    const isCurrent = town.id === currentTownId;
-    return createListRow({
-      art: createTownIcon(3),
-      title: t('world.levels', { name: t(`town.${town.id}`), first: town.firstLevel, last: town.lastLevel }),
-      lines: [element('div', 'card-text', t(`town.${town.id}.region`)), element('div', 'card-text small', isCurrent ? t('world.here') : t('world.locked'))],
-      className: isCurrent ? 'current' : 'disabled',
-    });
-  });
-  return element('div', 'panel-body', element('p', 'hint', t('world.hint')), createList(...rows));
+  const map = element('div', 'world-map', drawWorldMap(TOWNS), ...TOWNS.map((town) => renderTownMarker(town, town.id === currentTownId)));
+  return element('div', 'panel-body', element('p', 'hint', t('world.tapHint')), map, element('p', 'hint', t('world.hint')));
 };

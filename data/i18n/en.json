@@ -396,8 +396,12 @@
   "workshop.started": "Started crafting {name}.",
   "workshop.unlocked": "Unlocked",
   "workshop.useCatalyst": "Use 1 {catalyst} for better quality (you have {count})",
+  "world.dungeonsLabel": "Dungeons: {names}",
   "world.here": "You are here",
   "world.hint": "Travel between towns will come in a later version.",
   "world.levels": "{name} - Lv {first}-{last}",
-  "world.locked": "Locked. Defeat the boss of the previous town."
+  "world.locked": "Locked. Defeat the boss of the previous town.",
+  "world.modalTitle": "Town",
+  "world.tapHint": "Tap a town to see details.",
+  "world.unexplored": "Unexplored lands."
 }

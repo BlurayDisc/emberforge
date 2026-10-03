@@ -564,3 +564,52 @@
 .bar.downed .bar-fill { background: var(--red, #b23a3a); }
 .bar.run-progress.bar-health { height: 16px; }
 .crafter-job { margin-top: 4px; }
+
+.world-map {
+  position: relative;
+  box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--wood-700);
+}
+
+.world-map canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.map-pin {
+  width: 14px;
+  height: 14px;
+  background: #b23a3a;
+  box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px #f2c14e;
+}
+
+.map-marker.current .map-pin {
+  background: #f2c14e;
+  box-shadow: 0 0 0 2px var(--ink), 0 0 0 5px #fff;
+}
+
+.map-label {
+  margin-top: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--parchment);
+  background: rgba(23, 17, 13, 0.82);
+}
+
+.map-marker:hover .map-pin { transform: scale(1.25); }

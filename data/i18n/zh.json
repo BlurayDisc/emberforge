@@ -396,8 +396,12 @@
   "workshop.started": "开始制作 {name}。",
   "workshop.unlocked": "已解锁",
   "workshop.useCatalyst": "使用 1 个{catalyst}提升品质（你有 {count} 个）",
+  "world.dungeonsLabel": "地下城：{names}",
   "world.here": "你在这里",
-  "world.hint": "城镇之间的旅行将在以后的版本加入。",
+  "world.hint": "城镇之间的旅行将在以后的版本中加入。",
   "world.levels": "{name} - 等级 {first}-{last}",
-  "world.locked": "未解锁。请击败上一个城镇的首领。"
+  "world.locked": "未解锁。请击败上一个城镇的首领。",
+  "world.modalTitle": "城镇",
+  "world.tapHint": "点击城镇查看详情。",
+  "world.unexplored": "尚未探索的土地。"
 }
