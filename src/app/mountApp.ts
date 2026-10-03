@@ -1,5 +1,5 @@
 import { BUILD_LABEL } from '../kernel/buildInfo';
-import { TOWN_SCREEN_COUNT } from '../kernel/stageSize';
+import { CASTLE_SCREEN_COUNT, TOWN_SCREEN_COUNT } from '../kernel/stageSize';
 import { BUILDINGS } from '../content/buildings';
 import { playSound } from '../audio';
 import type { GameStore } from '../game';
@@ -7,21 +7,25 @@ import { drawBattleBackdrop } from '../render/battleBackdrops';
 import { CREATURE_DRAWERS } from '../render/creatureArt';
 import { registerArtProviders } from '../ui/artProviders';
 import { createBattleView } from '../render/battleView';
+import { FIGURE_DRAWERS } from '../render/castleFigureArt';
+import { createCastleView } from '../render/castleView';
 import { createPixelStage } from '../render/pixelStage';
 import { createTownView } from '../render/townView';
 import { createBottomBar } from '../ui/bottomBar';
+import { createCastleOverlay } from '../ui/castleOverlay';
 import { element } from '../ui/dom';
 import { createPanelHost } from '../ui/panelHost';
 import { getModalHost } from '../ui/modal';
 import { createRunHud } from '../ui/runHud';
 import { createTownOverlay } from '../ui/townOverlay';
 import { createTownSpeech } from '../ui/townSpeech';
+import { combineTownAndCastle } from './townScenes';
 import { startJobTicker } from './jobTicker';
 import { startFlowController } from './flowController';
 import { startRunPlayback } from './runPlayback';
 
 export function mountApp(root: HTMLElement, store: GameStore): void {
-  registerArtProviders({ dungeonBackdrop: drawBattleBackdrop, monsterSprite: (spriteKey) => CREATURE_DRAWERS[spriteKey]?.() ?? null });
+  registerArtProviders({ dungeonBackdrop: drawBattleBackdrop, monsterSprite: (spriteKey) => CREATURE_DRAWERS[spriteKey]?.() ?? null, castleFigure: (look) => FIGURE_DRAWERS[look]?.() ?? null });
   const canvasHost = element('div', 'stage-canvas-host');
   const panelHost = createPanelHost(store);
   const hud = createRunHud(store);
@@ -41,8 +45,15 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
     onScroll: townView.onScroll,
   });
   townOverlay.world.append(townSpeech.element);
-  stage.overlay.append(townOverlay.element);
-  startRunPlayback(store, stage, { battleView, townView }, hud);
+  const castleView = createCastleView(stage);
+  const castleOverlay = createCastleOverlay({
+    screenCount: CASTLE_SCREEN_COUNT,
+    currentScreen: castleView.currentScreen,
+    goToScreen: castleView.goToScreen,
+    onScroll: castleView.onScroll,
+  });
+  stage.overlay.append(townOverlay.element, castleOverlay);
+  startRunPlayback(store, stage, { battleView, townView: combineTownAndCastle(townView, castleView) }, hud);
   startFlowController(store, panelHost);
   startJobTicker(store, panelHost);
 

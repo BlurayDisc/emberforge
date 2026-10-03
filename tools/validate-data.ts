@@ -1,7 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { FIGURE_DRAWERS } from '../src/render/castleFigureArt';
 import { CREATURE_DRAWERS } from '../src/render/creatureArt';
+import { CASTLE_SCREEN_COUNT, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../src/kernel/stageSize';
+import { ITEM_SHAPE_ROWS } from '../src/ui/itemShapes';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDirectory = join(projectRoot, 'data');
@@ -15,6 +18,8 @@ interface Material extends Identified {
   tier: number;
   category: string;
   sellValueCopper: number;
+  width: number;
+  height: number;
 }
 interface Drop {
   materialId: string;
@@ -61,10 +66,18 @@ interface HeroClass extends Identified {
   displayName: string;
   roleDescription: string;
   recoveryRate: number;
+  unlockAfterDungeonId: string | null;
   spriteKey: string;
   weaponTypes: string[];
   offHandTypes: string[];
   armourWeight: string;
+}
+interface Advancement extends Identified {
+  baseClassId: string;
+  promotesFrom: string;
+  requiredLevel: number;
+  displayName: string;
+  roleDescription: string;
 }
 interface Affix extends Identified {
   displayName: string;
@@ -84,11 +97,13 @@ const dungeons = load<Dungeon[]>('dungeons.json');
 const townsFile = load<{ startingTownId: string; towns: Town[] }>('towns.json');
 const baseItems = load<BaseItem[]>('base-items.json');
 const classes = load<HeroClass[]>('classes.json');
+const advancements = load<Advancement[]>('advancements.json');
 const affixes = load<Affix[]>('affixes.json');
 const heroNames = load<string[]>('hero-names.json');
 const professions = load<Record<string, string>>('professions.json');
 const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
-const buildings = load<Array<Identified & { label: string | null; panelId: string | null; style: string }>>('buildings.json');
+const buildings = load<Array<Identified & { label: string | null; panelId: string | null; opens?: string; style: string }>>('buildings.json');
+const castleSpots = load<{ spots: Array<Identified & { screen: number; kind: string; look: string | null; x: number; y: number; width: number; height: number; tales: number }> }>('castle.json').spots;
 const languages = load<Array<{ id: string; nativeName: string }>>('i18n/languages.json');
 const translationsByLanguage: Record<string, Record<string, string>> = {};
 for (const language of languages) translationsByLanguage[language.id] = load<Record<string, string>>(`i18n/${language.id}.json`);
@@ -112,6 +127,7 @@ checkUniqueIds('dungeons.json', dungeons);
 checkUniqueIds('towns.json', townsFile.towns);
 checkUniqueIds('base-items.json', baseItems);
 checkUniqueIds('classes.json', classes);
+checkUniqueIds('advancements.json (with classes.json)', [...classes, ...advancements]);
 checkUniqueIds('affixes.json', affixes);
 if (new Set(heroNames).size !== heroNames.length) report('hero-names.json: duplicate names');
 
@@ -144,6 +160,34 @@ for (const monster of monsters) {
     if (drop.minQuantity < 1 || drop.minQuantity > drop.maxQuantity) report(`monsters.json: '${monster.id}' drop '${drop.materialId}' has a bad quantity range`);
   }
 }
+
+const dungeonOfMonster = new Map<string, string>();
+const dungeonOfSprite = new Map<string, string>();
+for (const dungeon of dungeons) {
+  const monsterIdsInDungeon = [...dungeon.monsterIds, ...(dungeon.rareMonsterId ? [dungeon.rareMonsterId] : []), ...(dungeon.bossMonsterId ? [dungeon.bossMonsterId] : [])];
+  for (const monsterId of new Set(monsterIdsInDungeon)) {
+    const otherDungeonId = dungeonOfMonster.get(monsterId);
+    if (otherDungeonId) report(`dungeons.json: monster '${monsterId}' is in both '${otherDungeonId}' and '${dungeon.id}'. Every dungeon needs its own monsters.`);
+    dungeonOfMonster.set(monsterId, dungeon.id);
+    const spriteKey = monstersById.get(monsterId)?.spriteKey;
+    const otherSpriteDungeonId = spriteKey ? dungeonOfSprite.get(spriteKey) : undefined;
+    if (spriteKey && otherSpriteDungeonId && otherSpriteDungeonId !== dungeon.id) report(`dungeons.json: sprite '${spriteKey}' looks the same in '${otherSpriteDungeonId}' and '${dungeon.id}'`);
+    if (spriteKey) dungeonOfSprite.set(spriteKey, dungeon.id);
+  }
+}
+const MAXIMUM_SHARED_MATERIALS_BETWEEN_DUNGEONS = 1;
+const craftingMaterialsOfDungeon = (dungeon: Dungeon): Set<string> => {
+  const normalMonsters = dungeon.monsterIds.map((monsterId) => monstersById.get(monsterId));
+  const drops = normalMonsters.flatMap((monster) => monster?.drops ?? []);
+  return new Set(drops.map((drop) => drop.materialId).filter((materialId) => !['essence', 'catalyst'].includes(materialsById.get(materialId)?.category ?? '')));
+};
+dungeons.forEach((dungeon, index) => {
+  const materialsHere = craftingMaterialsOfDungeon(dungeon);
+  for (const otherDungeon of dungeons.slice(index + 1)) {
+    const sharedMaterials = [...craftingMaterialsOfDungeon(otherDungeon)].filter((materialId) => materialsHere.has(materialId));
+    if (sharedMaterials.length > MAXIMUM_SHARED_MATERIALS_BETWEEN_DUNGEONS) report(`dungeons.json: '${dungeon.id}' and '${otherDungeon.id}' drop the same materials from normal monsters (${sharedMaterials.join(', ')}). Share at most ${MAXIMUM_SHARED_MATERIALS_BETWEEN_DUNGEONS}.`);
+  }
+});
 
 for (const dungeon of dungeons) {
   const town = townsById.get(dungeon.townId);
@@ -180,7 +224,13 @@ for (const material of materials) {
 }
 
 const tiersWithMaterials = [...new Set(materials.map((material) => material.tier))];
+for (const material of materials) {
+  if (!(material.width >= 1 && material.height >= 1)) report(`materials.json: '${material.id}' needs a width and a height of at least 1`);
+}
 for (const base of baseItems) {
+  const shapeRows = ITEM_SHAPE_ROWS[base.id];
+  if (!shapeRows) report(`ui/itemShapes.ts: base item '${base.id}' has no icon picture`);
+  else if (shapeRows.length !== 12 || shapeRows.some((row) => row.length !== 12)) report(`ui/itemShapes.ts: the picture of '${base.id}' must be 12 rows of 12 letters`);
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
   if (base.craftLevelOffset < 1 || base.craftLevelOffset > itemBalance.levelsPerBracket) report(`base-items.json: '${base.id}' needs a craftLevelOffset from 1 to ${itemBalance.levelsPerBracket}`);
   if (base.width < 1 || base.height < 1) report(`base-items.json: '${base.id}' has an invalid size`);
@@ -202,12 +252,35 @@ for (const heroClass of classes) {
     if (!gearTypes.has(gearType)) report(`classes.json: '${heroClass.id}' allows gear type '${gearType}' that no base item has`);
   }
 }
+const FIRST_PROMOTION_LEVEL = 20;
+const MASTER_PROMOTION_LEVEL = 50;
+const dungeonIds = new Set(dungeons.map((dungeon) => dungeon.id));
+const startingClasses = classes.filter((heroClass) => heroClass.unlockAfterDungeonId === null);
+if (startingClasses.length === 0) report('classes.json: at least one class must be open from the start');
+for (const heroClass of classes) {
+  if (heroClass.unlockAfterDungeonId !== null && !dungeonIds.has(heroClass.unlockAfterDungeonId)) report(`classes.json: '${heroClass.id}' unlocks after unknown dungeon '${heroClass.unlockAfterDungeonId}'`);
+  const branches = advancements.filter((advancement) => advancement.baseClassId === heroClass.id && advancement.promotesFrom === heroClass.id);
+  if (branches.length !== 2) report(`advancements.json: base class '${heroClass.id}' needs exactly 2 branches, found ${branches.length}`);
+  for (const branch of branches) {
+    if (branch.requiredLevel !== FIRST_PROMOTION_LEVEL) report(`advancements.json: branch '${branch.id}' must need level ${FIRST_PROMOTION_LEVEL}`);
+    const masters = advancements.filter((advancement) => advancement.promotesFrom === branch.id);
+    if (masters.length !== 1) report(`advancements.json: branch '${branch.id}' needs exactly 1 master class, found ${masters.length}`);
+    for (const master of masters) {
+      if (master.requiredLevel !== MASTER_PROMOTION_LEVEL) report(`advancements.json: master '${master.id}' must need level ${MASTER_PROMOTION_LEVEL}`);
+      if (master.baseClassId !== heroClass.id) report(`advancements.json: master '${master.id}' must keep base class '${heroClass.id}'`);
+    }
+  }
+}
+const advancementParentIds = new Set([...classes.map((heroClass) => heroClass.id), ...advancements.map((advancement) => advancement.id)]);
+for (const advancement of advancements) {
+  if (!advancementParentIds.has(advancement.promotesFrom)) report(`advancements.json: '${advancement.id}' promotes from unknown class '${advancement.promotesFrom}'`);
+}
 for (const affix of affixes) {
   if (!STAT_NAMES.includes(affix.stat)) report(`affixes.json: '${affix.id}' uses unknown stat '${affix.stat}'`);
 }
 
 
-const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tavern', 'workshop', 'merchant'];
+const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tavern', 'workshop', 'merchant', 'bank'];
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
   quality: ['common', 'magic', 'rare', 'unique'],
   statname: ['hp', 'health', 'mana', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'],
@@ -221,6 +294,9 @@ function expectedEnglishNames(): Array<[string, string]> {
   const expected: Array<[string, string]> = [];
   for (const heroClass of classes) {
     expected.push([`class.${heroClass.id}.name`, heroClass.displayName], [`class.${heroClass.id}.role`, heroClass.roleDescription]);
+  }
+  for (const advancement of advancements) {
+    expected.push([`class.${advancement.id}.name`, advancement.displayName], [`class.${advancement.id}.role`, advancement.roleDescription]);
   }
   for (const monster of monsters) expected.push([`monster.${monster.id}`, monster.name]);
   for (const material of materials) {
@@ -242,6 +318,12 @@ function expectedEnglishNames(): Array<[string, string]> {
 function expectedKeysWithoutEnglishSource(): string[] {
   const keys = PANEL_IDS.map((panelId) => `panel.${panelId}`);
   keys.push('lore.prologue.title', 'lore.prologue.1', 'lore.prologue.2', 'lore.prologue.3', 'lore.begin');
+  keys.push('castle.leave', 'castle.farewell');
+  for (let screen = 0; screen < CASTLE_SCREEN_COUNT; screen++) keys.push(`castle.screen.${screen}`);
+  for (const spot of castleSpots) {
+    keys.push(`castle.${spot.id}.name`, `castle.${spot.id}.title`);
+    for (let tale = 1; tale <= spot.tales; tale++) keys.push(`castle.${spot.id}.tale.${tale}`);
+  }
   for (const town of townsFile.towns) keys.push(`town.${town.id}.lore`);
   for (const monster of monsters) keys.push(`monster.${monster.id}.lore`);
   for (const material of materials) keys.push(`material.${material.id}.lore`);
@@ -273,6 +355,23 @@ function checkAudio(): void {
 }
 
 checkAudio();
+
+function checkCastle(): void {
+  const knownIds = new Set<string>();
+  for (const spot of castleSpots) {
+    if (knownIds.has(spot.id)) report(`castle.json: duplicate spot '${spot.id}'`);
+    knownIds.add(spot.id);
+    if (spot.screen < 0 || spot.screen >= CASTLE_SCREEN_COUNT) report(`castle.json: '${spot.id}' is on screen ${spot.screen}, but the castle has ${CASTLE_SCREEN_COUNT} screens`);
+    if (spot.kind === 'person' && (spot.look === null || !FIGURE_DRAWERS[spot.look])) report(`castle.json: person '${spot.id}' uses unknown figure look '${spot.look}'`);
+    if (spot.kind === 'landmark' && spot.look !== null) report(`castle.json: landmark '${spot.id}' must have look null, because the backdrop draws it`);
+    const fitsScreen = spot.x - spot.width / 2 >= 0 && spot.x + spot.width / 2 <= LOGICAL_WIDTH && spot.y - spot.height >= 0 && spot.y <= LOGICAL_HEIGHT;
+    if (!fitsScreen) report(`castle.json: '${spot.id}' reaches outside its screen`);
+    if (spot.tales < 1) report(`castle.json: '${spot.id}' needs at least one tale`);
+  }
+  for (const building of buildings) if (building.opens !== undefined && building.opens !== 'castle') report(`buildings.json: '${building.id}' opens unknown place '${building.opens}'`);
+}
+
+checkCastle();
 
 for (const town of townsFile.towns) {
   const townDungeons = dungeons.filter((dungeon) => dungeon.townId === town.id);

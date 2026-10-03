@@ -1,4 +1,5 @@
 import type { Hero } from '../../model/hero';
+import { migrateUnstackedMaterials } from './migrateUnstackedMaterials';
 import { migrateWeaponDamageAndSmiths } from './migrateWeaponDamageAndSmiths';
 
 // A save is never dropped because the game changed. Each migration upgrades a save by one version.
@@ -22,5 +23,10 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
   {
     fromVersion: 7,
     migrate: migrateWeaponDamageAndSmiths,
+  },
+  {
+    // Version 9: materials no longer stack, and the Bank sells backpack rows and merchant sale slots.
+    fromVersion: 8,
+    migrate: migrateUnstackedMaterials,
   },
 ];

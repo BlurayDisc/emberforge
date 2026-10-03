@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
 import {
+  cancelSaleCommand,
   craftItemCommand,
   createGameStore,
   equipItemCommand,
   collectFinishedJobsCommand,
   completeRunCommand,
+  buyStorageUpgradeCommand,
+  describeStorage,
   hireHeroCommand,
+  listTavernOffers,
+  runAwayCommand,
   sellBackpackEntryCommand,
   startDungeonRunCommand,
   type GameStore,
@@ -18,7 +23,7 @@ import { QUALITY_WEIGHTS, SELL_QUALITY_FACTOR } from '../src/content/balance/ite
 import { requireById } from '../src/content/lookup';
 import { MATERIALS } from '../src/content/materials';
 import { findRecipe, listRecipes } from '../src/systems/crafting';
-import { addMaterials } from '../src/systems/inventory';
+import { addMaterials, backpackRowCount, usedCellCount } from '../src/systems/inventory';
 import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
 import { computeHeroSheet } from '../src/systems/stats';
 
@@ -35,11 +40,15 @@ function rejectionKey(store: GameStore, command: Parameters<GameStore['execute']
   return result.accepted ? null : (result.rejection?.key ?? 'unknown');
 }
 
+// Materials do not stack, so the test backpack gets many expansions to hold the starter materials.
+const TEST_BACKPACK_EXPANSIONS = 100;
+
 function giveStarterMaterials(store: GameStore): void {
   store.execute((state) => ({
     ...state,
     copper: 100000,
-    backpack: addMaterials(state.backpack, MATERIALS.map((material) => ({ materialId: material.id, quantity: 200 }))).entries,
+    backpackExpansions: TEST_BACKPACK_EXPANSIONS,
+    backpack: addMaterials(state.backpack, MATERIALS.map((material) => ({ materialId: material.id, quantity: 60 })), backpackRowCount(TEST_BACKPACK_EXPANSIONS)).entries,
   }));
 }
 
@@ -79,6 +88,18 @@ function playSession(seed: number): string {
   assert.equal(rejectionKey(store, hireHeroCommand('mage')), null);
   const [warrior, archer, mage] = store.getState().company;
   assert.ok(warrior && archer && mage);
+
+  for (const lockedClassId of ['priest', 'thief', 'barbarian', 'fighter'] as const) {
+    assert.equal(rejectionKey(store, hireHeroCommand(lockedClassId)), 'reject.classLocked', `${lockedClassId} is locked at the start`);
+  }
+  const offersAtStart = listTavernOffers(store.getState());
+  assert.deepEqual(offersAtStart.filter((offer) => offer.lockedUntilDungeonId === null).map((offer) => offer.classId), ['warrior', 'archer', 'mage'], 'only warrior, archer and mage are open at the start');
+  const stateBeforeUnlock = store.getState();
+  store.execute((state) => ({ ...state, clearedDungeonIds: [...state.clearedDungeonIds, 'wolf-trail'] }));
+  assert.notEqual(rejectionKey(store, hireHeroCommand('thief')), 'reject.classLocked', 'clearing Wolf Trail opens the thief');
+  assert.equal(rejectionKey(store, hireHeroCommand('priest')), 'reject.classLocked', 'the priest stays locked');
+  store.execute(() => stateBeforeUnlock);
+  for (const baseId of ['greataxe', 'maul', 'knuckles', 'cestus']) assert.ok(findRecipe(baseId, 1), `${baseId} has a tier 1 recipe`);
 
   const damageBefore = computeHeroSheet(warrior).physicalDamage;
   assert.equal(rejectionKey(store, craftItemCommand('axe', 1, clock.nowMs)), 'reject.craftLevelTooLow', 'an axe is locked at level 1');
@@ -152,6 +173,29 @@ function playSession(seed: number): string {
   assert.ok(crafter && (crafter.level > 1 || crafter.experience > 0), 'crafting gives the crafter experience');
   const encounters = finalState.reports.length;
 
+  // A sale can be cancelled, and the goods come back.
+  const goodsEntry = finalState.backpack[0];
+  assert.ok(goodsEntry, 'the backpack holds something to sell');
+  const entriesBeforeSale = finalState.backpack.length;
+  assert.equal(rejectionKey(store, sellBackpackEntryCommand({ column: goodsEntry.column, row: goodsEntry.row }, clock.nowMs)), null);
+  const saleJob = store.getState().jobs.find((job) => job.kind === 'sell');
+  assert.ok(saleJob, 'the sale is a job');
+  assert.equal(rejectionKey(store, cancelSaleCommand(saleJob.id)), null, 'cancel the sale');
+  assert.equal(store.getState().jobs.length, 0, 'a cancelled sale leaves no job');
+  assert.equal(store.getState().backpack.length, entriesBeforeSale, 'the goods return to the backpack');
+
+  // Running away keeps no loot and no report, and the hero is not healed.
+  const reportsBeforeRun = store.getState().reports.length;
+  const runner = store.getState().company.find((candidate) => candidate.classId === 'mage');
+  assert.ok(runner);
+  assert.equal(rejectionKey(store, startDungeonRunCommand('rat-cellar', [runner.id], clock.nowMs)), null);
+  const runNumber = store.getState().dungeonRuns[0]?.runNumber ?? 0;
+  assert.equal(rejectionKey(store, runAwayCommand(runNumber, 6, clock.nowMs)), null, 'run away');
+  assert.equal(store.getState().dungeonRuns.length, 0, 'the run is gone');
+  assert.equal(store.getState().reports.length, reportsBeforeRun, 'running away leaves no report');
+  const ranAwayHero = store.getState().company.find((candidate) => candidate.id === runner.id);
+  assert.ok(ranAwayHero && ranAwayHero.healthAsOfMs === clock.nowMs, 'the health is settled at the moment of the escape');
+
   const hero = finalState.company[0];
   return JSON.stringify([finalState.copper, encounters, hero?.level, hero?.experience, hero?.statistics]);
 }
@@ -186,6 +230,42 @@ assert.equal(migratedSeven.crafters.weaponsmithing?.level, 4, 'the Blacksmithing
 assert.equal(migratedSeven.crafters.armoursmithing?.level, 4, 'the Blacksmithing level goes to the Armoursmithing crafter');
 const migratedEntry = migratedSeven.backpack[0]?.content;
 assert.ok(migratedEntry?.kind === 'item' && migratedEntry.item.baseStats.physicalDamage === 7 && migratedEntry.item.baseStats.strength === undefined, 'a weapon strength becomes physical damage');
+
+// Materials do not stack: every unit takes its own place, and bulky materials take 2 cells.
+const stackedOre = addMaterials([], [{ materialId: 'copper-ore', quantity: 3 }, { materialId: 'pine-wood', quantity: 2 }], backpackRowCount(0));
+assert.equal(stackedOre.entries.length, 5, 'every material unit is its own entry');
+assert.equal(usedCellCount(stackedOre.entries), 3 * 1 + 2 * 2, 'pine wood fills 2 cells');
+const crowded = addMaterials([], [{ materialId: 'pine-wood', quantity: 50 }], backpackRowCount(0));
+assert.equal(crowded.entries.length, 40, 'the base backpack holds 40 bulky units');
+assert.equal(crowded.overflow[0]?.quantity, 10, 'units that find no room are returned');
+
+// The Bank sells backpack rows and merchant sale slots.
+{
+  const store = createStore(7);
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('backpack')), 'reject.notEnoughMoney', 'a storage upgrade costs money');
+  store.execute((state) => ({ ...state, copper: 1_000_000 }));
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('backpack')), null);
+  assert.equal(store.getState().backpackExpansions, 1);
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('merchantSlot')), null);
+  assert.equal(describeStorage(store.getState()).merchantSaleSlots, 4, 'the Bank adds a merchant sale slot');
+  for (let bought = 0; bought < 20; bought++) store.execute(buyStorageUpgradeCommand('backpack'));
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('backpack')), 'reject.upgradeSoldOut', 'the upgrades end');
+}
+
+// A version 8 save has stacked materials. The migration splits them and keeps every unit.
+const versionEightSave = JSON.stringify({
+  saveVersion: 8,
+  company: [],
+  backpack: [
+    { column: 0, row: 0, content: { kind: 'material', materialId: 'pine-wood', quantity: 99 } },
+    { column: 1, row: 0, content: { kind: 'material', materialId: 'copper-ore', quantity: 40 } },
+  ],
+});
+const migratedEight = parseGameState(versionEightSave);
+assert.ok(migratedEight && migratedEight.saveVersion === CURRENT_SAVE_VERSION, 'a version 8 save migrates');
+assert.equal(migratedEight.backpack.length, 139, 'no material unit is lost');
+assert.ok(migratedEight.backpackExpansions > 0, 'the backpack grows to hold the old stacks');
+assert.equal(usedCellCount(migratedEight.backpack), 99 * 2 + 40, 'the cells add up');
 
 const firstSummary = playSession(12345);
 const secondSummary = playSession(12345);

@@ -3,6 +3,7 @@ import type { TimedJob } from '../../model/timedJob';
 import { applyCraftingExperience } from '../../systems/crafting';
 import { addItem } from '../../systems/inventory';
 import { CommandRejected, type Command } from '../gameStore';
+import { backpackRowsOf } from '../storage';
 
 export function findFinishedJobs(state: GameState, nowMs: number): TimedJob[] {
   return state.jobs.filter((job) => job.finishesAtMs <= nowMs);
@@ -13,7 +14,7 @@ export function findFinishedJobs(state: GameState, nowMs: number): TimedJob[] {
 function finishJob(state: GameState, job: TimedJob): GameState | null {
   const withoutJob = { ...state, jobs: state.jobs.filter((candidate) => candidate.id !== job.id) };
   if (job.kind === 'sell') return { ...withoutJob, copper: state.copper + job.copper };
-  const backpack = addItem(state.backpack, job.item);
+  const backpack = addItem(state.backpack, job.item, backpackRowsOf(state));
   if (backpack === null) return null;
   const crafter = state.crafters[job.professionId] ?? { level: 1, experience: 0 };
   return { ...withoutJob, backpack, crafters: { ...state.crafters, [job.professionId]: applyCraftingExperience(crafter, job.crafterExperience) } };

@@ -9,6 +9,7 @@ export const ITEM_LEVEL_ROLLS_KEEP_HIGHEST = data.itemLevelRollsKeepHighest;
 
 export const BASE_STAT_GROWTH_PER_ITEM_LEVEL = data.baseStatGrowthPerItemLevel;
 export const BASE_STAT_SPREAD_FRACTION = data.baseStatSpreadFraction;
+export const UNSCALED_BASE_STATS: readonly string[] = data.unscaledBaseStats;
 export const AFFIX_GROWTH_PER_ITEM_LEVEL = data.affixGrowthPerItemLevel;
 
 export const MAGIC_AFFIX_COUNTS: readonly number[] = data.magicAffixCounts;

@@ -96,6 +96,29 @@ const DRAW_GEAR: Record<ClassId, (paint: Paint, look: ClassLook, hair: Hex) => v
     paint(GOLD, 20, 22, 3, 1);
     paint(WOOD, 21, 23, 1, 2);
   },
+  barbarian: (paint, look) => {
+    paint(look.cloth as Hex, 7, 2, 10, 4);
+    paint(look.clothShade as Hex, 7, 5, 10, 1);
+    paint(STEEL, 5, 0, 2, 4);
+    paint(STEEL, 17, 0, 2, 4);
+    paint(look.clothShade as Hex, 6, 13, 12, 3);
+    paint(WOOD, 21, 6, 1, 20);
+    paint(STEEL, 17, 6, 5, 7);
+    paint('#ffffff', 17, 7, 1, 5);
+    paint(STEEL_DARK, 21, 6, 1, 7);
+  },
+  fighter: (paint, look) => {
+    paint(RED, 8, 5, 8, 1);
+    paint(RED, 16, 5, 2, 1);
+    paint(RED, 17, 6, 2, 3);
+    paint(look.cloth as Hex, 7, 13, 10, 1);
+    paint(look.clothShade as Hex, 2, 19, 4, 3);
+    paint(look.clothShade as Hex, 18, 19, 4, 3);
+    paint(STEEL, 2, 22, 4, 1);
+    paint(STEEL, 18, 22, 4, 1);
+    paint(GOLD, 3, 22, 1, 1);
+    paint(GOLD, 19, 22, 1, 1);
+  },
 };
 
 export function drawHeroSprite(classId: ClassId, heroName: string): HTMLCanvasElement {

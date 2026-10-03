@@ -1,8 +1,7 @@
 import { BASE_ITEMS } from '../../../content/baseItems';
 import { requireById } from '../../../content/lookup';
 import { MATERIALS } from '../../../content/materials';
-import { listSaleJobs, saleDurationSeconds, sellBackpackEntryCommand } from '../../../game';
-import { MERCHANT_SALE_SLOTS } from '../../../content/balance/economy';
+import { cancelSaleCommand, listSaleJobs, merchantSaleSlotsOf, saleDurationSeconds, sellBackpackEntryCommand } from '../../../game';
 import type { SaleJob } from '../../../model/timedJob';
 import { formatDuration } from '../../liveUpdate';
 import { createJobBar } from '../../liveBars';
@@ -15,6 +14,11 @@ import { openItemView, openMaterialView } from '../../itemModals';
 import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
 import type { PanelContext, PanelRenderer } from '../panelContext';
+
+// A material in the backpack is one unit. A sale from an old save can hold a few units.
+function quantityTitle(name: string, quantity: number): string {
+  return quantity === 1 ? name : `${name} x${quantity}`;
+}
 
 function sell(context: PanelContext, entry: BackpackEntry): void {
   const result = context.store.execute(sellBackpackEntryCommand({ column: entry.column, row: entry.row }, Date.now()));
@@ -51,7 +55,7 @@ function renderEntryRow(context: PanelContext, entry: BackpackEntry): HTMLElemen
   return makeClickable(
     createListRow({
       art: createMaterialIcon(material.id, material.category, 3),
-      title: `${materialName(material.id)} x${entry.content.quantity}`,
+      title: quantityTitle(materialName(material.id), entry.content.quantity),
       lines: [saleTimeLine(material.sellValueCopper * entry.content.quantity)],
       actions: [createMoneyDisplay(material.sellValueCopper * entry.content.quantity), sellButton],
     }),
@@ -59,7 +63,11 @@ function renderEntryRow(context: PanelContext, entry: BackpackEntry): HTMLElemen
   );
 }
 
-function renderSaleJob(job: SaleJob): HTMLElement {
+function renderSaleJob(context: PanelContext, job: SaleJob): HTMLElement {
+  const cancelButton = actionButton(t('merchant.cancelSale'), () => {
+    const result = context.store.execute(cancelSaleCommand(job.id));
+    if (!result.accepted) context.notify(describeRejection(result.rejection));
+  }, { className: 'action-button small-button' });
   if (job.content.kind === 'item') {
     const { item } = job.content;
     const base = requireById(BASE_ITEMS, item.baseId);
@@ -67,16 +75,16 @@ function renderSaleJob(job: SaleJob): HTMLElement {
       art: createItemIcon(item.baseId, item.materialId, base.mainCategory, 3),
       title: element('span', `quality-${item.quality}`, itemDisplayName(item)),
       lines: [createJobBar(job, t('job.paying'))],
-      actions: [createMoneyDisplay(job.copper)],
+      actions: [createMoneyDisplay(job.copper), cancelButton],
       className: 'fighting',
     });
   }
   const material = requireById(MATERIALS, job.content.materialId);
   return createListRow({
     art: createMaterialIcon(material.id, material.category, 3),
-    title: `${materialName(material.id)} x${job.content.quantity}`,
+    title: quantityTitle(materialName(material.id), job.content.quantity),
     lines: [createJobBar(job, t('job.paying'))],
-    actions: [createMoneyDisplay(job.copper)],
+    actions: [createMoneyDisplay(job.copper), cancelButton],
     className: 'fighting',
   });
 }
@@ -89,8 +97,8 @@ function renderSellTab(context: PanelContext): HTMLElement {
     'div',
     'panel-body',
     element('p', 'hint', t('merchant.hint')),
-    element('div', 'section-title', t('merchant.salesInProgress', { used: saleJobs.length, slots: MERCHANT_SALE_SLOTS })),
-    saleJobs.length > 0 ? createList(...saleJobs.map(renderSaleJob)) : element('p', 'hint', t('merchant.noSales')),
+    element('div', 'section-title', t('merchant.salesInProgress', { used: saleJobs.length, slots: merchantSaleSlotsOf(state) })),
+    saleJobs.length > 0 ? createList(...saleJobs.map((job) => renderSaleJob(context, job))) : element('p', 'hint', t('merchant.noSales')),
     element('div', 'section-title', t('merchant.backpackGoods')),
     sortedEntries.length > 0 ? createList(...sortedEntries.map((entry) => renderEntryRow(context, entry))) : element('p', 'hint', t('merchant.empty')),
   );

@@ -1,27 +1,9 @@
 import type { MaterialCategory } from '../model/material';
+import { ITEM_SHAPE_ROWS } from './itemShapes';
 import { drawAscii, drawingToImage } from './pixelDraw';
 
 type Rows = readonly string[];
 
-export const ITEM_SHAPE_ROWS: Readonly<Record<string, Rows>> = {
-  sword: ['.....oo.....', '....olao....', '....olao....', '....olao....', '....olao....', '....olao....', '....olao....', '..oooooooo..', '..oggggggo..', '....owwo....', '....owwo....', '....oggo....'],
-  axe: ['......oooo..', '.....oaaaao.', '....oaaalao.', '....oaaaaao.', '.....oaaao..', '....owwo....', '....owwo....', '....owwo....', '....owwo....', '....owwo....', '....owwo....', '....oWWo....'],
-  mace: ['....oooo....', '...oaaaao...', '...oalaao...', '...oaaaao...', '....oaao....', '....owwo....', '....owwo....', '....owwo....', '....owwo....', '....owwo....', '....owwo....', '....oWWo....'],
-  dagger: ['............', '............', '.....oo.....', '....olao....', '....olao....', '....olao....', '....olao....', '...oooooo...', '...oggggo...', '....owwo....', '....owwo....', '....oggo....'],
-  bow: ['......oo....', '.....oaso...', '....oasoo...', '...oaaso....', '...oaso.....', '..oaaso.....', '..oaaso.....', '...oaso.....', '...oaaso....', '....oasoo...', '.....oaso...', '......oo....'],
-  staff: ['....oooo....', '...obbbbo...', '...obllbo...', '...obbbbo...', '....oooo....', '....oaao....', '....oaao....', '....oaao....', '....oaao....', '....oaao....', '....oaao....', '....oWWo....'],
-  wand: ['......oo....', '....ooggoo..', '......oo....', '.....oaao...', '.....oaao...', '.....oaao...', '.....oaao...', '.....oaao...', '.....oaao...', '.....oaao...', '.....oaao...', '.....oooo...'],
-  shield: ['..oooooooo..', '.oaaaaaaaao.', '.oaallaaaao.', '.oaaggggaao.', '.oaaggggaao.', '.oaallaaaao.', '..oaaaaaao..', '..oaaaaaao..', '...oaaaao...', '....oaao....', '.....oo.....', '............'],
-  quiver: ['...r..r.r...', '...w..w.w...', '..owwwwwwo..', '..oaaaaaao..', '..oaaaaaao..', '..oaaaaaao..', '..oaaWWaao..', '..oaaaaaao..', '..oaaaaaao..', '...oaaaao...', '...oooooo...', '............'],
-  tome: ['............', '.oooooooooo.', '.oaaaaaaaao.', '.oaaggggaao.', '.oaaggggaao.', '.oaaaaaaaao.', '.oaaaaaaaao.', '.oppppppppo.', '.oppppppppo.', '.oooooooooo.', '............', '............'],
-  belt: ['............', '............', '............', 'oooooooooooo', 'oaaaaaaaaaao', 'oaaaggggaaao', 'oaaaaaaaaaao', 'oooooooooooo', '............', '............', '............', '............'],
-  ring: ['............', '....oooo....', '...oaaaao...', '...oalaao...', '....oooo....', '...oggggo...', '..og....go..', '..og....go..', '..og....go..', '...oggggo...', '....oooo....', '............'],
-  amulet: ['..o......o..', '..og....go..', '...og..go...', '....ogggo...', '.....oao....', '....oaaao...', '...oaalaao..', '...oaaaaao..', '....oaaao...', '.....ooo....', '............', '............'],
-  helm: ['....oooo....', '...oaaaao...', '..oaaaaaao..', '..oaaaaaao..', '..oaaooaao..', '..oaaooaao..', '..oaaaaaao..', '..oaa..aao..', '..ooo..ooo..', '............', '............', '............'],
-  armour: ['..oo....oo..', '.oaaaoooaaao', '.oaaaaaaaaao', '.oaaaaaaaaao', '..oaaaggaao.', '..oaaaaaaao.', '..oaaaaaaao.', '..oaaaaaaao.', '..odddddddo.', '..oaaaaaaao.', '...oooooooo.', '............'],
-  gloves: ['............', '..oo.oo.oo..', '.oaaoaaoaao.', '.oaaaaaaaao.', '.oaaaaaaaao.', '..oaaaaaao..', '..oaaaaaao..', '..oaaaaaao..', '..oddddddo..', '..oooooooo..', '............', '............'],
-  boots: ['............', '...oaaao....', '...oaaao....', '...oaaao....', '...oaaao....', '...oaaao....', '...oaaaooo..', '...oaaaaaao.', '...oddddddo.', '...oooooooo.', '............', '............'],
-};
 
 const MATERIAL_ROWS: Readonly<Record<MaterialCategory, Rows>> = {
   ore: ['............', '....oooo....', '...oaalao...', '..oaaaaaaoo.', '.oaalaaaaaao', '.oaaaaadaaao', '.oaaaaaaaao.', '..oaaaaaao..', '...oooooo...', '............', '............', '............'],
@@ -80,11 +62,6 @@ function tintFor(materialId: string, category: string): Tint {
   return TINT_BY_MATERIAL[materialId] ?? TINT_BY_CATEGORY[category] ?? DEFAULT_TINT;
 }
 
-function shapeOfBase(baseId: string): string {
-  if (baseId === 'parrying-dagger') return 'dagger';
-  return baseId.split('-')[0] ?? baseId;
-}
-
 function cachedImage(key: string, scale: number, rows: Rows, legend: Readonly<Record<string, string>>): HTMLImageElement {
   let canvas = imageCache.get(key);
   if (!canvas) {
@@ -96,8 +73,8 @@ function cachedImage(key: string, scale: number, rows: Rows, legend: Readonly<Re
 
 export function createItemIcon(baseId: string, materialId: string, mainCategory: string, scale = 3): HTMLImageElement {
   const tint = tintFor(materialId, mainCategory);
-  const rows = ITEM_SHAPE_ROWS[shapeOfBase(baseId)] ?? ITEM_SHAPE_ROWS.sword ?? [];
-  return cachedImage(`item:${shapeOfBase(baseId)}:${materialId}`, scale, rows, { ...BASE_LEGEND, ...tint });
+  const rows = ITEM_SHAPE_ROWS[baseId] ?? ITEM_SHAPE_ROWS.sword ?? [];
+  return cachedImage(`item:${baseId}:${materialId}`, scale, rows, { ...BASE_LEGEND, ...tint });
 }
 
 export function createMaterialIcon(materialId: string, category: MaterialCategory, scale = 3): HTMLImageElement {

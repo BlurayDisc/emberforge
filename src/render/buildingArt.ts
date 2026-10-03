@@ -16,14 +16,14 @@ import {
   type BuildingColors,
 } from './buildingParts';
 import { addOutline, createPixelCanvas, type PixelCanvas } from './pixelCanvas';
+import { drawKeep } from './keepArt';
 import { DECORATIVE_DRAWERS } from './townhouseArt';
 
-const COLORS_BY_STYLE: Record<'tavern' | 'workshop' | 'merchant' | 'gate' | 'keep', BuildingColors> = {
+const COLORS_BY_STYLE: Record<'tavern' | 'workshop' | 'merchant' | 'gate', BuildingColors> = {
   tavern: { wall: 'plaster', wallDark: 'pathDark', roof: 'roofRed', roofDark: 'roofRedDark' },
   workshop: { wall: 'brick', wallDark: 'brickDark', roof: 'roofSlate', roofDark: 'roofSlateDark' },
   merchant: { wall: 'plaster', wallDark: 'pathDark', roof: 'roofSlate', roofDark: 'roofSlateDark' },
   gate: { wall: 'stone', wallDark: 'stoneDark', roof: 'stoneLight', roofDark: 'stoneDark' },
-  keep: { wall: 'stone', wallDark: 'stoneDark', roof: 'roofRed', roofDark: 'roofRedDark' },
 };
 
 function drawTavern(art: PixelCanvas, width: number, height: number): void {
@@ -74,26 +74,6 @@ function drawGate(art: PixelCanvas, width: number, height: number): void {
   drawTorch(art, width - towerWidth - 4, height - 30);
   art.fill('blood', width / 2 - 3, 24, 6, 8);
   art.fill('gold', width / 2 - 1, 26, 2, 4);
-}
-
-function drawKeep(art: PixelCanvas, width: number, height: number): void {
-  const towerWidth = 24;
-  const centerLeft = Math.round(width / 2 - 18);
-  drawBrickWalls(art, 0, 30, width, height - 30, COLORS_BY_STYLE.keep);
-  for (let tooth = 0; tooth < width; tooth += 8) art.fill('stone', tooth, 26, 5, 5);
-  drawGateTower(art, 0, 14, towerWidth, height - 14);
-  drawGateTower(art, width - towerWidth, 14, towerWidth, height - 14);
-  drawGateTower(art, centerLeft, 0, 36, height);
-  for (const tower of [4, width - towerWidth + 4, centerLeft + 4]) art.fill('void', tower + 6, 22, 3, 8);
-  art.fill('void', centerLeft + 14, 12, 8, 12);
-  drawGateArch(art, width / 2, height - 1);
-  art.fill('timber', centerLeft + 17, -10, 2, 12);
-  art.fill('blood', centerLeft + 19, -10, 10, 6);
-  art.fill('gold', centerLeft + 22, -8, 3, 2);
-  for (const bannerX of [towerWidth + 6, width - towerWidth - 12]) {
-    art.fill('blood', bannerX, 44, 6, 16);
-    art.fill('gold', bannerX + 2, 48, 2, 4);
-  }
 }
 
 const DRAWERS: Record<BuildingStyle, (art: PixelCanvas, width: number, height: number) => void> = {

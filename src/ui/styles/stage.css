@@ -56,29 +56,39 @@
   will-change: transform;
 }
 
+/* The arrow is a tall strip on the screen edge. It shows when the pointer is near. Touch screens have no hover, so it stays visible there. */
 .town-arrow {
   position: absolute;
-  top: 50%;
-  width: calc(var(--u) * 22);
-  height: calc(var(--u) * 34);
-  margin-top: calc(var(--u) * -17);
+  top: 0;
+  bottom: 0;
+  width: calc(var(--u) * 56);
+  height: auto;
+  margin: 0;
   padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--wood-700);
-  box-shadow: var(--outline-4), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-900);
+  border: 0;
+  background: transparent;
   pointer-events: auto;
   cursor: pointer;
 }
 
-.town-arrow-left { left: calc(var(--u) * 6); }
-.town-arrow-right { right: calc(var(--u) * 6); }
-.town-arrow:hover { background: var(--wood-500); }
+.town-arrow-left { left: 0; }
+.town-arrow-right { right: 0; }
+.town-arrow:hover,
+.town-arrow:focus-visible,
+.town-arrow.attention { opacity: 1; }
+
+@media (hover: none) {
+  .town-arrow { opacity: 1; }
+}
 
 .town-arrow-shape {
-  width: calc(var(--u) * 10);
-  height: calc(var(--u) * 16);
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 24);
   background: var(--gold);
   clip-path: polygon(100% 0, 0 50%, 100% 100%);
 }
@@ -388,6 +398,15 @@
   max-height: 100%;
 }
 
+.modal-backdrop-near {
+  background: transparent;
+}
+
+.modal-backdrop-near .modal {
+  position: absolute;
+  width: min(280px, calc(100% - 16px));
+}
+
 .modal-body {
   padding: 12px;
   overflow-y: auto;
@@ -454,4 +473,81 @@
     min-height: 0;
     box-shadow: inset 4px 0 0 var(--ink);
   }
+}
+
+/* The castle: two stage screens wide. The hotspots sit on people and places. */
+.castle-world {
+  width: 200%;
+}
+
+.castle-hotspot {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.castle-hotspot::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--u) * -1);
+  pointer-events: none;
+}
+
+.castle-hotspot:hover::after,
+.castle-hotspot:focus-visible::after {
+  box-shadow: 0 0 0 var(--u) var(--gold);
+}
+
+/* A name shows on hover or focus. A touch screen has no hover, so a tap opens the story at once. */
+.castle-hotspot .building-label {
+  display: none;
+  z-index: 2;
+}
+
+.castle-hotspot:hover .building-label,
+.castle-hotspot:focus-visible .building-label {
+  display: block;
+}
+
+/* A gold mark floats over a person the player has not spoken to yet. */
+.castle-marker {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--u) * 1);
+  transform: translateX(-50%);
+  width: calc(var(--u) * 6);
+  height: calc(var(--u) * 8);
+  line-height: calc(var(--u) * 8);
+  text-align: center;
+  font-family: var(--font-title);
+  font-size: calc(var(--u) * 7);
+  color: var(--ink);
+  background: var(--gold);
+  box-shadow: 0 calc(var(--u) * -1) 0 var(--ink), 0 var(--u) 0 var(--ink), calc(var(--u) * -1) 0 0 var(--ink), var(--u) 0 0 var(--ink);
+  animation: castle-marker-bounce 1s steps(1) infinite;
+  pointer-events: none;
+}
+
+.castle-person.unheard .castle-marker {
+  display: block;
+}
+
+@keyframes castle-marker-bounce {
+  0% { margin-bottom: 0; }
+  50% { margin-bottom: calc(var(--u) * 2); }
+}
+
+.castle-leave-button {
+  position: absolute;
+  top: calc(var(--u) * 4);
+  right: calc(var(--u) * 4);
+  width: auto;
+  margin: 0;
+  padding: calc(var(--u) * 2) calc(var(--u) * 8);
+  font-size: calc(var(--u) * 7);
+  pointer-events: auto;
 }

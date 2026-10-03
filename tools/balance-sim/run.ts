@@ -1,3 +1,4 @@
+import { printEconomy } from './economy';
 import { DUNGEONS, type DungeonDefinition } from '../../src/content/dungeons';
 import { createRandom, type Random } from '../../src/kernel/random';
 import type { ClassId, Hero } from '../../src/model/hero';
@@ -20,7 +21,7 @@ interface PartyCase {
   classIds: readonly ClassId[];
 }
 
-const SOLO_CASES: readonly PartyCase[] = (['warrior', 'archer', 'mage', 'priest', 'thief'] as const).map((classId) => ({ label: `solo ${classId}`, classIds: [classId] }));
+const SOLO_CASES: readonly PartyCase[] = (['warrior', 'archer', 'mage', 'priest', 'thief', 'barbarian', 'fighter'] as const).map((classId) => ({ label: `solo ${classId}`, classIds: [classId] }));
 
 const DUO_CASES: readonly PartyCase[] = [
   { label: 'duo warrior+priest', classIds: ['warrior', 'priest'] },
@@ -33,6 +34,8 @@ const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
   archer: ['bow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
   mage: ['staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
   priest: ['wand', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  barbarian: ['greataxe', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  fighter: ['knuckles', 'cestus', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
   thief: ['dagger', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
 };
 
@@ -100,3 +103,5 @@ for (const dungeon of DUNGEONS) {
     }
   }
 }
+
+printEconomy();

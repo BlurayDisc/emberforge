@@ -3,6 +3,7 @@
 export interface ArtProviders {
   dungeonBackdrop(dungeonId: string): HTMLCanvasElement;
   monsterSprite(spriteKey: string): HTMLCanvasElement | null;
+  castleFigure(look: string): HTMLCanvasElement | null;
 }
 
 let providers: ArtProviders | null = null;
@@ -17,4 +18,8 @@ export function dungeonBackdropCanvas(dungeonId: string): HTMLCanvasElement | nu
 
 export function monsterSpriteCanvas(spriteKey: string): HTMLCanvasElement | null {
   return providers?.monsterSprite(spriteKey) ?? null;
+}
+
+export function castleFigureCanvas(look: string): HTMLCanvasElement | null {
+  return providers?.castleFigure(look) ?? null;
 }

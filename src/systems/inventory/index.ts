@@ -1,6 +1,7 @@
 export {
   addItem,
   addMaterials,
+  backpackRowCount,
   combineMaterialQuantities,
   countMaterial,
   findEntryAt,
@@ -9,6 +10,8 @@ export {
   removeEntryAt,
   removeItem,
   removeMaterials,
+  sizeOfContent,
+  usedCellCount,
   type AddMaterialsResult,
   type GridPosition,
 } from './backpack';

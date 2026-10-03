@@ -12,7 +12,7 @@ import { createPortrait } from '../portraitArt';
 import { renderEquipmentScreen } from './heroes/equipmentScreen';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
-type HeroTab = 'stats' | 'equipment';
+type HeroTab = 'stats' | 'equipment' | 'record';
 
 const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'mana', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed'];
 const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'skill' | 'magic'; className: string }> = [
@@ -52,21 +52,11 @@ function statisticRow(label: string, value: string): HTMLElement {
 
 function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
-  const { statistics } = hero;
   const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', statName(stat)), element('span', 'stat-value', String(view.sheet[stat]))));
   const attributeMaximum = ATTRIBUTE_BAR_BASE + ATTRIBUTE_BAR_PER_LEVEL * hero.level;
   const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) =>
     element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'stat-value', String(view.sheet[stat]))),
   );
-  const record = [
-    statisticRow(t('heroes.power'), String(view.power)),
-    statisticRow(t('heroes.kills'), String(statistics.monstersDefeated)),
-    statisticRow(t('heroes.damageDealt'), String(statistics.damageDealt)),
-    statisticRow(t('heroes.dps'), formatNumber(view.damagePerSecond)),
-    statisticRow(t('heroes.damageTaken'), String(statistics.damageTaken)),
-    statisticRow(t('heroes.healingDone'), String(statistics.healingDone)),
-    statisticRow(t('heroes.battles'), `${statistics.battlesWon} / ${statistics.battlesLost}`),
-  ];
   const identity = element(
     'div',
     'hero-identity',
@@ -89,9 +79,22 @@ function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
     element('div', 'stat-table', ...mainRows),
     element('div', 'section-title', t('heroes.attributes')),
     element('div', 'attribute-list', ...attributeRows),
-    element('div', 'section-title', t('heroes.record')),
-    element('div', 'stat-grid wide', ...record),
   );
+}
+
+function renderRecordTab(context: PanelContext, hero: Hero): HTMLElement {
+  const view = describeHero(context.store.getState(), hero, Date.now());
+  const { statistics } = hero;
+  const record = [
+    statisticRow(t('heroes.power'), String(view.power)),
+    statisticRow(t('heroes.kills'), String(statistics.monstersDefeated)),
+    statisticRow(t('heroes.damageDealt'), String(statistics.damageDealt)),
+    statisticRow(t('heroes.dps'), formatNumber(view.damagePerSecond)),
+    statisticRow(t('heroes.damageTaken'), String(statistics.damageTaken)),
+    statisticRow(t('heroes.healingDone'), String(statistics.healingDone)),
+    statisticRow(t('heroes.battles'), `${statistics.battlesWon} / ${statistics.battlesLost}`),
+  ];
+  return element('div', 'hero-detail', element('div', 'section-title', t('heroes.record')), element('div', 'stat-grid wide', ...record));
 }
 
 function renderHeroDetail(context: PanelContext, hero: Hero): HTMLElement {
@@ -106,8 +109,8 @@ function renderHeroDetail(context: PanelContext, hero: Hero): HTMLElement {
   return element(
     'div',
     'hero-detail',
-    element('div', 'tab-row', tabButton('stats', t('heroes.tabStats')), tabButton('equipment', t('heroes.tabEquipment'))),
-    activeTab === 'stats' ? renderStatsTab(context, hero) : renderEquipmentScreen(context, hero),
+    element('div', 'tab-row', tabButton('stats', t('heroes.tabStats')), tabButton('equipment', t('heroes.tabEquipment')), tabButton('record', t('heroes.tabRecord'))),
+    activeTab === 'stats' ? renderStatsTab(context, hero) : activeTab === 'record' ? renderRecordTab(context, hero) : renderEquipmentScreen(context, hero),
   );
 }
 

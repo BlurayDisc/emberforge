@@ -103,14 +103,14 @@ function renderCrafterHeader(context: PanelContext, crafter: CrafterView): HTMLE
 
 function renderCrafterRow(context: PanelContext, crafter: CrafterView): HTMLElement {
   const row = createListRow({
-    art: createCrafterPortrait(crafter.professionId, 2),
+    art: createCrafterPortrait(crafter.professionId, 4),
     title: t(`profession.${crafter.professionId}`),
     lines: [
       element('div', 'card-text small', t('workshop.crafterLevelShort', { level: crafter.level })),
       percentBar(crafter.experience / crafter.experienceToNextLevel, 'bar-experience'),
       renderCrafterStatus(context, crafter),
     ],
-    className: 'clickable',
+    className: 'clickable crafter-tile',
   });
   row.addEventListener('click', () => {
     selectedProfessionId = crafter.professionId;
@@ -124,7 +124,7 @@ function renderCrafterList(context: PanelContext, crafters: readonly CrafterView
     'div',
     'panel-body',
     element('p', 'hint', t('workshop.chooseCrafter')),
-    createList(...crafters.map((crafter) => renderCrafterRow(context, crafter))),
+    element('div', 'tile-grid', ...crafters.map((crafter) => renderCrafterRow(context, crafter))),
     actionButton(t('workshop.leave'), context.closePanel),
   );
 }

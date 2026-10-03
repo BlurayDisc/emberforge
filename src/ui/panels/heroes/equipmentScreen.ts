@@ -11,7 +11,7 @@ import { createItemIcon } from '../../iconArt';
 import { openItemView } from '../../itemModals';
 import { statName } from '../../itemStatTable';
 import { createItemCard, slotLabel } from '../../itemText';
-import { openModal, type ModalHandle } from '../../modal';
+import { openModal, type ModalHandle, type ScreenPoint } from '../../modal';
 import { createPortrait } from '../../portraitArt';
 import type { PanelContext } from '../panelContext';
 
@@ -80,9 +80,9 @@ function openEquipChooser(context: PanelContext, hero: Hero, slot: EquipmentSlot
   handle = openModal(t('equip.chooseTitle', { slot: slotLabel(slot) }), element('div', 'chooser', list, compareArea));
 }
 
-function openSlotMenu(context: PanelContext, hero: Hero, slot: EquipmentSlot, item: Item): void {
+function openSlotMenu(context: PanelContext, hero: Hero, slot: EquipmentSlot, item: Item, clickPoint: ScreenPoint): void {
   const menu = element('div', 'slot-menu');
-  const modal = openModal(itemDisplayName(item), menu);
+  const modal = openModal(itemDisplayName(item), menu, undefined, clickPoint);
   menu.append(
     actionButton(t('slot.menuEquip'), () => {
       modal.close();
@@ -108,7 +108,12 @@ function renderSlot(context: PanelContext, hero: Hero, slot: EquipmentSlot): HTM
   if (item) {
     box.title = itemDisplayName(item);
     box.append(iconOf(item), element('span', 'slot-caption', slotLabel(slot)));
-    box.addEventListener('click', () => openSlotMenu(context, hero, slot, item));
+    box.addEventListener('click', (event) => {
+      // A key press gives a click with no pointer position, so the menu opens at the slot instead.
+      const slotBox = box.getBoundingClientRect();
+      const clickPoint = event.detail === 0 ? { x: slotBox.left + slotBox.width / 2, y: slotBox.top + slotBox.height / 2 } : { x: event.clientX, y: event.clientY };
+      openSlotMenu(context, hero, slot, item, clickPoint);
+    });
   } else {
     box.append(element('span', 'slot-empty', slotLabel(slot)));
     box.addEventListener('click', () => openEquipChooser(context, hero, slot));

@@ -1,6 +1,6 @@
 import type { EquipmentSlot, Item } from './item';
 
-export type ClassId = 'warrior' | 'archer' | 'mage' | 'priest' | 'thief';
+export type ClassId = 'warrior' | 'archer' | 'mage' | 'priest' | 'thief' | 'barbarian' | 'fighter';
 
 export type HeroEquipment = Partial<Record<EquipmentSlot, Item>>;
 

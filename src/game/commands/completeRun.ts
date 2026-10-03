@@ -8,6 +8,7 @@ import { applyExperience, experienceForKill } from '../../systems/progression';
 import { encounterRandomFor, planNextEncounter, type PlannedEncounter } from '../encounterPlanner';
 import { summariseHeroPerformance, type HeroPerformance } from '../encounterStatistics';
 import { CommandRejected, type Command } from '../gameStore';
+import { backpackRowsOf } from '../storage';
 import { findActiveRun } from '../runStatus';
 import type { DungeonRun } from '../../model/gameState';
 
@@ -70,7 +71,7 @@ export function completeRunCommand(runNumber: number, nowMs: number): Command {
     const loot = won ? rollRunLoot(state, run, plan.monsterUnits) : [];
     const copperGained = loot.reduce((sum, drop) => sum + drop.copper, 0);
     const materialsDropped = loot.flatMap((drop) => drop.materials);
-    const backpack = addMaterials(state.backpack, materialsDropped);
+    const backpack = addMaterials(state.backpack, materialsDropped, backpackRowsOf(state));
 
     const outcomes = state.company
       .filter((hero) => run.heroIds.includes(hero.id))

@@ -6,6 +6,7 @@
   "itemLevelRollsKeepHighest": 2,
   "baseStatGrowthPerItemLevel": 0.12,
   "baseStatSpreadFraction": 0.15,
+  "unscaledBaseStats": ["speed"],
   "affixGrowthPerItemLevel": 0.1,
   "magicAffixCounts": [1, 2],
   "rareAffixCounts": [3, 4],

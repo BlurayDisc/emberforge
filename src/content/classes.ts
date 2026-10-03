@@ -17,6 +17,7 @@ export interface ClassDefinition {
   baseStats: StatBlock;
   growthPerLevel: StatBlock;
   recoveryRate: number;
+  unlockAfterDungeonId: string | null;
 }
 
 export const CLASSES = classesData as unknown as readonly ClassDefinition[];
