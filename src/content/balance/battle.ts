@@ -1,0 +1,14 @@
+export const ACTION_THRESHOLD = 100;
+export const SECONDS_PER_TICK = 0.1;
+export const MAXIMUM_BATTLE_SECONDS = 1200;
+
+export const CRITICAL_DAMAGE_MULTIPLIER = 1.5;
+export const CRITICAL_CHANCE_PER_SKILL_POINT = 0.0025;
+export const MAXIMUM_CRITICAL_CHANCE = 0.5;
+
+export const MITIGATION_BASE = 50;
+export const MITIGATION_PER_ATTACKER_LEVEL = 10;
+export const DAMAGE_VARIANCE_FRACTION = 0.1;
+
+export const HEAL_BELOW_HEALTH_FRACTION = 0.5;
+export const HEAL_POWER_MULTIPLIER = 1.5;
