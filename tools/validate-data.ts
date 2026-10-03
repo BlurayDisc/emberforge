@@ -53,6 +53,7 @@ interface Town extends Identified {
 }
 interface BaseItem extends Identified {
   name: string;
+  slot: string;
   craftLevelOffset: number;
   mainCategory: string;
   secondaryCategory: string;
@@ -242,12 +243,53 @@ for (const base of baseItems) {
   }
 }
 
+// A class must get a stronger weapon every few crafter levels, so a bracket never leaves a hero with one weapon until the boss.
+const MAXIMUM_WEAPON_OFFSET_GAP = 3;
+const MINIMUM_LAST_WEAPON_OFFSET = 7;
+// Base materials (ore, wood, hide, cloth) drop only in the first dungeons of a bracket. Later dungeons drop beast parts, gems and essence.
+const BASE_MATERIAL_CATEGORIES = ['ore', 'wood', 'hide', 'cloth'];
+for (const dungeon of dungeons) {
+  const firstLevelOfBracket = Math.min(...dungeons.filter((other) => bracketOf(other.level) === bracketOf(dungeon.level)).map((other) => other.level));
+  if (dungeon.level === firstLevelOfBracket) continue;
+  const monsterIdsInDungeon = [...dungeon.monsterIds, ...(dungeon.rareMonsterId ? [dungeon.rareMonsterId] : []), ...(dungeon.bossMonsterId ? [dungeon.bossMonsterId] : [])];
+  for (const drop of monsterIdsInDungeon.flatMap((monsterId) => monstersById.get(monsterId)?.drops ?? [])) {
+    const category = materialsById.get(drop.materialId)?.category ?? '';
+    if (BASE_MATERIAL_CATEGORIES.includes(category)) report(`base material rule: '${dungeon.id}' (level ${dungeon.level}) drops base material '${drop.materialId}'. Base materials drop only in the first dungeons of a bracket.`);
+  }
+}
+
+// A recipe must not need a material that first drops in a dungeon above the recipe's craft level.
+const firstDungeonLevelOfCategory = new Map<string, number>();
+for (const dungeon of dungeons.filter((candidate) => bracketOf(candidate.level) === 1)) {
+  for (const monsterId of dungeon.monsterIds) {
+    for (const drop of monstersById.get(monsterId)?.drops ?? []) {
+      const category = materialsById.get(drop.materialId)?.category;
+      if (category) firstDungeonLevelOfCategory.set(category, Math.min(dungeon.level, firstDungeonLevelOfCategory.get(category) ?? Infinity));
+    }
+  }
+}
+for (const base of baseItems) {
+  for (const category of [base.mainCategory, base.secondaryCategory]) {
+    const dungeonLevel = firstDungeonLevelOfCategory.get(category);
+    if (dungeonLevel === undefined || dungeonLevel > base.craftLevelOffset) report(`recipe rule: '${base.id}' needs craft level ${base.craftLevelOffset}, but '${category}' first drops in a level ${dungeonLevel} dungeon`);
+  }
+}
+
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
   if (!(heroClass.recoveryRate > 0)) report(`classes.json: '${heroClass.id}' needs a recoveryRate above 0`);
   const startingRecipes = baseItems.filter((base) => base.craftLevelOffset === 1);
   if (!startingRecipes.some((base) => heroClass.weaponTypes.includes(base.gearType))) report(`base-items.json: class '${heroClass.id}' has no weapon it can craft at crafter level 1`);
   if (!startingRecipes.some((base) => base.armourWeight === heroClass.armourWeight)) report(`base-items.json: class '${heroClass.id}' has no armour it can craft at crafter level 1`);
+  const weaponOffsets = baseItems
+    .filter((base) => base.slot === 'mainHand' && heroClass.weaponTypes.includes(base.gearType))
+    .map((base) => base.craftLevelOffset)
+    .sort((first, second) => first - second);
+  weaponOffsets.forEach((offset, index) => {
+    const previousOffset = weaponOffsets[index - 1] ?? 1;
+    if (offset - previousOffset > MAXIMUM_WEAPON_OFFSET_GAP) report(`base-items.json: class '${heroClass.id}' waits ${offset - previousOffset} crafter levels for the weapon at offset ${offset}. The limit is ${MAXIMUM_WEAPON_OFFSET_GAP}`);
+  });
+  if ((weaponOffsets.at(-1) ?? 0) < MINIMUM_LAST_WEAPON_OFFSET) report(`base-items.json: class '${heroClass.id}' has no weapon at offset ${MINIMUM_LAST_WEAPON_OFFSET} or higher`);
   for (const gearType of [...heroClass.weaponTypes, ...heroClass.offHandTypes]) {
     if (!gearTypes.has(gearType)) report(`classes.json: '${heroClass.id}' allows gear type '${gearType}' that no base item has`);
   }

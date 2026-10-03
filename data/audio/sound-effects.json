@@ -383,6 +383,7 @@
   },
   "monsterAttack": {
     "monster-rat": "attack-bite",
+    "monster-scarecrow": "attack-club",
     "monster-wolf": "attack-bite",
     "monster-goblin": "attack-club",
     "monster-goblin-chief": "attack-chief",
@@ -391,6 +392,7 @@
   },
   "monsterHurt": {
     "monster-rat": "hurt-rat",
+    "monster-scarecrow": "hurt-rat",
     "monster-wolf": "hurt-wolf",
     "monster-goblin": "hurt-goblin",
     "monster-goblin-chief": "hurt-chief",

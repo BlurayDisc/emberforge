@@ -1,5 +1,6 @@
 [
   {"id": "rat-cellar", "name": "Rat Cellar", "townId": "hollowbrook", "level": 1, "monsterIds": ["cave-rat"], "rareMonsterId": "rat-king", "bossMonsterId": null, "maxPartySize": 1, "recommendedMinLevel": 1, "recommendedMaxLevel": 2, "unlockAfter": null},
+  {"id": "scarecrow-field", "name": "Scarecrow Field", "townId": "hollowbrook", "level": 1, "monsterIds": ["straw-scarecrow"], "rareMonsterId": "harvest-king", "bossMonsterId": null, "maxPartySize": 1, "recommendedMinLevel": 1, "recommendedMaxLevel": 2, "unlockAfter": "rat-cellar"},
   {"id": "wolf-trail", "name": "Wolf Trail", "townId": "hollowbrook", "level": 3, "monsterIds": ["wolf"], "rareMonsterId": "alpha-wolf", "bossMonsterId": null, "maxPartySize": 1, "recommendedMinLevel": 3, "recommendedMaxLevel": 4, "unlockAfter": "rat-cellar"},
   {"id": "goblin-camp", "name": "Goblin Camp", "townId": "hollowbrook", "level": 6, "monsterIds": ["goblin"], "rareMonsterId": "goblin-captain", "bossMonsterId": null, "maxPartySize": 1, "recommendedMinLevel": 6, "recommendedMaxLevel": 7, "unlockAfter": "wolf-trail"},
   {"id": "old-wood-hollow", "name": "Old Wood Hollow", "townId": "hollowbrook", "level": 8, "monsterIds": ["bark-spider"], "rareMonsterId": "hollow-broodmother", "bossMonsterId": null, "maxPartySize": 1, "recommendedMinLevel": 8, "recommendedMaxLevel": 9, "unlockAfter": "goblin-camp"},

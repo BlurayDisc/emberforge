@@ -21,6 +21,7 @@ const MATERIAL_ROWS: Readonly<Record<MaterialCategory, Rows>> = {
 
 const DUNGEON_ROWS: Readonly<Record<string, Rows>> = {
   'rat-cellar': ['...oooooo...', '..oWWWWWWo..', '.owwwwwwwwo.', '.oggggggggo.', '.owwwwwwwwo.', '.owwWwwwwwo.', '.owwwwwwwwo.', '.oggggggggo.', '.owwwwwwwwo.', '..oWWWWWWo..', '...oooooo...', '............'],
+  'scarecrow-field': ['....oooo....', '..oowwwwoo..', '...oppppo...', '...opoopo...', '...oppppo...', 'ogoowwwwoogo', 'o..owwwwo..o', '...owrrwo...', '...owrrwo...', '....owwo....', '....owwo....', '....oWWo....'],
   'wolf-trail': ['............', '...oooo.....', '..oggggo....', '.oggggo.....', '.ogggo......', '.ogggo......', '.ogggo......', '.oggggo.....', '..oggggooo..', '...oggggggo.', '....oooooo..', '............'],
   'goblin-camp': ['.....rr.....', '.....oo.....', '....oaao....', '...oaaaao...', '..oaaaaaao..', '.oaaooooaao.', '.oaaooooaao.', '.oaaooooaao.', 'oooooooooooo', '............', '............', '............'],
   'old-wood-hollow': ['....oooo....', '..oofFfFoo..', '.offFfffFfo.', 'offfFffffFfo', 'offfffFfffo.', '.offfffffffo', '..oofffoo...', '....owwo....', '....owwo....', '....owwo....', '...oowwoo...', '............'],

@@ -96,6 +96,28 @@ function drawTrail(art: PixelCanvas, random: Random): void {
   tree(art, 452, 258, 160, '#1f4a3a', '#2f6a4a', '#3a2a1e');
 }
 
+function drawField(art: PixelCanvas, random: Random): void {
+  verticalGradient(art, 0, 100, [70, 90, 150], [230, 190, 120]);
+  art.fill('gold', 60, 30, 16, 16);
+  art.fill('#f2e0a0', 64, 34, 8, 8);
+  art.fill('#3a5a3a', 0, 92, WIDTH, 20);
+  for (let hill = 0; hill < WIDTH; hill += 48) art.fill('#3a5a3a', hill, 84 + ((hill / 48) % 3) * 4, 48, 14);
+  art.fill('#b89a4a', 0, 112, WIDTH, HEIGHT - 112);
+  for (let y = 116; y < HEIGHT; y += 8) art.fill('#8a7236', 0, y, WIDTH, 1);
+  for (let stalk = 0; stalk < 360; stalk++) art.fill(random.chance(0.5) ? '#d9b84a' : '#8a7236', random.nextInt(0, WIDTH - 1), random.nextInt(114, HEIGHT - 1), 1, 3);
+  for (let x = 10; x < WIDTH; x += 44) {
+    art.fill('timber', x, 100, 3, 24);
+    art.fill('timber', 0, 106, WIDTH, 2);
+  }
+  for (const x of [120, 360]) {
+    art.fill('timber', x, 92, 3, 30);
+    art.fill('timber', x - 10, 98, 23, 2);
+    art.fill('#c9b07a', x - 3, 86, 9, 8);
+    art.fill('#4a3322', x - 5, 84, 13, 2);
+  }
+  for (const [x, y] of [[200, 60], [214, 52], [300, 66]] as const) art.fill('#17110d', x, y, 5, 1), art.fill('#17110d', x + 1, y - 1, 1, 1), art.fill('#17110d', x + 3, y - 1, 1, 1);
+}
+
 function drawCamp(art: PixelCanvas, random: Random): void {
   verticalGradient(art, 0, 110, [10, 10, 28], [40, 30, 50]);
   stars(art, random, 60, 80);
@@ -174,6 +196,7 @@ function drawLair(art: PixelCanvas, random: Random): void {
 
 const DRAWERS: Readonly<Record<string, (art: PixelCanvas, random: Random) => void>> = {
   'rat-cellar': drawCellar,
+  'scarecrow-field': drawField,
   'wolf-trail': drawTrail,
   'goblin-camp': drawCamp,
   'old-wood-hollow': drawHollow,

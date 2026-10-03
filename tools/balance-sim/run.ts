@@ -14,7 +14,7 @@ const SECONDS_ADDED_PER_LEVEL = 0.535;
 const LEVELS_PER_TIER = 10;
 const BOSS_DURATION_MULTIPLIER = 10;
 
-type GearMode = 'no gear' | 'crafted gear';
+type GearMode = 'no gear' | 'best weapon only' | 'crafted gear';
 
 interface PartyCase {
   label: string;
@@ -30,22 +30,24 @@ const DUO_CASES: readonly PartyCase[] = [
 ];
 
 const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
-  warrior: ['sword', 'shield', 'helm-heavy', 'armour-heavy', 'gloves-heavy', 'boots-heavy', 'belt', 'amulet', 'ring', 'ring'],
-  archer: ['bow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
-  mage: ['staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
-  priest: ['wand', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  warrior: ['broadsword', 'shield', 'helm-heavy', 'armour-heavy', 'gloves-heavy', 'boots-heavy', 'belt', 'amulet', 'ring', 'ring'],
+  archer: ['warbow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  mage: ['arcane-staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  priest: ['scepter', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
   barbarian: ['greataxe', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
-  fighter: ['knuckles', 'cestus', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
-  thief: ['dagger', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  fighter: ['steel-claws', 'cestus', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  thief: ['kris', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
 };
 
 function targetDurationSeconds(level: number): number {
   return SHORT_FIGHT_SECONDS_AT_LEVEL_ONE + SECONDS_ADDED_PER_LEVEL * (level - 1);
 }
 
-function equipCraftedGear(hero: Hero, random: Random): Hero {
+// The first base id of each class is its best weapon. Boss fights must still need the other slots.
+function equipCraftedGear(hero: Hero, random: Random, gearMode: GearMode): Hero {
   const tier = Math.ceil(hero.level / LEVELS_PER_TIER);
-  return GEAR_BASE_IDS_BY_CLASS[hero.classId].reduce((equippedHero, baseId, index) => {
+  const baseIds = gearMode === 'best weapon only' ? GEAR_BASE_IDS_BY_CLASS[hero.classId].slice(0, 1) : GEAR_BASE_IDS_BY_CLASS[hero.classId];
+  return baseIds.reduce((equippedHero, baseId, index) => {
     const item = generateCraftedItem(
       {
         itemId: `sim-item-${hero.id}-${index}`,
@@ -63,7 +65,7 @@ function equipCraftedGear(hero: Hero, random: Random): Hero {
 function createParty(classIds: readonly ClassId[], level: number, gearMode: GearMode, random: Random): Hero[] {
   return classIds.map((classId, index) => {
     const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, healthAsOfMs: 0, downedUntilMs: null, equipment: {}, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
-    return gearMode === 'crafted gear' ? equipCraftedGear(hero, random.fork('gear')) : hero;
+    return gearMode === 'no gear' ? hero : equipCraftedGear(hero, random.fork('gear'), gearMode);
   });
 }
 
@@ -98,7 +100,7 @@ function measure(partyCase: PartyCase, dungeon: DungeonDefinition, gearMode: Gea
 for (const dungeon of DUNGEONS) {
   console.log(`\n${dungeon.name} (monster level ${dungeon.level}, heroes at level ${dungeon.level}, party size ${dungeon.maxPartySize})`);
   for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : [...SOLO_CASES, ...DUO_CASES]) {
-    for (const gearMode of ['no gear', 'crafted gear'] as const) {
+    for (const gearMode of ['no gear', 'best weapon only', 'crafted gear'] as const) {
       console.log(`  ${measure(partyCase, dungeon, gearMode)}`);
     }
   }

@@ -66,6 +66,34 @@ function drawWolf(): HTMLCanvasElement {
   return art.canvas;
 }
 
+function drawScarecrow(): HTMLCanvasElement {
+  const art = createPixelCanvas(26, 34);
+  const sackCloth: Tones = { base: '#c9b07a', light: '#e0cc9a', dark: '#8a7448' };
+  const shirt: Tones = { base: '#9a5a3a', light: '#b9784a', dark: '#5e3822' };
+  art.fill('#4a3322', 12, 12, 3, 22);
+  art.fill('#6a4a2a', 13, 12, 2, 22);
+  art.fill('#6a4a2a', 1, 14, 24, 3);
+  for (const handX of [0, 23]) art.fill('#d9b84a', handX, 11, 3, 7);
+  shadedBlob(art, 13, 21, 6, 6, shirt);
+  art.fill('#4f7a3a', 10, 22, 3, 3);
+  for (const strawX of [8, 10, 12, 14, 16, 18]) art.fill('#d9b84a', strawX, 27, 1, 4);
+  shadedBlob(art, 13, 8, 5, 5, sackCloth);
+  art.fill('#17110d', 10, 6, 2, 2);
+  art.fill('#17110d', 14, 6, 2, 2);
+  art.fill('#c0392b', 11, 7, 1, 1);
+  art.fill('#c0392b', 15, 7, 1, 1);
+  art.fill('#17110d', 10, 11, 7, 1);
+  for (const stitchX of [11, 13, 15]) art.fill('#17110d', stitchX, 10, 1, 3);
+  art.fill('#4a3322', 6, 3, 14, 2);
+  art.fill('#5e4a38', 9, 0, 8, 4);
+  art.fill('#c0392b', 9, 3, 8, 1);
+  art.fill('#2a2a3a', 19, 11, 4, 3);
+  art.fill('#2a2a3a', 22, 9, 2, 3);
+  art.fill('#ffd75e', 24, 10, 1, 1);
+  addOutline(art, 'outline');
+  return art.canvas;
+}
+
 function drawGoblinBody(art: PixelCanvas, skin: Tones, cloth: Hex, scale: 1 | 2): void {
   const unit = (value: number): number => value * scale;
   art.fill('#4a3322', unit(7), unit(20), unit(3), unit(8));
@@ -155,6 +183,7 @@ function drawGoblinChief(): HTMLCanvasElement {
 export const CREATURE_DRAWERS: Readonly<Record<string, () => HTMLCanvasElement>> = {
   'monster-rat': drawRat,
   'monster-wolf': drawWolf,
+  'monster-scarecrow': drawScarecrow,
   'monster-goblin': drawGoblin,
   'monster-spider': drawSpider,
   'monster-hobgoblin': drawHobgoblin,

@@ -125,6 +125,20 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 - **Enchanting actions:** Reroll the values of one affix. Add an affix (up to the quality limit). Reforge all affixes (needs a Catalyst).
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
 - **Starter gear:** every class can craft a weapon and an armour piece at crafter level 1 (the validator checks this). Harder bases need a higher offset inside the bracket. Offsets spread over 1-10 inside each profession, so a crafter at level 10 can make every base of the tier. A hero still needs level ≥ ilvl to equip what the crafter makes.
+- **Recipe rule:** a recipe must not need a material that first drops in a dungeon above the recipe's craft level (the validator checks this). So the level 1 starter recipes of every class use only materials from the two level 1 dungeons: Copper Ore, Rawhide, Linen, Pine Wood, Bone Shard and Coarse Sinew. Sharp Fang first drops at level 3 (Wolf Trail), so only recipes at offset 3 and higher use it. Quartz first drops at level 6, so the Ring is at offset 6.
+- **Weapon steps:** every class gets a stronger weapon every 3 crafter levels or less inside a bracket, and its last weapon is at offset 7 or higher (the validator checks this). A stronger weapon is a new base with the same gear type and size as the weapon it follows, so the same classes can use it. The step is small (about +1 base damage), so the boss rule below still holds.
+
+  | Class | Main hand weapons (offset) |
+  |---|---|
+  | Warrior | Sword (1), Mace (4), Axe (7), Broadsword (10) |
+  | Archer | Bow (1), Longbow (4), Composite Bow (7), Warbow (10) |
+  | Mage | Wand (1), Runed Wand (3), Staff (6), Scepter (7), Arcane Staff (9) |
+  | Priest | Wand (1), Runed Wand (3), Mace (4), Scepter (7), Morning Star (7) |
+  | Thief | Dagger (1), Stiletto (3), Dirk (6), Kris (9) |
+  | Barbarian | Maul (1), Sledgehammer (4), Bearded Axe (6), Greataxe (8) |
+  | Fighter | Knuckles (1), Brass Knuckles (3), Spiked Knuckles (6), Steel Claws (9) |
+
+- **Boss rule:** a weapon alone must not beat a boss. The balance simulator has a "best weapon only" case. A hero with only its best weapon must lose to the boss (win rate under 30%), and the boss still needs a hero with all 10 slots filled.
 - **Crafter levels:** each profession is a crafter with level 1-100 and XP. Every craft gives XP (more for higher recipes, less for recipes far below the crafter level). A recipe needs level (tier - 1) x 10 + the base item's offset. Locked recipes show the needed level.
 - The Workshop is in town. It lists the crafters, each with a portrait, level and job. Click a crafter to see only the recipes that crafter can make now (recipes above the crafter level stay hidden, with a note for the next level). Click a recipe to see a big portrait and the stat ranges.
 - **Timed jobs:** selling and crafting take time (real clock, also while the page is closed). A sale takes 5 s + 0.6 s per copper of value, up to 10 minutes. The merchant runs 3 sales at once, and the Bank sells up to 4 more sale slots. A crafter makes one item at a time, 5 s + 1.5 s per required level. Jobs show a progress bar. A finished craft waits for backpack room.
@@ -194,12 +208,12 @@ Ten brackets. Each bracket has one town.
 
 - **Town:** workshop (craft, enchant), merchant (sell items and materials for gold), tavern (hire heroes), dungeon board.
 - **Travel:** the army marker moves on the world map. Time = 2 s + 1 s per bracket crossed. Going back is always allowed. The next town opens when the player beats the boss of the current bracket.
-- **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon.
-- **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters. **Every dungeon has its own monsters.** A monster id and a sprite key appear in one dungeon only (the validator checks it). Hollowbrook: Rat Cellar (Cave Rat, Rat King), Wolf Trail (Wolf, Alpha Wolf), Goblin Camp (Goblin, Goblin Captain), Old Wood Hollow (Bark Spider, Hollow Broodmother), Goblin Chief's Lair (Goblin Chief, Hobgoblin adds).
+- **Dungeons:** 5-8 per town. Dungeon *i* of *n* has level = bracket start + round((i − 1) × 9 ÷ (n − 1)). The last dungeon is the boss dungeon. Hollowbrook is the exception: it has two level 1 dungeons (Rat Cellar and Scarecrow Field). The Rat Cellar is open at the start. The Scarecrow Field and the Wolf Trail both open after the first win in the Rat Cellar. The Scarecrow Field drops the wood, cloth and sinew that the first Archer, Mage and Priest recipes need.
+- **Dungeon content:** 1-3 monster families from the town list and 1 rare monster. An encounter holds 1-3 monsters. **Every dungeon has its own monsters.** A monster id and a sprite key appear in one dungeon only (the validator checks it). Hollowbrook: Rat Cellar (Cave Rat, Rat King), Scarecrow Field (Straw Scarecrow, Harvest King), Wolf Trail (Wolf, Alpha Wolf), Goblin Camp (Goblin, Goblin Captain), Old Wood Hollow (Bark Spider, Hollow Broodmother), Goblin Chief's Lair (Goblin Chief, Hobgoblin adds).
 - **Run:** one run is one fight. Wounds stay after it (see Recovery).
 - **Recovery:** heroes regenerate health by the clock. A level 1 hero heals from empty to full in 1 minute. The time grows in a straight line to 5 minutes at level 100 (a high level hero has more health). The class rate speeds it up or slows it down (thief 1.75, priest 1.25, warrior and archer 1, mage 0.8). A hero at 0 health is down for (60 s + 5 s per level) divided by the class rate, then returns at 30% health. A down hero cannot start a run. A report notification shows the result and the loot. Speed-up is not built yet (a later spell may unlock it).
 - **Locks and levels:** each dungeon shows a recommended level range. Only the first dungeon is open. Clearing a dungeon opens the next.
-- **Drop tables:** every dungeon has its own materials. A normal monster drops 3 crafting materials. Two dungeons share at most 1 crafting material between their normal monsters (the validator checks it). Rare monsters and bosses drop more of their dungeon materials, plus Faint Essence and Catalysts. Hollowbrook: Rat Cellar (Rawhide, Bone Shard, Copper Ore), Wolf Trail (Sharp Fang, Coarse Sinew, Pine Wood), Goblin Camp (Linen, Copper Ore, Quartz), Old Wood Hollow (Coarse Sinew, Linen, Bone Shard), Goblin Chief's Lair (Rawhide, Quartz, Faint Essence). A material the dungeons do not drop can be bought at the merchant.
+- **Drop tables:** every dungeon has its own materials. A normal monster drops 3 crafting materials in the first dungeons of a bracket, and 2 in later dungeons. Two dungeons share at most 1 crafting material between their normal monsters (the validator checks it). Rare monsters and bosses drop more of their dungeon materials, plus Faint Essence and Catalysts. Hollowbrook: Rat Cellar (Rawhide, Bone Shard, Copper Ore), Scarecrow Field (Linen, Coarse Sinew, Pine Wood), Wolf Trail (Sharp Fang, Coarse Sinew), Goblin Camp (Bone Shard, Quartz), Old Wood Hollow (Sharp Fang, Bone Shard), Goblin Chief's Lair (Coarse Sinew, Quartz, Faint Essence). **Base materials (Copper Ore, Pine Wood, Rawhide, Linen) drop only in the first dungeons of a bracket** (the validator checks this). Later dungeons drop beast parts, gems and essence. A material the dungeons do not drop can be bought at the merchant.
 - **Drops per fight:** gold; at least 1 crafting material (guaranteed); each other drop rolls its own chance, so lucky fights give more. All are of the bracket tier.
 - **Sell value** = 10 × ilvl × quality factor (Common 1, Magic 2, Rare 4, Unique 10). Materials sell at a fixed price per tier.
 
@@ -238,7 +252,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 - **Build label:** the build number (git commit count) and commit hash show in the Settings screen, in the corner of the page and in the browser tab title.
 - **Hero bars:** hero lists show a live health bar and an experience bar.
 - **Several heroes:** each hero can go to a different dungeon. A dungeon in use shows "Under fight" with a fight icon and the buttons Watch battle and Run away. Running away gives no loot, XP or report. The hero keeps the wounds taken until that moment (the same seeded fight is replayed up to it) and heals from there. Locked dungeons show a lock and the dungeon to clear first.
-- **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
+- **During a run:** a themed battle scene for each dungeon. Health bars float above the heads. Each bar has a level badge and tick lines for chunks of HP (bigger ticks at every fifth). A pale chunk shows the damage that was just taken, and it drains away. Units bob, flash and collapse. Melee units lunge. The Archer shoots an arrow and the Mage shoots a magic bolt: the shot flies to the target, and the hit sparks and damage number show when it lands (`render/rangedAttackStyles.ts`). Damage numbers float up and hit sparks fly.
 - **After a run:** there is no pop-up notice in the corner. If the player watches the run, the report opens at once. A run in the background leaves a report: its dungeon row shows "Fight over" and View results, and the Dungeons button shows a gold badge. The player reads the stats first, then the dungeon can start again. The report shows result, damage, XP, level-ups and loot. Buttons are large for touch.
 - **Combat log:** it has a title and groups lines into numbered turns (one turn is one second of battle). Hero names are blue, monster names red. Damage is a gold chip, damage taken red, a critical hit orange, healing green.
 - **Workshop recipes:** a recipe shows the classes that can use the item, so the player does not craft gear that no hero can wear.
@@ -254,7 +268,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 
 ## 12. MVP scope
 
-- Brackets 1-2 (Lv 1-20): 2 towns, 5 and 6 dungeons, 2 bosses.
+- Brackets 1-2 (Lv 1-20): 2 towns, 6 and 6 dungeons, 2 bosses.
 - 5 base classes. Promotion works at Lv 20 with one branch for each class.
 - All 6 professions with tiers 1-2. All 10 slots. The Unique pool has 2 items per bracket.
 - Backpack with tabs, merchant, tavern, world map and travel, auto-save, save export and import.

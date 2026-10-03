@@ -1,3 +1,5 @@
+import { WEAPON_UPGRADE_SHAPE_ROWS } from './itemShapesWeaponUpgrades';
+
 type Rows = readonly string[];
 
 // One 12 by 12 picture for each base item id. Letters are colours: see BASE_LEGEND and the material tint in iconArt.ts.
@@ -32,4 +34,5 @@ export const ITEM_SHAPE_ROWS: Readonly<Record<string, Rows>> = {
   'boots-heavy': ['...oSSSSo...', '...oaaaao...', '...oSSSSo...', '...oaaaao...', '...oaaaao...', '...oSSSSo...', '...oaaaooo..', '...oaaaaaao.', '...oSSSSSSo.', '...oooooooo.', '............', '............'],
   'boots-medium': ['............', '...oaaao....', '...oaaao....', '...oaaao....', '...oaaao....', '...oaaao....', '...oaaaooo..', '...oaaaaaao.', '...oddddddo.', '...oooooooo.', '............', '............'],
   'boots-light': ['............', '............', '............', '............', '............', '...oaao.....', '...oaaoo....', '...oaaaaoo..', '..oaalaaaaoo', '..oddddddddo', '..oooooooooo', '............'],
+  ...WEAPON_UPGRADE_SHAPE_ROWS,
 };

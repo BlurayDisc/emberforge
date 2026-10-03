@@ -5,6 +5,8 @@ import { PALETTE } from './palette';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, type PixelStage } from './pixelStage';
 import { createHealthBar, type HealthBar } from './healthBarArt';
 import { createPixelTexture, createBattleSprite } from './pixelSprites';
+import { createProjectileLayer } from './projectileLayer';
+import { RANGED_ATTACK_STYLE_BY_SPRITE_KEY, type RangedAttackStyle } from './rangedAttackStyles';
 
 const HEALTH_BAR_GAP_ABOVE_HEAD = 6;
 const SIDE_OFFSET_X = 105;
@@ -35,6 +37,7 @@ interface UnitVisual {
   worldX: number;
   feetWorldY: number;
   side: BattleUnit['side'];
+  rangedAttackStyle: RangedAttackStyle | null;
   bobPhase: number;
   flashUntilSeconds: number;
   lungeStartSeconds: number;
@@ -63,6 +66,10 @@ function createFlatMesh(color: string, width: number, height: number, z: number)
   return mesh;
 }
 
+function projectileAnchor(visual: UnitVisual, sideOfUnit: number): { x: number; y: number } {
+  return { x: visual.worldX + sideOfUnit * visual.lungeDirection * 10, y: visual.feetWorldY + visual.spriteHeight * 0.6 };
+}
+
 export function createBattleView(stage: PixelStage): BattleView {
   const root = new Group();
   stage.scene.add(root);
@@ -72,6 +79,7 @@ export function createBattleView(stage: PixelStage): BattleView {
   root.add(ground);
   const backdropTextures = new Map<string, MeshBasicMaterial['map']>();
 
+  const projectileLayer = createProjectileLayer(root);
   const visualsByUnitId = new Map<string, UnitVisual>();
   const particles: Particle[] = [];
   const flashColor = new Color(PALETTE.blood).lerp(new Color('#ffffff'), 0.4);
@@ -79,6 +87,7 @@ export function createBattleView(stage: PixelStage): BattleView {
   let latestElapsedSeconds = 0;
 
   const clearUnits = (): void => {
+    projectileLayer.clear();
     visualsByUnitId.forEach((visual) => {
       visual.sprite.material.dispose();
       (visual.shadow.material as MeshBasicMaterial).dispose();
@@ -131,6 +140,7 @@ export function createBattleView(stage: PixelStage): BattleView {
     const deltaSeconds = Math.min(0.1, elapsedSeconds - latestElapsedSeconds);
     latestElapsedSeconds = elapsedSeconds;
     if (!root.visible) return;
+    projectileLayer.update(elapsedSeconds);
     visualsByUnitId.forEach((visual) => {
       applyAnimation(visual, elapsedSeconds);
       visual.healthBar.update(elapsedSeconds, deltaSeconds);
@@ -182,6 +192,7 @@ export function createBattleView(stage: PixelStage): BattleView {
           healthBar.sprite.position.set(worldX, Math.round(feetWorldY + sprite.scale.y + HEALTH_BAR_GAP_ABOVE_HEAD), 3);
           const visual: UnitVisual = {
             sprite, shadow, healthBar, baseColor, spriteHeight: sprite.scale.y, worldX, feetWorldY, side,
+            rangedAttackStyle: RANGED_ATTACK_STYLE_BY_SPRITE_KEY[unit.spriteKey] ?? null,
             bobPhase: slotIndex * 1.7 + (side === 'party' ? 0 : 0.9),
             flashUntilSeconds: 0, lungeStartSeconds: 0, lungeDirection: side === 'party' ? 1 : -1, shakeStartSeconds: 0, defeatedStartSeconds: 0,
           };
@@ -198,12 +209,20 @@ export function createBattleView(stage: PixelStage): BattleView {
     playHit: (actorId, targetId, amount, isCritical) => {
       const actor = visualsByUnitId.get(actorId);
       const target = visualsByUnitId.get(targetId);
-      if (actor) actor.lungeStartSeconds = latestElapsedSeconds;
       if (!target) return;
-      target.flashUntilSeconds = latestElapsedSeconds + FLASH_SECONDS;
-      target.shakeStartSeconds = latestElapsedSeconds;
-      spawnParticles(target, isCritical ? PALETTE.gold : '#ffffff', isCritical ? 10 : 5);
-      spawnFloatingText(target, isCritical ? `${amount}!` : String(amount), isCritical ? 'critical' : 'damage');
+      const showImpact = (): void => {
+        target.flashUntilSeconds = latestElapsedSeconds + FLASH_SECONDS;
+        target.shakeStartSeconds = latestElapsedSeconds;
+        spawnParticles(target, isCritical ? PALETTE.gold : '#ffffff', isCritical ? 10 : 5);
+        spawnFloatingText(target, isCritical ? `${amount}!` : String(amount), isCritical ? 'critical' : 'damage');
+      };
+      if (actor?.rangedAttackStyle) {
+        // The hit shows when the projectile lands, not when the shot leaves.
+        projectileLayer.launch(actor.rangedAttackStyle, projectileAnchor(actor, 1), projectileAnchor(target, -1), actor.lungeDirection, latestElapsedSeconds, showImpact);
+        return;
+      }
+      if (actor) actor.lungeStartSeconds = latestElapsedSeconds;
+      showImpact();
     },
     playHeal: (actorId, targetId, amount) => {
       const actor = visualsByUnitId.get(actorId);
