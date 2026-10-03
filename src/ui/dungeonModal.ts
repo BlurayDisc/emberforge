@@ -40,6 +40,7 @@ function renderMonsterEntry(monster: MonsterDefinition, dungeon: DungeonDefiniti
       'div',
       'monster-details',
       element('div', 'card-title', `${t(`monster.${monster.id}`)}${rankTag(monster)}`),
+      element('div', 'card-text small lore-text', t(`monster.${monster.id}.lore`)),
       element('div', 'card-text small', t('dungeons.monsterLevel', { level: dungeon.level })),
       ...monster.drops.map(renderLootLine),
     ),

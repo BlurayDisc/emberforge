@@ -231,6 +231,10 @@ function expectedEnglishNames(): Array<[string, string]> {
 
 function expectedKeysWithoutEnglishSource(): string[] {
   const keys = PANEL_IDS.map((panelId) => `panel.${panelId}`);
+  keys.push('lore.prologue.title', 'lore.prologue.1', 'lore.prologue.2', 'lore.prologue.3', 'lore.begin');
+  for (const town of townsFile.towns) keys.push(`town.${town.id}.lore`);
+  for (const monster of monsters) keys.push(`monster.${monster.id}.lore`);
+  for (const material of materials) keys.push(`material.${material.id}.lore`);
   for (const [group, values] of Object.entries(FIXED_KEY_GROUPS)) keys.push(...values.map((value) => `${group}.${value}`));
   return keys;
 }

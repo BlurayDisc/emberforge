@@ -613,3 +613,9 @@
 }
 
 .map-marker:hover .map-pin { transform: scale(1.25); }
+
+.lore-text {
+  font-style: italic;
+  color: var(--parchment-dim);
+  line-height: 1.4;
+}

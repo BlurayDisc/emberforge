@@ -198,6 +198,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 ## 11b. Screens and flow
 
 - **Town screen** is the main stage when no run is active. The town has a Lord's Keep (decoration), a Tavern, a Workshop, a Merchant and a Dungeons gate. They stand apart, joined by winding cobbled roads. Villagers and a guard walk on the roads. Heroes do not stand in town. Click a building to open its panel.
+- **Lore:** an opening story shows before the first hero is hired (and after a reset). Every town, monster and material has a short lore text (`town.<id>.lore`, `monster.<id>.lore`, `material.<id>.lore` in `data/i18n/`). The text shows in the world map town popup, the dungeon popup and the material popup. The validator requires lore for all new content.
 - **World map:** the World screen draws a pixel map of the land. Every town has a place on it (`mapX`, `mapY`, `biome` in `data/towns.json`). Land, biomes and roads are drawn from the town list. Tap a town for details. Travel is not built yet.
 - **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
 - **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.

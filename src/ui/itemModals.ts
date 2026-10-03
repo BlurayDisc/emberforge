@@ -29,6 +29,7 @@ export function openMaterialView(materialId: string, extra: Node[] = []): void {
     element('div', 'item-name', materialName(material.id)),
     element('div', 'card-text small', t('inventory.materialInfo', { tier: material.tier, category: t(`category.${material.category}`) })),
     element('div', 'card-row', t('item.sells'), createMoneyDisplay(material.sellValueCopper)),
+    element('p', 'card-text small lore-text', t(`material.${material.id}.lore`)),
     ...extra,
   );
   openModal(materialName(material.id), element('div', 'modal-columns', createMaterialPortrait(material.id), details));

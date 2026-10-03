@@ -12,6 +12,7 @@ function openTownView(town: TownDefinition, isCurrent: boolean): void {
   const content = element(
     'div',
     'panel-body',
+    element('p', 'card-text lore-text', t(`town.${town.id}.lore`)),
     element('div', 'card-text', t(`town.${town.id}.region`)),
     element('div', 'card-text small', t('world.levels', { name: t(`town.${town.id}`), first: town.firstLevel, last: town.lastLevel })),
     element('div', 'card-text small', dungeonNames.length > 0 ? t('world.dungeonsLabel', { names: listOf(dungeonNames) }) : t('world.unexplored')),
