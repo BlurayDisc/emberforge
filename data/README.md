@@ -6,7 +6,7 @@ All game data lives in these JSON files. The game loads them through `src/conten
 |---|---|
 | `towns.json` | `startingTownId` and the 10 towns (one per bracket of 10 levels) |
 | `buildings.json` | Town buildings: label, panel to open, art style, position on the 480x270 stage |
-| `dungeons.json` | Dungeons: town, level, monster ids, rare monster id, boss id |
+| `dungeons.json` | Dungeons: town, level, monster ids, rare monster id, boss id, `maxPartySize` (heroes allowed in one run: 1 normal, 2 boss) |
 | `monsters.json` | Monsters: rank, sprite, stat factors, drop table |
 | `materials.json` | Materials: tier, category, sell value, crafted item name prefix |
 | `base-items.json` | Item bases: slot, gear type, size, profession, ingredient categories, base stats |
@@ -14,6 +14,7 @@ All game data lives in these JSON files. The game loads them through `src/conten
 | `affixes.json` | Item prefixes and suffixes: stat and value range |
 | `classes.json` | Hero classes: stats, growth per level, allowed gear |
 | `hero-names.json` | Names for new heroes |
+| `hero-appearance.json` | Skin, hair and eye colors, and the colors of each class. A hero name picks its look, for the portrait and the battle sprite. |
 | `i18n/en.json`, `i18n/zh.json` | All player text and content names, one flat key per text. `languages.json` lists the languages. |
 | `balance/*.json` | Numbers: battle, progression (XP), economy (money, hiring), dungeon runs, monster scaling, backpack, item generation |
 

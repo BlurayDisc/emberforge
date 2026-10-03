@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SPRITE_ART } from '../src/render/spriteArt';
+import { CREATURE_DRAWERS } from '../src/render/creatureArt';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDirectory = join(projectRoot, 'data');
@@ -30,6 +30,7 @@ interface Monster extends Identified {
 }
 interface Dungeon extends Identified {
   name: string;
+  maxPartySize: number;
   townId: string;
   level: number;
   monsterIds: string[];
@@ -80,7 +81,7 @@ const affixes = load<Affix[]>('affixes.json');
 const heroNames = load<string[]>('hero-names.json');
 const professions = load<Record<string, string>>('professions.json');
 const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
-const buildings = load<Array<Identified & { label: string; panelId: string }>>('buildings.json');
+const buildings = load<Array<Identified & { label: string; panelId: string | null }>>('buildings.json');
 const languages = load<Array<{ id: string; nativeName: string }>>('i18n/languages.json');
 const translationsByLanguage: Record<string, Record<string, string>> = {};
 for (const language of languages) translationsByLanguage[language.id] = load<Record<string, string>>(`i18n/${language.id}.json`);
@@ -129,7 +130,7 @@ if (!catalyst || catalyst.category !== 'catalyst') report('balance/items.json: c
 
 for (const monster of monsters) {
   if (!MONSTER_RANKS.includes(monster.rank)) report(`monsters.json: '${monster.id}' has an unknown rank '${monster.rank}'`);
-  if (!SPRITE_ART[monster.spriteKey]) report(`monsters.json: '${monster.id}' uses unknown sprite '${monster.spriteKey}'`);
+  if (!CREATURE_DRAWERS[monster.spriteKey]) report(`monsters.json: '${monster.id}' uses unknown sprite '${monster.spriteKey}'`);
   for (const drop of monster.drops) {
     if (!materialsById.has(drop.materialId)) report(`monsters.json: '${monster.id}' drops unknown material '${drop.materialId}'`);
     if (drop.chance <= 0 || drop.chance > 1) report(`monsters.json: '${monster.id}' drop '${drop.materialId}' needs a chance between 0 and 1`);
@@ -157,6 +158,9 @@ for (const dungeon of dungeons) {
       }
     }
   }
+  if (dungeon.maxPartySize < 1) report(`dungeons.json: '${dungeon.id}' needs maxPartySize of at least 1`);
+  if (dungeon.bossMonsterId && dungeon.maxPartySize !== 2) report(`dungeons.json: boss dungeon '${dungeon.id}' must have maxPartySize 2`);
+  if (!dungeon.bossMonsterId && dungeon.maxPartySize !== 1) report(`dungeons.json: normal dungeon '${dungeon.id}' must have maxPartySize 1`);
   if (dungeon.rareMonsterId && monstersById.get(dungeon.rareMonsterId)?.rank !== 'rare') report(`dungeons.json: '${dungeon.id}' rareMonsterId must be a rare monster`);
   if (dungeon.bossMonsterId && monstersById.get(dungeon.bossMonsterId)?.rank !== 'boss') report(`dungeons.json: '${dungeon.id}' bossMonsterId must be a boss monster`);
 }
@@ -175,7 +179,6 @@ for (const base of baseItems) {
 
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
-  if (!SPRITE_ART[heroClass.spriteKey]) report(`classes.json: '${heroClass.id}' uses unknown sprite '${heroClass.spriteKey}'`);
   for (const gearType of [...heroClass.weaponTypes, ...heroClass.offHandTypes]) {
     if (!gearTypes.has(gearType)) report(`classes.json: '${heroClass.id}' allows gear type '${gearType}' that no base item has`);
   }

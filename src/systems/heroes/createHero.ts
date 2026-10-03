@@ -11,5 +11,14 @@ export function createHero(classId: ClassId, heroNumber: number, random: Random)
     experience: 0,
     healthFraction: 1,
     equipment: {},
+    statistics: {
+      monstersDefeated: 0,
+      damageDealt: 0,
+      damageTaken: 0,
+      healingDone: 0,
+      secondsFought: 0,
+      battlesWon: 0,
+      battlesLost: 0,
+    },
   };
 }

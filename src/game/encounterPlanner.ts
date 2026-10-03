@@ -24,9 +24,9 @@ export function planNextEncounter(state: GameState): PlannedEncounter {
 
   const dungeon = requireById(DUNGEONS, run.dungeonId);
   const random = encounterRandomFor(state, run);
-  const partyUnits = state.partyHeroIds.map((heroId) => {
+  const partyUnits = run.heroIds.map((heroId) => {
     const hero = state.company.find((candidate) => candidate.id === heroId);
-    if (!hero) throw new Error(`Party hero is missing from the company: ${heroId}`);
+    if (!hero) throw new Error(`Run hero is missing from the company: ${heroId}`);
     return heroToBattleUnit(hero);
   });
   const monsterUnits = createEncounter(dungeon, partyUnits.length, random.fork('monsters'));

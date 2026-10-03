@@ -9,7 +9,7 @@ import { activeRunOf } from '../runStatus';
 function requireEditableHero(state: GameState, heroId: string): Hero {
   const hero = state.company.find((candidate) => candidate.id === heroId);
   if (!hero) throw new CommandRejected('reject.heroMissing');
-  if (activeRunOf(state) !== null && state.partyHeroIds.includes(heroId)) {
+  if (activeRunOf(state)?.heroIds.includes(heroId)) {
     throw new CommandRejected('reject.stopRunBeforeGearChange');
   }
   return hero;

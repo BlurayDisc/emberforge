@@ -8,14 +8,15 @@ function percentOf(value: number, total: number): string {
   return `${(value / total) * 100}%`;
 }
 
-function createHotspot(building: BuildingDefinition, onSelect: (panelId: string) => void): HTMLButtonElement {
-  const hotspot = element('button', 'building-hotspot', element('span', 'building-label'));
-  hotspot.type = 'button';
+function createHotspot(building: BuildingDefinition, onSelect: (panelId: string) => void): HTMLElement {
+  const panelId = building.panelId;
+  const hotspot = element(panelId === null ? 'div' : 'button', panelId === null ? 'building-hotspot static' : 'building-hotspot', element('span', 'building-label'));
+  if (hotspot instanceof HTMLButtonElement) hotspot.type = 'button';
   hotspot.style.left = percentOf(building.x - building.width / 2, LOGICAL_WIDTH);
   hotspot.style.top = percentOf(building.y - building.height, LOGICAL_HEIGHT);
   hotspot.style.width = percentOf(building.width, LOGICAL_WIDTH);
   hotspot.style.height = percentOf(building.height, LOGICAL_HEIGHT);
-  hotspot.addEventListener('click', () => onSelect(building.panelId));
+  if (panelId !== null) hotspot.addEventListener('click', () => onSelect(panelId));
   return hotspot;
 }
 
@@ -29,8 +30,7 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
     const state = store.getState();
     overlay.style.display = activeRunOf(state) === null ? 'block' : 'none';
     const hasNoHeroes = state.company.length === 0;
-    const hasEmptyParty = !hasNoHeroes && state.partyHeroIds.length === 0;
-    const isReadyForFirstRun = !hasNoHeroes && !hasEmptyParty && state.runsStarted === 0;
+    const isReadyForFirstRun = !hasNoHeroes && state.runsStarted === 0;
 
     hotspots.forEach(({ building, hotspot }) => {
       hotspot.classList.toggle('attention', hasNoHeroes && building.id === 'tavern');
@@ -40,9 +40,8 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
       if (labelElement) labelElement.textContent = label;
     });
     if (hasNoHeroes) hint.textContent = t('hint.noHeroes');
-    else if (hasEmptyParty) hint.textContent = t('hint.emptyParty');
     else hint.textContent = t('hint.heroReady');
-    hint.style.display = hasNoHeroes || hasEmptyParty || isReadyForFirstRun ? 'block' : 'none';
+    hint.style.display = hasNoHeroes || isReadyForFirstRun ? 'block' : 'none';
   };
 
   store.subscribe(refresh);

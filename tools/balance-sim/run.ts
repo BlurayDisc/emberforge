@@ -19,10 +19,12 @@ interface PartyCase {
   classIds: readonly ClassId[];
 }
 
-const PARTY_CASES: readonly PartyCase[] = [
-  { label: 'solo warrior', classIds: ['warrior'] },
+const SOLO_CASES: readonly PartyCase[] = (['warrior', 'archer', 'mage', 'priest', 'thief'] as const).map((classId) => ({ label: `solo ${classId}`, classIds: [classId] }));
+
+const DUO_CASES: readonly PartyCase[] = [
   { label: 'duo warrior+priest', classIds: ['warrior', 'priest'] },
-  { label: 'full party', classIds: ['warrior', 'archer', 'mage', 'priest'] },
+  { label: 'duo archer+mage', classIds: ['archer', 'mage'] },
+  { label: 'duo thief+priest', classIds: ['thief', 'priest'] },
 ];
 
 const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
@@ -57,7 +59,7 @@ function equipCraftedGear(hero: Hero, random: Random): Hero {
 
 function createParty(classIds: readonly ClassId[], level: number, gearMode: GearMode, random: Random): Hero[] {
   return classIds.map((classId, index) => {
-    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, equipment: {} };
+    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, equipment: {}, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
     return gearMode === 'crafted gear' ? equipCraftedGear(hero, random.fork('gear')) : hero;
   });
 }
@@ -90,8 +92,8 @@ function measure(partyCase: PartyCase, dungeon: DungeonDefinition, gearMode: Gea
 }
 
 for (const dungeon of DUNGEONS) {
-  console.log(`\n${dungeon.name} (monster level ${dungeon.level}, heroes at level ${dungeon.level})`);
-  for (const partyCase of PARTY_CASES) {
+  console.log(`\n${dungeon.name} (monster level ${dungeon.level}, heroes at level ${dungeon.level}, party size ${dungeon.maxPartySize})`);
+  for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : DUO_CASES) {
     for (const gearMode of ['no gear', 'crafted gear'] as const) {
       console.log(`  ${measure(partyCase, dungeon, gearMode)}`);
     }

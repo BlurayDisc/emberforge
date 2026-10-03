@@ -6,7 +6,8 @@
     "level": 1,
     "monsterIds": ["cave-rat"],
     "rareMonsterId": "rat-king",
-    "bossMonsterId": null
+    "bossMonsterId": null,
+    "maxPartySize": 1
   },
   {
     "id": "wolf-trail",
@@ -15,7 +16,8 @@
     "level": 3,
     "monsterIds": ["wolf", "cave-rat"],
     "rareMonsterId": "alpha-wolf",
-    "bossMonsterId": null
+    "bossMonsterId": null,
+    "maxPartySize": 1
   },
   {
     "id": "goblin-camp",
@@ -24,7 +26,8 @@
     "level": 6,
     "monsterIds": ["goblin", "wolf"],
     "rareMonsterId": "goblin-captain",
-    "bossMonsterId": null
+    "bossMonsterId": null,
+    "maxPartySize": 1
   },
   {
     "id": "old-wood-hollow",
@@ -33,7 +36,8 @@
     "level": 8,
     "monsterIds": ["wolf", "goblin"],
     "rareMonsterId": "alpha-wolf",
-    "bossMonsterId": null
+    "bossMonsterId": null,
+    "maxPartySize": 1
   },
   {
     "id": "goblin-chief-lair",
@@ -42,6 +46,7 @@
     "level": 10,
     "monsterIds": ["goblin"],
     "rareMonsterId": null,
-    "bossMonsterId": "goblin-chief"
+    "bossMonsterId": "goblin-chief",
+    "maxPartySize": 2
   }
 ]

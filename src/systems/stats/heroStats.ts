@@ -1,6 +1,10 @@
 import {
+  ACTION_THRESHOLD,
   CRITICAL_CHANCE_PER_SKILL_POINT,
+  CRITICAL_DAMAGE_MULTIPLIER,
   MAXIMUM_CRITICAL_CHANCE,
+  MITIGATION_BASE,
+  MITIGATION_PER_ATTACKER_LEVEL,
 } from '../../content/balance/battle';
 import { CLASSES } from '../../content/classes';
 import { requireById } from '../../content/lookup';
@@ -52,4 +56,12 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     critChance: Math.min(MAXIMUM_CRITICAL_CHANCE, stats.skill * CRITICAL_CHANCE_PER_SKILL_POINT),
     behavior: classDefinition.behavior,
   };
+}
+
+export function computeHeroPower(hero: Hero): number {
+  const unit = heroToBattleUnit({ ...hero, healthFraction: 1 });
+  const reduction = unit.defence / (unit.defence + MITIGATION_BASE + MITIGATION_PER_ATTACKER_LEVEL * unit.level);
+  const offence = unit.attack * (unit.speed / ACTION_THRESHOLD) * (1 + unit.critChance * (CRITICAL_DAMAGE_MULTIPLIER - 1));
+  const durability = unit.maxHp / (1 - reduction);
+  return Math.round(Math.sqrt(offence * durability));
 }

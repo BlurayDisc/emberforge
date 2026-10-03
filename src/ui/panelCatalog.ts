@@ -1,6 +1,6 @@
 import { renderDungeonsPanel } from './panels/dungeonsPanel';
 import { renderHeroesPanel } from './panels/heroesPanel';
-import { renderInventoryPanel } from './panels/inventoryPanel';
+import { renderInventoryPanel, resetInventorySelection } from './panels/inventoryPanel';
 import type { PanelRenderer } from './panels/panelContext';
 import { renderSettingsPanel } from './panels/settingsPanel';
 import { renderMerchantPanel } from './panels/town/merchantView';
@@ -13,11 +13,12 @@ export interface PanelDefinition {
   id: string;
   barIcon: IconName | null;
   render: PanelRenderer;
+  onClose?: () => void;
 }
 
 export const PANEL_CATALOG: readonly PanelDefinition[] = [
   { id: 'heroes', barIcon: 'heroes', render: renderHeroesPanel },
-  { id: 'inventory', barIcon: 'inventory', render: renderInventoryPanel },
+  { id: 'inventory', barIcon: 'inventory', render: renderInventoryPanel, onClose: resetInventorySelection },
   { id: 'dungeons', barIcon: 'dungeons', render: renderDungeonsPanel },
   { id: 'world', barIcon: 'world', render: renderWorldPanel },
   { id: 'settings', barIcon: 'menu', render: renderSettingsPanel },

@@ -3,7 +3,7 @@ import { PALETTE, type PaletteColor } from './palette';
 export interface PixelCanvas {
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
-  fill(color: PaletteColor, x: number, y: number, width: number, height: number): void;
+  fill(color: PaletteColor | `#${string}`, x: number, y: number, width: number, height: number): void;
 }
 
 export function createPixelCanvas(width: number, height: number): PixelCanvas {
@@ -16,7 +16,7 @@ export function createPixelCanvas(width: number, height: number): PixelCanvas {
     canvas,
     context,
     fill: (color, x, y, fillWidth, fillHeight) => {
-      context.fillStyle = PALETTE[color];
+      context.fillStyle = color.startsWith('#') ? color : PALETTE[color as PaletteColor];
       context.fillRect(Math.round(x), Math.round(y), Math.round(fillWidth), Math.round(fillHeight));
     },
   };

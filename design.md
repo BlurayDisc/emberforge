@@ -6,7 +6,7 @@ Working title. Pixel-art, turn-based, Middle-earth-style fantasy. You lead a com
 
 Fight → Loot → Craft → Equip → Travel → Fight (harder).
 
-Heroes fight alone (auto-battle). The player multitasks: craft, equip, sell and plan while the party fights.
+Heroes fight automatically. The player sends one hero (two for a boss) into a dungeon. The player crafts, equips and sells while the fight plays.
 
 ## 2. Technology decision
 
@@ -29,7 +29,7 @@ Heroes fight alone (auto-battle). The player multitasks: craft, equip, sell and 
 | Word | Meaning |
 |---|---|
 | Company | All heroes the player owns (max 12). |
-| Party | Up to 4 heroes who fight together. |
+| Run party | The hero or heroes sent into one dungeon run. The dungeon sets the maximum: 1 for normal dungeons, 2 for boss dungeons. There is no permanent party. |
 | Bracket | A block of 10 levels (1-10, 11-20 … 91-100). |
 | Tier | Material grade. Tier N belongs to bracket N. |
 | Town | Hub of one bracket: workshop, merchant, tavern, dungeons. |
@@ -46,7 +46,7 @@ Heroes fight alone (auto-battle). The player multitasks: craft, equip, sell and 
 - Level cap 100. Stats: HP, Strength, Magic, Skill (crit), Speed, Defence, Resistance.
 - The company starts empty. The player hires the **first hero for free** at the town tavern (any of the 5 classes). More heroes cost gold: 1s, 3s, 9s, 27s … (×3 each).
 - **Money:** 100 copper = 1 silver, 100 silver = 1 gold. The game stores copper only. The bottom bar always shows the amount.
-- The party has a front row (2) and a back row (2). Melee enemies hit the front row 70% of the time.
+- **Statistics:** each hero records monsters defeated, damage dealt, damage taken, healing done, fight time, and battles won and lost. The Heroes screen shows them, with damage per second and a **Power** number (the square root of damage output times durability). Power tells how strong the hero is.
 - Each class has growth rates and one active skill per tier. The AI uses the skill when it is ready.
 - **Promotion** (Fire Emblem style): at Lv 20 the player picks one of two branches. At Lv 50 the hero takes the master class. The hero keeps the level.
 
@@ -127,7 +127,7 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
 - **Duration targets at 1× speed:**
   - Normal encounter: 7 s at Lv 1, rising in a straight line to 60 s at Lv 100.
   - Boss: 10 × the normal duration of its level (about 2 min at Lv 10, about 10 min at Lv 100).
-- **Monster stats come from a reference party curve.** The reference party is 4 heroes at level L with Magic-quality gear of ilvl L. Monster HP makes the reference party need the target duration. Monster damage makes it lose about 35% of its HP.
+- **Monster stats come from a reference curve.** The reference hero is a single hero at level L with Magic-quality gear of ilvl L. Monster HP makes the reference party need the target duration. Monster damage makes it lose about 35% of its HP.
 - **Rare monster:** 2% of encounters. About 2.5 × HP. Drops ×3, one Catalyst, 4% Unique.
 - **Boss:** 1 boss and 0-2 adds. Drops ×5, two Catalysts, 25% Unique.
 - **Encounter size:** 1-3 monsters, never more than the party size. A solo hero meets 1 monster.
@@ -190,10 +190,13 @@ Ten brackets. Each bracket has one town.
 
 ## 11b. Screens and flow
 
-- **Town screen** is the main stage when no run is active. It shows buildings: Tavern, Workshop, Merchant, Dungeons gate. Click a building to open its panel.
-- **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Menu, and the money (gold, silver, copper coins).
-- **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player starts a run.
-- **After a run:** the Inventory opens with the run summary and loot. The button "Equip gear (Heroes)" opens Heroes. In Heroes, the Items tab shows the slots and the backpack items that the hero can equip.
+- **Town screen** is the main stage when no run is active. The town has a Lord's Keep (decoration), a Tavern, a Workshop, a Merchant and a Dungeons gate. They stand apart, joined by winding cobbled roads. Villagers and a guard walk on the roads. Heroes do not stand in town. Click a building to open its panel.
+- **Bottom bar** is always visible: Heroes, Inventory, Dungeons, World, Settings, and the money (gold, silver and copper coins).
+- **Lists:** every menu shows one item per row, with a pixel picture: hero portraits, item and material icons, dungeon icons.
+- **First start:** the Tavern opens. The player hires the free first hero. Then the Dungeons panel opens. The player picks the hero (1 for normal dungeons, up to 2 for bosses) and starts a run.
+- **During a run:** a themed battle scene for each dungeon. Units bob, lunge, flash and collapse. Damage numbers float up and hit sparks fly.
+- **After each fight:** a results card shows fight time, damage, damage per second, damage taken, XP, level-ups and the loot. The next fight starts after a short pause.
+- **After a run:** the Inventory opens with the run summary and loot. The button "Equip gear (Heroes)" opens Heroes. In Heroes, the Stats tab shows the portrait, attributes, Power and the battle record. The Items tab shows the slots and the backpack items that the hero can equip.
 - **Style:** pixel art, wood and parchment menus, blackletter titles (Jacquard 12), pixel text (Pixelify Sans).
 - **Data:** all game data is JSON in `data/`. A README there explains each file.
 - **Languages:** English and Simplified Chinese. The player picks the language in the Settings screen. The choice is saved apart from the game save. All text and content names are in `data/i18n/`. Item names are built from parts (material, base, affixes), so they change language too.

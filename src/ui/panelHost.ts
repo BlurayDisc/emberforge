@@ -51,7 +51,12 @@ export function createPanelHost(store: GameStore): PanelHost {
   };
 
   const setActive = (panelId: string | null): void => {
+    const previousId = activeId;
     activeId = panelId !== null && PANEL_CATALOG.some((panel) => panel.id === panelId) ? panelId : null;
+    if (previousId !== activeId) {
+      PANEL_CATALOG.find((panel) => panel.id === previousId)?.onClose?.();
+      host.querySelector('.toast')?.remove();
+    }
     render();
     changeListeners.forEach((listener) => listener());
   };

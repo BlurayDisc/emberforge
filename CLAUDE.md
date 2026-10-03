@@ -83,8 +83,8 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - Textures use `NearestFilter`, no mipmaps. The renderer has antialiasing off.
 - Put sprites and the camera on whole-pixel positions. No sub-pixel movement.
 - Use colors from `render/palette.ts` (stage) and `ui/styles/theme.css` (menus) only. Add a color there first.
-- Draw all sprites at one pixel scale. Do not mix scales.
-- Load sprites into one atlas once. Do not create objects in the per-frame loop. Reuse them.
+- Keep one pixel scale on the stage. Heroes and monsters are drawn in code (`render/heroSpriteArt.ts`, `render/creatureArt.ts`), backdrops in `render/battleBackdrops.ts`, the town in `render/townGroundArt.ts` and `render/buildingArt.ts`. Menu pictures are in `ui/iconArt.ts` and `ui/portraitArt.ts`.
+- Cache every drawn sprite and texture. Do not create objects in the per-frame loop. Reuse them. A hero looks the same in the portrait and in battle, because both use `pickHeroAppearance`.
 - Fonts and assets are bundled in the repo. No CDN. Fonts from `@fontsource`: Jacquard 12 (titles, signs), Pixelify Sans (text), Fusion Pixel 12px SC (Chinese). Chinese text uses full-width punctuation.
 - Menu frames use notched box-shadow outlines (no border radius). Buttons press down 2 px. Keep that look in new components.
 - Building labels are DOM text on top of the canvas (`ui/townOverlay.ts`). Their size follows the whole-number stage scale (`--stage-scale`).

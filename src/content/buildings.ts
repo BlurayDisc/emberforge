@@ -1,11 +1,11 @@
 import buildingsData from '../../data/buildings.json';
 
-export type BuildingStyle = 'tavern' | 'workshop' | 'merchant' | 'gate';
+export type BuildingStyle = 'tavern' | 'workshop' | 'merchant' | 'gate' | 'keep';
 
 export interface BuildingDefinition {
   id: string;
   label: string;
-  panelId: string;
+  panelId: string | null;
   style: BuildingStyle;
   x: number;
   y: number;

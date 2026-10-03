@@ -9,7 +9,6 @@ export function createNewGameState(seed: number): GameState {
     townId: STARTING_TOWN_ID,
     copper: 0,
     company: [],
-    partyHeroIds: [],
     heroesHired: 0,
     backpack: [],
     itemsCrafted: 0,

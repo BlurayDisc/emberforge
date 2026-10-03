@@ -1,10 +1,4 @@
-import {
-  activeRunOf,
-  finishEncounterCommand,
-  listPartyBattleUnits,
-  planNextEncounter,
-  type GameStore,
-} from '../game';
+import { activeRunOf, finishEncounterCommand, planNextEncounter, type GameStore } from '../game';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { BattleView } from '../render/battleView';
 import type { TownView } from '../render/townView';
@@ -15,6 +9,7 @@ import type { RunHud } from '../ui/runHud';
 
 const MAXIMUM_FRAME_SECONDS = 0.1;
 const PAUSE_AFTER_ENCOUNTER_SECONDS = 1;
+const RESULT_DISPLAY_SECONDS = 3.5;
 
 interface EncounterPlayback {
   events: readonly BattleEvent[];
@@ -45,6 +40,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   const { battleView: view, townView } = scenes;
   let playback: EncounterPlayback | null = null;
   let previousFrameSeconds: number | null = null;
+  let resultPauseRemainingSeconds = 0;
 
   const beginEncounter = (): void => {
     const state = store.getState();
@@ -52,6 +48,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     if (run === null) return;
     const plan = planNextEncounter(state);
     if (run.encounterNumber === 0) hud.clearLog();
+    view.setBackdrop(run.dungeonId);
     view.showUnits([...plan.partyUnits, ...plan.monsterUnits]);
     const monsterNames = listOf(plan.monsterUnits.map((unit) => unitDisplayName(unit)));
     hud.appendLogLine(t('log.fight', { number: run.encounterNumber + 1, monsters: monsterNames }));
@@ -70,20 +67,21 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     const state = store.getState();
     if (activeRunOf(state) === null) {
       playback = null;
+      resultPauseRemainingSeconds = 0;
       view.setVisible(false);
       townView.setVisible(true);
-      townView.showParty(listPartyBattleUnits(state));
       return;
     }
     townView.setVisible(false);
     view.setVisible(true);
-    if (playback === null) beginEncounter();
+    if (playback === null && resultPauseRemainingSeconds <= 0) beginEncounter();
   };
 
   const applyEvent = (event: BattleEvent, current: EncounterPlayback): void => {
     const target = current.unitsById.get(event.targetId);
     if (target) view.setUnitHealth(target.id, event.targetHpAfter, target.maxHp);
-    if (event.kind === 'attack') view.flashUnit(event.targetId);
+    if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount, event.isCritical);
+    else view.playHeal(event.actorId, event.targetId, event.amount);
     hud.appendLogLine(describeEvent(event, current.unitsById));
     if (target && event.targetHpAfter === 0) {
       view.markDefeated(target.id);
@@ -95,6 +93,15 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     const frameSeconds =
       previousFrameSeconds === null ? 0 : Math.min(MAXIMUM_FRAME_SECONDS, elapsedSeconds - previousFrameSeconds);
     previousFrameSeconds = elapsedSeconds;
+    if (resultPauseRemainingSeconds > 0) {
+      resultPauseRemainingSeconds -= frameSeconds * hud.playbackSpeed();
+      if (resultPauseRemainingSeconds <= 0) {
+        resultPauseRemainingSeconds = 0;
+        hud.hideResult();
+        if (playback === null) synchronizeWithState();
+      }
+      return;
+    }
     const current = playback;
     if (current === null) return;
 
@@ -112,7 +119,11 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     }
     if (current.elapsedSeconds >= current.durationSeconds + PAUSE_AFTER_ENCOUNTER_SECONDS) {
       playback = null;
+      resultPauseRemainingSeconds = RESULT_DISPLAY_SECONDS;
       store.execute(finishEncounterCommand());
+      const finishedRun = store.getState().dungeonRun;
+      if (finishedRun?.status === 'active' && finishedRun.lastEncounter) hud.showResult(finishedRun.lastEncounter);
+      else resultPauseRemainingSeconds = 0;
     }
   });
 

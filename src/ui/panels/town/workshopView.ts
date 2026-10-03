@@ -1,4 +1,7 @@
+import { BASE_ITEMS } from '../../../content/baseItems';
 import { CATALYST_MATERIAL_ID } from '../../../content/balance/items';
+import { requireById } from '../../../content/lookup';
+import { MATERIALS } from '../../../content/materials';
 import {
   countCatalysts,
   craftItemCommand,
@@ -10,6 +13,8 @@ import type { Item } from '../../../model/item';
 import { actionButton, element } from '../../dom';
 import { craftedBaseName, itemDisplayName, materialName, qualityName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
+import { createItemIcon } from '../../iconArt';
+import { createList, createListRow } from '../../listRow';
 import type { PanelContext, PanelRenderer } from '../panelContext';
 
 let usesCatalyst = false;
@@ -46,13 +51,14 @@ function craft(context: PanelContext, recipe: WorkshopRecipeView): void {
 
 function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView, catalystCount: number): HTMLElement {
   const canCraft = recipe.canCraft && (!usesCatalyst || catalystCount > 0);
-  return element(
-    'div',
-    'card',
-    element('div', 'card-title', `${craftedBaseName(recipe.mainMaterialId, recipe.baseId)} (${recipe.sizeText})`),
-    element('div', 'card-text small', ...describeIngredients(recipe.ingredients)),
-    actionButton(t('workshop.craft'), () => craft(context, recipe), { disabled: !canCraft }),
-  );
+  const base = requireById(BASE_ITEMS, recipe.baseId);
+  const mainMaterial = requireById(MATERIALS, recipe.mainMaterialId);
+  return createListRow({
+    art: createItemIcon(recipe.baseId, mainMaterial.id, base.mainCategory, 3),
+    title: `${craftedBaseName(recipe.mainMaterialId, recipe.baseId)} (${recipe.sizeText})`,
+    lines: [element('div', 'card-text small', ...describeIngredients(recipe.ingredients))],
+    actions: [actionButton(t('workshop.craft'), () => craft(context, recipe), { disabled: !canCraft })],
+  });
 }
 
 export const renderWorkshopPanel: PanelRenderer = (context) => {
@@ -79,7 +85,7 @@ export const renderWorkshopPanel: PanelRenderer = (context) => {
     const professionRecipes = recipes.filter((recipe) => recipe.professionId === professionId);
     body.append(
       element('div', 'section-title', t(`profession.${professionId}`)),
-      element('div', 'card-grid', ...professionRecipes.map((recipe) => renderRecipe(context, recipe, catalystCount))),
+      createList(...professionRecipes.map((recipe) => renderRecipe(context, recipe, catalystCount))),
     );
   }
   body.append(actionButton(t('workshop.leave'), context.closePanel));

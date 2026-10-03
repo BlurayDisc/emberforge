@@ -1,26 +1,11 @@
 import { CanvasTexture, NearestFilter, SRGBColorSpace, Sprite, SpriteMaterial } from 'three';
-import { PALETTE } from './palette';
-import { SPRITE_ART, type SpriteArt } from './spriteArt';
+import type { BattleUnit } from '../model/battle';
+import type { ClassId } from '../model/hero';
+import { CREATURE_DRAWERS } from './creatureArt';
+import { drawHeroSprite } from './heroSpriteArt';
 
-const textureBySpriteKey = new Map<string, CanvasTexture>();
-
-function drawSpriteArt(art: SpriteArt): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = art.rows[0]?.length ?? 0;
-  canvas.height = art.rows.length;
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('2D canvas is not available');
-
-  art.rows.forEach((row, rowIndex) => {
-    [...row].forEach((symbol, columnIndex) => {
-      const colorName = art.legend[symbol];
-      if (colorName === undefined) return;
-      context.fillStyle = PALETTE[colorName];
-      context.fillRect(columnIndex, rowIndex, 1, 1);
-    });
-  });
-  return canvas;
-}
+const canvasBySpriteId = new Map<string, HTMLCanvasElement>();
+const textureBySpriteId = new Map<string, CanvasTexture>();
 
 export function createPixelTexture(source: HTMLCanvasElement): CanvasTexture {
   const texture = new CanvasTexture(source);
@@ -31,20 +16,35 @@ export function createPixelTexture(source: HTMLCanvasElement): CanvasTexture {
   return texture;
 }
 
-function textureForSpriteKey(spriteKey: string): CanvasTexture {
-  const cachedTexture = textureBySpriteKey.get(spriteKey);
-  if (cachedTexture) return cachedTexture;
-  const art = SPRITE_ART[spriteKey];
-  if (!art) throw new Error(`Unknown sprite key: ${spriteKey}`);
-  const texture = createPixelTexture(drawSpriteArt(art));
-  textureBySpriteKey.set(spriteKey, texture);
-  return texture;
+function spriteIdOf(unit: BattleUnit): string {
+  return unit.rank === 'hero' ? `hero:${unit.definitionId}:${unit.name}` : unit.spriteKey;
 }
 
-export function createUnitSprite(spriteKey: string): Sprite {
-  const texture = textureForSpriteKey(spriteKey);
+function canvasForUnit(unit: BattleUnit): HTMLCanvasElement {
+  const spriteId = spriteIdOf(unit);
+  const cached = canvasBySpriteId.get(spriteId);
+  if (cached) return cached;
+  const creatureDrawer = CREATURE_DRAWERS[unit.spriteKey];
+  const canvas = unit.rank === 'hero' ? drawHeroSprite(unit.definitionId as ClassId, unit.name) : creatureDrawer?.();
+  if (!canvas) throw new Error(`Unknown sprite key: ${unit.spriteKey}`);
+  canvasBySpriteId.set(spriteId, canvas);
+  return canvas;
+}
+
+export function spriteSizeOf(unit: BattleUnit): { width: number; height: number } {
+  const canvas = canvasForUnit(unit);
+  return { width: canvas.width, height: canvas.height };
+}
+
+export function createBattleSprite(unit: BattleUnit): Sprite {
+  const spriteId = spriteIdOf(unit);
+  let texture = textureBySpriteId.get(spriteId);
+  if (!texture) {
+    texture = createPixelTexture(canvasForUnit(unit));
+    textureBySpriteId.set(spriteId, texture);
+  }
+  const { width, height } = spriteSizeOf(unit);
   const sprite = new Sprite(new SpriteMaterial({ map: texture, transparent: true }));
-  const { width, height } = texture.image as HTMLCanvasElement;
   sprite.scale.set(width, height, 1);
   return sprite;
 }

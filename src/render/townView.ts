@@ -1,18 +1,14 @@
 import { Group, Mesh, MeshBasicMaterial, PlaneGeometry, Sprite, SpriteMaterial } from 'three';
 import type { BuildingDefinition } from '../content/buildings';
-import type { BattleUnit } from '../model/battle';
 import { drawBuildingArt } from './buildingArt';
-import { createPixelTexture, createUnitSprite } from './pixelSprites';
+import { createPixelTexture } from './pixelSprites';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, type PixelStage } from './pixelStage';
+import { createBystanders, depthFor } from './bystanders';
 import { drawTownGroundArt } from './townGroundArt';
-
-const PARTY_FEET_Y = 188;
-const PARTY_CENTER_X = 240;
-const PARTY_SPACING = 34;
+import { TOWN_ROADS } from './townLayout';
 
 export interface TownView {
   setVisible(isVisible: boolean): void;
-  showParty(units: readonly BattleUnit[]): void;
 }
 
 function toWorldX(logicalX: number): number {
@@ -27,7 +23,7 @@ function createBuildingSprite(building: BuildingDefinition): Sprite {
   const art = drawBuildingArt(building.style, building.width, building.height);
   const sprite = new Sprite(new SpriteMaterial({ map: createPixelTexture(art), transparent: true }));
   sprite.scale.set(art.width, art.height, 1);
-  sprite.position.set(toWorldX(building.x), toWorldY(building.y) + art.height / 2, -1);
+  sprite.position.set(toWorldX(building.x), toWorldY(building.y) + art.height / 2, depthFor(building.y));
   return sprite;
 }
 
@@ -43,24 +39,14 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
   root.add(ground);
   buildings.forEach((building) => root.add(createBuildingSprite(building)));
 
-  let partySprites: Sprite[] = [];
+  const bystanders = createBystanders(root, TOWN_ROADS, 5);
+  stage.onFrame((elapsedSeconds) => {
+    if (root.visible) bystanders.update(elapsedSeconds);
+  });
 
   return {
     setVisible: (isVisible) => {
       root.visible = isVisible;
-    },
-    showParty: (units) => {
-      partySprites.forEach((sprite) => {
-        sprite.material.dispose();
-        root.remove(sprite);
-      });
-      partySprites = units.map((unit, index) => {
-        const sprite = createUnitSprite(unit.spriteKey);
-        const x = PARTY_CENTER_X + (index - (units.length - 1) / 2) * PARTY_SPACING;
-        sprite.position.set(toWorldX(x), toWorldY(PARTY_FEET_Y) + 8, 1);
-        root.add(sprite);
-        return sprite;
-      });
     },
   };
 }

@@ -4,7 +4,9 @@ import type { ClassId } from '../../../model/hero';
 import { actionButton, element } from '../../dom';
 import { className } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
+import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
+import { createPortrait } from '../../portraitArt';
 import type { PanelContext, PanelRenderer } from '../panelContext';
 
 function hire(context: PanelContext, classId: ClassId): void {
@@ -14,13 +16,12 @@ function hire(context: PanelContext, classId: ClassId): void {
 
 function renderOffer(context: PanelContext, offer: TavernOffer): HTMLElement {
   const price = offer.cost === 0 ? element('span', 'money-free', t('tavern.free')) : createMoneyDisplay(offer.cost);
-  return element(
-    'div',
-    'card',
-    element('div', 'card-title', className(offer.classId)),
-    element('div', 'card-text', t(`class.${offer.classId}.role`)),
-    element('div', 'card-row', price, actionButton(t('tavern.hire'), () => hire(context, offer.classId), { disabled: !offer.isAffordable })),
-  );
+  return createListRow({
+    art: createPortrait(offer.classId, className(offer.classId), 2),
+    title: className(offer.classId),
+    lines: [element('div', 'card-text', t(`class.${offer.classId}.role`))],
+    actions: [price, actionButton(t('tavern.hire'), () => hire(context, offer.classId), { disabled: !offer.isAffordable })],
+  });
 }
 
 export const renderTavernPanel: PanelRenderer = (context) => {
@@ -30,7 +31,7 @@ export const renderTavernPanel: PanelRenderer = (context) => {
   if (state.company.length === 0) content.append(element('p', 'hint welcome', t('tavern.welcome')));
   content.append(element('p', 'hint', t('tavern.company', { count: state.company.length, max: MAXIMUM_COMPANY_SIZE })));
   if (offers.length === 0) content.append(element('p', 'hint', t('tavern.full')));
-  content.append(element('div', 'card-grid', ...offers.map((offer) => renderOffer(context, offer))));
+  content.append(createList(...offers.map((offer) => renderOffer(context, offer))));
   content.append(actionButton(t('tavern.leave'), context.closePanel));
   return content;
 };

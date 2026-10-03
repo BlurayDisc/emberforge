@@ -1,17 +1,18 @@
 import { CLASSES } from '../../content/classes';
-import type { BattleUnit } from '../../model/battle';
 import type { GameState } from '../../model/gameState';
 import type { ClassId, Hero } from '../../model/hero';
 import type { MoneyBreakdown } from '../../model/money';
 import type { StatBlock } from '../../model/statBlock';
 import { hireCostForCompanySize, splitCopper } from '../../systems/economy';
 import { experienceToNextLevel } from '../../systems/progression';
-import { computeHeroStats, heroToBattleUnit } from '../../systems/stats';
+import { computeHeroPower, computeHeroStats } from '../../systems/stats';
 
 export interface HeroView {
   stats: StatBlock;
   currentHp: number;
   experienceToNextLevel: number;
+  power: number;
+  damagePerSecond: number;
 }
 
 export interface TavernOffer {
@@ -30,6 +31,8 @@ export function describeHero(hero: Hero): HeroView {
     stats,
     currentHp: Math.round(stats.hp * hero.healthFraction),
     experienceToNextLevel: experienceToNextLevel(hero.level),
+    power: computeHeroPower(hero),
+    damagePerSecond: hero.statistics.secondsFought > 0 ? hero.statistics.damageDealt / hero.statistics.secondsFought : 0,
   };
 }
 
@@ -41,11 +44,4 @@ export function listTavernOffers(state: GameState): TavernOffer[] {
     cost,
     isAffordable: state.copper >= cost,
   }));
-}
-
-export function listPartyBattleUnits(state: GameState): BattleUnit[] {
-  return state.partyHeroIds.flatMap((heroId) => {
-    const hero = state.company.find((candidate) => candidate.id === heroId);
-    return hero ? [heroToBattleUnit(hero)] : [];
-  });
 }

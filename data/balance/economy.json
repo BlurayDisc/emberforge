@@ -2,7 +2,6 @@
   "copperPerSilver": 100,
   "silverPerGold": 100,
   "maximumCompanySize": 12,
-  "maximumPartySize": 4,
   "heroHireCostByCompanySize": [0, 100, 300, 900, 2700, 8100, 24300, 72900, 218700, 656100, 1968300, 5904900],
   "copperDropBase": 3,
   "copperDropPerLevel": 2,

@@ -162,3 +162,130 @@
     grid-template-columns: 1fr;
   }
 }
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px;
+  padding: 8px 10px;
+  background: var(--leather);
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--wood-700);
+}
+
+.list-row.disabled {
+  opacity: 0.5;
+}
+
+.list-row.current,
+.list-row.hero-choice.selected {
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--gold-dark), inset -2px -2px 0 var(--gold-dark);
+}
+
+.list-row.hero-choice {
+  cursor: pointer;
+}
+
+.row-art {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 4px;
+  background: var(--wood-900);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.row-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pixel-portrait {
+  display: block;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.hero-identity {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.hero-identity-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  background: rgba(36, 25, 18, 0.96);
+  box-shadow: var(--outline-4), inset 2px 2px 0 var(--wood-600), inset -2px -2px 0 var(--wood-900);
+}
+
+.result-title {
+  font-family: var(--font-title);
+  font-size: 26px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.result-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-hero-text {
+  flex: 1;
+}
+
+.level-up {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.result-loot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.loot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.grid-entry img {
+  pointer-events: none;
+}
+
+.stat-grid.wide {
+  grid-template-columns: 1fr 1fr;
+}
