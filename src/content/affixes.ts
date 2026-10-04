@@ -1,14 +1,15 @@
 import affixesData from '../../data/affixes.json';
-import type { AffixKind } from '../model/item';
-import type { StatBlock } from '../model/statBlock';
+import type { AffixKind, AffixStat } from '../model/item';
 
 export interface AffixDefinition {
   id: string;
   kind: AffixKind;
   displayName: string;
-  stat: keyof StatBlock;
+  stat: AffixStat;
   minimumValue: number;
   maximumValue: number;
+  // Percent affixes set this to false, so a high item level does not make them too strong.
+  scalesWithItemLevel?: boolean;
 }
 
 export const AFFIXES = affixesData as unknown as readonly AffixDefinition[];

@@ -59,6 +59,9 @@ export interface GameState {
   // Bought upgrades at the Bank: more backpack rows, and more sale slots at the merchant.
   backpackExpansions: number;
   merchantExtraSlots: number;
+  // Bought Bank upgrades of the Mill: more storage, and a shorter production time.
+  millCapacityUpgrades: number;
+  millSpeedUpgrades: number;
   // Features that the player bought at the Bank. Until then the game hides them.
   bankUnlockIds: BankUnlockId[];
   itemsCrafted: number;

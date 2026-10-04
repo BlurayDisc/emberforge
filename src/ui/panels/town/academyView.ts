@@ -6,6 +6,7 @@ import { describeRejection, t } from '../../i18n';
 import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
 import { createPortrait } from '../../portraitArt';
+import { createSpellIcon } from '../../spellIconArt';
 import { describeSpell, describeSpellCosts, spellName } from '../../spellText';
 import type { PanelContext, PanelRenderer } from '../panelContext';
 
@@ -26,7 +27,7 @@ function renderOffer(context: PanelContext, hero: Hero, offer: SpellOffer): HTML
   const { spell } = offer;
   const canLearn = !offer.isLearned && offer.problem === null && offer.isAffordable;
   return createListRow({
-    art: element('div', `spell-badge${spell.isUltimate ? ' ultimate' : ''}`, t('spell.levelBadge', { level: spell.unlockLevel })),
+    art: element('div', 'spell-art', createSpellIcon(spell.id, 3), element('div', `spell-badge${spell.isUltimate ? ' ultimate' : ''}`, t('spell.levelBadge', { level: spell.unlockLevel }))),
     title: spell.isUltimate ? `${spellName(spell.id)} (${t('spell.ultimate')})` : spellName(spell.id),
     lines: [
       element('div', 'card-text small', describeSpell(spell)),

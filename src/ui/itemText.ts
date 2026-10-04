@@ -15,6 +15,7 @@ export const EQUIPMENT_SLOT_ORDER: readonly EquipmentSlot[] = [
   'helm',
   'armour',
   'gloves',
+  'legs',
   'boots',
   'belt',
   'amulet',

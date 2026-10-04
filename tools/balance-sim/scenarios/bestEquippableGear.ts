@@ -9,7 +9,7 @@ import { classIdsThatCanUse, equipItem, findEquipProblem } from '../../../src/sy
 import { generateCraftedItem } from '../../../src/systems/items';
 
 // A hero wears one item for each of these. A ring fills two slots.
-const SLOT_ORDER: readonly ItemSlot[] = ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'boots', 'belt', 'amulet', 'ring', 'ring'];
+const SLOT_ORDER: readonly ItemSlot[] = ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ring', 'ring'];
 
 function recipeSlot(recipe: Recipe): ItemSlot {
   return requireById(BASE_ITEMS, recipe.baseId).slot;

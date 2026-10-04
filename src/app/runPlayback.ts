@@ -4,7 +4,7 @@ import { ARMOUR_HIT_SOUNDS, CLASS_ATTACK_SOUNDS, MONSTER_ATTACK_SOUNDS, MONSTER_
 import { CLASSES } from '../content/classes';
 import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
-import { completeRunCommand, experienceForDefeatedMonsters, findActiveRun, planNextEncounter, type GameStore } from '../game';
+import { completeRunCommand, describeSpellEvent, experienceForDefeatedMonsters, findActiveRun, planNextEncounter, type GameStore, type SpellPresentation } from '../game';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { ClassId } from '../model/hero';
 import type { BattleView } from '../render/battleView';
@@ -16,6 +16,7 @@ import { listOf, resourceName, unitDisplayName } from '../ui/displayNames';
 import { t } from '../ui/i18n';
 import { spellName as spellNameOf } from '../ui/spellText';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
+import { playSpellSounds } from './spellSounds';
 import { forgetRunProgress, publishRunProgress } from '../ui/runProgress';
 import type { RunHud } from '../ui/runHud';
 
@@ -78,17 +79,18 @@ function logEntriesForEvent(event: BattleEvent, encounter: EncounterPlayback): L
 }
 
 // A hero attack sounds as the weapon plus the monster's cry. A monster attack sounds as its own
-// strike plus the hit on the armour type of the hero.
-function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>): void {
+// strike plus the hit on the armour type of the hero. A spell with its own sounds plays them instead of the weapon.
+function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>, spell: SpellPresentation | null): void {
   const actor = unitsById.get(event.actorId);
   const target = unitsById.get(event.targetId);
   if (!actor || !target) return;
+  if (spell) playSpellSounds(spell);
   if (event.kind === 'heal' || event.kind === 'effect') {
-    playSound('heal-chime');
+    if (!spell) playSound('heal-chime');
     return;
   }
   if (actor.rank === 'hero') {
-    playSound(CLASS_ATTACK_SOUNDS[actor.definitionId as ClassId]);
+    if (!spell) playSound(CLASS_ATTACK_SOUNDS[actor.definitionId as ClassId]);
     playSound(MONSTER_HURT_SOUNDS[target.spriteKey] ?? '', 0.05);
   } else {
     playSound(MONSTER_ATTACK_SOUNDS[actor.spriteKey] ?? '');
@@ -110,13 +112,24 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     view.setUnitResource(event.targetId, event.targetResourceAfter);
   };
 
-  const applyEventToView = (event: BattleEvent, encounter: EncounterPlayback): void => {
+  // A spell with a look (data/spell-visuals.json) shows its own effects. Any other event keeps the plain hit and heal look.
+  const showSpellOnView = (event: BattleEvent, spell: SpellPresentation & { visual: NonNullable<SpellPresentation['visual']> }): void => {
+    if (spell.startsCast) view.playSpellCast(event.actorId, spell.visual);
+    if (spell.role === 'damage') view.playSpellHit(event.actorId, event.targetId, event.amount, event.isCritical, spell.visual, spell.hitIndex, spell.statusDurationSeconds);
+    else if (spell.role === 'heal') view.playSpellHeal(event.actorId, event.targetId, event.amount, spell.visual);
+    else if (spell.statusDurationSeconds !== null) view.playSpellStatus(event.actorId, event.targetId, spell.visual, spell.role, spell.statusDurationSeconds);
+  };
+
+  const applyEventToView = (event: BattleEvent, encounter: EncounterPlayback, eventIndex: number): void => {
     const target = encounter.unitsById.get(event.targetId);
     if (target) view.setUnitHealth(target.id, event.targetHpAfter);
     showResourcesAfterEvent(event);
-    if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount, event.isCritical);
+    const spell = describeSpellEvent(encounter.events, eventIndex, encounter.unitsById);
+    const spellWithLook = spell?.visual ? { ...spell, visual: spell.visual } : null;
+    if (spellWithLook) showSpellOnView(event, spellWithLook);
+    else if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount, event.isCritical);
     else if (event.kind === 'heal') view.playHeal(event.actorId, event.targetId, event.amount);
-    playEventSounds(event, encounter.unitsById);
+    playEventSounds(event, encounter.unitsById, spellWithLook);
     logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
     if (target && event.targetHpAfter === 0) view.markDefeated(target.id);
   };
@@ -212,7 +225,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     publishRunProgress(player.runNumber, encounter.elapsedSeconds / totalSeconds, totalSeconds - encounter.elapsedSeconds, encounter.elapsedSeconds);
     const isFocused = focusedRunNumber() === player.runNumber;
     for (let event = encounter.events[encounter.nextEventIndex]; event && event.timeSeconds <= encounter.elapsedSeconds; event = encounter.events[encounter.nextEventIndex]) {
-      if (isFocused) applyEventToView(event, encounter);
+      if (isFocused) applyEventToView(event, encounter, encounter.nextEventIndex);
       encounter.nextEventIndex += 1;
     }
     if (isFocused && !encounter.hasAnnouncedResult && encounter.elapsedSeconds >= encounter.durationSeconds) {

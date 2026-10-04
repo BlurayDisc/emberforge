@@ -430,7 +430,7 @@
     'gloves portrait belt'
     'mainHand portrait offHand'
     'ringOne portrait ringTwo'
-    'boots armour .';
+    'legs armour boots';
   gap: 8px;
   justify-items: center;
   align-items: center;
@@ -697,6 +697,14 @@
   line-height: 1.4;
 }
 
+.victory-banner {
+  font-family: var(--font-title);
+  font-size: 40px;
+  text-align: center;
+  color: var(--gold);
+  padding: 8px 0;
+}
+
 .crafter-intro {
   display: flex;
   gap: 12px;
@@ -705,6 +713,84 @@
 
 .crafter-intro .crafter-header {
   flex: 1;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dropdown {
+  position: relative;
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.dropdown-trigger {
+  width: 100%;
+  min-height: 44px;
+  margin: 2px 0;
+  padding: 8px 28px 8px 12px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  text-align: left;
+  color: var(--parchment);
+  text-shadow: 1px 1px 0 var(--ink);
+  background-color: var(--wood-600);
+  /* A pixel arrow shows that the button opens a list. */
+  background-image: linear-gradient(var(--parchment), var(--parchment)), linear-gradient(var(--parchment), var(--parchment)), linear-gradient(var(--parchment), var(--parchment));
+  background-repeat: no-repeat;
+  background-size: 10px 2px, 6px 2px, 2px 2px;
+  background-position: right 10px top 19px, right 12px top 21px, right 14px top 23px;
+  border: 0;
+  cursor: pointer;
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-800);
+}
+
+.dropdown-trigger:hover {
+  background-color: var(--wood-500);
+}
+
+.dropdown-list {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  margin-top: 4px;
+  overflow-y: auto;
+  background: var(--wood-900);
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--wood-700), inset -2px -2px 0 var(--ink);
+}
+
+.dropdown-list[hidden] {
+  display: none;
+}
+
+.dropdown-option {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  text-align: left;
+  color: var(--parchment);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.dropdown-option:hover {
+  background: var(--wood-600);
+}
+
+.dropdown-option.selected {
+  color: var(--ink);
+  text-shadow: none;
+  background: var(--gold);
 }
 
 /* Tiles: a grid of cards that wrap to the width of the panel. */
@@ -825,9 +911,26 @@
   gap: 6px;
 }
 
+.spell-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spell-slot-icon-empty {
+  width: 48px;
+  height: 48px;
+  box-shadow: inset 0 0 0 2px var(--wood-600);
+}
+
+.spell-choice > .pixel-icon {
+  flex: none;
+}
+
 .spell-badge {
   min-width: 48px;
-  padding: 6px 4px;
+  padding: 2px 4px;
   text-align: center;
   font-weight: 700;
   color: var(--ink);
@@ -954,4 +1057,10 @@
   .growth-bars {
     grid-template-columns: 1fr;
   }
+}
+
+.report-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }

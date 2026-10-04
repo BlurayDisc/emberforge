@@ -28,7 +28,7 @@ function splitAffixCount(totalCount: number, maximumPerKind: number, random: Ran
 }
 
 function rollAffixValue(definition: AffixDefinition, itemLevel: number, random: Random): number {
-  const levelFactor = 1 + AFFIX_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
+  const levelFactor = definition.scalesWithItemLevel === false ? 1 : 1 + AFFIX_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
   const rolled = random.nextInt(definition.minimumValue, definition.maximumValue);
   return Math.max(1, Math.round(rolled * levelFactor));
 }

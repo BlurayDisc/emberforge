@@ -26,6 +26,7 @@ import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
 import { openModal } from '../../modal';
 import type { PanelContext, PanelRenderer } from '../panelContext';
+import { applyRecipeFilter, createRecipeFilterBar } from './workshopRecipeFilter';
 
 let selectedProfessionId: ProfessionId | null = null;
 
@@ -172,13 +173,15 @@ function renderCrafterList(context: PanelContext, crafters: readonly CrafterView
 
 // Recipes above the crafter level stay hidden, so the player sees only what the crafter can make now.
 function renderCrafterScreen(context: PanelContext, crafter: CrafterView, recipes: readonly WorkshopRecipeView[]): HTMLElement {
-  const craftableRecipes = recipes.filter((recipe) => recipe.professionId === crafter.professionId && recipe.isUnlocked).sort((first, second) => first.requiredCraftLevel - second.requiredCraftLevel);
+  const craftableRecipes = recipes.filter((recipe) => recipe.professionId === crafter.professionId && recipe.isUnlocked);
+  const shownRecipes = applyRecipeFilter(craftableRecipes);
   const nextRecipeLevel = recipes.filter((recipe) => recipe.professionId === crafter.professionId && !recipe.isUnlocked).reduce((lowest, recipe) => Math.min(lowest, recipe.requiredCraftLevel), Infinity);
   const body = element(
     'div',
     'panel-body',
     element('div', 'crafter-intro', createCrafterPortrait(crafter.professionId, 4), renderCrafterHeader(context, crafter)),
-    createList(...craftableRecipes.map((recipe) => renderRecipe(context, recipe))),
+    createRecipeFilterBar(craftableRecipes, context.requestRender),
+    shownRecipes.length === 0 ? element('p', 'hint', t('workshop.noRecipesMatch')) : createList(...shownRecipes.map((recipe) => renderRecipe(context, recipe))),
   );
   if (nextRecipeLevel !== Infinity) body.append(element('p', 'hint', t('workshop.nextRecipeAt', { level: nextRecipeLevel })));
   body.append(actionButton(t('workshop.back'), () => {

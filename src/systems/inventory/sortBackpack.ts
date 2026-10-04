@@ -2,7 +2,7 @@ import type { BackpackEntry } from '../../model/backpack';
 import type { Item, ItemQuality, ItemSlot } from '../../model/item';
 import { findFreePosition, sizeOfContent } from './backpack';
 
-const SLOT_ORDER: readonly ItemSlot[] = ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'boots', 'belt', 'amulet', 'ring'];
+const SLOT_ORDER: readonly ItemSlot[] = ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ring'];
 const QUALITY_ORDER: readonly ItemQuality[] = ['unique', 'rare', 'magic', 'common'];
 
 function compareItems(first: Item, second: Item): number {

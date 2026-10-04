@@ -6,3 +6,9 @@ export interface MillState {
   productionsMade: number;
   storedMaterials: MaterialStack[];
 }
+
+// What the Bank upgrades change: how many materials the Mill holds, and how long one takes.
+export interface MillSettings {
+  storageCapacity: number;
+  productionIntervalSeconds: number;
+}

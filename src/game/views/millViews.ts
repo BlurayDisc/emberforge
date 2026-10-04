@@ -1,7 +1,7 @@
-import { MILL_STORAGE_CAPACITY } from '../../content/balance/mill';
 import type { GameState } from '../../model/gameState';
 import type { MaterialStack } from '../../model/material';
 import { isMillFull, nextMillProductionAtMs, storedMillMaterialCount } from '../../systems/mill';
+import { millSettingsOf } from '../millSettings';
 
 export interface MillView {
   storedMaterials: MaterialStack[];
@@ -12,11 +12,12 @@ export interface MillView {
 }
 
 export function describeMill(state: GameState): MillView {
+  const settings = millSettingsOf(state);
   return {
     storedMaterials: state.mill.storedMaterials,
     storedCount: storedMillMaterialCount(state.mill),
-    capacity: MILL_STORAGE_CAPACITY,
-    isFull: isMillFull(state.mill),
-    nextProductionAtMs: nextMillProductionAtMs(state.mill),
+    capacity: settings.storageCapacity,
+    isFull: isMillFull(state.mill, settings),
+    nextProductionAtMs: nextMillProductionAtMs(state.mill, settings),
   };
 }

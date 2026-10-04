@@ -2,6 +2,8 @@ import data from '../../../data/balance/progression.json';
 import type { UnitRank } from '../../model/battle';
 
 export const LEVEL_CAP = data.levelCap;
+// The first clear of this dungeon ends the story so far, and the Victory screen opens.
+export const VICTORY_DUNGEON_ID = data.victoryDungeonId;
 
 // Absolute numbers for the first levels. Index 0 is level 1. The levels above the table follow the exponent.
 export const EXPERIENCE_TO_NEXT_LEVEL_BY_LEVEL: readonly number[] = data.experienceToNextLevelByLevel;

@@ -24,6 +24,9 @@ export interface BattleUnit {
   resistance: number;
   speed: number;
   critChance: number;
+  criticalDamageMultiplier: number;
+  // The fraction of damage dealt that the unit heals.
+  lifeSteal: number;
   behavior: UnitBehavior;
   resourceId: ResourceId;
   maxResource: number;

@@ -10,6 +10,7 @@ import {
   produceMillMaterialsCommand,
   collectWaitingCraftCommand,
   completeRunCommand,
+  describeSpellEvent,
   equipSpellCommand,
   learnSpellCommand,
   listSpellOffers,
@@ -17,10 +18,13 @@ import {
   unequipSpellCommand,
   buyBankUnlockCommand,
   buyStorageUpgradeCommand,
+  describeMill,
+  millSettingsOf,
   sortBackpackCommand,
   describeStorage,
   hireHeroCommand,
   listTavernOffers,
+  repeatDungeonRunCommand,
   runAwayCommand,
   findBackpackMoveAnchor,
   moveBackpackEntryCommand,
@@ -41,9 +45,10 @@ import { findRecipe, listRecipes, rollUpgradeLevel, upgradeReachChance, upgradeS
 import { addMaterials, backpackExpansionCostCopper, backpackRowCount, usedCellCount } from '../src/systems/inventory';
 import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
 import { computeHeroSheet, heroToBattleUnit } from '../src/systems/stats';
+import { AFFIXES } from '../src/content/affixes';
 import { BASE_ITEMS } from '../src/content/baseItems';
 import { CLASSES } from '../src/content/classes';
-import { MILL_PRODUCED_MATERIAL_IDS, MILL_PRODUCTION_INTERVAL_SECONDS, MILL_STORAGE_CAPACITY } from '../src/content/balance/mill';
+import { MILL_BASE_STORAGE_CAPACITY, MILL_PRODUCED_MATERIAL_IDS, MILL_PRODUCTION_INTERVAL_SECONDS_BY_SPEED_UPGRADE, MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER } from '../src/content/balance/mill';
 import type { ClassId, Hero } from '../src/model/hero';
 import type { EquipmentSlot } from '../src/model/item';
 import { DUNGEONS } from '../src/content/dungeons';
@@ -54,7 +59,7 @@ import { simulateBattle } from '../src/systems/battle';
 import { itemDisplayName } from '../src/ui/displayNames';
 import { createEncounter, createMonsterUnit } from '../src/systems/dungeons';
 import { createHero } from '../src/systems/heroes';
-import { classIdsThatCanUse, findEquipProblem } from '../src/systems/equipment';
+import { classIdsThatCanUse, equipItem, findEquipProblem } from '../src/systems/equipment';
 import { equipSpell, learnSpell } from '../src/systems/spells';
 
 function createStore(seed: number): GameStore {
@@ -323,6 +328,45 @@ function playSession(seed: number): string {
   assert.ok(bossHitsOn(mageWithFrostShard) < bossHitsOn(mageWithoutSpell), 'a slowed boss hits fewer times each second');
 }
 
+// Life steal, critical chance and critical damage come from suffixes. They reach the battle unit, the hero sheet and the fight.
+{
+  const sword = generateSwordForMigration();
+  const withBonuses = (affixes: Item['affixes']): Hero => ({ ...createHero('warrior', 1, createRandom(8)), level: 10, equipment: { mainHand: { ...sword, affixes } } });
+  const plainUnit = heroToBattleUnit(withBonuses([]));
+  const bonusAffixes: Item['affixes'] = [
+    { affixId: 'of-the-leech', kind: 'suffix', displayName: 'of the Leech', stat: 'lifeSteal', value: 5 },
+    { affixId: 'of-the-viper', kind: 'suffix', displayName: 'of the Viper', stat: 'criticalChance', value: 3 },
+    { affixId: 'of-carnage', kind: 'suffix', displayName: 'of Carnage', stat: 'criticalDamage', value: 15 },
+  ];
+  const bonusHero = withBonuses(bonusAffixes);
+  const bonusUnit = heroToBattleUnit(bonusHero);
+  assert.equal(plainUnit.lifeSteal, 0, 'gear without life steal gives none');
+  assert.ok(Math.abs(bonusUnit.lifeSteal - 0.05) < 1e-9, 'life steal comes from the suffix');
+  assert.ok(Math.abs(bonusUnit.critChance - plainUnit.critChance - 0.03) < 1e-9, 'critical chance adds to the Skill chance');
+  assert.ok(Math.abs(bonusUnit.criticalDamageMultiplier - plainUnit.criticalDamageMultiplier - 0.15) < 1e-9, 'critical damage adds to the multiplier');
+  const bonusSheet = computeHeroSheet(bonusHero);
+  assert.equal(bonusSheet.lifeSteal, 5);
+  assert.equal(bonusSheet.criticalDamage, Math.round(bonusUnit.criticalDamageMultiplier * 100));
+
+  const healEventsOf = (unit: typeof bonusUnit): number => {
+    const fight = simulateBattle([{ ...unit, maxHp: 100_000, hp: 50_000, lifeSteal: unit.lifeSteal }, createMonsterUnit('goblin-chief', 10, 'life-steal-check')], createRandom(8).fork('battle'));
+    return fight.events.filter((event) => event.kind === 'heal' && event.actorId === unit.id && event.targetId === unit.id).length;
+  };
+  assert.equal(healEventsOf(plainUnit), 0, 'a hero without life steal never heals itself');
+  assert.ok(healEventsOf({ ...bonusUnit, lifeSteal: 0.5 }) > 0, 'a hero with life steal heals when it hits');
+
+  const rolledValues: Record<string, number[]> = { lifeSteal: [], criticalChance: [], criticalDamage: [] };
+  for (let seed = 1; seed <= 600; seed++) {
+    const crafted = generateCraftedItem({ itemId: `roll-${seed}`, baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 40, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(seed));
+    for (const affix of crafted.affixes) rolledValues[affix.stat]?.push(affix.value);
+  }
+  for (const affix of AFFIXES.filter((definition) => definition.scalesWithItemLevel === false)) {
+    const values = rolledValues[affix.stat] ?? [];
+    assert.ok(values.length > 0, `${affix.id} is crafted by chance`);
+    assert.ok(values.every((value) => value >= affix.minimumValue && value <= affix.maximumValue), `${affix.id} does not grow with the item level`);
+  }
+}
+
 // A wound cuts the healing that a unit receives. The Goblin Chief wounds with Crushing Cleaver.
 {
   const cleaver = MONSTER_SPELLS.find((spell) => spell.id === 'goblin-chief.crushing-cleaver');
@@ -432,6 +476,81 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const skillWith = (helm: Item): number => computeHeroSheet({ ...warrior, equipment: { helm } }).skill;
   assert.equal(makeHelm('sharp-fang').materialId, 'sharp-fang', 'a set piece keeps its set material');
   assert.equal(skillWith(makeHelm('sharp-fang')) - skillWith(makeHelm(null)), requireById(MATERIALS, 'sharp-fang').setBonus!.value, 'a set material gives its fixed bonus');
+}
+
+// Every spell up to level 10 shows a look and plays sounds in a real fight. The planner sees each cast once, in order.
+{
+  const seenRoles = new Set<string>();
+  const spellsSeen = new Set<string>();
+  for (const classId of ['warrior', 'archer', 'mage', 'priest', 'thief', 'barbarian', 'fighter'] as const) {
+    const learnable = spellsOfClass(classId).filter((spell) => spell.unlockLevel <= 10 && !spell.isUltimate);
+    const caster = learnable.reduce((hero, spell, index) => equipSpell(learnSpell(hero, spell), spell, index), { ...createHero(classId, 10, createRandom(3)), level: 10 });
+    for (const dungeonId of ['rat-cellar', 'goblin-chief-lair']) {
+      for (let seed = 1; seed <= 6; seed++) {
+        const party = [heroToBattleUnit(caster), ...(dungeonId === 'goblin-chief-lair' ? [heroToBattleUnit({ ...createHero('priest', 5, createRandom(4)), id: 'partner' })] : [])];
+        const monsters = createEncounter(requireById(DUNGEONS, dungeonId), party.length, createRandom(seed).fork('monsters'));
+        const report = simulateBattle([...party, ...monsters], createRandom(seed).fork('battle'));
+        const unitsById = new Map([...party, ...monsters].map((unit) => [unit.id, unit]));
+        let castsStarted = 0;
+        report.events.forEach((event, index) => {
+          const presentation = describeSpellEvent(report.events, index, unitsById);
+          if (!presentation || !unitsById.get(event.actorId)?.id.startsWith('hero')) return;
+          const spell = findSpell(presentation.spellId);
+          if (!spell || spell.unlockLevel > 10 || presentation.visual === undefined) return;
+          seenRoles.add(presentation.role);
+          spellsSeen.add(spell.id);
+          assert.ok(presentation.sounds, `${spell.id} has sounds`);
+          if (presentation.startsCast) castsStarted += 1;
+          if (presentation.role === 'buff' || presentation.role === 'debuff') assert.ok((presentation.statusDurationSeconds ?? 0) > 0, `${spell.id} status has a duration`);
+        });
+        assert.ok(castsStarted <= report.events.length, 'casts are counted once');
+      }
+    }
+  }
+  for (const role of ['damage', 'heal', 'buff', 'debuff']) assert.ok(seenRoles.has(role), `a fight shows a ${role} spell look`);
+  assert.ok(spellsSeen.size >= 12, `fights cast many different spells with a look (${spellsSeen.size})`);
+}
+
+// The boss dungeon needs two heroes. Only one of them must reach the dungeon level.
+{
+  const memory: { saved: string | null } = { saved: null };
+  const bossStore = createGameStore({ read: () => memory.saved, write: (text) => { memory.saved = text; }, clear: () => { memory.saved = null; } });
+  const strongHero = { ...createHero('warrior', 10, createRandom(3)), id: 'strong-hero', level: 10 };
+  const partnerHero = { ...createHero('priest', 4, createRandom(4)), id: 'partner-hero', level: 4 };
+  bossStore.execute((state) => ({ ...state, company: [strongHero, partnerHero], clearedDungeonIds: DUNGEONS.filter((dungeon) => dungeon.bossMonsterId === null).map((dungeon) => dungeon.id) }));
+  assert.equal(rejectionKey(bossStore, startDungeonRunCommand('goblin-chief-lair', [strongHero.id], clock.nowMs)), 'reject.tooFewHeroes', 'the boss needs 2 heroes');
+  assert.equal(rejectionKey(bossStore, startDungeonRunCommand('goblin-chief-lair', [partnerHero.id, 'other'], clock.nowMs)), 'reject.heroMissing', 'both heroes must exist');
+  const weakPair = { ...partnerHero, id: 'weak-hero', level: 5 };
+  bossStore.execute((state) => ({ ...state, company: [...state.company, weakPair] }));
+  assert.equal(rejectionKey(bossStore, startDungeonRunCommand('goblin-chief-lair', [partnerHero.id, weakPair.id], clock.nowMs)), 'reject.heroLevelTooLow', 'one hero must reach the dungeon level');
+  assert.equal(rejectionKey(bossStore, startDungeonRunCommand('goblin-chief-lair', [strongHero.id, partnerHero.id], clock.nowMs)), null, 'a level 10 hero and a level 4 partner can fight the boss');
+  assert.equal(bossStore.getState().dungeonRuns[0]?.heroIds.length, 2, 'the run holds both heroes');
+}
+
+// Legs: every armour weight has a legs recipe, a hero of a fitting class wears it, and no two pieces of one set share a crafter level.
+{
+  for (const weight of ['heavy', 'medium', 'light']) {
+    const pieceLevels = ['helm', 'gloves', 'boots', 'legs', 'armour'].map((slot) => `${slot}-${weight}`);
+    for (const setMaterialId of [null, ...MATERIALS.filter((material) => material.tier === 1 && material.setBonus !== undefined).map((material) => material.id)]) {
+      const levels = pieceLevels.map((baseId) => findRecipe(baseId, 1, setMaterialId)?.requiredCraftLevel);
+      assert.equal(new Set(levels).size, levels.length, `the ${weight} set pieces made from ${setMaterialId ?? 'the main material'} open at different crafter levels`);
+      assert.ok(levels.every((level, index) => index === 0 || (level as number) > (levels[index - 1] as number)), 'a set opens in the order helm, gloves, boots, legs, armour');
+    }
+  }
+  const wearerByWeight = { heavy: 'warrior', medium: 'archer', light: 'mage' } as const;
+  for (const [weight, classId] of Object.entries(wearerByWeight)) {
+    const legsRecipe = findRecipe(`legs-${weight}`, 1);
+    assert.ok(legsRecipe, `a tier 1 recipe makes ${weight} legs`);
+    const legs = generateCraftedItem({ itemId: `legs-${weight}`, baseId: `legs-${weight}`, tier: 1, setMaterialId: null, itemLevel: legsRecipe.itemLevel, upgradeLevel: 0, craftingCostCopper: 1 }, createRandom(4));
+    assert.equal(legs.slot, 'legs', 'legs items use the legs slot');
+    const wearer = { ...createHero(classId, legsRecipe.itemLevel, createRandom(3)), level: legsRecipe.itemLevel };
+    assert.equal(findEquipProblem(wearer, legs), null, `a level ${legsRecipe.itemLevel} ${classId} can wear ${weight} legs`);
+    const equipped = equipItem(wearer, legs).hero;
+    assert.equal(equipped.equipment.legs?.id, legs.id, 'legs go into the legs slot');
+    assert.ok(computeHeroSheet(equipped).armour + computeHeroSheet(equipped).resistance > computeHeroSheet(wearer).armour + computeHeroSheet(wearer).resistance, 'legs add armour or magic resist');
+    const otherClassId = classId === 'warrior' ? 'mage' : 'warrior';
+    assert.notEqual(findEquipProblem(createHero(otherClassId, 100, createRandom(3)), legs), null, `a ${otherClassId} cannot wear ${weight} legs`);
+  }
 }
 
 // A version 14 report has no hero level or experience after the fight. The hero's current values stand in for them.
@@ -649,6 +768,30 @@ for (let level = 1; level <= 7; level++) {
   }
 }
 
+// Repeat sends the same heroes into the same dungeon, and the report counts as read.
+{
+  const store = createStore(31);
+  const nowMs = 5_000_000;
+  assert.equal(rejectionKey(store, hireHeroCommand('warrior')), null);
+  const hero = store.getState().company[0]!;
+  const healHero = (): void => { store.execute((state) => ({ ...state, company: state.company.map((member) => ({ ...member, healthFraction: 1, healthAsOfMs: nowMs, downedUntilMs: null })) })); };
+  assert.equal(rejectionKey(store, startDungeonRunCommand('rat-cellar', [hero.id], nowMs)), null);
+  assert.equal(rejectionKey(store, completeRunCommand(store.getState().dungeonRuns[0]!.runNumber, nowMs)), null);
+  const firstReport = store.getState().reports[0]!;
+  healHero();
+  assert.equal(rejectionKey(store, repeatDungeonRunCommand(firstReport.runNumber, nowMs)), null, 'repeat starts the dungeon again');
+  assert.equal(store.getState().reports.length, 0, 'repeat marks the report as read');
+  assert.deepEqual(store.getState().dungeonRuns.map((run) => [run.dungeonId, ...run.heroIds]), [['rat-cellar', hero.id]], 'the same hero goes into the same dungeon');
+  assert.equal(rejectionKey(store, repeatDungeonRunCommand(firstReport.runNumber, nowMs)), 'reject.reportMissing', 'a closed report cannot repeat');
+
+  assert.equal(rejectionKey(store, completeRunCommand(store.getState().dungeonRuns[0]!.runNumber, nowMs)), null);
+  const secondReport = store.getState().reports[0]!;
+  store.execute((state) => ({ ...state, pendingLoot: { ...state.pendingLoot, 'rat-cellar': [{ materialId: 'rawhide', quantity: 1 }] } }));
+  healHero();
+  assert.equal(rejectionKey(store, repeatDungeonRunCommand(secondReport.runNumber, nowMs)), 'reject.dungeonHasPendingLoot', 'loot that waits blocks the repeat');
+  assert.equal(store.getState().reports.length, 1, 'a rejected repeat keeps the report');
+}
+
 // The Bank sells backpack rows and merchant sale slots.
 {
   const store = createStore(7);
@@ -662,31 +805,52 @@ for (let level = 1; level <= 7; level++) {
   assert.equal(rejectionKey(store, buyStorageUpgradeCommand('backpack')), 'reject.upgradeSoldOut', 'the upgrades end');
 }
 
-// The Mill makes one basic material every 10 minutes by the clock. A full Mill stops. A collect starts it again.
+// The Mill holds 1 material at first. A full Mill stops its clock. A collect starts it again.
+// The Bank sells more storage and a shorter production time.
 {
   const store = createStore(11);
-  const intervalMs = MILL_PRODUCTION_INTERVAL_SECONDS * 1000;
+  const baseIntervalMs = millSettingsOf(store.getState()).productionIntervalSeconds * 1000;
   const startMs = clock.nowMs;
+  const storedCount = () => store.getState().mill.storedMaterials.reduce((total, stack) => total + stack.quantity, 0);
+  assert.equal(describeMill(store.getState()).capacity, MILL_BASE_STORAGE_CAPACITY, 'a new Mill holds the base capacity');
   assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs)), null, 'the first clock check starts the Mill');
-  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + intervalMs - 1)), 'reject.nothingDue', 'nothing is made before the interval ends');
-  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 2 * intervalMs)), null, 'the Mill makes a material for each interval, also while the page was closed');
-  assert.equal(store.getState().mill.storedMaterials.reduce((total, stack) => total + stack.quantity, 0), 2);
+  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + baseIntervalMs - 1)), 'reject.nothingDue', 'nothing is made before the interval ends');
+  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 5 * baseIntervalMs)), null, 'the Mill makes a material, also while the page was closed');
+  assert.equal(storedCount(), MILL_BASE_STORAGE_CAPACITY, 'the Mill stops at its capacity');
   assert.ok(store.getState().mill.storedMaterials.every((stack) => MILL_PRODUCED_MATERIAL_IDS.includes(stack.materialId)), 'the Mill makes only basic materials');
-  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 100 * intervalMs)), null);
-  assert.equal(store.getState().mill.storedMaterials.reduce((total, stack) => total + stack.quantity, 0), MILL_STORAGE_CAPACITY, 'the Mill stops at its capacity');
   assert.equal(store.getState().mill.productionClockStartedAtMs, null, 'a full Mill stops its clock');
-  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 200 * intervalMs)), 'reject.nothingDue', 'a full Mill makes nothing');
+  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 200 * baseIntervalMs)), 'reject.nothingDue', 'a full Mill makes nothing');
   store.execute((state) => ({ ...state, backpack: addMaterials([], [{ materialId: 'quartz', quantity: 100 }], backpackRowCount(0)).entries }));
   assert.equal(rejectionKey(store, collectMillMaterialsCommand()), 'reject.backpackFullForLoot', 'collecting needs room');
   store.execute((state) => ({ ...state, backpack: [] }));
   assert.equal(rejectionKey(store, collectMillMaterialsCommand()), null);
-  assert.equal(store.getState().mill.storedMaterials.length, 0, 'the Mill is empty after a collect');
-  assert.equal(store.getState().backpack.length, MILL_STORAGE_CAPACITY, 'the materials are in the backpack');
+  assert.equal(storedCount(), 0, 'the Mill is empty after a collect');
+  assert.equal(store.getState().backpack.length, MILL_BASE_STORAGE_CAPACITY, 'the material is in the backpack');
   assert.equal(rejectionKey(store, collectMillMaterialsCommand()), 'reject.nothingToCollect');
-  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 300 * intervalMs)), null, 'the Mill starts again after a collect');
-  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 301 * intervalMs)), null);
+  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 300 * baseIntervalMs)), null, 'the Mill starts again after a collect');
+
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('millCapacity')), 'reject.notEnoughMoney', 'a Mill upgrade costs money');
+  store.execute((state) => ({ ...state, copper: 10_000_000 }));
+  const copperBeforeUpgrade = store.getState().copper;
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('millCapacity')), null);
+  assert.equal(copperBeforeUpgrade - store.getState().copper, MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER[0], 'the upgrade costs the table price');
+  assert.equal(describeMill(store.getState()).capacity, MILL_BASE_STORAGE_CAPACITY + 1, 'a capacity upgrade adds one place');
+  assert.equal(rejectionKey(store, produceMillMaterialsCommand(startMs + 300 * baseIntervalMs + 2 * baseIntervalMs)), null, 'a bigger Mill makes material again');
+  assert.equal(storedCount(), MILL_BASE_STORAGE_CAPACITY + 1, 'the Mill fills its new place');
+  for (let bought = 0; bought < 100; bought++) store.execute(buyStorageUpgradeCommand('millCapacity'));
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('millCapacity')), 'reject.upgradeSoldOut', 'the Mill storage upgrades end');
+  assert.equal(describeMill(store.getState()).capacity, MILL_BASE_STORAGE_CAPACITY + MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER.length);
+
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('millSpeed')), null);
+  assert.equal(millSettingsOf(store.getState()).productionIntervalSeconds, MILL_PRODUCTION_INTERVAL_SECONDS_BY_SPEED_UPGRADE[1], 'a speed upgrade shortens the interval');
+  for (let bought = 0; bought < 100; bought++) store.execute(buyStorageUpgradeCommand('millSpeed'));
+  assert.equal(rejectionKey(store, buyStorageUpgradeCommand('millSpeed')), 'reject.upgradeSoldOut', 'the Mill speed upgrades end');
+  assert.equal(millSettingsOf(store.getState()).productionIntervalSeconds, MILL_PRODUCTION_INTERVAL_SECONDS_BY_SPEED_UPGRADE.at(-1), 'the last speed upgrade gives the shortest interval');
+
   const migratedMill = parseGameState(JSON.stringify({ saveVersion: 17, company: [], backpack: [] }));
   assert.deepEqual(migratedMill?.mill.storedMaterials, [], 'a version 17 save gets an empty Mill');
+  assert.equal(migratedMill?.millCapacityUpgrades, 0, 'a saved game owns no Mill upgrade');
+  assert.equal(migratedMill?.millSpeedUpgrades, 0);
 }
 
 // A version 8 save has stacked materials. The migration splits them and keeps every unit.

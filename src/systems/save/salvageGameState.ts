@@ -1,5 +1,6 @@
 import { BANK_UNLOCK_COSTS_COPPER } from '../../content/balance/economy';
 import { CRAFTING_MAXIMUM_LEVEL } from '../../content/balance/crafting';
+import { MILL_SPEED_UPGRADE_COSTS_COPPER, MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER } from '../../content/balance/mill';
 import { PROFESSION_IDS } from '../../content/baseItems';
 import { DUNGEONS } from '../../content/dungeons';
 import { TOWNS } from '../../content/towns';
@@ -87,6 +88,8 @@ export function salvageGameState(savedValue: unknown, freshState: GameState): Sa
     backpack: salvageBackpack(saved.backpack, backpackExpansions, tally),
     backpackExpansions,
     merchantExtraSlots: readWholeNumber(saved.merchantExtraSlots, 0, MAXIMUM_NUMBER, 0),
+    millCapacityUpgrades: readWholeNumber(saved.millCapacityUpgrades, 0, MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER.length, 0),
+    millSpeedUpgrades: readWholeNumber(saved.millSpeedUpgrades, 0, MILL_SPEED_UPGRADE_COSTS_COPPER.length, 0),
     bankUnlockIds: [...new Set(readTexts(saved.bankUnlockIds, (id) => id in BANK_UNLOCK_COSTS_COPPER, tally))] as BankUnlockId[],
     itemsCrafted: readWholeNumber(saved.itemsCrafted, 0, MAXIMUM_NUMBER, 0),
     runsStarted: readWholeNumber(saved.runsStarted, 0, MAXIMUM_NUMBER, 0),

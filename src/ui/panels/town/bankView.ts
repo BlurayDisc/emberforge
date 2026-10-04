@@ -4,6 +4,7 @@ import { buyBankUnlockCommand, buyStorageUpgradeCommand, describeStorage, hasBan
 import type { BankUnlockId } from '../../../model/bankUnlock';
 import { actionButton, element } from '../../dom';
 import { describeRejection, t } from '../../i18n';
+import { formatDuration } from '../../liveUpdate';
 import { createItemIcon } from '../../iconArt';
 import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
@@ -73,6 +74,24 @@ export const renderBankPanel: PanelRenderer = (context) => {
       t('bank.merchant.usage', { slots: storage.merchantSaleSlots }),
       storage.merchantSlotCostCopper,
       t('bank.merchant.upgrade'),
+    ),
+    renderUpgradeRow(
+      context,
+      'millCapacity',
+      createItemIcon('quiver', 'linen', 'cloth', 3),
+      t('bank.millCapacity.title'),
+      t('bank.millCapacity.usage', { capacity: storage.millStorageCapacity }),
+      storage.millCapacityCostCopper,
+      t('bank.millCapacity.upgrade'),
+    ),
+    renderUpgradeRow(
+      context,
+      'millSpeed',
+      createItemIcon('belt', 'linen', 'cloth', 3),
+      t('bank.millSpeed.title'),
+      t('bank.millSpeed.usage', { time: formatDuration(storage.millProductionIntervalSeconds) }),
+      storage.millSpeedCostCopper,
+      storage.millNextProductionIntervalSeconds === null ? t('bank.soldOut') : t('bank.millSpeed.upgrade', { time: formatDuration(storage.millNextProductionIntervalSeconds) }),
     ),
     ...(Object.keys(BANK_UNLOCK_COSTS_COPPER) as BankUnlockId[]).map((unlockId) => renderUnlockRow(context, unlockId)),
   );

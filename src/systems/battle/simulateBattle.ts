@@ -9,6 +9,7 @@ import type { Random } from '../../kernel/random';
 import type { BattleEvent, BattleReport, BattleUnit } from '../../model/battle';
 import { combatantOf, damageFactorBetween, livingUnitsOf, statusStrength, type Combatant } from './combatant';
 import { rollDamage } from './damage';
+import { applyLifeSteal } from './lifeSteal';
 import { gainResourceFromHit, regenerateResource } from './resourcePool';
 import { tryCastSpell } from './spellCasting';
 
@@ -58,7 +59,7 @@ function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeS
   const damage = rollDamage(actor, target, random, { statusFactor: damageFactorBetween(actingCombatant, combatantOf(combatants, target), timeSeconds) });
   target.hp = Math.max(0, target.hp - damage.amount);
   gainResourceFromHit(actor, target);
-  return [{
+  const attackEvent: BattleEvent = {
     timeSeconds,
     kind: 'attack',
     actorId: actor.id,
@@ -68,7 +69,8 @@ function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeS
     targetHpAfter: target.hp,
     actorResourceAfter: actor.resource,
     targetResourceAfter: target.resource,
-  }];
+  };
+  return [attackEvent, ...applyLifeSteal(actor, damage.amount, timeSeconds)];
 }
 
 // The whole fight is simulated at once from a seed, then replayed by the screen.

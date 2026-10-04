@@ -39,14 +39,32 @@ export function craftFeeCopper(requiredCraftLevel: number): number {
   return Math.round(CRAFT_FEE_BASE_COPPER + CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER * requiredCraftLevel);
 }
 
+function setFloorOffset(setMaterial: MaterialDefinition, slot: BaseItemDefinition['slot']): number {
+  return (slot === 'armour' ? setMaterial.setBodyArmourCraftLevelOffset : setMaterial.setCraftLevelOffset) ?? 0;
+}
+
+// A set recipe is 1 crafter level above the basic recipe, and the dungeon of the set material sets a floor.
+// The pieces of one set open in the order of their basic recipes, each at least 1 level after the piece before it, so no two pieces share a level.
+function setPieceCraftLevelOffset(base: BaseItemDefinition, setMaterial: MaterialDefinition): number {
+  const setPieces = SET_RECIPE_SLOTS.flatMap((slot) => BASE_ITEMS.filter((piece) => piece.slot === slot && piece.armourWeight === base.armourWeight)).sort(
+    (first, second) => first.craftLevelOffset - second.craftLevelOffset,
+  );
+  let previousPieceOffset = 0;
+  for (const piece of setPieces) {
+    const ownOffset = Math.max(piece.craftLevelOffset + SET_RECIPE_LEVEL_STEP, setFloorOffset(setMaterial, piece.slot));
+    const pieceOffset = Math.max(ownOffset, previousPieceOffset + 1);
+    if (piece.id === base.id) return pieceOffset;
+    previousPieceOffset = pieceOffset;
+  }
+  return base.craftLevelOffset;
+}
+
 function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: MaterialDefinition | null): Recipe | null {
   const mainMaterial = materialOfTier(tier, base.mainCategory);
   if (!mainMaterial) return null;
 
   const cells = base.width * base.height;
-  // A set recipe is 1 crafter level above the basic recipe. The dungeon of the set material sets a floor.
-  const setLevelFloor = base.slot === 'armour' ? setMaterial?.setBodyArmourCraftLevelOffset : setMaterial?.setCraftLevelOffset;
-  const craftLevelOffset = setMaterial ? Math.max(base.craftLevelOffset + SET_RECIPE_LEVEL_STEP, setLevelFloor ?? 0) : base.craftLevelOffset;
+  const craftLevelOffset = setMaterial ? setPieceCraftLevelOffset(base, setMaterial) : base.craftLevelOffset;
   const requiredCraftLevel = (tier - 1) * LEVELS_PER_BRACKET + craftLevelOffset;
   const mainQuantity = Math.max(1, Math.ceil(cells / MAIN_INGREDIENT_CELLS_PER_UNIT));
   const setMaterialQuantity = cells >= LARGE_ITEM_CELL_THRESHOLD ? SET_MATERIAL_LARGE_ITEM : SET_MATERIAL_SMALL_ITEM;

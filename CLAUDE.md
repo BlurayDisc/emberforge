@@ -15,8 +15,9 @@ Pixel-art, turn-based crafting RPG. Stack: three.js + TypeScript + Vite. Static 
 | `npm run check` | Type check + architecture boundary check + data and translation validation + headless smoke play. Run it before you finish any task. |
 | `npm run build` | `check` + production build into `dist/` |
 | `npm run balance` | Balance simulator (`tools/balance-sim/run.ts`). Prints win rate, duration and HP lost per dungeon and party. |
-| `npm run scenarios` | Four balance scenarios from the preset files in `tools/balance-sim/presets/`: `economy`, `experience`, `mob-kill-time`, `boss-fight`. The hero wears the best gear it can equip at its level. Run one with `npm run scenarios -- boss-fight`. Change a preset file, not the code. |
+| `npm run scenarios` | Five balance scenarios from the preset files in `tools/balance-sim/presets/`: `economy`, `experience`, `mob-kill-time`, `boss-fight`, `resource-use`. The hero wears the best gear it can equip at its level. Run one with `npm run scenarios -- boss-fight`. Change a preset file, not the code. |
 | `npm run smoke` | Headless smoke play (`tools/smoke-play.ts`): hire, craft, equip, sell, and several dungeon runs at once, and a same-seed check. Fails on a broken rule. |
+| `npm run gallery` | Spell gallery in the browser (`spell-gallery.html`, `tools/spell-gallery/main.ts`). It plays every spell that has a visual in `data/spell-visuals.json` on the real battle stage. See Spell visuals. |
 | `npm run validate` | Data validator (`tools/validate-data.ts`). `check` and `build` run it too. |
 
 ## Architecture
@@ -98,6 +99,12 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - The language choice is saved apart from the game save (`emberforge.settings`), so a new game keeps it. The player changes it in the Settings screen. The UI redraws at once.
 - Add a key to **both** files. `npm run validate` fails when a key is missing, empty or unknown, when a key used in code does not exist, or when a content name in `en.json` differs from the data file.
 - To add a language: add `data/i18n/<id>.json`, add it to `data/i18n/languages.json` and to `LanguageId` in `content/translations.ts`.
+
+## Spell visuals
+
+- Spell looks are in `data/spell-visuals.json` (theme, cast, projectile, impact, buff, debuff, icon). The art is drawn in code in `src/render/spellEffects/`. The art ids are listed in `content/spellVisuals.ts`.
+- The spell gallery (`npm run gallery`) reads `SPELL_VISUALS`, so a new spell with a visual shows in it with no extra step. A new art id, a new theme or a new kind of effect (for example a new status) may need a change in `tools/spell-gallery/main.ts` too. The gallery is a dev tool. `vite build` does not include it.
+- When you add or change a spell animation: start the gallery (`npm run gallery`, or tell the user to run it), open the new spell in the browser, look at it with a screenshot, and show the user the page. Keep the gallery working for the new effect kind. Do not leave the dev server running when you finish.
 
 ## Pixel-art rules
 

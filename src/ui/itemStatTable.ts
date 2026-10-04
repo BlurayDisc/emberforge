@@ -1,7 +1,7 @@
 import { BASE_ITEMS } from '../content/baseItems';
 import { MATERIALS } from '../content/materials';
 import { requireById } from '../content/lookup';
-import type { GearType, Item, StatBonuses } from '../model/item';
+import { COMBAT_BONUS_STATS, type GearType, type Item, type StatBonuses } from '../model/item';
 import { element } from './dom';
 import { materialName } from './displayNames';
 import { t } from './i18n';
@@ -12,6 +12,14 @@ const WEAPON_GEAR_TYPES: readonly GearType[] = ['sword', 'axe', 'greataxe', 'mac
 
 export function statName(stat: string): string {
   return t(`statname.${stat}`);
+}
+
+function isPercentStat(stat: string): boolean {
+  return (COMBAT_BONUS_STATS as readonly string[]).includes(stat);
+}
+
+export function formatStatValue(stat: string, value: number): string {
+  return isPercentStat(stat) ? `${value}%` : String(value);
 }
 
 function tableStatsFor(gearType: GearType): readonly string[] {
@@ -53,7 +61,7 @@ export function createItemStatTable(item: Item): HTMLElement {
   const baseValues: Record<string, string> = {};
   for (const [stat, value] of Object.entries(item.baseStats as StatBonuses)) baseValues[stat] = String(value);
   const affixLines = item.affixes.map((affix) =>
-    element('div', `affix-line affix-${affix.kind}`, `${t(`affix.${affix.affixId}.short`)}: +${affix.value} ${statName(affix.stat)}`),
+    element('div', `affix-line affix-${affix.kind}`, `${t(`affix.${affix.affixId}.short`)}: +${formatStatValue(affix.stat, affix.value)} ${statName(affix.stat)}`),
   );
   return createTableWithExtras(item.gearType, (stat) => baseValues[stat], [...extraBaseStatLines(baseValues, item.gearType), ...createSetBonusLine(item.materialId), ...affixLines]);
 }

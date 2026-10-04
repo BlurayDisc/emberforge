@@ -4,7 +4,7 @@ import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import type { GameState } from '../../model/gameState';
 import type { ClassId } from '../../model/hero';
-import type { Item } from '../../model/item';
+import type { Item, ItemSlot } from '../../model/item';
 import { craftSeconds, craftingExperienceToNextLevel, listRecipes, upgradeStepChance } from '../../systems/crafting';
 import { classIdsThatCanUse, findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
@@ -24,6 +24,7 @@ export interface WorkshopRecipeView {
   resultMaterialId: string;
   setMaterialId: string | null;
   professionId: string;
+  slot: ItemSlot;
   ingredients: IngredientView[];
   hasMaterials: boolean;
   requiredCraftLevel: number;
@@ -75,6 +76,7 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         resultMaterialId: recipe.setMaterialId ?? recipe.ingredients[0]?.materialId ?? '',
         setMaterialId: recipe.setMaterialId,
         professionId: recipe.profession,
+        slot: base.slot,
         ingredients,
         hasMaterials: ingredients.every((ingredient) => ingredient.owned >= ingredient.needed),
         requiredCraftLevel: recipe.requiredCraftLevel,

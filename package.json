@@ -1,7 +1,7 @@
 {
   "name": "emberforge",
   "private": true,
-  "version": "0.3.2",
+  "version": "4.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "scenarios": "tsx tools/balance-sim/scenarios.ts",
     "check": "tsc --noEmit -p . && tsc --noEmit -p tools && tsx tools/check-boundaries.ts && tsx tools/validate-data.ts && tsx tools/smoke-play.ts",
     "validate": "tsx tools/validate-data.ts",
-    "smoke": "tsx tools/smoke-play.ts"
+    "smoke": "tsx tools/smoke-play.ts",
+    "gallery": "vite --open /spell-gallery.html"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",

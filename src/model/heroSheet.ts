@@ -10,4 +10,8 @@ export interface HeroSheet {
   strength: number;
   skill: number;
   magic: number;
+  // Percent points.
+  criticalChance: number;
+  criticalDamage: number;
+  lifeSteal: number;
 }

@@ -15,6 +15,8 @@ export function createNewGameState(seed: number): GameState {
     backpack: [],
     backpackExpansions: 0,
     merchantExtraSlots: 0,
+    millCapacityUpgrades: 0,
+    millSpeedUpgrades: 0,
     bankUnlockIds: [],
     itemsCrafted: 0,
     runsStarted: 0,

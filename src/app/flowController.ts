@@ -7,7 +7,7 @@ import { openRunReport } from '../ui/runReportModal';
 
 // A run ends while the player watches it: the report opens at once, so the player reads the stats before the next action.
 // A run in the background keeps its report. The dungeon row shows "Results ready" until the player opens it.
-function startReportFlow(store: GameStore): void {
+function startReportFlow(store: GameStore, notify: (message: string) => void): void {
   const announced = new Set<number>(store.getState().reports.map((report) => report.runNumber));
   let watchedRunNumber: number | null = null;
 
@@ -25,7 +25,7 @@ function startReportFlow(store: GameStore): void {
       if (report.result.heroes.some((hero) => hero.reachedLevel !== null)) playSound('level-up', 0.4);
       if (report.runNumber === watchedRunNumber) {
         watchedRunNumber = null;
-        openRunReport(store, report);
+        openRunReport(store, report, notify);
       }
     }
   });
@@ -35,7 +35,7 @@ export function startFlowController(store: GameStore, panelHost: PanelHost): voi
   let previousState = store.getState();
   const startStory = (): void => openPrologue(() => panelHost.open('tavern'));
   if (previousState.company.length === 0) startStory();
-  startReportFlow(store);
+  startReportFlow(store, panelHost.notify);
 
   store.subscribe(() => {
     const currentState = store.getState();

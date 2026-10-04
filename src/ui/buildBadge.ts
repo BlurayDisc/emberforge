@@ -2,8 +2,7 @@ import { loadSeenChangelogVersion, saveSeenChangelogVersion } from '../game';
 import { APP_VERSION, BUILD_LABEL } from '../kernel/buildInfo';
 import { actionButton, element } from './dom';
 import { onLanguageChange, t } from './i18n';
-
-const CHANGELOG_URL = 'https://bluraydisc.github.io/emberforge-wiki/changelog/';
+import { CHANGELOG_URL } from './wikiLinks';
 
 // The version label sits in the corner. A new version also shows a notice button that opens the wiki changelog.
 // One click is enough: the seen version is saved apart from the game save, so the notice stays silent until the next version.

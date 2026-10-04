@@ -1,0 +1,11 @@
+{
+  "description": "How hard a hero works its resource pool (mana, stamina, hatred, rage) in a fight against one normal monster and against the boss. Low numbers mean the pool is never a limit.",
+  "firstLevel": 1,
+  "lastLevel": 10,
+  "classIds": ["warrior", "archer", "mage", "priest", "thief", "barbarian", "fighter"],
+  "battlesPerCase": 200,
+  "seed": 2024,
+  "bossDungeonId": "goblin-chief-lair",
+  "bossHeroLevels": [9, 10],
+  "targetLowestResourcePercentAtLevel": { "1": [60, 80], "10": [10, 30] }
+}

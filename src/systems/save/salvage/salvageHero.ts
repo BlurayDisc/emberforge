@@ -8,7 +8,7 @@ import type { EquipmentSlot, Item } from '../../../model/item';
 import { readNumber, readRecord, readText, readTexts, readWholeNumber, type SalvageTally } from './lenientReaders';
 import { salvageItem } from './salvageItem';
 
-const EQUIPMENT_SLOTS: readonly EquipmentSlot[] = ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'];
+const EQUIPMENT_SLOTS: readonly EquipmentSlot[] = ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'];
 const STATISTIC_NAMES: readonly (keyof HeroStatistics)[] = ['monstersDefeated', 'damageDealt', 'damageTaken', 'healingDone', 'secondsFought', 'battlesWon', 'battlesLost'];
 
 function fitsSlot(item: Item, slot: EquipmentSlot): boolean {

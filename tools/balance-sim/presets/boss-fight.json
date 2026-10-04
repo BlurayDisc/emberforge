@@ -1,9 +1,33 @@
 {
-  "description": "One hero against the boss of the first town. The hero wears the best gear it can equip at its level and uses its best spells.",
+  "description": "One strong hero and one weaker partner against the boss of the first town. Both heroes wear the best gear they can equip at their level and use their best spells.",
   "dungeonId": "goblin-chief-lair",
-  "heroLevels": [8, 9, 10],
-  "classIds": ["warrior", "archer", "mage", "priest", "thief", "barbarian", "fighter"],
-  "battlesPerCase": 300,
+  "heroLevels": [
+    9,
+    10
+  ],
+  "partnerLevels": [
+    4,
+    5
+  ],
+  "classIds": [
+    "warrior",
+    "archer",
+    "mage",
+    "priest",
+    "thief",
+    "barbarian",
+    "fighter"
+  ],
+  "partnerClassIds": [
+    "warrior",
+    "archer",
+    "mage",
+    "priest",
+    "thief",
+    "barbarian",
+    "fighter"
+  ],
+  "battlesPerCase": 150,
   "seed": 2024,
   "targetSeconds": 125,
   "targetWinRatePercent": 90

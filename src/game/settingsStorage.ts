@@ -1,5 +1,6 @@
 import { DEFAULT_LANGUAGE, LANGUAGES, type LanguageId } from '../content/translations';
 import type { AudioPreferences } from '../model/audioPreferences';
+import type { RecipeFilterPreferences } from '../model/recipeFilterPreferences';
 
 const SETTINGS_KEY = 'emberforge.settings';
 
@@ -8,6 +9,7 @@ interface StoredSettings {
   audio?: Partial<AudioPreferences>;
   staysOnDungeonScreen?: boolean;
   seenChangelogVersion?: string;
+  recipeFilter?: Partial<RecipeFilterPreferences>;
 }
 
 function readSettings(): StoredSettings {
@@ -78,6 +80,25 @@ export function loadSeenChangelogVersion(): string | null {
 export function saveSeenChangelogVersion(seenChangelogVersion: string): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), seenChangelogVersion }));
+  } catch {
+    return;
+  }
+}
+
+const DEFAULT_RECIPE_FILTER: RecipeFilterPreferences = { classId: 'all', slot: 'all', sortDirection: 'up' };
+
+export function loadRecipeFilterPreferences(): RecipeFilterPreferences {
+  const saved = readSettings().recipeFilter ?? {};
+  return {
+    classId: typeof saved.classId === 'string' ? saved.classId : DEFAULT_RECIPE_FILTER.classId,
+    slot: typeof saved.slot === 'string' ? saved.slot : DEFAULT_RECIPE_FILTER.slot,
+    sortDirection: saved.sortDirection === 'down' ? 'down' : DEFAULT_RECIPE_FILTER.sortDirection,
+  };
+}
+
+export function saveRecipeFilterPreferences(recipeFilter: RecipeFilterPreferences): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), recipeFilter }));
   } catch {
     return;
   }

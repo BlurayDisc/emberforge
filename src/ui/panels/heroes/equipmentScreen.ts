@@ -15,7 +15,7 @@ import { createFullBodyPortrait } from '../../fullBody/fullBodyPortraitArt';
 import type { PanelContext } from '../panelContext';
 import { renderEquipComparison } from './equipComparison';
 
-const SLOTS: readonly EquipmentSlot[] = ['helm', 'amulet', 'gloves', 'belt', 'mainHand', 'offHand', 'ringOne', 'ringTwo', 'boots', 'armour'];
+const SLOTS: readonly EquipmentSlot[] = ['helm', 'amulet', 'gloves', 'belt', 'mainHand', 'offHand', 'ringOne', 'ringTwo', 'legs', 'armour', 'boots'];
 
 function iconOf(item: Item): HTMLImageElement {
   return createItemIcon(item.baseId, item.materialId, requireById(BASE_ITEMS, item.baseId).mainCategory, 3);

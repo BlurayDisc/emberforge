@@ -5,6 +5,10 @@ import { FIGURE_DRAWERS } from '../src/render/castleFigureArt';
 import { CREATURE_DRAWERS } from '../src/render/creatureArt';
 import { CASTLE_SCREEN_COUNT, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../src/kernel/stageSize';
 import { ITEM_SHAPE_ROWS } from '../src/ui/itemShapes';
+import { SPELL_ICON_MOTIFS } from '../src/content/spellVisuals';
+import { SPELL_ICON_GLYPHS } from '../src/ui/spellIconGlyphs';
+import { BUFF_ART_IDS, CAST_ART_IDS, DEBUFF_ART_IDS, IMPACT_ART_IDS, PROJECTILE_ART_IDS } from '../src/content/spellVisuals';
+import { SPELL_THEMES } from '../src/render/spellEffects/spellThemes';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDirectory = join(projectRoot, 'data');
@@ -46,6 +50,7 @@ interface Dungeon extends Identified {
   unlockAfter: string | null;
   minimumHeroLevel: number;
   recommendedMaxLevel: number;
+  minimumPartySize: number;
   maxPartySize: number;
   townId: string;
   level: number;
@@ -59,7 +64,9 @@ interface Town extends Identified {
   firstLevel: number;
   lastLevel: number;
 }
-const RECIPE_OFFSETS = [1, 3, 5, 7, 9];
+const RECIPE_OFFSETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const ARMOUR_PROFESSIONS = ['armoursmithing', 'tailoring'];
+const ODD_RECIPE_OFFSETS = RECIPE_OFFSETS.filter((offset) => offset % 2 === 1);
 interface BaseItem extends Identified {
   name: string;
   slot: string;
@@ -98,6 +105,7 @@ interface Affix extends Identified {
 }
 
 const STAT_NAMES = ['hp', 'strength', 'magic', 'skill', 'speed', 'defence', 'resistance'];
+const AFFIX_STAT_NAMES = [...STAT_NAMES, 'lifeSteal', 'criticalChance', 'criticalDamage'];
 const MONSTER_RANKS = ['normal', 'rare', 'boss'];
 
 function load<Content>(file: string): Content {
@@ -182,8 +190,18 @@ for (const material of materials) {
   if (material.tier < 1) report(`materials.json: '${material.id}' has an invalid tier`);
   if (material.sellValueCopper <= 0) report(`materials.json: '${material.id}' must have a positive sell value`);
 }
-const millBalance = load<{ productionIntervalSeconds: number; storageCapacity: number; producedMaterialIds: string[] }>('balance/mill.json');
-if (millBalance.productionIntervalSeconds <= 0 || millBalance.storageCapacity <= 0) report('balance/mill.json: the interval and the capacity must be positive');
+const millBalance = load<{
+  baseStorageCapacity: number;
+  storageCapacityUpgradeCostsCopper: number[];
+  productionIntervalSecondsBySpeedUpgrade: number[];
+  speedUpgradeCostsCopper: number[];
+  producedMaterialIds: string[];
+}>('balance/mill.json');
+if (millBalance.baseStorageCapacity < 1) report('balance/mill.json: the Mill must hold at least 1 material');
+if (millBalance.storageCapacityUpgradeCostsCopper.some((cost) => cost <= 0) || millBalance.speedUpgradeCostsCopper.some((cost) => cost <= 0)) report('balance/mill.json: every upgrade price must be positive');
+const millIntervals = millBalance.productionIntervalSecondsBySpeedUpgrade;
+if (millIntervals.length !== millBalance.speedUpgradeCostsCopper.length + 1) report('balance/mill.json: there must be one more production interval than speed upgrade prices');
+if (millIntervals.some((seconds, index) => seconds <= 0 || (index > 0 && seconds >= (millIntervals[index - 1] ?? 0)))) report('balance/mill.json: the production intervals must be positive and shrink with each speed upgrade');
 if (millBalance.producedMaterialIds.length === 0) report('balance/mill.json: the Mill needs at least one material');
 for (const materialId of millBalance.producedMaterialIds) {
   const material = materialsById.get(materialId);
@@ -264,7 +282,9 @@ for (const dungeon of dungeons) {
   if (dungeon.minimumHeroLevel > dungeon.recommendedMaxLevel) report(`dungeons.json: '${dungeon.id}' has a bad level range`);
   if (dungeon.minimumHeroLevel > dungeon.level) report(`dungeons.json: '${dungeon.id}' needs a hero level above its monster level`);
   if (dungeon.maxPartySize < 1) report(`dungeons.json: '${dungeon.id}' needs maxPartySize of at least 1`);
-  if (dungeon.maxPartySize !== 1) report(`dungeons.json: '${dungeon.id}' must have maxPartySize 1 (one hero for each run)`);
+  if (dungeon.minimumPartySize < 1 || dungeon.minimumPartySize > dungeon.maxPartySize) report(`dungeons.json: '${dungeon.id}' needs a minimumPartySize from 1 up to its maxPartySize`);
+  if (dungeon.maxPartySize > 2) report(`dungeons.json: '${dungeon.id}' must have maxPartySize 1 or 2`);
+  if ((dungeon.bossMonsterId !== null) !== (dungeon.minimumPartySize === 2)) report(`dungeons.json: '${dungeon.id}' needs minimumPartySize 2 if and only if it has a boss`);
   if (dungeon.rareMonsterId && monstersById.get(dungeon.rareMonsterId)?.rank !== 'rare') report(`dungeons.json: '${dungeon.id}' rareMonsterId must be a rare monster`);
   if (dungeon.bossMonsterId && monstersById.get(dungeon.bossMonsterId)?.rank !== 'boss') report(`dungeons.json: '${dungeon.id}' bossMonsterId must be a boss monster`);
 }
@@ -284,6 +304,7 @@ for (const base of baseItems) {
   else if (shapeRows.length !== 12 || shapeRows.some((row) => row.length !== 12)) report(`ui/itemShapes.ts: the picture of '${base.id}' must be 12 rows of 12 letters`);
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
   if (!RECIPE_OFFSETS.includes(base.craftLevelOffset)) report(`base-items.json: '${base.id}' needs a craftLevelOffset of ${RECIPE_OFFSETS.join(', ')}`);
+  if (!ARMOUR_PROFESSIONS.includes(base.profession) && !ODD_RECIPE_OFFSETS.includes(base.craftLevelOffset)) report(`base-items.json: '${base.id}' needs an odd craftLevelOffset (${ODD_RECIPE_OFFSETS.join(', ')}), only armour bases may use even levels`);
   if (base.craftLevelOffset < 1 || base.craftLevelOffset > itemBalance.levelsPerBracket) report(`base-items.json: '${base.id}' needs a craftLevelOffset from 1 to ${itemBalance.levelsPerBracket}`);
   if (base.width < 1 || base.height < 1) report(`base-items.json: '${base.id}' has an invalid size`);
   for (const tier of tiersWithMaterials) {
@@ -295,7 +316,7 @@ for (const base of baseItems) {
 }
 
 // A class must get a stronger weapon every 2 crafter levels, so a bracket never leaves a hero with one weapon until the boss.
-// Every recipe opens on an odd crafter level (1, 3, 5, 7 or 9), and each new weapon of a class beats every weapon before it.
+// Weapons and jewellery open on an odd crafter level (1, 3, 5, 7 or 9), and each new weapon of a class beats every weapon before it.
 const MAXIMUM_WEAPON_OFFSET_GAP = 2;
 const MINIMUM_LAST_WEAPON_OFFSET = 7;
 // Base materials (ore, wood, hide, cloth) drop only in the first dungeons of a bracket. Later dungeons drop beast parts, gems and essence.
@@ -362,20 +383,32 @@ for (const base of baseItems) {
   }
 }
 
-// Armour sets come one piece at a time. A new piece unlocks every 2 crafter levels, and the body armour is the last piece of its set.
+// Armour sets come one piece at a time. The set pieces open on the odd crafter levels, one every 2 levels, and the body armour is the last piece.
+// Other armour bases (shield, belt, tome) open on even levels, so no two armour bases of a profession share a crafter level.
 const ARMOUR_SET_LEVEL_STEP = 2;
-const ARMOUR_SET_SLOTS = ['helm', 'gloves', 'boots', 'belt', 'offHand', 'armour'];
-for (const professionId of ['armoursmithing', 'tailoring']) {
-  const setPieces = baseItems.filter((base) => base.profession === professionId && ARMOUR_SET_SLOTS.includes(base.slot));
-  const lastOtherOffset = Math.max(...setPieces.filter((base) => base.slot !== 'armour').map((base) => base.craftLevelOffset));
+const ARMOUR_SET_PIECE_SLOTS = ['helm', 'gloves', 'boots', 'legs', 'armour'];
+const ARMOUR_EXTRA_SLOTS = ['belt', 'offHand'];
+for (const professionId of ARMOUR_PROFESSIONS) {
+  const armourBases = baseItems.filter((base) => base.profession === professionId && [...ARMOUR_SET_PIECE_SLOTS, ...ARMOUR_EXTRA_SLOTS].includes(base.slot));
+  const setPieces = armourBases.filter((base) => ARMOUR_SET_PIECE_SLOTS.includes(base.slot));
+  const lastOtherOffset = Math.max(...armourBases.filter((base) => base.slot !== 'armour').map((base) => base.craftLevelOffset));
   for (const bodyArmour of setPieces.filter((base) => base.slot === 'armour')) {
     if (bodyArmour.craftLevelOffset <= lastOtherOffset) report(`base-items.json: body armour '${bodyArmour.id}' (offset ${bodyArmour.craftLevelOffset}) must come after every other piece of ${professionId} (last offset ${lastOtherOffset})`);
   }
   const offsets = [...new Set(setPieces.map((base) => base.craftLevelOffset))].sort((first, second) => first - second);
   offsets.forEach((offset, index) => {
     const expectedOffset = 1 + ARMOUR_SET_LEVEL_STEP * index;
-    if (offset !== expectedOffset) report(`base-items.json: ${professionId} pieces must unlock every ${ARMOUR_SET_LEVEL_STEP} crafter levels from 1, but found offset ${offset} where ${expectedOffset} is expected`);
+    if (offset !== expectedOffset) report(`base-items.json: ${professionId} set pieces must unlock every ${ARMOUR_SET_LEVEL_STEP} crafter levels from 1, but found offset ${offset} where ${expectedOffset} is expected`);
   });
+  const distinctSlotOffsets = new Map<number, string>();
+  for (const base of armourBases) {
+    const clashingSlot = distinctSlotOffsets.get(base.craftLevelOffset);
+    if (clashingSlot !== undefined && clashingSlot !== base.slot) report(`base-items.json: ${professionId} slots '${clashingSlot}' and '${base.slot}' both open at crafter level ${base.craftLevelOffset}`);
+    distinctSlotOffsets.set(base.craftLevelOffset, base.slot);
+  }
+  for (const base of armourBases.filter((candidate) => ARMOUR_EXTRA_SLOTS.includes(candidate.slot))) {
+    if (base.craftLevelOffset % 2 !== 0) report(`base-items.json: '${base.id}' is not a set piece, so it needs an even crafter level (found ${base.craftLevelOffset})`);
+  }
 }
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
@@ -432,8 +465,12 @@ const advancementParentIds = new Set([...classes.map((heroClass) => heroClass.id
 for (const advancement of advancements) {
   if (!advancementParentIds.has(advancement.promotesFrom)) report(`advancements.json: '${advancement.id}' promotes from unknown class '${advancement.promotesFrom}'`);
 }
+const progressionBalance = load<{ victoryDungeonId: string }>('balance/progression.json');
+const victoryDungeon = dungeons.find((dungeon) => dungeon.id === progressionBalance.victoryDungeonId);
+if (!victoryDungeon) report(`balance/progression.json: victoryDungeonId '${progressionBalance.victoryDungeonId}' is not a dungeon`);
+else if (!victoryDungeon.bossMonsterId) report(`balance/progression.json: victory dungeon '${victoryDungeon.id}' needs a boss`);
 for (const affix of affixes) {
-  if (!STAT_NAMES.includes(affix.stat)) report(`affixes.json: '${affix.id}' uses unknown stat '${affix.stat}'`);
+  if (!AFFIX_STAT_NAMES.includes(affix.stat)) report(`affixes.json: '${affix.id}' uses unknown stat '${affix.stat}'`);
 }
 
 
@@ -441,8 +478,8 @@ const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tave
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
   quality: ['common', 'magic', 'rare', 'unique'],
   resource: ['mana', 'stamina', 'hatred', 'rage'],
-  statname: ['hp', 'health', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'],
-  slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
+  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'],
+  slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
   category: ['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'skin', 'silk', 'essence', 'catalyst'],
   armourweight: ['heavy', 'medium', 'light'],
   endreason: ['stopped', 'party-defeated', 'party-weakened', 'backpack-full'],
@@ -598,6 +635,63 @@ function checkSpells(): void {
 }
 
 checkSpells();
+
+// Every spell up to level 10 has a look (cast, projectile, impact, buff or debuff) and a sound for each part of its look.
+const SPELLS_WITH_LOOK_UP_TO_LEVEL = 10;
+interface SpellLookData {
+  theme: string;
+  icon?: string;
+  cast?: string;
+  projectile?: string;
+  impact?: string;
+  buff?: string;
+  debuff?: string;
+}
+function checkSpellLooks(): void {
+  for (const motif of SPELL_ICON_MOTIFS) {
+    const rows = SPELL_ICON_GLYPHS[motif];
+    if (rows.length !== 12 || rows.some((row) => row.length !== 12)) report(`ui/spellIconGlyphs.ts: the icon '${motif}' must be 12 rows of 12 letters`);
+  }
+  const looks = load<{ spells: Record<string, SpellLookData> }>('spell-visuals.json').spells;
+  const audio = load<{ effects: Record<string, unknown>; spellSounds: Record<string, Partial<Record<'cast' | 'projectile' | 'impact' | 'buff' | 'debuff', string>>> }>('audio/sound-effects.json');
+  const artIdsByPhase = { cast: CAST_ART_IDS, projectile: PROJECTILE_ART_IDS, impact: IMPACT_ART_IDS, buff: BUFF_ART_IDS, debuff: DEBUFF_ART_IDS } as const;
+  const phases = Object.keys(artIdsByPhase) as Array<keyof typeof artIdsByPhase>;
+  for (const spell of spells) {
+    if (spell.unlockLevel <= SPELLS_WITH_LOOK_UP_TO_LEVEL && !looks[spell.id]) report(`spell-visuals.json: spell '${spell.id}' (level ${spell.unlockLevel}) has no look`);
+    if (spell.unlockLevel <= SPELLS_WITH_LOOK_UP_TO_LEVEL && !audio.spellSounds[spell.id]) report(`audio/sound-effects.json: spell '${spell.id}' (level ${spell.unlockLevel}) has no sounds`);
+  }
+  for (const [spellId, look] of Object.entries(looks)) {
+    const spell = spells.find((candidate) => candidate.id === spellId);
+    if (!spell) {
+      report(`spell-visuals.json: unknown spell '${spellId}'`);
+      continue;
+    }
+    if (look.icon === undefined || !(SPELL_ICON_MOTIFS as readonly string[]).includes(look.icon)) report(`spell-visuals.json: '${spellId}' needs an icon from the list of icon motifs`);
+    if (!(look.theme in SPELL_THEMES)) report(`spell-visuals.json: '${spellId}' has unknown theme '${look.theme}'`);
+    const sounds = audio.spellSounds[spellId] ?? {};
+    for (const phase of phases) {
+      const artId = look[phase];
+      if (artId === undefined) {
+        if (sounds[phase] !== undefined) report(`audio/sound-effects.json: '${spellId}' has a ${phase} sound but no ${phase} look`);
+        continue;
+      }
+      if (!(artIdsByPhase[phase] as readonly string[]).includes(artId)) report(`spell-visuals.json: '${spellId}' has unknown ${phase} look '${artId}'`);
+      const soundId = sounds[phase];
+      if (soundId === undefined) report(`audio/sound-effects.json: '${spellId}' has a ${phase} look but no ${phase} sound`);
+      else if (!(soundId in audio.effects)) report(`audio/sound-effects.json: '${spellId}' uses unknown effect '${soundId}'`);
+    }
+    const { effect } = spell;
+    if ((effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'heal') && !look.impact) report(`spell-visuals.json: '${spellId}' needs an impact look`);
+    if (effect.kind === 'damage' && effect.inflicts && !look.debuff) report(`spell-visuals.json: '${spellId}' inflicts a status, so it needs a debuff look`);
+    if (effect.kind === 'status') {
+      const isBuff = effect.target === 'self' || effect.target === 'allAllies';
+      if (isBuff && !look.buff) report(`spell-visuals.json: '${spellId}' helps allies, so it needs a buff look`);
+      if (!isBuff && !look.debuff) report(`spell-visuals.json: '${spellId}' hurts enemies, so it needs a debuff look`);
+    }
+  }
+  for (const spellId of Object.keys(audio.spellSounds)) if (!looks[spellId]) report(`audio/sound-effects.json: spell sounds for '${spellId}' have no look in spell-visuals.json`);
+}
+checkSpellLooks();
 
 function checkTranslations(): void {
   const english = translationsByLanguage.en;

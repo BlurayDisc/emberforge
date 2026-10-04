@@ -91,6 +91,14 @@ export const PALETTE = {
   flameBright: '#ffe680',
   leather: '#6a4326',
   leatherDark: '#472b18',
+  iceMain: '#5ab4e8',
+  iceLight: '#d8f4ff',
+  arcaneLight: '#d2b0ff',
+  shadowMain: '#5b4a7a',
+  shadowLight: '#b49ad8',
+  kiMain: '#4fd0a0',
+  kiLight: '#c8ffe8',
+  natureLight: '#c4ec90',
 } as const;
 
 export type PaletteColor = keyof typeof PALETTE;

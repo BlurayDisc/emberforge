@@ -1,9 +1,10 @@
 import { MERCHANT_EXTRA_SLOT_COSTS_COPPER } from '../../content/balance/economy';
+import { MILL_SPEED_UPGRADE_COSTS_COPPER, MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER } from '../../content/balance/mill';
 import type { GameState } from '../../model/gameState';
 import { backpackExpansionCostCopper } from '../../systems/inventory';
 import { CommandRejected, type Command } from '../gameStore';
 
-export type StorageUpgradeKind = 'backpack' | 'merchantSlot';
+export type StorageUpgradeKind = 'backpack' | 'merchantSlot' | 'millCapacity' | 'millSpeed';
 
 interface UpgradeRule {
   nextCostCopper: (state: GameState) => number | null;
@@ -18,6 +19,14 @@ const UPGRADE_RULES: Record<StorageUpgradeKind, UpgradeRule> = {
   merchantSlot: {
     nextCostCopper: (state) => MERCHANT_EXTRA_SLOT_COSTS_COPPER[state.merchantExtraSlots] ?? null,
     withOneMore: (state) => ({ ...state, merchantExtraSlots: state.merchantExtraSlots + 1 }),
+  },
+  millCapacity: {
+    nextCostCopper: (state) => MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER[state.millCapacityUpgrades] ?? null,
+    withOneMore: (state) => ({ ...state, millCapacityUpgrades: state.millCapacityUpgrades + 1 }),
+  },
+  millSpeed: {
+    nextCostCopper: (state) => MILL_SPEED_UPGRADE_COSTS_COPPER[state.millSpeedUpgrades] ?? null,
+    withOneMore: (state) => ({ ...state, millSpeedUpgrades: state.millSpeedUpgrades + 1 }),
   },
 };
 

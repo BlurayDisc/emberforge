@@ -1,5 +1,4 @@
 import {
-  CRITICAL_DAMAGE_MULTIPLIER,
   DAMAGE_VARIANCE_FRACTION,
   MITIGATION_BASE,
   MITIGATION_PER_ATTACKER_LEVEL,
@@ -26,7 +25,7 @@ export function rollDamage(attacker: BattleUnit, target: BattleUnit, random: Ran
   const reduction = mitigationStat / (mitigationStat + MITIGATION_BASE + MITIGATION_PER_ATTACKER_LEVEL * attacker.level);
   const variance = 1 + (random.nextFloat() * 2 - 1) * DAMAGE_VARIANCE_FRACTION;
   const isCritical = random.chance(attacker.critChance);
-  const criticalMultiplier = isCritical ? CRITICAL_DAMAGE_MULTIPLIER : 1;
+  const criticalMultiplier = isCritical ? attacker.criticalDamageMultiplier : 1;
   const amount = Math.max(1, Math.round(attacker.attack * power * (1 - reduction) * variance * criticalMultiplier * statusFactor));
   return { amount, isCritical };
 }

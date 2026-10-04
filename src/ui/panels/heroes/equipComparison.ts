@@ -5,21 +5,21 @@ import type { HeroSheet } from '../../../model/heroSheet';
 import { actionButton, element } from '../../dom';
 import { classResourceName, heroDisplayName, itemDisplayName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
-import { statName } from '../../itemStatTable';
+import { formatStatValue, statName } from '../../itemStatTable';
 import { createItemPortrait } from '../../itemPortrait';
 import { createItemCard } from '../../itemText';
 import type { PanelContext } from '../panelContext';
 
-const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'];
+const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed', 'criticalChance', 'criticalDamage', 'lifeSteal', 'strength', 'skill', 'magic'];
 
-function deltaCell(before: number, after: number): HTMLElement {
-  const difference = after - before;
-  const text = difference > 0 ? `+${difference}` : String(difference);
+function deltaCell(stat: string, before: number, after: number): HTMLElement {
+  const difference = Math.round((after - before) * 10) / 10;
+  const text = difference > 0 ? `+${formatStatValue(stat, difference)}` : formatStatValue(stat, difference);
   return element('span', `delta ${difference > 0 ? 'delta-up' : difference < 0 ? 'delta-down' : 'delta-same'}`, difference === 0 ? '=' : text);
 }
 
-function compareRow(label: string, before: number, after: number): HTMLElement {
-  return element('div', 'compare-row', element('span', 'stat-name', label), element('span', '', String(before)), element('span', '', '>'), element('span', '', String(after)), deltaCell(before, after));
+function compareRow(stat: string, label: string, before: number, after: number): HTMLElement {
+  return element('div', 'compare-row', element('span', 'stat-name', label), element('span', '', formatStatValue(stat, before)), element('span', '', '>'), element('span', '', formatStatValue(stat, after)), deltaCell(stat, before, after));
 }
 
 // A requested slot of undefined lets the equipment system pick the slot. The comparison and the equip command then agree on it.
@@ -28,8 +28,8 @@ export function renderEquipComparison(context: PanelContext, hero: Hero, request
   const equipped = comparison ? hero.equipment[comparison.slot] : undefined;
   const rows = comparison
     ? [
-        ...COMPARED_STATS.map((stat) => compareRow(stat === 'resource' ? classResourceName(hero.classId) : statName(stat), comparison.before[stat], comparison.after[stat])),
-        compareRow(t('equip.power'), comparison.powerBefore, comparison.powerAfter),
+        ...COMPARED_STATS.map((stat) => compareRow(stat, stat === 'resource' ? classResourceName(hero.classId) : statName(stat), comparison.before[stat], comparison.after[stat])),
+        compareRow('power', t('equip.power'), comparison.powerBefore, comparison.powerAfter),
       ]
     : [];
   const equipButton = actionButton(t('equip.confirm'), () => {

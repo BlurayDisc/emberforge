@@ -8,6 +8,7 @@ import { actionButton, element } from '../dom';
 import { createExperienceBar, createLiveHealthBar } from '../liveBars';
 import { className, heroDisplayName, listOf, materialName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
+import { openPartyChooser } from './dungeonPartyChooser';
 import { openDungeonView } from '../dungeonModal';
 import { openModal, type ModalHandle } from '../modal';
 import { createDungeonIcon, createFightIcon, createLockIcon } from '../iconArt';
@@ -16,7 +17,7 @@ import { addDungeonBackdrop } from '../dungeonBackdrop';
 import { createPortrait } from '../portraitArt';
 import { focusRun } from '../runFocus';
 import { createRunProgressBar, elapsedSecondsOfRun } from '../runProgress';
-import { openRunReport } from '../runReportModal';
+import { openRunReport, repeatRun } from '../runReportModal';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
 function monsterNamesOf(dungeon: DungeonDefinition): string {
@@ -27,8 +28,8 @@ function monsterNamesOf(dungeon: DungeonDefinition): string {
 // Saved apart from the game save, like the other settings. A new game keeps it, so it only counts while the Bank upgrade is owned.
 let staysOnDungeonScreen = loadStaysOnDungeonScreen();
 
-function start(context: PanelContext, dungeonId: string, heroId: string, chooser: ModalHandle | null): void {
-  const result = context.store.execute(startDungeonRunCommand(dungeonId, [heroId], Date.now()));
+function start(context: PanelContext, dungeonId: string, heroIds: string[], chooser: ModalHandle | null): void {
+  const result = context.store.execute(startDungeonRunCommand(dungeonId, heroIds, Date.now()));
   if (!result.accepted) {
     context.notify(describeRejection(result.rejection));
     return;
@@ -61,7 +62,7 @@ function renderHeroChoice(context: PanelContext, hero: Hero, dungeon: DungeonDef
     ],
     className: `hero-choice${isAway || isTooLow ? ' busy' : ''}`,
   });
-  if (!isAway && !isTooLow) entry.addEventListener('click', () => start(context, dungeon.id, hero.id, chooser));
+  if (!isAway && !isTooLow) entry.addEventListener('click', () => start(context, dungeon.id, [hero.id], chooser));
   return entry;
 }
 
@@ -70,7 +71,8 @@ function renderHeroChoice(context: PanelContext, hero: Hero, dungeon: DungeonDef
 function sendHeroToDungeon(context: PanelContext, dungeon: DungeonDefinition): void {
   const company = context.store.getState().company;
   const primaryHero = company[0];
-  if (company.length === 1 && primaryHero) start(context, dungeon.id, primaryHero.id, null);
+  if (dungeon.minimumPartySize > 1) openPartyChooser(context, dungeon, (heroIds, chooser) => start(context, dungeon.id, heroIds, chooser));
+  else if (company.length === 1 && primaryHero) start(context, dungeon.id, [primaryHero.id], null);
   else openHeroChooser(context, dungeon);
 }
 
@@ -114,7 +116,14 @@ function renderLockedDungeon(context: PanelContext, dungeon: DungeonDefinition):
 
 // A finished fight waits for the player. The stats open first, and only then the dungeon can start again.
 function renderFinishedDungeon(context: PanelContext, dungeon: DungeonDefinition, report: RunReport): HTMLElement {
-  const open = (): void => openRunReport(context.store, report);
+  const open = (): void => openRunReport(context.store, report, context.notify);
+  const repeat = (): void => {
+    const newRunNumber = repeatRun(context.store, report, context.notify);
+    if (newRunNumber === null) return;
+    if (staysOnDungeonScreen && hasBankUnlock(context.store.getState(), 'quickDispatch')) return;
+    focusRun(newRunNumber);
+    context.closePanel();
+  };
   const row = createListRow({
     art: element('div', 'fight-art', createDungeonIcon(dungeon.id, 3), element('span', 'fight-badge', createFightIcon(2))),
     title: dungeonTitle(dungeon),
@@ -122,7 +131,7 @@ function renderFinishedDungeon(context: PanelContext, dungeon: DungeonDefinition
       element('div', `fight-status ${report.result.won ? 'won' : 'lost'}`, t('dungeons.resultsReady', { outcome: report.result.won ? t('result.victory') : t('result.defeat') })),
       element('div', 'card-text small', t('dungeons.resultsHint')),
     ],
-    actions: [actionButton(t('dungeons.viewResults'), open, { className: 'action-button primary' })],
+    actions: [actionButton(t('dungeons.viewResults'), open, { className: 'action-button primary' }), actionButton(t('report.repeat'), repeat)],
     className: 'clickable finished',
   });
   addDungeonBackdrop(row, dungeon.id);
@@ -154,7 +163,8 @@ function renderPendingLootDungeon(context: PanelContext, dungeon: DungeonDefinit
 function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
   const state = context.store.getState();
   const isCleared = state.clearedDungeonIds.includes(dungeon.id);
-  const hasHeroToSend = state.company.some((hero) => !runOfHero(state, hero.id) && hero.level >= dungeon.minimumHeroLevel);
+  const freeHeroes = state.company.filter((hero) => !runOfHero(state, hero.id));
+  const hasHeroToSend = freeHeroes.length >= dungeon.minimumPartySize && freeHeroes.some((hero) => hero.level >= dungeon.minimumHeroLevel);
   return makeDetailsClickable(context, createListRow({
     art: createDungeonIcon(dungeon.id, 3),
     title: dungeonTitle(dungeon),

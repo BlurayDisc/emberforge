@@ -4,6 +4,7 @@ import type { BattleEvent, BattleUnit } from '../../model/battle';
 import type { BattleSpell, SpellEffect } from '../../model/spell';
 import { applyStatus, combatantOf, damageFactorBetween, livingUnitsOf, statusStrength, type Combatant } from './combatant';
 import { rollDamage } from './damage';
+import { applyLifeSteal } from './lifeSteal';
 import { gainResourceFromHit, spendResource } from './resourcePool';
 
 interface CastContext {
@@ -75,6 +76,7 @@ function castDamage(effect: Extract<SpellEffect, { kind: 'damage' | 'drain' }>, 
     caster.hp += healed;
     if (healed > 0) events.push(event(context, caster, 'heal', healed));
   }
+  events.push(...applyLifeSteal(context.actor.unit, dealtTotal, context.timeSeconds, context.spell.id));
   return events;
 }
 

@@ -11,12 +11,14 @@ export function startDungeonRunCommand(dungeonId: string, heroIds: readonly stri
     if (runInDungeon(state, dungeonId)) throw new CommandRejected('reject.dungeonBusy');
     if ((state.pendingLoot[dungeonId] ?? []).length > 0) throw new CommandRejected('reject.dungeonHasPendingLoot');
     if (heroIds.length === 0) throw new CommandRejected('reject.noHeroSelected');
+    if (heroIds.length < dungeon.minimumPartySize) throw new CommandRejected('reject.tooFewHeroes', { min: dungeon.minimumPartySize });
     if (heroIds.length > dungeon.maxPartySize) throw new CommandRejected('reject.tooManyHeroes', { max: dungeon.maxPartySize });
     if (!heroIds.every((heroId) => state.company.some((hero) => hero.id === heroId))) throw new CommandRejected('reject.heroMissing');
     if (heroIds.some((heroId) => runOfHero(state, heroId))) throw new CommandRejected('reject.heroBusy');
 
-    const tooWeakHero = state.company.find((hero) => heroIds.includes(hero.id) && hero.level < dungeon.minimumHeroLevel);
-    if (tooWeakHero) throw new CommandRejected('reject.heroLevelTooLow', { hero: tooWeakHero.name, level: dungeon.minimumHeroLevel });
+    const partyHeroes = state.company.filter((hero) => heroIds.includes(hero.id));
+    const strongestHero = partyHeroes.reduce((strongest, hero) => (hero.level > strongest.level ? hero : strongest), partyHeroes[0]!);
+    if (strongestHero.level < dungeon.minimumHeroLevel) throw new CommandRejected('reject.heroLevelTooLow', { hero: strongestHero.name, level: dungeon.minimumHeroLevel });
 
     const downedHero = state.company.find((hero) => heroIds.includes(hero.id) && isDowned(hero, nowMs));
     if (downedHero) throw new CommandRejected('reject.heroDowned', { hero: downedHero.name });

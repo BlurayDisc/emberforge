@@ -33,13 +33,13 @@ const DUO_CASES: readonly PartyCase[] = [
 ];
 
 const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
-  warrior: ['broadsword', 'shield', 'helm-heavy', 'armour-heavy', 'gloves-heavy', 'boots-heavy', 'belt', 'amulet', 'ring', 'ring'],
-  archer: ['warbow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
-  mage: ['arcane-staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
-  priest: ['flanged-mace', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
-  barbarian: ['greataxe', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
-  fighter: ['steel-claws', 'cestus', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
-  thief: ['kris', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  warrior: ['broadsword', 'shield', 'helm-heavy', 'armour-heavy', 'gloves-heavy', 'legs-heavy', 'boots-heavy', 'belt', 'amulet', 'ring', 'ring'],
+  archer: ['warbow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'legs-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  mage: ['arcane-staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'legs-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  priest: ['flanged-mace', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'legs-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  barbarian: ['greataxe', 'helm-medium', 'armour-medium', 'gloves-medium', 'legs-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  fighter: ['steel-claws', 'cestus', 'helm-medium', 'armour-medium', 'gloves-medium', 'legs-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
+  thief: ['kris', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'legs-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
 };
 
 // A normal fight grows from 7 s at level 1 to 25 s at level 10, then more slowly.
@@ -111,7 +111,7 @@ function measure(partyCase: PartyCase, dungeon: DungeonDefinition, gearMode: Gea
 
 for (const dungeon of DUNGEONS) {
   console.log(`\n${dungeon.name} (monster level ${dungeon.level}, heroes at level ${dungeon.level}, party size ${dungeon.maxPartySize})`);
-  for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : [...SOLO_CASES, ...DUO_CASES]) {
+  for (const partyCase of dungeon.maxPartySize === 1 ? SOLO_CASES : DUO_CASES) {
     for (const gearMode of ['no gear', 'best weapon only', 'crafted gear', 'gear + first spells', 'gear + best spells'] as const) {
       console.log(`  ${measure(partyCase, dungeon, gearMode)}`);
     }

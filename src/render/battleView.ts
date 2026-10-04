@@ -7,6 +7,8 @@ import { createHealthBar, type HealthBar } from './healthBarArt';
 import { createPixelTexture, createBattleSprite } from './pixelSprites';
 import { createProjectileLayer } from './projectileLayer';
 import { RANGED_ATTACK_STYLE_BY_SPRITE_KEY, type RangedAttackStyle } from './rangedAttackStyles';
+import type { SpellVisualSpec } from '../content/spellVisuals';
+import { createSpellEffectPlayer } from './spellEffects/spellEffectPlayer';
 
 const HEALTH_BAR_GAP_ABOVE_HEAD = 6;
 const SIDE_OFFSET_X = 105;
@@ -17,6 +19,7 @@ const SHAKE_SECONDS = 0.22;
 const DEFEAT_SECONDS = 0.6;
 const PARTICLE_LIFE_SECONDS = 0.45;
 const FLOATING_TEXT_MILLISECONDS = 1100;
+const SPELL_HIT_SPACING_SECONDS = 0.16;
 
 export interface BattleView {
   setVisible(isVisible: boolean): void;
@@ -27,6 +30,11 @@ export interface BattleView {
   playHit(actorId: string, targetId: string, amount: number, isCritical: boolean): void;
   playHeal(actorId: string, targetId: string, amount: number): void;
   markDefeated(unitId: string): void;
+  playSpellCast(casterId: string, visual: SpellVisualSpec): void;
+  // hitIndex counts the hits of one cast on one target. debuffSeconds is set when the hit inflicts a status.
+  playSpellHit(actorId: string, targetId: string, amount: number, isCritical: boolean, visual: SpellVisualSpec, hitIndex: number, debuffSeconds: number | null): void;
+  playSpellHeal(actorId: string, targetId: string, amount: number, visual: SpellVisualSpec | undefined): void;
+  playSpellStatus(actorId: string, targetId: string, visual: SpellVisualSpec, role: 'buff' | 'debuff', durationSeconds: number): void;
 }
 
 interface UnitVisual {
@@ -81,6 +89,10 @@ export function createBattleView(stage: PixelStage): BattleView {
   const backdropTextures = new Map<string, MeshBasicMaterial['map']>();
 
   const projectileLayer = createProjectileLayer(root);
+  const spellEffects = createSpellEffectPlayer(root, (unitId) => {
+    const visual = visualsByUnitId.get(unitId);
+    return visual && { x: visual.worldX, feetY: visual.feetWorldY, height: visual.spriteHeight, facing: visual.lungeDirection };
+  });
   const visualsByUnitId = new Map<string, UnitVisual>();
   const particles: Particle[] = [];
   const flashColor = new Color(PALETTE.blood).lerp(new Color('#ffffff'), 0.4);
@@ -89,6 +101,7 @@ export function createBattleView(stage: PixelStage): BattleView {
 
   const clearUnits = (): void => {
     projectileLayer.clear();
+    spellEffects.clear();
     visualsByUnitId.forEach((visual) => {
       visual.sprite.material.dispose();
       (visual.shadow.material as MeshBasicMaterial).dispose();
@@ -118,6 +131,13 @@ export function createBattleView(stage: PixelStage): BattleView {
     }
   };
 
+  const showHitOn = (target: UnitVisual, amount: number, isCritical: boolean): void => {
+    target.flashUntilSeconds = latestElapsedSeconds + FLASH_SECONDS;
+    target.shakeStartSeconds = latestElapsedSeconds;
+    spawnParticles(target, isCritical ? PALETTE.gold : '#ffffff', isCritical ? 10 : 5);
+    spawnFloatingText(target, isCritical ? `${amount}!` : String(amount), isCritical ? 'critical' : 'damage');
+  };
+
   const applyAnimation = (visual: UnitVisual, elapsedSeconds: number): void => {
     let offsetX = 0;
     let offsetY = visual.defeatedStartSeconds > 0 ? 0 : Math.round(Math.sin(elapsedSeconds * 3 + visual.bobPhase));
@@ -142,6 +162,7 @@ export function createBattleView(stage: PixelStage): BattleView {
     latestElapsedSeconds = elapsedSeconds;
     if (!root.visible) return;
     projectileLayer.update(elapsedSeconds);
+    spellEffects.update(elapsedSeconds);
     visualsByUnitId.forEach((visual) => {
       applyAnimation(visual, elapsedSeconds);
       visual.healthBar.update(elapsedSeconds, deltaSeconds);
@@ -214,12 +235,7 @@ export function createBattleView(stage: PixelStage): BattleView {
       const actor = visualsByUnitId.get(actorId);
       const target = visualsByUnitId.get(targetId);
       if (!target) return;
-      const showImpact = (): void => {
-        target.flashUntilSeconds = latestElapsedSeconds + FLASH_SECONDS;
-        target.shakeStartSeconds = latestElapsedSeconds;
-        spawnParticles(target, isCritical ? PALETTE.gold : '#ffffff', isCritical ? 10 : 5);
-        spawnFloatingText(target, isCritical ? `${amount}!` : String(amount), isCritical ? 'critical' : 'damage');
-      };
+      const showImpact = (): void => showHitOn(target, amount, isCritical);
       if (actor?.rangedAttackStyle) {
         // The hit shows when the projectile lands, not when the shot leaves.
         projectileLayer.launch(actor.rangedAttackStyle, projectileAnchor(actor, 1), projectileAnchor(target, -1), actor.lungeDirection, latestElapsedSeconds, showImpact);
@@ -235,6 +251,40 @@ export function createBattleView(stage: PixelStage): BattleView {
       if (!target) return;
       spawnParticles(target, PALETTE.goblin, 6);
       spawnFloatingText(target, `+${amount}`, 'heal');
+    },
+    playSpellCast: (casterId, visual) => {
+      const caster = visualsByUnitId.get(casterId);
+      if (caster) caster.lungeStartSeconds = latestElapsedSeconds;
+      spellEffects.playCast(casterId, visual);
+    },
+    playSpellHit: (actorId, targetId, amount, isCritical, visual, hitIndex, debuffSeconds) => {
+      const target = visualsByUnitId.get(targetId);
+      if (!target) return;
+      const land = (): void => {
+        showHitOn(target, amount, isCritical);
+        spellEffects.playImpact(targetId, visual);
+        if (debuffSeconds !== null && hitIndex === 0) spellEffects.playStatus(targetId, visual, 'debuff', debuffSeconds);
+      };
+      const delaySeconds = hitIndex * SPELL_HIT_SPACING_SECONDS;
+      if (!spellEffects.playProjectile(actorId, targetId, visual, delaySeconds, land)) spellEffects.later(delaySeconds, land);
+    },
+    playSpellHeal: (actorId, targetId, amount, visual) => {
+      const actor = visualsByUnitId.get(actorId);
+      const target = visualsByUnitId.get(targetId);
+      if (actor) actor.lungeStartSeconds = latestElapsedSeconds;
+      if (!target) return;
+      spawnParticles(target, PALETTE.goblin, 6);
+      spawnFloatingText(target, `+${amount}`, 'heal');
+      if (visual) spellEffects.playImpact(targetId, visual);
+    },
+    playSpellStatus: (actorId, targetId, visual, role, durationSeconds) => {
+      const applyStatus = (): void => {
+        if (role === 'debuff') spellEffects.playImpact(targetId, visual);
+        spellEffects.playStatus(targetId, visual, role, durationSeconds);
+      };
+      // A debuff with a projectile lands when the projectile arrives.
+      if (role === 'debuff' && spellEffects.playProjectile(actorId, targetId, visual, 0, applyStatus)) return;
+      applyStatus();
     },
     markDefeated: (unitId) => {
       const visual = visualsByUnitId.get(unitId);

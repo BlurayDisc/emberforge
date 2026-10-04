@@ -7,7 +7,7 @@ import { createExperienceBar, createLiveHealthBar } from '../liveBars';
 import { className, classResourceName, heroDisplayName } from '../displayNames';
 import { t } from '../i18n';
 import { createList, createListRow } from '../listRow';
-import { statName } from '../itemStatTable';
+import { formatStatValue, statName } from '../itemStatTable';
 import { createGrowthGain } from '../classGrowth';
 import { createFullBodyPortrait } from '../fullBody/fullBodyPortraitArt';
 import { createPortrait } from '../portraitArt';
@@ -17,7 +17,7 @@ import type { PanelContext, PanelRenderer } from './panelContext';
 
 type HeroTab = 'stats' | 'equipment' | 'spells' | 'record';
 
-const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed'];
+const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed', 'criticalChance', 'criticalDamage', 'lifeSteal'];
 const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'skill' | 'magic'; className: string }> = [
   { stat: 'strength', className: 'bar-strength' },
   { stat: 'skill', className: 'bar-skill' },
@@ -55,7 +55,7 @@ function statisticRow(label: string, value: string): HTMLElement {
 
 function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
-  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', stat === 'resource' ? classResourceName(hero.classId) : statName(stat)), element('span', 'stat-value', String(view.sheet[stat]))));
+  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', stat === 'resource' ? classResourceName(hero.classId) : statName(stat)), element('span', 'stat-value', formatStatValue(stat, view.sheet[stat]))));
   const showAttributeGrowth = hasBankUnlock(context.store.getState(), 'attributeGrowth');
   const attributeMaximum = ATTRIBUTE_BAR_BASE + ATTRIBUTE_BAR_PER_LEVEL * hero.level;
   const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) =>

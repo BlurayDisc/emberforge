@@ -1,15 +1,8 @@
-import { DUNGEONS, type DungeonDefinition } from '../../../src/content/dungeons';
-import { dungeonForLevel } from '../economy';
+import { DUNGEONS } from '../../../src/content/dungeons';
 import { measureSoloHero } from './measureBattles';
+import { dungeonOfNormalMonsters } from './normalMonsterDungeon';
 import { MOB_KILL_TIME_PRESET } from './presets';
 import { printTable } from './table';
-
-// A normal monster only: the rare monster of the dungeon is left out.
-function dungeonOfNormalMonsters(heroLevel: number): DungeonDefinition {
-  const dungeon = dungeonForLevel(heroLevel);
-  const monsterLevel = MOB_KILL_TIME_PRESET.monsterLevelRule === 'hero-level' ? heroLevel : dungeon.level;
-  return { ...dungeon, level: monsterLevel, rareMonsterId: null };
-}
 
 export function runMobKillTimeScenario(): void {
   const preset = MOB_KILL_TIME_PRESET;

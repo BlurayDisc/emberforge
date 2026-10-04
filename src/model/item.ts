@@ -6,6 +6,7 @@ export type EquipmentSlot =
   | 'helm'
   | 'armour'
   | 'gloves'
+  | 'legs'
   | 'boots'
   | 'belt'
   | 'amulet'
@@ -34,6 +35,10 @@ export type GearType =
 export type ArmourWeight = 'heavy' | 'medium' | 'light';
 export type ItemQuality = 'common' | 'magic' | 'rare' | 'unique';
 export type AffixKind = 'prefix' | 'suffix';
+// Percent points, not class stats. A hero only gets them from gear.
+export const COMBAT_BONUS_STATS = ['criticalChance', 'criticalDamage', 'lifeSteal'] as const;
+export type CombatBonusStat = (typeof COMBAT_BONUS_STATS)[number];
+export type AffixStat = keyof StatBlock | CombatBonusStat;
 export interface StatBonuses extends Partial<StatBlock> {
   physicalDamage?: number;
   magicalDamage?: number;
@@ -43,7 +48,7 @@ export interface ItemAffix {
   affixId: string;
   kind: AffixKind;
   displayName: string;
-  stat: keyof StatBlock;
+  stat: AffixStat;
   value: number;
 }
 

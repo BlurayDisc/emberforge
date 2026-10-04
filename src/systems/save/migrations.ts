@@ -1,5 +1,6 @@
 import type { Hero } from '../../model/hero';
 import { migrateMill } from './migrateMill';
+import { migrateMillUpgrades } from './migrateMillUpgrades';
 import { migrateExperienceBars } from './migrateExperienceBars';
 import { migrateBackpackGrid } from './migrateBackpackGrid';
 import { migrateWaitingLoot } from './migrateWaitingLoot';
@@ -80,5 +81,10 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
   {
     fromVersion: 17,
     migrate: migrateMill,
+  },
+  {
+    // Version 19: the Mill holds 1 material at first, and the Bank sells Mill upgrades.
+    fromVersion: 18,
+    migrate: migrateMillUpgrades,
   },
 ];

@@ -6,6 +6,7 @@ import type { SpellDefinition } from '../../../model/spell';
 import { actionButton, element } from '../../dom';
 import { describeRejection, t } from '../../i18n';
 import { openModal, type ModalHandle } from '../../modal';
+import { createSpellIcon } from '../../spellIconArt';
 import { describeSpell, describeSpellCosts, spellName } from '../../spellText';
 import type { PanelContext } from '../panelContext';
 
@@ -36,6 +37,7 @@ function openSpellChooser(context: PanelContext, hero: Hero, slotIndex: SlotInde
       element(
         'div',
         `chooser-row spell-choice${isCurrent ? ' selected' : ''}`,
+        createSpellIcon(spell.id, 3),
         element('div', 'spell-choice-text', element('div', 'card-title', spellName(spell.id)), element('div', 'card-text small', describeSpell(spell)), element('div', 'card-text small', describeSpellCosts(spell))),
         actionButton(t('spells.equip'), () => equipInSlot(context, hero, spell, slotIndex, modal), { disabled: isCurrent }),
       ),
@@ -58,6 +60,7 @@ function renderSlot(context: PanelContext, hero: Hero, slotIndex: SlotIndex): HT
     'button',
     `spell-slot${slotIndex === null ? ' ultimate' : ''}${spell ? ' filled' : ''}`,
     element('span', 'spell-slot-label', label),
+    spell ? createSpellIcon(spell.id, 3) : element('span', 'spell-slot-icon-empty', ''),
     spell ? element('span', 'spell-slot-name', spellName(spell.id)) : element('span', 'spell-slot-empty', t('spells.empty')),
     spell ? element('span', 'card-text small', describeSpellCosts(spell)) : '',
   );

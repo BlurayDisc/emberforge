@@ -1,6 +1,6 @@
-import { MILL_PRODUCED_MATERIAL_IDS, MILL_PRODUCTION_INTERVAL_SECONDS, MILL_STORAGE_CAPACITY } from '../../content/balance/mill';
+import { MILL_PRODUCED_MATERIAL_IDS } from '../../content/balance/mill';
 import type { Random } from '../../kernel/random';
-import type { MillState } from '../../model/mill';
+import type { MillSettings, MillState } from '../../model/mill';
 
 const MILLISECONDS_PER_SECOND = 1000;
 
@@ -8,13 +8,13 @@ export function storedMillMaterialCount(mill: MillState): number {
   return mill.storedMaterials.reduce((total, stack) => total + stack.quantity, 0);
 }
 
-export function isMillFull(mill: MillState): boolean {
-  return storedMillMaterialCount(mill) >= MILL_STORAGE_CAPACITY;
+export function isMillFull(mill: MillState, settings: MillSettings): boolean {
+  return storedMillMaterialCount(mill) >= settings.storageCapacity;
 }
 
-export function nextMillProductionAtMs(mill: MillState): number | null {
+export function nextMillProductionAtMs(mill: MillState, settings: MillSettings): number | null {
   if (mill.productionClockStartedAtMs === null) return null;
-  return mill.productionClockStartedAtMs + MILL_PRODUCTION_INTERVAL_SECONDS * MILLISECONDS_PER_SECOND;
+  return mill.productionClockStartedAtMs + settings.productionIntervalSeconds * MILLISECONDS_PER_SECOND;
 }
 
 function addToStock(mill: MillState, materialIds: readonly string[]): MillState['storedMaterials'] {
@@ -30,13 +30,13 @@ function addToStock(mill: MillState, materialIds: readonly string[]): MillState[
 // The Mill works by the clock, also while the page was closed. A full Mill stops its clock,
 // so time spent full is never saved up. Each product has its own random stream by its number.
 // Returns null when nothing changes.
-export function produceMillMaterials(mill: MillState, nowMs: number, random: Random): MillState | null {
-  if (isMillFull(mill)) return null;
+export function produceMillMaterials(mill: MillState, settings: MillSettings, nowMs: number, random: Random): MillState | null {
+  if (isMillFull(mill, settings)) return null;
   if (mill.productionClockStartedAtMs === null) return { ...mill, productionClockStartedAtMs: nowMs };
-  const intervalMs = MILL_PRODUCTION_INTERVAL_SECONDS * MILLISECONDS_PER_SECOND;
+  const intervalMs = settings.productionIntervalSeconds * MILLISECONDS_PER_SECOND;
   const intervalsPassed = Math.floor((nowMs - mill.productionClockStartedAtMs) / intervalMs);
   if (intervalsPassed < 1) return null;
-  const roomLeft = MILL_STORAGE_CAPACITY - storedMillMaterialCount(mill);
+  const roomLeft = settings.storageCapacity - storedMillMaterialCount(mill);
   const productsMade = Math.min(intervalsPassed, roomLeft);
   const producedIds = Array.from({ length: productsMade }, (_, index) => random.fork(`mill-${mill.productionsMade + index}`).pick(MILL_PRODUCED_MATERIAL_IDS));
   const isFullNow = productsMade === roomLeft;
