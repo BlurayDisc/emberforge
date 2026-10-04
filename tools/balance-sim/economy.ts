@@ -5,6 +5,7 @@ import { createRandom } from '../../src/kernel/random';
 import { createEncounter } from '../../src/systems/dungeons';
 import { hireCostForCompanySize } from '../../src/systems/economy';
 import { rollMonsterLoot } from '../../src/systems/loot';
+import { craftAndSellAll } from './craftedSales';
 import { experienceForKill, experienceToNextLevel } from '../../src/systems/progression';
 
 const LAST_LEVEL = 10;
@@ -13,6 +14,8 @@ const RUNS_FOR_AVERAGE = 200;
 export interface LevelMilestone {
   fights: number;
   copperFromSoldMaterials: number;
+  itemsCrafted: number;
+  copperFromCraftedItems: number;
 }
 
 export function dungeonForLevel(heroLevel: number) {
@@ -28,19 +31,22 @@ export function playUntilLevels(seed: number, lastLevel: number = LAST_LEVEL): M
   let experience = 0;
   let fights = 0;
   let copperFromSoldMaterials = 0;
+  const materialsHeld: Record<string, number> = {};
   while (level < lastLevel) {
     const dungeon = dungeonForLevel(level);
     const monsters = createEncounter(dungeon, 1, random.fork(`encounter-${fights}`));
     fights += 1;
     for (const monster of monsters) {
       const loot = rollMonsterLoot(monster.definitionId, random.fork(`loot-${fights}-${monster.id}`));
+      for (const stack of loot.materials) materialsHeld[stack.materialId] = (materialsHeld[stack.materialId] ?? 0) + stack.quantity;
       copperFromSoldMaterials += loot.materials.reduce((sum, stack) => sum + stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper, 0);
       experience += experienceForKill(monster.level, level, monster.rank);
     }
     while (experience >= experienceToNextLevel(level) && level < lastLevel) {
       experience -= experienceToNextLevel(level);
       level += 1;
-      milestones.set(level, { fights, copperFromSoldMaterials });
+      const crafted = craftAndSellAll(materialsHeld, level);
+      milestones.set(level, { fights, copperFromSoldMaterials, itemsCrafted: crafted.itemsCrafted, copperFromCraftedItems: crafted.netCopper });
     }
   }
   return milestones;

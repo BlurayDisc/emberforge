@@ -30,7 +30,7 @@ export function openRunReport(store: GameStore, report: RunReport, notify: (mess
   const showsVictory = report.firstClear && report.dungeonId === VICTORY_DUNGEON_ID;
   const modal = openModal(t('report.title', { dungeon: t(`dungeon.${dungeon.id}`) }), content, () => {
     store.execute(dismissReportCommand(report.runNumber));
-    if (showsVictory) openVictoryScreen(store.getState().company.filter((hero) => report.result.heroes.some((result) => result.heroId === hero.id)));
+    if (showsVictory) openVictoryScreen(store.getState(), store.getState().company.filter((hero) => report.result.heroes.some((result) => result.heroId === hero.id)));
   });
   const repeat = (): void => {
     const newRunNumber = repeatRun(store, report, notify);

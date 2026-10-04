@@ -89,7 +89,7 @@ function renderVersion(): HTMLElement {
 function renderVictoryReplay(context: PanelContext): HTMLElement | string {
   const state = context.store.getState();
   if (!state.clearedDungeonIds.includes(VICTORY_DUNGEON_ID)) return '';
-  return element('div', 'card', actionButton(t('settings.watchVictory'), () => openVictoryScreen(state.company)));
+  return element('div', 'card', actionButton(t('settings.watchVictory'), () => openVictoryScreen(state, state.company)));
 }
 
 export const renderSettingsPanel: PanelRenderer = (context) =>

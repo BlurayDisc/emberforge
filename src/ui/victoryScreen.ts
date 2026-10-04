@@ -1,10 +1,11 @@
 import { playSound } from '../audio';
+import { DUNGEONS } from '../content/dungeons';
+import type { GameState } from '../model/gameState';
 import type { Hero } from '../model/hero';
-import { className, heroDisplayName } from './displayNames';
 import { actionButton, element } from './dom';
 import { t } from './i18n';
 import { drawAscii, drawingToImage } from './pixelDraw';
-import { createPortrait } from './portraitArt';
+import { createHeroCards } from './victoryHeroCards';
 import { WIKI_URL } from './wikiLinks';
 
 const TROPHY_ROWS = ['..oooooooo..', 'ooogllgggdoo', 'ogoglgggdogo', 'ogoglgggdogo', '.ooglgggdoo.', '..oglgggdo..', '...ogggdo...', '....oddo....', '.....oo.....', '.....oo.....', '...oooooo...', '..oddggddo..'];
@@ -25,17 +26,22 @@ function createConfetti(): HTMLElement[] {
   });
 }
 
-function createHeroRow(heroes: readonly Hero[]): HTMLElement {
-  return element(
-    'div',
-    'victory-heroes',
-    ...heroes.map((hero) => element('div', 'victory-hero', createPortrait(hero.classId, hero.name, 4), element('div', 'victory-hero-name', heroDisplayName(hero.name)), element('div', 'victory-hero-class', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })))),
-  );
+// Totals of the whole adventure, shown under the hero cards.
+function createAdventureTotals(state: GameState, heroes: readonly Hero[]): HTMLElement {
+  const lines: Array<[string, string]> = [
+    [t('victory.dungeonsCleared'), `${state.clearedDungeonIds.length} / ${DUNGEONS.length}`],
+    [t('victory.monstersDefeated'), state.company.reduce((sum, hero) => sum + hero.statistics.monstersDefeated, 0).toLocaleString()],
+    [t('victory.fightsStarted'), state.runsStarted.toLocaleString()],
+    [t('victory.itemsCrafted'), state.itemsCrafted.toLocaleString()],
+    [t('victory.spellsLearned'), state.company.reduce((sum, hero) => sum + hero.learnedSpellIds.length, 0).toLocaleString()],
+    [t('victory.heroesInCompany'), String(Math.max(state.company.length, heroes.length))],
+  ];
+  return element('div', 'victory-totals', ...lines.map(([label, value]) => element('div', 'victory-total', element('div', 'victory-total-value', value), element('div', 'victory-total-label', label))));
 }
 
 // The Victory screen covers the whole page. It opens when the player first clears the victory dungeon, and again from the Settings screen.
 // The player may keep playing.
-export function openVictoryScreen(heroes: readonly Hero[]): void {
+export function openVictoryScreen(state: GameState, heroes: readonly Hero[]): void {
   const overlay = element('div', 'victory-overlay');
   const close = (): void => {
     document.removeEventListener('keydown', closeOnEscape);
@@ -44,6 +50,9 @@ export function openVictoryScreen(heroes: readonly Hero[]): void {
   const closeOnEscape = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') close();
   };
+  const { cards, revealSeconds } = createHeroCards(state, heroes);
+  const totals = createAdventureTotals(state, heroes);
+  totals.style.animationDelay = `${revealSeconds}s`;
   const trophy = drawingToImage(drawAscii(TROPHY_ROWS, TROPHY_LEGEND), 10, 'pixel-icon victory-trophy');
   overlay.append(
     element('div', 'victory-rays'),
@@ -54,10 +63,12 @@ export function openVictoryScreen(heroes: readonly Hero[]): void {
       trophy,
       element('div', 'victory-title', t('victory.title')),
       element('div', 'victory-subtitle', t('victory.subtitle')),
-      ...(heroes.length > 0 ? [element('div', 'victory-section', t('victory.heroes')), createHeroRow(heroes)] : []),
+      ...(heroes.length > 0 ? [element('div', 'victory-section', t('victory.hallOfFame')), cards] : []),
+      element('div', 'victory-section', t('victory.adventure')),
+      totals,
       element('div', 'victory-story', ...STORY_PARAGRAPHS.map((paragraph, index) => {
         const line = element('p', 'victory-line', t(`victory.${paragraph}`));
-        line.style.animationDelay = `${1.2 + index * 0.9}s`;
+        line.style.animationDelay = `${revealSeconds + 0.8 + index * 0.9}s`;
         return line;
       })),
       element('div', 'victory-actions', actionButton(t('victory.continue'), close), actionButton(t('victory.wiki'), () => window.open(WIKI_URL, '_blank', 'noopener'), { className: 'action-button primary' })),

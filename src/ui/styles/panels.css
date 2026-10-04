@@ -1125,25 +1125,92 @@
   letter-spacing: 2px;
 }
 
-.victory-heroes {
+.victory-cards {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 16px;
+  width: 100%;
 }
 
-.victory-hero {
+.victory-card {
+  flex: 1 1 280px;
+  max-width: 340px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px;
+  gap: 8px;
+  padding: 12px;
+  text-align: left;
   background: var(--wood-900);
   box-shadow: var(--outline-2), inset 0 0 0 2px var(--gold-dark);
+  animation: victory-card-in 0.5s steps(6) both;
 }
 
-.victory-hero-name { font-weight: 700; color: var(--parchment); }
-.victory-hero-class { font-size: 12px; color: var(--parchment-dim); }
+.victory-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.victory-card-title { display: flex; flex-direction: column; gap: 2px; }
+.victory-hero-name { font-family: var(--font-title); font-size: 26px; color: var(--gold); }
+.victory-hero-class { color: var(--parchment); }
+.victory-power { font-weight: 700; color: var(--copper); }
+
+.victory-card-section {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  border-bottom: 2px solid var(--wood-600);
+}
+
+.victory-stats { display: flex; flex-direction: column; gap: 4px; }
+
+.victory-stat-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 56px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.victory-stat-name { color: var(--parchment-dim); }
+.victory-stat-value { text-align: right; font-weight: 700; color: var(--parchment); }
+
+.victory-stat-track {
+  height: 10px;
+  background: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--wood-700);
+}
+
+.victory-stat-fill {
+  height: 100%;
+  width: 0;
+  background: var(--bar-color);
+  animation: victory-fill 0.9s steps(12) both;
+}
+
+.victory-record { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.victory-record-line { display: flex; justify-content: space-between; color: var(--parchment-dim); }
+.victory-record-value { color: var(--parchment); font-weight: 700; }
+
+.victory-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  width: 100%;
+  animation: victory-fade-in 0.8s steps(8) both;
+}
+
+.victory-total {
+  padding: 8px;
+  background: var(--wood-900);
+  box-shadow: var(--outline-2);
+}
+
+.victory-total-value { font-family: var(--font-title); font-size: 30px; color: var(--gold); }
+.victory-total-label { font-size: 12px; color: var(--parchment-dim); }
 
 .victory-story {
   display: flex;
@@ -1173,8 +1240,11 @@
 @keyframes victory-spin { to { transform: rotate(360deg); } }
 @keyframes victory-fall { to { transform: translateY(110vh) rotate(360deg); } }
 @keyframes victory-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes victory-fill { from { width: 0; } to { width: var(--fill); } }
+@keyframes victory-card-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes victory-pop { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .victory-rays, .victory-confetti, .victory-trophy { animation: none; }
+  .victory-stat-fill { animation-duration: 0.01s; }
 }
