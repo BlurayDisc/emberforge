@@ -11,8 +11,8 @@ import { describeRejection, t } from '../../i18n';
 import { createItemIcon, createMaterialIcon } from '../../iconArt';
 import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
-import { openBackpackEntryMenu } from '../backpack/backpackEntryMenu';
 import { createBackpackGrid } from '../backpack/backpackGrid';
+import { createMerchantSelectionBar } from '../backpack/merchantSelectionBar';
 import type { PanelContext, PanelRenderer } from '../panelContext';
 
 // A material in the backpack is one unit. A sale from an old save can hold a few units.
@@ -46,8 +46,21 @@ function renderSaleJob(context: PanelContext, job: SaleJob): HTMLElement {
   });
 }
 
+interface SelectedPosition {
+  column: number;
+  row: number;
+}
+
+let selectedPosition: SelectedPosition | null = null;
+
+export function resetMerchantSelection(): void {
+  selectedPosition = null;
+}
+
 function renderSellTab(context: PanelContext): HTMLElement {
   const state = context.store.getState();
+  const selected = state.backpack.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
+  if (!selected) selectedPosition = null;
   const saleJobs = listSaleJobs(state);
   return element(
     'div',
@@ -56,9 +69,21 @@ function renderSellTab(context: PanelContext): HTMLElement {
     element('div', 'section-title', t('merchant.salesInProgress', { used: saleJobs.length, slots: merchantSaleSlotsOf(state) })),
     saleJobs.length > 0 ? createList(...saleJobs.map((job) => renderSaleJob(context, job))) : element('p', 'hint', t('merchant.noSales')),
     element('div', 'section-title', t('merchant.backpackGoods')),
-    state.backpack.length > 0
-      ? createBackpackGrid(context.store, { onEntryClick: (entry, clickPoint) => openBackpackEntryMenu(context, entry, clickPoint) })
-      : element('p', 'hint', t('merchant.empty')),
+    ...(state.backpack.length > 0
+      ? [
+          createMerchantSelectionBar(context, selected, () => {
+            selectedPosition = null;
+            context.requestRender();
+          }),
+          createBackpackGrid(context.store, {
+            isSelected: (entry) => entry === selected,
+            onEntryClick: (entry) => {
+              selectedPosition = entry === selected ? null : { column: entry.column, row: entry.row };
+              context.requestRender();
+            },
+          }),
+        ]
+      : [element('p', 'hint', t('merchant.empty'))]),
   );
 }
 

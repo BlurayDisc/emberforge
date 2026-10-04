@@ -1,1 +1,1 @@
-export type BankUnlockId = 'backpackSorting' | 'monsterStatistics' | 'dropRates';
+export type BankUnlockId = 'backpackSorting' | 'monsterStatistics' | 'dropRates' | 'quickDispatch' | 'mainStatGrowth' | 'attributeGrowth';

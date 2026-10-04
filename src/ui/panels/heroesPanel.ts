@@ -1,4 +1,4 @@
-import { describeHero } from '../../game';
+import { describeHero, hasBankUnlock } from '../../game';
 import type { Hero } from '../../model/hero';
 import { ATTRIBUTE_BAR_BASE, ATTRIBUTE_BAR_PER_LEVEL } from '../../content/balance/heroSheet';
 import type { HeroSheet } from '../../model/heroSheet';
@@ -8,6 +8,7 @@ import { className, classResourceName, heroDisplayName } from '../displayNames';
 import { t } from '../i18n';
 import { createList, createListRow } from '../listRow';
 import { statName } from '../itemStatTable';
+import { createGrowthGain } from '../classGrowth';
 import { createFullBodyPortrait } from '../fullBody/fullBodyPortraitArt';
 import { createPortrait } from '../portraitArt';
 import { renderEquipmentScreen } from './heroes/equipmentScreen';
@@ -55,9 +56,10 @@ function statisticRow(label: string, value: string): HTMLElement {
 function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
   const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', stat === 'resource' ? classResourceName(hero.classId) : statName(stat)), element('span', 'stat-value', String(view.sheet[stat]))));
+  const showAttributeGrowth = hasBankUnlock(context.store.getState(), 'attributeGrowth');
   const attributeMaximum = ATTRIBUTE_BAR_BASE + ATTRIBUTE_BAR_PER_LEVEL * hero.level;
   const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) =>
-    element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'stat-value', String(view.sheet[stat]))),
+    element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'stat-value', String(view.sheet[stat]), ...(showAttributeGrowth ? [createGrowthGain(hero.classId, stat)] : []))),
   );
   const identity = element(
     'div',

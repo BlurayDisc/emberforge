@@ -152,6 +152,7 @@
 .panel-body {
   padding: 12px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -320,6 +321,21 @@
   50% { background: #ff6a5a; }
 }
 
+.stay-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.stay-toggle-box {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  accent-color: var(--gold);
+}
+
 .volume-slider {
   flex: 1;
   max-width: 260px;
@@ -382,7 +398,7 @@
 
 .attribute-row {
   display: grid;
-  grid-template-columns: 110px 1fr 40px;
+  grid-template-columns: minmax(110px, max-content) 1fr auto;
   align-items: center;
   gap: 10px;
 }
@@ -394,6 +410,21 @@
 .bar-strength .bar-fill { background: var(--crimson); }
 .bar-skill .bar-fill { background: var(--green); }
 .bar-magic .bar-fill { background: var(--blue); }
+.bar-hp .bar-fill { background: var(--log-taken); }
+.bar-defence .bar-fill { background: var(--silver); }
+.bar-resistance .bar-fill { background: var(--upgrade-4); }
+.bar-speed .bar-fill { background: var(--gold); }
+
+.growth-gain {
+  margin-left: 6px;
+  color: var(--parchment);
+}
+
+.stat-name,
+.stat-value,
+.growth-gain {
+  white-space: nowrap;
+}
 
 .class-tags {
   display: flex;

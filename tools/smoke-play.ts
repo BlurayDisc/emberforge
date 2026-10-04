@@ -22,12 +22,15 @@ import {
   hireHeroCommand,
   listTavernOffers,
   runAwayCommand,
+  findBackpackMoveAnchor,
   moveBackpackEntryCommand,
   sellBackpackEntryCommand,
   startDungeonRunCommand,
   type GameStore,
 } from '../src/game';
-import { CURRENT_SAVE_VERSION, parseGameState } from '../src/systems/save';
+import { CURRENT_SAVE_VERSION, loadGameState, parseGameState } from '../src/systems/save';
+import { createNewGameState } from '../src/game/newGame';
+import type { GameState } from '../src/model/gameState';
 import { createRandom } from '../src/kernel/random';
 import type { Item } from '../src/model/item';
 import { generateCraftedItem } from '../src/systems/items';
@@ -41,15 +44,17 @@ import { computeHeroSheet, heroToBattleUnit } from '../src/systems/stats';
 import { BASE_ITEMS } from '../src/content/baseItems';
 import { CLASSES } from '../src/content/classes';
 import { MILL_PRODUCED_MATERIAL_IDS, MILL_PRODUCTION_INTERVAL_SECONDS, MILL_STORAGE_CAPACITY } from '../src/content/balance/mill';
-import type { ClassId } from '../src/model/hero';
+import type { ClassId, Hero } from '../src/model/hero';
+import type { EquipmentSlot } from '../src/model/item';
 import { DUNGEONS } from '../src/content/dungeons';
+import { MONSTER_SPELLS } from '../src/content/monsterSpells';
 import { SPELLS, findSpell, spellsOfClass } from '../src/content/spells';
-import type { SpellDefinition } from '../src/model/spell';
+import type { BattleSpell, SpellDefinition } from '../src/model/spell';
 import { simulateBattle } from '../src/systems/battle';
 import { itemDisplayName } from '../src/ui/displayNames';
-import { createEncounter } from '../src/systems/dungeons';
+import { createEncounter, createMonsterUnit } from '../src/systems/dungeons';
 import { createHero } from '../src/systems/heroes';
-import { learnSpell } from '../src/systems/spells';
+import { equipSpell, learnSpell } from '../src/systems/spells';
 
 function createStore(seed: number): GameStore {
   const memory = { saved: null as string | null };
@@ -97,6 +102,46 @@ function levelUpCrafter(store: GameStore, baseId: string, professionId: string, 
 
 function generateSwordForMigration(): Item {
   return generateCraftedItem({ itemId: 'old-sword', baseId: 'sword', tier: 1, setMaterialId: null, maximumItemLevel: 1, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(1));
+}
+
+// A save always loads. A good save comes back unchanged. A broken part is dropped, and the heroes, levels, gear and dungeon progress stay.
+function checkSaveSalvage(state: GameState): void {
+  const freshState = createNewGameState(1);
+  const intact = loadGameState(JSON.stringify(state), freshState);
+  assert.ok(intact?.isIntact, 'a good save loads without any loss');
+  assert.deepEqual(intact.state, state, 'a good save comes back unchanged');
+
+  const tooNew = loadGameState(JSON.stringify({ ...state, saveVersion: CURRENT_SAVE_VERSION + 5 }), freshState);
+  assert.ok(tooNew && !tooNew.isIntact, 'a save from a newer game still loads, and its raw text is kept');
+  assert.deepEqual(tooNew.state.company, state.company, 'a newer save keeps the heroes');
+
+  const geared = state.company.find((hero: Hero) => Object.keys(hero.equipment).length >= 1);
+  assert.ok(geared, 'the test company has a hero with gear');
+  const [brokenSlot] = Object.keys(geared.equipment) as EquipmentSlot[];
+  assert.ok(brokenSlot);
+  const brokenText = JSON.stringify({
+    ...state,
+    company: [
+      ...state.company.map((hero: Hero) => hero.id === geared.id
+        ? { ...hero, learnedSpellIds: [...hero.learnedSpellIds, 'no-such-spell'], equipment: { ...hero.equipment, [brokenSlot]: { ...(hero.equipment as Record<string, object>)[brokenSlot], baseId: 'no-such-base' } } }
+        : hero),
+      { id: 'hero-broken', classId: 'no-such-class', level: 4 },
+    ],
+    clearedDungeonIds: [...state.clearedDungeonIds, 'no-such-dungeon'],
+    backpack: [{ column: 0, row: 0, content: { kind: 'material', materialId: 'no-such-material', quantity: 1 } }, ...state.backpack],
+    reports: 'not a list',
+  });
+  const repaired = loadGameState(brokenText, freshState);
+  assert.ok(repaired && !repaired.isIntact, 'a damaged save loads, and its raw text is kept');
+  const repairedHero = repaired.state.company.find((hero: Hero) => hero.id === geared.id);
+  assert.equal(repaired.state.company.length, state.company.length, 'only the hero with an unknown class is dropped');
+  assert.equal(repairedHero?.level, geared.level, 'the hero keeps its level');
+  assert.equal(repairedHero?.equipment[brokenSlot], undefined, 'the broken gear is left out');
+  assert.equal(Object.keys(repairedHero?.equipment ?? {}).length, Object.keys(geared.equipment).length - 1, 'the other gear stays');
+  assert.deepEqual(repairedHero?.learnedSpellIds, geared.learnedSpellIds, 'an unknown spell is left out');
+  assert.deepEqual(repaired.state.clearedDungeonIds, state.clearedDungeonIds, 'the dungeon progress stays');
+  assert.deepEqual(repaired.state.backpack, state.backpack, 'a broken backpack entry is left out');
+  assert.equal(loadGameState('not json', freshState), null, 'text that is not a save does not load');
 }
 
 function playSession(seed: number): string {
@@ -247,8 +292,49 @@ function playSession(seed: number): string {
   const ranAwayHero = store.getState().company.find((candidate) => candidate.id === runner.id);
   assert.ok(ranAwayHero && ranAwayHero.healthAsOfMs === clock.nowMs, 'the health is settled at the moment of the escape');
 
+  checkSaveSalvage(store.getState());
+
   const hero = finalState.company[0];
   return JSON.stringify([finalState.copper, encounters, hero?.level, hero?.experience, hero?.statistics]);
+}
+
+// The Goblin Chief casts its own spells. They cost no resource and wait for their cooldown.
+{
+  const goblinChief = createMonsterUnit('goblin-chief', 10, 'boss-spell-check');
+  assert.deepEqual(goblinChief.spells.map((spell) => spell.id), ['goblin-chief.cowing-roar', 'goblin-chief.war-cry', 'goblin-chief.crushing-cleaver'], 'the boss has its three spells');
+  const challenger = { ...createHero('warrior', 1, createRandom(3)), level: 10 };
+  const bossFight = simulateBattle([heroToBattleUnit(challenger), goblinChief], createRandom(3).fork('battle'));
+  assert.ok(bossFight.events.some((event) => event.spellId?.startsWith('goblin-chief.') && event.resourceSpent === undefined), 'the boss casts a spell in the fight, and the log shows no resource cost');
+}
+
+// Frost Shard hits and slows. A slowed boss acts less often, so it hits the Mage fewer times.
+{
+  const frostShard = findSpell('mage.frost-shard');
+  assert.ok(frostShard?.effect.kind === 'damage' && frostShard.effect.inflicts?.status === 'slow', 'Frost Shard slows the enemy it hits');
+  const mageWithoutSpell = { ...createHero('mage', 1, createRandom(4)), level: 10 };
+  const mageWithFrostShard = equipSpell(learnSpell(mageWithoutSpell, frostShard), frostShard, 0);
+  const bossHitsOn = (hero: typeof mageWithoutSpell): number => {
+    const boss = createMonsterUnit('goblin-chief', 10, 'boss-slow-check');
+    const report = simulateBattle([{ ...heroToBattleUnit(hero), maxHp: 100_000, hp: 100_000 }, boss], createRandom(4).fork('battle'));
+    return report.events.filter((event) => event.actorId === boss.id && event.kind === 'attack').length / report.durationSeconds;
+  };
+  assert.ok(bossHitsOn(mageWithFrostShard) < bossHitsOn(mageWithoutSpell), 'a slowed boss hits fewer times each second');
+}
+
+// A wound cuts the healing that a unit receives. The Goblin Chief wounds with Crushing Cleaver.
+{
+  const cleaver = MONSTER_SPELLS.find((spell) => spell.id === 'goblin-chief.crushing-cleaver');
+  assert.ok(cleaver?.effect.kind === 'damage' && cleaver.effect.inflicts?.status === 'wound', 'Crushing Cleaver wounds the hero');
+  const minorHeal = findSpell('priest.minor-heal');
+  assert.ok(minorHeal);
+  const priest = equipSpell(learnSpell({ ...createHero('priest', 1, createRandom(6)), level: 10 }, minorHeal), minorHeal, 0);
+  const averageHealAfterBossSpells = (bossSpells: readonly BattleSpell[]): number => {
+    const boss = { ...createMonsterUnit('goblin-chief', 10, 'boss-wound-check'), spells: bossSpells };
+    const woundedPriest = { ...heroToBattleUnit(priest), maxHp: 100_000, hp: 100 };
+    const heals = simulateBattle([woundedPriest, boss], createRandom(6).fork('battle')).events.filter((event) => event.kind === 'heal' && event.actorId === woundedPriest.id);
+    return heals.reduce((total, event) => total + event.amount, 0) / heals.length;
+  };
+  assert.ok(averageHealAfterBossSpells([cleaver]) < averageHealAfterBossSpells([]), 'a wounded hero is healed less');
 }
 
 // Smithing must pay a little: the average sale beats the fee plus what the raw materials would sell for.
@@ -422,6 +508,9 @@ for (let level = 1; level <= 7; level++) {
   const bulky = store.getState().backpack.find((entry) => entry.content.kind === 'material' && entry.content.materialId === 'pine-wood');
   assert.ok(bulky);
   assert.equal(rejectionKey(store, moveBackpackEntryCommand({ column: bulky.column, row: bulky.row }, { column: 0, row: backpackRowCount(0) - 1 })), 'reject.cannotPlaceThere', 'a 1 by 2 entry cannot hang over the last row');
+  const lastRow = backpackRowCount(0) - 1;
+  assert.deepEqual(findBackpackMoveAnchor(store.getState(), { column: bulky.column, row: bulky.row }, { column: 0, row: lastRow }), { column: 0, row: lastRow - 1 }, 'a tap on the bottom cell of a 1 by 2 entry moves its corner up');
+  assert.equal(findBackpackMoveAnchor(store.getState(), { column: bulky.column, row: bulky.row }, { column: 5, row: 4 }), null, 'a tap on a taken cell has no anchor');
   assert.equal(rejectionKey(store, moveBackpackEntryCommand({ column: 4, row: 4 }, { column: 3, row: 3 })), 'reject.cannotPlaceThere', 'an empty spot has nothing to move');
 }
 
@@ -434,6 +523,9 @@ for (let level = 1; level <= 7; level++) {
   store.execute((state) => ({ ...state, copper: 10_000 }));
   assert.equal(rejectionKey(store, buyBankUnlockCommand('backpackSorting')), null, 'the upgrade can be bought');
   assert.equal(rejectionKey(store, buyBankUnlockCommand('backpackSorting')), 'reject.alreadyUnlocked', 'the upgrade is bought once');
+  assert.equal(rejectionKey(store, buyBankUnlockCommand('quickDispatch')), null, 'quick dispatch can be bought');
+  assert.equal(rejectionKey(store, buyBankUnlockCommand('mainStatGrowth')), null, 'main stat growth can be bought');
+  assert.equal(rejectionKey(store, buyBankUnlockCommand('attributeGrowth')), null, 'attribute growth can be bought');
   const entriesBefore = store.getState().backpack;
   assert.equal(rejectionKey(store, sortBackpackCommand()), null, 'a bought sort works');
   const sortedOnce = store.getState().backpack;

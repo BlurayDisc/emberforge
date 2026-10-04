@@ -1,7 +1,7 @@
 import { HEAL_SPELL_CAST_BELOW_HEALTH_FRACTION, ULTIMATE_OPENING_DELAY_SECONDS } from '../../content/balance/spells';
 import type { Random } from '../../kernel/random';
 import type { BattleEvent, BattleUnit } from '../../model/battle';
-import type { SpellDefinition, SpellEffect } from '../../model/spell';
+import type { BattleSpell, SpellEffect } from '../../model/spell';
 import { applyStatus, combatantOf, damageFactorBetween, livingUnitsOf, statusStrength, type Combatant } from './combatant';
 import { rollDamage } from './damage';
 import { gainResourceFromHit, spendResource } from './resourcePool';
@@ -13,13 +13,13 @@ interface CastContext {
   opponents: BattleUnit[];
   timeSeconds: number;
   random: Random;
-  spell: SpellDefinition;
+  spell: BattleSpell;
 }
 
 const healthFractionOf = (unit: BattleUnit): number => unit.hp / unit.maxHp;
 const isWounded = (unit: BattleUnit): boolean => healthFractionOf(unit) < HEAL_SPELL_CAST_BELOW_HEALTH_FRACTION;
 
-function readyAtSeconds(actor: Combatant, spell: SpellDefinition): number {
+function readyAtSeconds(actor: Combatant, spell: BattleSpell): number {
   return actor.spellReadyAtSeconds[spell.id] ?? (spell.isUltimate ? ULTIMATE_OPENING_DELAY_SECONDS : 0);
 }
 
@@ -65,6 +65,9 @@ function castDamage(effect: Extract<SpellEffect, { kind: 'damage' | 'drain' }>, 
       dealtTotal += damage.amount;
       events.push(event(context, target, 'attack', damage.amount, damage.isCritical));
     }
+    if (effect.kind === 'damage' && effect.inflicts && target.hp > 0) {
+      applyStatus(targetCombatant, { status: effect.inflicts.status, strength: effect.inflicts.strength, expiresAtSeconds: context.timeSeconds + effect.inflicts.durationSeconds });
+    }
   }
   if (effect.kind === 'drain') {
     const caster = context.actor.unit;
@@ -79,7 +82,8 @@ function castHeal(effect: Extract<SpellEffect, { kind: 'heal' }>, context: CastC
   const wounded = (effect.target === 'self' ? [context.actor.unit] : context.allies).filter((unit) => unit.hp < unit.maxHp);
   const targets = effect.target === 'allAllies' ? wounded : [[...wounded].sort((first, second) => healthFractionOf(first) - healthFractionOf(second))[0] as BattleUnit];
   return targets.map((target) => {
-    const healed = Math.min(target.maxHp - target.hp, Math.round(context.actor.unit.attack * effect.power));
+    const woundFactor = 1 - statusStrength(combatantOf(context.combatants, target), 'wound', context.timeSeconds);
+    const healed = Math.min(target.maxHp - target.hp, Math.round(context.actor.unit.attack * effect.power * woundFactor));
     target.hp += healed;
     return event(context, target, 'heal', healed);
   });
@@ -111,7 +115,7 @@ export function tryCastSpell(actor: Combatant, combatants: readonly Combatant[],
     actor.spellReadyAtSeconds[spell.id] = timeSeconds + spell.cooldownSeconds;
     const events = cast(context);
     const firstEvent = events[0];
-    if (firstEvent) firstEvent.resourceSpent = spell.resourceCost;
+    if (firstEvent && spell.resourceCost > 0) firstEvent.resourceSpent = spell.resourceCost;
     return events;
   }
   return null;

@@ -1,18 +1,15 @@
 import { MATERIALS } from '../../../content/materials';
 import { requireById } from '../../../content/lookup';
-import { saleDurationSeconds, sellBackpackEntryCommand } from '../../../game';
+import { sellBackpackEntryCommand } from '../../../game';
 import type { BackpackEntry } from '../../../model/backpack';
-import { actionButton, element } from '../../dom';
+import { actionButton } from '../../dom';
 import { itemDisplayName, materialName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
 import { openItemView, openMaterialView } from '../../itemModals';
-import { formatDuration } from '../../liveUpdate';
-import { openModal, type ScreenPoint } from '../../modal';
-import { createMoneyDisplay } from '../../moneyDisplay';
 import type { PanelContext } from '../panelContext';
 import { openEquipHeroChoice } from './equipHeroChoice';
 
-function saleValueOf(entry: BackpackEntry): number {
+export function saleValueOf(entry: BackpackEntry): number {
   if (entry.content.kind === 'item') return entry.content.item.sellValueCopper;
   return requireById(MATERIALS, entry.content.materialId).sellValueCopper * entry.content.quantity;
 }
@@ -47,18 +44,4 @@ export function createBackpackEntryActions(context: PanelContext, entry: Backpac
 
 export function backpackEntryTitle(entry: BackpackEntry): string {
   return entry.content.kind === 'item' ? itemDisplayName(entry.content.item) : materialName(entry.content.materialId);
-}
-
-// The merchant uses a popup next to the click, because there a tap means "sell or view", not "move".
-export function openBackpackEntryMenu(context: PanelContext, entry: BackpackEntry, clickPoint: ScreenPoint): void {
-  const saleValue = saleValueOf(entry);
-  let closeMenu = (): void => undefined;
-  const menu = element(
-    'div',
-    'slot-menu',
-    element('div', 'card-text small', t('merchant.saleTime', { time: formatDuration(saleDurationSeconds(saleValue)) })),
-    ...createBackpackEntryActions(context, entry, { afterAction: () => closeMenu() }),
-    createMoneyDisplay(saleValue),
-  );
-  closeMenu = openModal(backpackEntryTitle(entry), menu, undefined, clickPoint).close;
 }

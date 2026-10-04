@@ -1,5 +1,5 @@
 import type { GameState } from '../model/gameState';
-import { parseGameState, serializeGameState } from '../systems/save';
+import { loadGameState, serializeGameState } from '../systems/save';
 import { createNewGameState } from './newGame';
 import type { SaveStorage } from './saveStorage';
 
@@ -35,12 +35,13 @@ export interface GameStore {
   startNewGame(): void;
 }
 
+// A save always loads as much as it can. When it is not intact, the raw text stays under the unreadable key.
 function loadSavedState(storage: SaveStorage): GameState | null {
   const serialized = storage.read();
   if (serialized === null) return null;
-  const parsed = parseGameState(serialized);
-  if (parsed === null) storage.keepUnreadable?.(serialized);
-  return parsed;
+  const loaded = loadGameState(serialized, createFreshState());
+  if (loaded === null || !loaded.isIntact) storage.keepUnreadable?.(serialized);
+  return loaded?.state ?? null;
 }
 
 function createFreshState(): GameState {

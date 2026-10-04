@@ -17,7 +17,10 @@ function buy(context: PanelContext, kind: StorageUpgradeKind): void {
 const UNLOCK_ICONS: Readonly<Record<BankUnlockId, () => HTMLElement>> = {
   backpackSorting: () => createItemIcon('tome', 'linen', 'cloth', 3),
   dropRates: () => createItemIcon('ring', 'quartz', 'gem', 3),
+  quickDispatch: () => createItemIcon('boots-light', 'linen', 'cloth', 3),
   monsterStatistics: () => createItemIcon('amulet', 'quartz', 'gem', 3),
+  mainStatGrowth: () => createItemIcon('belt', 'linen', 'cloth', 3),
+  attributeGrowth: () => createItemIcon('ring', 'rawhide', 'hide', 3),
 };
 
 function renderUnlockRow(context: PanelContext, unlockId: BankUnlockId): HTMLElement {

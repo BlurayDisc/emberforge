@@ -6,11 +6,11 @@ import {
   MITIGATION_BASE,
   MITIGATION_PER_ATTACKER_LEVEL,
 } from '../../content/balance/battle';
-import { CLASSES } from '../../content/classes';
+import { CLASSES, type ClassDefinition } from '../../content/classes';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
 import { findSpell } from '../../content/spells';
-import type { BattleUnit } from '../../model/battle';
+import type { AttackKind, BattleUnit } from '../../model/battle';
 import type { Hero } from '../../model/hero';
 import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
@@ -45,14 +45,21 @@ function gearDamage(hero: Hero, damageKey: 'physicalDamage' | 'magicalDamage'): 
   return Object.values(hero.equipment).reduce((total, item) => total + (item.baseStats[damageKey] ?? 0), 0);
 }
 
+// The primary attribute of the class gives the damage of its attack kind. The other kind uses the plain attribute.
+function damageAttribute(classDefinition: ClassDefinition, attackKind: AttackKind, stats: StatBlock): number {
+  if (classDefinition.attackKind === attackKind) return stats[classDefinition.primaryAttribute];
+  return attackKind === 'magic' ? stats.magic : stats.strength;
+}
+
 // Damage is the attribute plus the weapon damage. The class resource (mana, stamina, hatred or rage) pays for spells.
 export function computeHeroSheet(hero: Hero): HeroSheet {
   const stats = computeHeroStats(hero);
+  const classDefinition = requireById(CLASSES, hero.classId);
   return {
     health: stats.hp,
-    resource: maximumResourceOf(requireById(CLASSES, hero.classId).resourceId, stats, hero.level),
-    physicalDamage: stats.strength + gearDamage(hero, 'physicalDamage'),
-    magicalDamage: stats.magic + gearDamage(hero, 'magicalDamage'),
+    resource: maximumResourceOf(classDefinition.resourceId, stats, hero.level),
+    physicalDamage: damageAttribute(classDefinition, 'physical', stats) + gearDamage(hero, 'physicalDamage'),
+    magicalDamage: damageAttribute(classDefinition, 'magic', stats) + gearDamage(hero, 'magicalDamage'),
     armour: stats.defence,
     resistance: stats.resistance,
     speed: stats.speed,

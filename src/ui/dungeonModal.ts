@@ -1,5 +1,6 @@
 import { DUNGEONS, type DungeonDefinition } from '../content/dungeons';
 import { requireById } from '../content/lookup';
+import { MONSTER_SPELLS } from '../content/monsterSpells';
 import { MONSTERS, type MonsterDefinition } from '../content/monsters';
 import { describeMonsterStatistics } from '../game';
 import { dungeonBackdropCanvas, monsterSpriteCanvas } from './artProviders';
@@ -9,6 +10,7 @@ import { statName } from './itemStatTable';
 import { t } from './i18n';
 import { createMaterialIcon } from './iconArt';
 import { openModal } from './modal';
+import { describeMonsterSpell, spellName } from './spellText';
 import { MATERIALS } from '../content/materials';
 
 function monsterIdsOf(dungeon: DungeonDefinition): string[] {
@@ -49,6 +51,13 @@ function renderStatisticsLine(monster: MonsterDefinition, dungeon: DungeonDefini
   return element('div', 'card-text small', parts.map(([stat, value]) => `${statName(stat)} ${value}`).join(' - '));
 }
 
+function renderMonsterSpellLines(monster: MonsterDefinition): HTMLElement[] {
+  return (monster.spellIds ?? []).flatMap((spellId) => {
+    const spell = MONSTER_SPELLS.find((candidate) => candidate.id === spellId);
+    return spell ? [element('div', 'card-text small', t('dungeons.monsterSpell', { name: spellName(spell.id), effect: describeMonsterSpell(spell), seconds: spell.cooldownSeconds }))] : [];
+  });
+}
+
 function renderMonsterEntry(monster: MonsterDefinition, dungeon: DungeonDefinition, options: DungeonViewOptions): HTMLElement {
   const sprite = monsterSpriteCanvas(monster.spriteKey);
   return element(
@@ -62,6 +71,7 @@ function renderMonsterEntry(monster: MonsterDefinition, dungeon: DungeonDefiniti
       element('div', 'card-text small lore-text', t(`monster.${monster.id}.lore`)),
       element('div', 'card-text small', t('dungeons.monsterLevel', { level: dungeon.level })),
       options.showsMonsterStatistics ? renderStatisticsLine(monster, dungeon) : element('div', 'card-text small hint', t('dungeons.statisticsLocked')),
+      ...renderMonsterSpellLines(monster),
       ...(options.showsDropRates ? monster.drops.map(renderLootLine) : [element('div', 'card-text small hint', t('dungeons.dropsLocked'))]),
     ),
   );

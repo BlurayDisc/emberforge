@@ -6,6 +6,7 @@ import { isInCastle, onCastleVisitChange, setInCastle } from './castleVisit';
 import { onLanguageChange, t } from './i18n';
 import { createMillStatus } from './millStatus';
 import { focusedRunNumber, onRunFocusChange } from './runFocus';
+import { enableSwipeBetweenScreens } from './swipeBetweenScreens';
 import type { TownNavigation } from './townNavigation';
 
 export interface TownOverlay {
@@ -56,6 +57,7 @@ export function createTownOverlay(store: GameStore, onSelect: (panelId: string) 
   const mill = BUILDINGS.find((building) => building.id === 'mill');
   if (mill) world.append(createMillStatus(store, mill, notify));
   overlay.append(world, leftArrow, rightArrow, title, hint);
+  enableSwipeBetweenScreens(() => overlay.style.display !== 'none' && document.querySelector('.panel, .modal') === null, () => goTo(navigation.currentScreen() + 1), () => goTo(navigation.currentScreen() - 1));
 
   const refreshArrows = (): void => {
     const screen = navigation.currentScreen();

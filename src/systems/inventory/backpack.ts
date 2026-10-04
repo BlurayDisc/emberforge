@@ -61,6 +61,21 @@ export function moveEntry(entries: readonly BackpackEntry[], from: GridPosition,
   return [...others, { ...moving, column: to.column, row: to.row }];
 }
 
+// A tap on a cell of the free area means "put the entry here". The top-left corner is tried first.
+// Then the corner moves up and left, so a tap on the bottom cell of a tall entry still works.
+export function findMoveAnchor(entries: readonly BackpackEntry[], from: GridPosition, tapped: GridPosition, rowCount: number): GridPosition | null {
+  const moving = findEntryAt(entries, from);
+  if (!moving) return null;
+  const { width, height } = sizeOfContent(moving.content);
+  for (let rowShift = 0; rowShift < height; rowShift++) {
+    for (let columnShift = 0; columnShift < width; columnShift++) {
+      const anchor = { column: tapped.column - columnShift, row: tapped.row - rowShift };
+      if (anchor.column >= 0 && anchor.row >= 0 && moveEntry(entries, from, anchor, rowCount) !== null) return anchor;
+    }
+  }
+  return null;
+}
+
 // Materials do not stack: every unit takes its own place in the backpack. A unit that finds no room is returned as overflow.
 export function addMaterials(
   currentEntries: readonly BackpackEntry[],

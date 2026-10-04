@@ -6,7 +6,7 @@ import type { PanelRenderer } from './panels/panelContext';
 import { renderSettingsPanel } from './panels/settingsPanel';
 import { renderAcademyPanel } from './panels/town/academyView';
 import { renderBankPanel } from './panels/town/bankView';
-import { renderMerchantPanel } from './panels/town/merchantView';
+import { renderMerchantPanel, resetMerchantSelection } from './panels/town/merchantView';
 import { renderMillPanel } from './panels/town/millView';
 import { renderTavernPanel } from './panels/town/tavernView';
 import { renderWorkshopPanel, resetWorkshopSelection } from './panels/town/workshopView';
@@ -24,12 +24,12 @@ export interface PanelDefinition {
 export const PANEL_CATALOG: readonly PanelDefinition[] = [
   { id: 'heroes', barIcon: 'heroes', render: renderHeroesPanel },
   { id: 'inventory', barIcon: 'inventory', render: renderInventoryPanel, onClose: resetInventorySelection },
+  { id: 'workshop', barIcon: 'workshop', render: renderWorkshopPanel, onClose: resetWorkshopSelection },
+  { id: 'merchant', barIcon: 'merchant', render: renderMerchantPanel, onClose: resetMerchantSelection },
   { id: 'dungeons', barIcon: 'dungeons', render: renderDungeonsPanel },
   { id: 'world', barIcon: 'world', render: renderWorldPanel },
   { id: 'settings', barIcon: 'menu', render: renderSettingsPanel },
   { id: 'tavern', barIcon: null, render: renderTavernPanel, isLocked: (state) => state.company.length === 0 },
-  { id: 'workshop', barIcon: null, render: renderWorkshopPanel, onClose: resetWorkshopSelection },
-  { id: 'merchant', barIcon: null, render: renderMerchantPanel },
   { id: 'bank', barIcon: null, render: renderBankPanel },
   { id: 'academy', barIcon: null, render: renderAcademyPanel },
   { id: 'mill', barIcon: null, render: renderMillPanel },

@@ -1,5 +1,7 @@
 .stage-area {
   position: relative;
+  /* A horizontal swipe moves between town screens. The browser keeps only the vertical pan. */
+  touch-action: pan-y;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -446,10 +448,27 @@
   right: 6px;
   bottom: 4px;
   z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 10px;
-  opacity: 0.55;
   color: var(--parchment, #e8d9b0);
   pointer-events: none;
+}
+
+.build-version {
+  opacity: 0.55;
+}
+
+/* The notice is a real button, so it takes touch. The rest of the badge stays click-through. */
+.changelog-notice {
+  pointer-events: auto;
+  white-space: nowrap;
+  animation: changelog-pulse 1.2s steps(1) infinite;
+}
+
+@keyframes changelog-pulse {
+  50% { box-shadow: var(--outline-2), 0 0 0 4px var(--gold); }
 }
 
 

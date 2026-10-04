@@ -1,6 +1,6 @@
 import { DUNGEONS, type DungeonDefinition } from '../../content/dungeons';
 import { requireById } from '../../content/lookup';
-import { collectDungeonLootCommand, describeHero, hasBankUnlock, isDungeonUnlocked, runInDungeon, runOfHero, runAwayCommand, startDungeonRunCommand } from '../../game';
+import { collectDungeonLootCommand, describeHero, hasBankUnlock, isDungeonUnlocked, loadStaysOnDungeonScreen, runInDungeon, runOfHero, runAwayCommand, saveStaysOnDungeonScreen, startDungeonRunCommand } from '../../game';
 import type { DungeonRun, RunReport } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
 import type { MaterialStack } from '../../model/material';
@@ -24,15 +24,19 @@ function monsterNamesOf(dungeon: DungeonDefinition): string {
   return listOf(ids.map((id) => t(`monster.${id}`)));
 }
 
-function start(context: PanelContext, dungeonId: string, heroId: string, chooser: ModalHandle): void {
+// Saved apart from the game save, like the other settings. A new game keeps it, so it only counts while the Bank upgrade is owned.
+let staysOnDungeonScreen = loadStaysOnDungeonScreen();
+
+function start(context: PanelContext, dungeonId: string, heroId: string, chooser: ModalHandle | null): void {
   const result = context.store.execute(startDungeonRunCommand(dungeonId, [heroId], Date.now()));
   if (!result.accepted) {
     context.notify(describeRejection(result.rejection));
     return;
   }
+  chooser?.close();
+  if (staysOnDungeonScreen && hasBankUnlock(context.store.getState(), 'quickDispatch')) return;
   const startedRun = runInDungeon(context.store.getState(), dungeonId);
   if (startedRun) focusRun(startedRun.runNumber);
-  chooser.close();
   context.closePanel();
 }
 
@@ -61,7 +65,15 @@ function renderHeroChoice(context: PanelContext, hero: Hero, dungeon: DungeonDef
   return entry;
 }
 
-// The player picks the dungeon first. This window then asks which hero goes, and one tap on a hero starts the fight.
+// The first hero in the company is the primary hero. A company of one has nobody to choose, so the fight starts at once.
+// From the second hero on, this window asks which hero goes, and one tap on a hero starts the fight.
+function sendHeroToDungeon(context: PanelContext, dungeon: DungeonDefinition): void {
+  const company = context.store.getState().company;
+  const primaryHero = company[0];
+  if (company.length === 1 && primaryHero) start(context, dungeon.id, primaryHero.id, null);
+  else openHeroChooser(context, dungeon);
+}
+
 function openHeroChooser(context: PanelContext, dungeon: DungeonDefinition): void {
   const heroes = context.store.getState().company;
   const list = element('div', 'chooser-list');
@@ -151,7 +163,7 @@ function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): H
       levelRangeLine(context, dungeon),
       ...(isCleared ? [element('div', 'card-text small', t('dungeons.cleared'))] : []),
     ],
-    actions: [actionButton(t('dungeons.start'), () => openHeroChooser(context, dungeon), { disabled: !hasHeroToSend })],
+    actions: [actionButton(t('dungeons.start'), () => sendHeroToDungeon(context, dungeon), { disabled: !hasHeroToSend })],
   }), dungeon.id);
 }
 
@@ -180,12 +192,24 @@ function renderBusyDungeon(context: PanelContext, dungeon: DungeonDefinition, ru
   }), dungeon.id);
 }
 
+function renderStayOnScreenToggle(): HTMLElement {
+  const checkbox = element('input', 'stay-toggle-box');
+  checkbox.type = 'checkbox';
+  checkbox.checked = staysOnDungeonScreen;
+  checkbox.addEventListener('change', () => {
+    staysOnDungeonScreen = checkbox.checked;
+    saveStaysOnDungeonScreen(staysOnDungeonScreen);
+  });
+  return element('label', 'stay-toggle', checkbox, element('span', 'card-text', t('dungeons.stayOnScreen')));
+}
+
 export const renderDungeonsPanel: PanelRenderer = (context) => {
   const state = context.store.getState();
   const body = element('div', 'panel-body');
   const dungeons = DUNGEONS.filter((dungeon) => dungeon.townId === state.townId);
   body.append(
     element('p', 'hint', t('dungeons.oneFightHint')),
+    ...(hasBankUnlock(state, 'quickDispatch') ? [renderStayOnScreenToggle()] : []),
     createList(
       ...dungeons.map((dungeon) => {
         const run = runInDungeon(state, dungeon.id);

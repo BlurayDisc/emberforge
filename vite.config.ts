@@ -17,5 +17,8 @@ const commitHash = readGitValue('git rev-parse --short HEAD', 'dev');
 export default defineConfig({
   base: './',
   build: { target: 'es2022', chunkSizeWarningLimit: 800 },
-  define: { __BUILD_LABEL__: JSON.stringify(`v${packageJson.version} build ${buildNumber} (${commitHash})`) },
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __BUILD_LABEL__: JSON.stringify(`v${packageJson.version} build ${buildNumber} (${commitHash})`),
+  },
 });

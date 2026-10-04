@@ -13,9 +13,10 @@ import { heroToBattleUnit } from '../../src/systems/stats';
 
 const BATTLES_PER_CASE = 300;
 const SHORT_FIGHT_SECONDS_AT_LEVEL_ONE = 7;
-const SECONDS_ADDED_PER_LEVEL = 0.535;
+const SECONDS_ADDED_PER_LEVEL_IN_FIRST_TIER = 2;
+const SECONDS_ADDED_PER_LEVEL_AFTER_FIRST_TIER = 0.4;
 const LEVELS_PER_TIER = 10;
-const BOSS_DURATION_MULTIPLIER = 10;
+const BOSS_DURATION_MULTIPLIER = 5;
 
 type GearMode = 'no gear' | 'best weapon only' | 'crafted gear' | 'gear + first spells' | 'gear + best spells';
 
@@ -42,8 +43,11 @@ const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
   thief: ['kris', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
 };
 
+// A normal fight grows from 7 s at level 1 to 25 s at level 10, then more slowly.
 function targetDurationSeconds(level: number): number {
-  return SHORT_FIGHT_SECONDS_AT_LEVEL_ONE + SECONDS_ADDED_PER_LEVEL * (level - 1);
+  const levelsInFirstTier = Math.min(level, LEVELS_PER_TIER) - 1;
+  const levelsAfterFirstTier = Math.max(0, level - LEVELS_PER_TIER);
+  return SHORT_FIGHT_SECONDS_AT_LEVEL_ONE + SECONDS_ADDED_PER_LEVEL_IN_FIRST_TIER * levelsInFirstTier + SECONDS_ADDED_PER_LEVEL_AFTER_FIRST_TIER * levelsAfterFirstTier;
 }
 
 // The first base id of each class is its best weapon. Boss fights must still need the other slots.

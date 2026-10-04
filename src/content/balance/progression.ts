@@ -12,7 +12,5 @@ export const KILLS_PER_LEVEL_GROWTH = data.killsPerLevelGrowth;
 export const LEVEL_GAP_STEP = data.levelGapStep;
 export const LEVEL_GAP_FACTOR_MINIMUM = data.levelGapFactorMinimum;
 export const LEVEL_GAP_FACTOR_MAXIMUM = data.levelGapFactorMaximum;
-export const EARLY_EXPERIENCE_BONUS = data.earlyExperienceBonus;
-export const EARLY_EXPERIENCE_FADE_LEVELS = data.earlyExperienceFadeLevels;
 
 export const EXPERIENCE_RANK_MULTIPLIER: Record<UnitRank, number> = data.experienceRankMultiplier;

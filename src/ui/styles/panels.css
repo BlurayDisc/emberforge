@@ -510,6 +510,11 @@
   gap: 10px;
 }
 
+/* The equip button comes first, so the player does not scroll down to it. */
+.equip-confirm {
+  order: -1;
+}
+
 .compare-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -546,10 +551,6 @@
 .delta-same { color: var(--parchment-dim); }
 
 @media (max-width: 640px) {
-  .compare-cards {
-    grid-template-columns: 1fr;
-  }
-
   .paperdoll {
     grid-template-columns: 64px 1fr 64px;
     grid-template-rows: repeat(5, 64px);
@@ -800,10 +801,13 @@
 }
 
 .selection-bar {
+  box-sizing: border-box;
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 96px;
+  height: 150px;
   padding: 6px 8px;
   background: var(--wood-800);
   box-shadow: 0 0 0 2px var(--ink);
@@ -882,4 +886,66 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+@media (max-width: 640px) {
+  /* On a phone the selection bar takes the place of the descriptions, so the grid gets more room. */
+  .inventory-intro,
+  .selection-hint {
+    display: none;
+  }
+
+  .selection-bar {
+    height: 108px;
+  }
+}
+
+/* The details sit beside the grid on a wide panel. On a phone the flex wrap puts them under the grid. */
+.inventory-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.inventory-grid-column {
+  --cell: min(46px, 7.5vw);
+  /* The width is the grid width, so a long item name in the selection bar cannot widen the column. */
+  width: calc(var(--cell) * 10 + 9 * 2px + 8px);
+  max-width: 100%;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inventory-detail-column {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.growth-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  margin-top: 4px;
+}
+
+/* The rows are transparent boxes, so the name, bar and number columns line up for the whole group. */
+.growth-group {
+  display: grid;
+  grid-template-columns: max-content minmax(40px, 1fr) 3em;
+  align-items: center;
+  gap: 2px 6px;
+  align-content: start;
+}
+
+.growth-bar-row {
+  display: contents;
+}
+
+@media (max-width: 520px) {
+  .growth-bars {
+    grid-template-columns: 1fr;
+  }
 }

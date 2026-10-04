@@ -6,6 +6,8 @@ const SETTINGS_KEY = 'emberforge.settings';
 interface StoredSettings {
   language?: string;
   audio?: Partial<AudioPreferences>;
+  staysOnDungeonScreen?: boolean;
+  seenChangelogVersion?: string;
 }
 
 function readSettings(): StoredSettings {
@@ -52,6 +54,30 @@ export function loadAudioPreferences(): AudioPreferences {
 export function saveAudioPreferences(preferences: AudioPreferences): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), audio: preferences }));
+  } catch {
+    return;
+  }
+}
+
+export function loadStaysOnDungeonScreen(): boolean {
+  return readSettings().staysOnDungeonScreen === true;
+}
+
+export function saveStaysOnDungeonScreen(staysOnDungeonScreen: boolean): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), staysOnDungeonScreen }));
+  } catch {
+    return;
+  }
+}
+
+export function loadSeenChangelogVersion(): string | null {
+  return readSettings().seenChangelogVersion ?? null;
+}
+
+export function saveSeenChangelogVersion(seenChangelogVersion: string): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), seenChangelogVersion }));
   } catch {
     return;
   }

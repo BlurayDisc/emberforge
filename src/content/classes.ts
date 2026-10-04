@@ -5,11 +5,15 @@ import type { ResourceId } from '../model/resource';
 import type { ArmourWeight, GearType } from '../model/item';
 import type { StatBlock } from '../model/statBlock';
 
+export type PrimaryAttribute = 'strength' | 'skill' | 'magic';
+
 export interface ClassDefinition {
   id: ClassId;
   displayName: string;
   roleDescription: string;
   attackKind: AttackKind;
+  // Like the main attribute in Warcraft or Dota: it gives this class its attack damage, one point for one damage.
+  primaryAttribute: PrimaryAttribute;
   behavior: UnitBehavior;
   resourceId: ResourceId;
   spriteKey: string;

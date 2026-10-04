@@ -1,5 +1,5 @@
 import type { ResourceId } from './resource';
-import type { SpellDefinition } from './spell';
+import type { BattleSpell } from './spell';
 
 export type BattleSide = 'party' | 'enemy';
 export type MonsterRank = 'normal' | 'rare' | 'boss';
@@ -28,7 +28,7 @@ export interface BattleUnit {
   resourceId: ResourceId;
   maxResource: number;
   resource: number;
-  spells: readonly SpellDefinition[];
+  spells: readonly BattleSpell[];
 }
 
 export interface BattleEvent {

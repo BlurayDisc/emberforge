@@ -1,6 +1,6 @@
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
-import { describeStorage, hasBankUnlock, listEquipOptions, moveBackpackEntryCommand, sortBackpackCommand } from '../../game';
+import { describeStorage, findBackpackMoveAnchor, hasBankUnlock, listEquipOptions, listSaleJobs, merchantSaleSlotsOf, moveBackpackEntryCommand, sortBackpackCommand } from '../../game';
 import type { BackpackEntry } from '../../model/backpack';
 import type { Item } from '../../model/item';
 import { actionButton, element } from '../dom';
@@ -51,12 +51,13 @@ function renderDetail(entry: BackpackEntry): HTMLElement {
 }
 
 function tryMove(context: PanelContext, from: SelectedPosition, column: number, row: number): void {
-  const result = context.store.execute(moveBackpackEntryCommand(from, { column, row }));
+  const target = findBackpackMoveAnchor(context.store.getState(), from, { column, row }) ?? { column, row };
+  const result = context.store.execute(moveBackpackEntryCommand(from, target));
   if (!result.accepted) {
     context.notify(describeRejection(result.rejection));
     return;
   }
-  selectedPosition = { column, row };
+  selectedPosition = target;
   context.requestRender();
 }
 
@@ -71,14 +72,22 @@ function renderSortControl(context: PanelContext): HTMLElement {
   });
 }
 
-// The action bar has a fixed place above the grid, so the grid does not jump when the selection changes.
+// The merchant slot count can grow with a Bank upgrade, so the ceiling comes from the state. The line turns red when no slot is free.
+function renderMerchantSaleStatus(context: PanelContext): HTMLElement {
+  const state = context.store.getState();
+  const used = listSaleJobs(state).length;
+  const slots = merchantSaleSlotsOf(state);
+  return element('p', `hint${used >= slots ? ' danger-text' : ''}`, t('inventory.merchantSales', { used, slots }));
+}
+
+// The action bar has a fixed place and a fixed height above the grid, so the grid does not jump when the selection changes.
 function renderSelectionBar(context: PanelContext, selected: BackpackEntry | undefined): HTMLElement {
   if (!selected) return element('div', 'selection-bar', element('p', 'hint', t('inventory.select')));
   return element(
     'div',
     'selection-bar',
     element('div', 'section-title', selected.content.kind === 'item' ? createItemNameElement(selected.content.item) : backpackEntryTitle(selected)),
-    element('p', 'hint', t('inventory.moveHint')),
+    element('p', 'hint selection-hint', t('inventory.moveHint')),
     element('div', 'hero-choice-row', ...createBackpackEntryActions(context, selected, {
       onEquipOnHero: (heroId) => selected.content.kind === 'item' && openEquipPreview(context, heroId, selected.content.item),
       afterAction: () => {
@@ -106,12 +115,16 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
   });
   const body = element('div', 'panel-body');
   body.append(
-    element('p', 'hint', t('inventory.hint')),
-    element('p', 'hint', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })),
+    element('p', 'hint inventory-intro', t('inventory.hint')),
+    element('p', 'hint inventory-intro', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })),
+    renderMerchantSaleStatus(context),
     renderSortControl(context),
-    renderSelectionBar(context, selected),
-    grid,
-    ...(selected ? [renderDetail(selected)] : []),
+    element(
+      'div',
+      'inventory-layout',
+      element('div', 'inventory-grid-column', renderSelectionBar(context, selected), grid),
+      element('div', 'inventory-detail-column', ...(selected ? [renderDetail(selected)] : [])),
+    ),
   );
   return body;
 };

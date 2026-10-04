@@ -36,7 +36,7 @@ export function renderEquipComparison(context: PanelContext, hero: Hero, request
     const result = context.store.execute(equipItemCommand(hero.id, item.id, comparison?.slot));
     context.notify(result.accepted ? t('heroes.equips', { hero: heroDisplayName(hero.name), item: itemDisplayName(item) }) : describeRejection(result.rejection));
     if (result.accepted) onEquipped();
-  }, { disabled: problem !== null, className: 'action-button primary' });
+  }, { disabled: problem !== null, className: 'action-button primary equip-confirm' });
   area.replaceChildren(
     element(
       'div',

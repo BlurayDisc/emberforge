@@ -1,4 +1,4 @@
-export type IconName = 'heroes' | 'inventory' | 'dungeons' | 'world' | 'menu' | 'coin-gold' | 'coin-silver' | 'coin-copper';
+export type IconName = 'heroes' | 'inventory' | 'workshop' | 'merchant' | 'dungeons' | 'world' | 'menu' | 'coin-gold' | 'coin-silver' | 'coin-copper';
 
 interface IconArt {
   rows: readonly string[];
@@ -65,6 +65,40 @@ const ICONS: Record<IconName, IconArt> = {
       '.owwwwwwwwo.',
       '..oooooooo..',
       '............',
+    ],
+    legend: BASE_LEGEND,
+  },
+  workshop: {
+    rows: [
+      '............',
+      '.oooooooooo.',
+      'osssssssssso',
+      'oSSSSSSSSSo.',
+      '.osssssssso.',
+      '..oSSSSSo...',
+      '...oSSSo....',
+      '...oSSSo....',
+      '..oSSSSSo...',
+      '.owwwwwwwwo.',
+      '.oooooooooo.',
+      '............',
+    ],
+    legend: BASE_LEGEND,
+  },
+  merchant: {
+    rows: [
+      '............',
+      '...oooooo...',
+      '..oggggggo..',
+      '.oggddddggo.',
+      '.ogdggggdgo.',
+      '.ogdgddggdo.',
+      '.ogdggdgdgo.',
+      '.ogdgddggdo.',
+      '.ogdggggdgo.',
+      '.oggddddggo.',
+      '..oggggggo..',
+      '...oooooo...',
     ],
     legend: BASE_LEGEND,
   },

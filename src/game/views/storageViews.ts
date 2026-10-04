@@ -1,6 +1,6 @@
 import type { GameState } from '../../model/gameState';
 import type { BackpackEntry } from '../../model/backpack';
-import { sizeOfContent, usedCellCount } from '../../systems/inventory';
+import { findMoveAnchor, sizeOfContent, usedCellCount, type GridPosition } from '../../systems/inventory';
 import { BACKPACK_COLUMNS } from '../../content/balance/backpack';
 import { nextStorageUpgradeCostCopper } from '../commands/buyStorageUpgrade';
 import { backpackRowsOf, merchantSaleSlotsOf } from '../storage';
@@ -25,4 +25,9 @@ export function describeStorage(state: GameState): StorageView {
     merchantSaleSlots: merchantSaleSlotsOf(state),
     merchantSlotCostCopper: nextStorageUpgradeCostCopper(state, 'merchantSlot'),
   };
+}
+
+// Where the entry's top-left corner goes when the player taps an empty cell. Null when the entry fits nowhere around that cell.
+export function findBackpackMoveAnchor(state: GameState, from: GridPosition, tapped: GridPosition): GridPosition | null {
+  return findMoveAnchor(state.backpack, from, tapped, backpackRowsOf(state));
 }

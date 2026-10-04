@@ -38,7 +38,7 @@ function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeS
   if (healTarget) {
     const healedAmount = Math.min(
       healTarget.maxHp - healTarget.hp,
-      Math.round(actor.attack * HEAL_POWER_MULTIPLIER),
+      Math.round(actor.attack * HEAL_POWER_MULTIPLIER * (1 - statusStrength(combatantOf(combatants, healTarget), 'wound', timeSeconds))),
     );
     healTarget.hp += healedAmount;
     return [{
@@ -86,7 +86,7 @@ export function simulateBattle(units: readonly BattleUnit[], random: Random): Ba
 
     for (const combatant of combatants) {
       if (combatant.unit.hp <= 0) continue;
-      combatant.charge += combatant.unit.speed * (1 + statusStrength(combatant, 'haste', timeSeconds)) * SECONDS_PER_TICK;
+      combatant.charge += combatant.unit.speed * (1 + statusStrength(combatant, 'haste', timeSeconds) - statusStrength(combatant, 'slow', timeSeconds)) * SECONDS_PER_TICK;
       regenerateResource(combatant.unit, SECONDS_PER_TICK);
     }
     const readyCombatants = combatants

@@ -9,6 +9,7 @@ export {
   findEntryAt,
   findItem,
   findFreePosition,
+  findMoveAnchor,
   moveEntry,
   removeEntryAt,
   removeItem,

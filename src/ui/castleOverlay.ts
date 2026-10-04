@@ -5,6 +5,7 @@ import { hasHeardCastleSpot, isInCastle, markCastleSpotHeard, onCastleVisitChang
 import { actionButton, element } from './dom';
 import { onLanguageChange, t } from './i18n';
 import { focusedRunNumber, onRunFocusChange } from './runFocus';
+import { enableSwipeBetweenScreens } from './swipeBetweenScreens';
 import type { TownNavigation } from './townNavigation';
 
 function percentOf(value: number, total: number): string {
@@ -47,6 +48,7 @@ export function createCastleOverlay(navigation: TownNavigation): HTMLElement {
   const leaveButton = actionButton('', () => setInCastle(false), { className: 'action-button castle-leave-button' });
   world.append(...hotspots.map((entry) => entry.hotspot));
   overlay.append(world, leftArrow, rightArrow, title, leaveButton);
+  enableSwipeBetweenScreens(() => overlay.style.display !== 'none' && document.querySelector('.panel, .modal') === null, () => goTo(navigation.currentScreen() + 1), () => goTo(navigation.currentScreen() - 1));
 
   const refreshArrows = (): void => {
     const screen = navigation.currentScreen();

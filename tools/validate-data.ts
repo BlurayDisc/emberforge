@@ -32,6 +32,11 @@ interface Drop {
 }
 interface Monster extends Identified {
   name: string;
+  spellIds?: string[];
+  hpFactor?: number;
+  attackFactor?: number;
+  defenceFactor?: number;
+  fixedStats?: { hp: number; attack: number; defence: number; resistance: number };
   rank: string;
   spriteKey: string;
   drops: Drop[];
@@ -78,6 +83,7 @@ interface HeroClass extends Identified {
   offHandTypes: string[];
   armourWeights: string[];
   attackKind: string;
+  primaryAttribute: string;
 }
 interface Advancement extends Identified {
   baseClassId: string;
@@ -116,6 +122,7 @@ interface SpellEffectData {
   hits?: number;
   strength?: number;
   durationSeconds?: number;
+  inflicts?: { status: string; strength: number; durationSeconds: number };
 }
 interface SpellData extends Identified {
   classId: string;
@@ -126,6 +133,7 @@ interface SpellData extends Identified {
   effect: SpellEffectData;
 }
 const spells = load<SpellData[]>('spells.json');
+const monsterSpells = load<Array<Omit<SpellData, 'classId' | 'unlockLevel'>>>('monster-spells.json');
 const buildings = load<Array<Identified & { label: string | null; panelId: string | null; opens?: string; style: string }>>('buildings.json');
 const castleSpots = load<{ spots: Array<Identified & { screen: number; kind: string; look: string | null; x: number; y: number; width: number; height: number; tales: number }> }>('castle.json').spots;
 const languages = load<Array<{ id: string; nativeName: string }>>('i18n/languages.json');
@@ -154,6 +162,7 @@ checkUniqueIds('classes.json', classes);
 checkUniqueIds('advancements.json (with classes.json)', [...classes, ...advancements]);
 checkUniqueIds('affixes.json', affixes);
 checkUniqueIds('spells.json', spells);
+checkUniqueIds('monster-spells.json', monsterSpells);
 if (new Set(heroNames).size !== heroNames.length) report('hero-names.json: duplicate names');
 
 const materialsById = new Map(materials.map((material) => [material.id, material]));
@@ -187,6 +196,15 @@ if (!catalyst || catalyst.category !== 'catalyst') report('balance/items.json: c
 for (const monster of monsters) {
   if (!MONSTER_RANKS.includes(monster.rank)) report(`monsters.json: '${monster.id}' has an unknown rank '${monster.rank}'`);
   if (!CREATURE_DRAWERS[monster.spriteKey]) report(`monsters.json: '${monster.id}' uses unknown sprite '${monster.spriteKey}'`);
+  const hasFactors = monster.hpFactor !== undefined || monster.attackFactor !== undefined || monster.defenceFactor !== undefined;
+  if (monster.rank === 'boss') {
+    if (hasFactors) report(`monsters.json: boss '${monster.id}' must use fixedStats, not factors`);
+    const stats = monster.fixedStats;
+    if (!stats || !(stats.hp > 0 && stats.attack > 0 && stats.defence >= 0 && stats.resistance >= 0)) report(`monsters.json: boss '${monster.id}' needs fixedStats with hp, attack, defence and resistance`);
+  } else {
+    if (monster.fixedStats) report(`monsters.json: '${monster.id}' is not a boss, so it must use the level curve and factors, not fixedStats`);
+    if (!(monster.hpFactor !== undefined && monster.hpFactor > 0 && monster.attackFactor !== undefined && monster.attackFactor > 0 && monster.defenceFactor !== undefined && monster.defenceFactor > 0)) report(`monsters.json: '${monster.id}' needs hpFactor, attackFactor and defenceFactor above 0`);
+  }
   for (const drop of monster.drops) {
     if (!materialsById.has(drop.materialId)) report(`monsters.json: '${monster.id}' drops unknown material '${drop.materialId}'`);
     if (drop.chance <= 0 || drop.chance > 1) report(`monsters.json: '${monster.id}' drop '${drop.materialId}' needs a chance between 0 and 1`);
@@ -361,6 +379,9 @@ for (const professionId of ['armoursmithing', 'tailoring']) {
 }
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
+  if (!['strength', 'skill', 'magic'].includes(heroClass.primaryAttribute)) report(`classes.json: '${heroClass.id}' has an unknown primaryAttribute '${heroClass.primaryAttribute}'`);
+  if (heroClass.attackKind === 'magic' && heroClass.primaryAttribute !== 'magic') report(`classes.json: '${heroClass.id}' attacks with magic, so its primaryAttribute must be magic`);
+  if (heroClass.attackKind === 'physical' && heroClass.primaryAttribute === 'magic') report(`classes.json: '${heroClass.id}' attacks with physical damage, so its primaryAttribute must be strength or skill`);
   if (!(heroClass.recoveryRate > 0)) report(`classes.json: '${heroClass.id}' needs a recoveryRate above 0`);
   const startingRecipes = baseItems.filter((base) => base.craftLevelOffset === 1);
   if (!startingRecipes.some((base) => heroClass.weaponTypes.includes(base.gearType))) report(`base-items.json: class '${heroClass.id}' has no weapon it can craft at crafter level 1`);
@@ -461,7 +482,7 @@ function expectedKeysWithoutEnglishSource(): string[] {
     keys.push(`castle.${spot.id}.name`, `castle.${spot.id}.title`);
     for (let tale = 1; tale <= spot.tales; tale++) keys.push(`castle.${spot.id}.tale.${tale}`);
   }
-  for (const spell of spells) keys.push(`spell.${spell.id}`);
+  for (const spell of [...spells, ...monsterSpells]) keys.push(`spell.${spell.id}`);
   for (const affix of affixes) keys.push(`affix.${affix.id}.short`);
   for (const town of townsFile.towns) keys.push(`town.${town.id}.lore`);
   for (const monster of monsters) keys.push(`monster.${monster.id}.lore`);
@@ -531,18 +552,42 @@ function checkResources(): void {
 
 checkResources();
 
+function checkSpellEffect(file: string, spell: Omit<SpellData, 'classId' | 'unlockLevel'>): void {
+  if (spell.cooldownSeconds <= 0 || spell.resourceCost < 0) report(`${file}: '${spell.id}' needs a positive cooldown and a resource cost of 0 or more`);
+  const { effect } = spell;
+  const needsPower = effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'heal';
+  if (needsPower && !(effect.power !== undefined && effect.power > 0)) report(`${file}: '${spell.id}' needs a positive power`);
+  if (effect.kind === 'status' && !((effect.strength ?? 0) > 0 && (effect.strength ?? 0) < 1 && (effect.durationSeconds ?? 0) > 0)) report(`${file}: '${spell.id}' status needs a strength between 0 and 1 and a duration`);
+  if (!['damage', 'drain', 'heal', 'status'].includes(effect.kind)) report(`${file}: '${spell.id}' has unknown effect '${effect.kind}'`);
+  if (effect.inflicts) {
+    if (effect.kind !== 'damage') report(`${file}: '${spell.id}' can only inflict a status with a damage effect`);
+    if (!['guard', 'haste', 'weaken', 'slow', 'wound'].includes(effect.inflicts.status)) report(`${file}: '${spell.id}' inflicts unknown status '${effect.inflicts.status}'`);
+    if (!(effect.inflicts.strength > 0 && effect.inflicts.strength < 1 && effect.inflicts.durationSeconds > 0)) report(`${file}: '${spell.id}' inflicted status needs a strength between 0 and 1 and a duration`);
+  }
+}
+
+function checkMonsterSpells(): void {
+  const castSpellIds = new Set(monsters.flatMap((monster) => monster.spellIds ?? []));
+  for (const monster of monsters) {
+    for (const spellId of monster.spellIds ?? []) {
+      if (!monsterSpells.some((spell) => spell.id === spellId)) report(`monsters.json: '${monster.id}' casts unknown spell '${spellId}'`);
+      if (!spellId.startsWith(`${monster.id}.`)) report(`monsters.json: spell '${spellId}' must start with the id of its monster '${monster.id}'`);
+    }
+  }
+  for (const spell of monsterSpells) {
+    checkSpellEffect('monster-spells.json', spell);
+    if (!castSpellIds.has(spell.id)) report(`monster-spells.json: no monster casts '${spell.id}'`);
+  }
+}
+checkMonsterSpells();
+
 function checkSpells(): void {
   const classIds = new Set(classes.map((heroClass) => heroClass.id));
   for (const spell of spells) {
     if (!classIds.has(spell.classId)) report(`spells.json: '${spell.id}' has unknown class '${spell.classId}'`);
     if (!spell.id.startsWith(`${spell.classId}.`)) report(`spells.json: '${spell.id}' must start with its class id`);
     if (spell.unlockLevel < 1 || spell.unlockLevel > 100) report(`spells.json: '${spell.id}' unlock level is outside 1-100`);
-    if (spell.cooldownSeconds <= 0 || spell.resourceCost < 0) report(`spells.json: '${spell.id}' needs a positive cooldown and a resource cost of 0 or more`);
-    const { effect } = spell;
-    const needsPower = effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'heal';
-    if (needsPower && !(effect.power !== undefined && effect.power > 0)) report(`spells.json: '${spell.id}' needs a positive power`);
-    if (effect.kind === 'status' && !((effect.strength ?? 0) > 0 && (effect.strength ?? 0) < 1 && (effect.durationSeconds ?? 0) > 0)) report(`spells.json: '${spell.id}' status needs a strength between 0 and 1 and a duration`);
-    if (!['damage', 'drain', 'heal', 'status'].includes(effect.kind)) report(`spells.json: '${spell.id}' has unknown effect '${effect.kind}'`);
+    checkSpellEffect('spells.json', spell);
   }
   for (const heroClass of classes) {
     const own = spells.filter((spell) => spell.classId === heroClass.id);
