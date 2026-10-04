@@ -44,7 +44,8 @@ function setFloorOffset(setMaterial: MaterialDefinition, slot: BaseItemDefinitio
 }
 
 // A set recipe is 1 crafter level above the basic recipe, and the dungeon of the set material sets a floor.
-// The pieces of one set open in the order of their basic recipes, each at least 1 level after the piece before it, so no two pieces share a level.
+// The pieces of one set open in the order of their basic recipes, each at least 1 level after the piece before it.
+// No set recipe goes above the last crafter level of the tier, so a level 10 crafter can make every item. Late pieces of a late set then share level 10.
 function setPieceCraftLevelOffset(base: BaseItemDefinition, setMaterial: MaterialDefinition): number {
   const setPieces = SET_RECIPE_SLOTS.flatMap((slot) => BASE_ITEMS.filter((piece) => piece.slot === slot && piece.armourWeight === base.armourWeight)).sort(
     (first, second) => first.craftLevelOffset - second.craftLevelOffset,
@@ -52,7 +53,7 @@ function setPieceCraftLevelOffset(base: BaseItemDefinition, setMaterial: Materia
   let previousPieceOffset = 0;
   for (const piece of setPieces) {
     const ownOffset = Math.max(piece.craftLevelOffset + SET_RECIPE_LEVEL_STEP, setFloorOffset(setMaterial, piece.slot));
-    const pieceOffset = Math.max(ownOffset, previousPieceOffset + 1);
+    const pieceOffset = Math.min(LEVELS_PER_BRACKET, Math.max(ownOffset, previousPieceOffset + 1));
     if (piece.id === base.id) return pieceOffset;
     previousPieceOffset = pieceOffset;
   }

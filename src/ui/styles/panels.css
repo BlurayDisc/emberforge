@@ -697,14 +697,6 @@
   line-height: 1.4;
 }
 
-.victory-banner {
-  font-family: var(--font-title);
-  font-size: 40px;
-  text-align: center;
-  color: var(--gold);
-  padding: 8px 0;
-}
-
 .crafter-intro {
   display: flex;
   gap: 12px;
@@ -1063,4 +1055,126 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* Victory screen: covers the whole page. */
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: auto;
+  display: flex;
+  background: radial-gradient(circle at 50% 35%, var(--wood-600) 0%, var(--wood-900) 45%, var(--ink) 100%);
+  animation: victory-fade-in 0.6s steps(6) both;
+}
+
+.victory-rays {
+  position: fixed;
+  inset: -50%;
+  pointer-events: none;
+  background: repeating-conic-gradient(from 0deg at 50% 38%, color-mix(in srgb, var(--gold) 22%, transparent) 0deg 8deg, transparent 8deg 24deg);
+  animation: victory-spin 40s linear infinite;
+}
+
+.victory-confetti {
+  position: fixed;
+  top: -12px;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  animation: victory-fall linear infinite;
+  animation-timing-function: steps(24);
+}
+
+.victory-content {
+  position: relative;
+  margin: auto;
+  width: min(720px, 100%);
+  padding: 24px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.victory-trophy {
+  animation: victory-bounce 1.2s steps(8) infinite;
+}
+
+.victory-title {
+  font-family: var(--font-title);
+  font-size: clamp(56px, 14vw, 120px);
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 4px 4px 0 var(--gold-dark), -4px 0 0 var(--ink), 4px 0 0 var(--ink), 0 -4px 0 var(--ink), 0 8px 0 var(--ink), 8px 8px 0 var(--ink);
+  animation: victory-pop 0.8s steps(8) both;
+}
+
+.victory-subtitle {
+  font-family: var(--font-title);
+  font-size: clamp(24px, 5vw, 36px);
+  color: var(--parchment);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.victory-section {
+  margin-top: 8px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.victory-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.victory-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: var(--wood-900);
+  box-shadow: var(--outline-2), inset 0 0 0 2px var(--gold-dark);
+}
+
+.victory-hero-name { font-weight: 700; color: var(--parchment); }
+.victory-hero-class { font-size: 12px; color: var(--parchment-dim); }
+
+.victory-story {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  margin-top: 8px;
+}
+
+.victory-line {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--parchment);
+  animation: victory-fade-in 1s steps(8) both;
+}
+
+.victory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@keyframes victory-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes victory-spin { to { transform: rotate(360deg); } }
+@keyframes victory-fall { to { transform: translateY(110vh) rotate(360deg); } }
+@keyframes victory-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes victory-pop { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .victory-rays, .victory-confetti, .victory-trophy { animation: none; }
 }

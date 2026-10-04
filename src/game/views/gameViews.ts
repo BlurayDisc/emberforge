@@ -5,6 +5,7 @@ import type { MoneyBreakdown } from '../../model/money';
 import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
 import { hireCostForCompanySize, splitCopper } from '../../systems/economy';
+import { LEVEL_CAP } from '../../content/balance/progression';
 import { experienceToNextLevel } from '../../systems/progression';
 import { healthFractionAt, isDowned, secondsToFullHealth } from '../../systems/recovery';
 import { isClassUnlocked } from '../classUnlocks';
@@ -50,7 +51,7 @@ export function describeHero(state: GameState, hero: Hero, nowMs: number): HeroV
     isDowned: downed,
     secondsToRevive: downed ? Math.ceil(((hero.downedUntilMs ?? nowMs) - nowMs) / 1000) : 0,
     secondsToFullHealth: isAway ? 0 : secondsToFullHealth(hero, nowMs),
-    experienceToNextLevel: experienceToNextLevel(hero.level),
+    experienceToNextLevel: hero.level >= LEVEL_CAP ? 0 : experienceToNextLevel(hero.level),
     power: computeHeroPower(hero),
     damagePerSecond: hero.statistics.secondsFought > 0 ? hero.statistics.damageDealt / hero.statistics.secondsFought : 0,
   };

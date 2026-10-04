@@ -29,11 +29,14 @@ import {
   findBackpackMoveAnchor,
   moveBackpackEntryCommand,
   sellBackpackEntryCommand,
+  describeHero,
   startDungeonRunCommand,
   type GameStore,
 } from '../src/game';
 import { CURRENT_SAVE_VERSION, loadGameState, parseGameState } from '../src/systems/save';
 import { createNewGameState } from '../src/game/newGame';
+import { LEVEL_CAP } from '../src/content/balance/progression';
+import { applyExperience } from '../src/systems/progression';
 import type { GameState } from '../src/model/gameState';
 import { createRandom } from '../src/kernel/random';
 import type { Item } from '../src/model/item';
@@ -511,6 +514,16 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   assert.ok(spellsSeen.size >= 12, `fights cast many different spells with a look (${spellsSeen.size})`);
 }
 
+// The level cap is 10. A hero at the cap gets no more levels and no stored experience, and the hero view has no next level.
+{
+  const nearCap = { ...createHero('warrior', 9, createRandom(3)), level: 9, experience: 0 };
+  const atCap = applyExperience(nearCap, 1_000_000);
+  assert.equal(atCap.level, LEVEL_CAP, 'a hero stops at the level cap');
+  assert.equal(atCap.experience, 0, 'a hero at the cap stores no experience');
+  assert.equal(LEVEL_CAP, 10, 'the first town caps heroes at level 10');
+  assert.equal(describeHero({ ...createNewGameState(1), company: [atCap] }, atCap, clock.nowMs).experienceToNextLevel, 0, 'a hero at the cap has no next level');
+}
+
 // The boss dungeon needs two heroes. Only one of them must reach the dungeon level.
 {
   const memory: { saved: string | null } = { saved: null };
@@ -533,8 +546,9 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
     const pieceLevels = ['helm', 'gloves', 'boots', 'legs', 'armour'].map((slot) => `${slot}-${weight}`);
     for (const setMaterialId of [null, ...MATERIALS.filter((material) => material.tier === 1 && material.setBonus !== undefined).map((material) => material.id)]) {
       const levels = pieceLevels.map((baseId) => findRecipe(baseId, 1, setMaterialId)?.requiredCraftLevel);
-      assert.equal(new Set(levels).size, levels.length, `the ${weight} set pieces made from ${setMaterialId ?? 'the main material'} open at different crafter levels`);
-      assert.ok(levels.every((level, index) => index === 0 || (level as number) > (levels[index - 1] as number)), 'a set opens in the order helm, gloves, boots, legs, armour');
+      if (setMaterialId === null) assert.equal(new Set(levels).size, levels.length, `the ${weight} plain pieces open at different crafter levels`);
+      assert.ok(levels.every((level, index) => index === 0 || (level as number) >= (levels[index - 1] as number)), 'a set opens in the order helm, gloves, boots, legs, armour');
+      assert.ok(levels.every((level) => (level as number) <= 10), `a level 10 crafter can make every ${weight} piece made from ${setMaterialId ?? 'the main material'}`);
     }
   }
   const wearerByWeight = { heavy: 'warrior', medium: 'archer', light: 'mage' } as const;

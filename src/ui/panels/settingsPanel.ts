@@ -3,7 +3,9 @@ import { BUILD_LABEL } from '../../kernel/buildInfo';
 import { LANGUAGES } from '../../content/translations';
 import { saveAudioPreferences } from '../../game';
 import type { AudioPreferences } from '../../model/audioPreferences';
+import { VICTORY_DUNGEON_ID } from '../../content/balance/progression';
 import { actionButton, element } from '../dom';
+import { openVictoryScreen } from '../victoryScreen';
 import { currentLanguageId, setLanguage, t } from '../i18n';
 import type { PanelContext, PanelRenderer } from './panelContext';
 
@@ -83,5 +85,12 @@ function renderVersion(): HTMLElement {
   return element('div', 'card', element('div', 'card-row', element('span', 'stat-name', t('settings.version')), element('span', 'card-text small', BUILD_LABEL)));
 }
 
+// The Victory screen opens by itself once. After that, the player can watch it again here.
+function renderVictoryReplay(context: PanelContext): HTMLElement | string {
+  const state = context.store.getState();
+  if (!state.clearedDungeonIds.includes(VICTORY_DUNGEON_ID)) return '';
+  return element('div', 'card', actionButton(t('settings.watchVictory'), () => openVictoryScreen(state.company)));
+}
+
 export const renderSettingsPanel: PanelRenderer = (context) =>
-  element('div', 'panel-body', renderLanguageChoice(), renderSoundControls(context), renderVersion(), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));
+  element('div', 'panel-body', renderLanguageChoice(), renderSoundControls(context), renderVictoryReplay(context), renderVersion(), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));

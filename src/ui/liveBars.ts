@@ -28,8 +28,10 @@ export function createLiveHealthBar(store: GameStore, heroId: string): HTMLEleme
 
 export function createExperienceBar(current: number, next: number): HTMLElement {
   const { bar, fill, label } = createBar('bar-experience');
-  fill.style.width = `${Math.round(Math.min(1, current / next) * 100)}%`;
-  label.textContent = `${current} / ${next}`;
+  // A hero at the level cap has no next level.
+  const isMaxLevel = next <= 0;
+  fill.style.width = isMaxLevel ? '100%' : `${Math.round(Math.min(1, current / next) * 100)}%`;
+  label.textContent = isMaxLevel ? t('heroes.maxLevel') : `${current} / ${next}`;
   return bar;
 }
 

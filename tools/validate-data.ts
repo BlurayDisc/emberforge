@@ -351,7 +351,7 @@ for (const material of setMaterials) {
   const { setBonus, setCraftLevelOffset } = material;
   if (!setBonus || !STAT_NAMES.includes(setBonus.stat) || !(setBonus.value > 0)) report(`materials.json: set material '${material.id}' needs a bonus on a known stat above 0`);
   if (!material.craftedItemPrefix) report(`materials.json: set material '${material.id}' needs a craftedItemPrefix`);
-  if (material.setBodyArmourCraftLevelOffset === undefined || material.setBodyArmourCraftLevelOffset < (setCraftLevelOffset ?? 0)) report(`materials.json: set material '${material.id}' needs a setBodyArmourCraftLevelOffset that is not below its setCraftLevelOffset`);
+  if (material.setBodyArmourCraftLevelOffset === undefined || material.setBodyArmourCraftLevelOffset < (setCraftLevelOffset ?? 0) || material.setBodyArmourCraftLevelOffset > itemBalance.levelsPerBracket) report(`materials.json: set material '${material.id}' needs a setBodyArmourCraftLevelOffset from its setCraftLevelOffset up to ${itemBalance.levelsPerBracket}`);
   const sources = dungeonsDroppingMaterial(material.id);
   if (sources.length !== 1) report(`materials.json: set material '${material.id}' must drop in exactly one dungeon (found ${sources.length})`);
   const source = sources[0];

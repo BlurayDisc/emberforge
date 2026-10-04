@@ -1,3 +1,4 @@
+import { LEVEL_CAP } from '../../../content/balance/progression';
 import { learnSpellCommand, listSpellOffers, type SpellOffer } from '../../../game';
 import type { Hero } from '../../../model/hero';
 import { actionButton, element } from '../../dom';
@@ -62,7 +63,8 @@ export const renderAcademyPanel: PanelRenderer = (context) => {
     return body;
   }
   selectedHeroId = selectedHero.id;
-  const offers = listSpellOffers(state, selectedHero.id);
+  // A spell above the level cap can never be learned, so the Academy does not list it or count it.
+  const offers = listSpellOffers(state, selectedHero.id).filter((offer) => offer.spell.unlockLevel <= LEVEL_CAP);
   const learnedCount = offers.filter((offer) => offer.isLearned).length;
   // A spell above the hero's level stays hidden. A note tells when the next one appears.
   const nextHiddenLevel = offers.filter((offer) => !offer.isInReach).reduce((lowest, offer) => Math.min(lowest, offer.spell.unlockLevel), Infinity);
