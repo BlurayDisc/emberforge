@@ -35,7 +35,7 @@ function playUntilLevels(seed: number): Map<number, LevelMilestone> {
     for (const monster of monsters) {
       const loot = rollMonsterLoot(monster.definitionId, random.fork(`loot-${fights}-${monster.id}`));
       copperFromSoldMaterials += loot.materials.reduce((sum, stack) => sum + stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper, 0);
-      experience += experienceForKill(monster.level, level, monster.rank);
+      experience += experienceForKill(monster.level, monster.rank);
     }
     while (experience >= experienceToNextLevel(level) && level < LAST_LEVEL) {
       experience -= experienceToNextLevel(level);

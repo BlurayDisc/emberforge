@@ -76,9 +76,8 @@ function recipeLevelText({ requiredCraftLevel }: WorkshopRecipeView): string {
   return t('workshop.recipeLevel', { level: requiredCraftLevel });
 }
 
-// The item level of a craft is rolled between these numbers. Every recipe of a tier shares the range.
-function itemLevelLine({ itemLevelRange }: WorkshopRecipeView): HTMLElement {
-  return element('div', 'card-text small', t('workshop.itemLevel', { first: itemLevelRange.lowest, last: itemLevelRange.highest }));
+function itemLevelLine({ itemLevel }: WorkshopRecipeView): HTMLElement {
+  return element('div', 'card-text small', t('workshop.itemLevel', { level: itemLevel }));
 }
 
 function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView): HTMLElement {

@@ -1,5 +1,4 @@
 import { BASE_ITEMS } from '../../content/baseItems';
-import { ITEM_LEVEL_ABOVE_HIGHEST_HERO } from '../../content/balance/items';
 import { PROFESSION_IDS, type ProfessionId } from '../../content/baseItems';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
@@ -9,7 +8,7 @@ import type { Item } from '../../model/item';
 import { craftSeconds, craftingExperienceToNextLevel, listRecipes, upgradeStepChance } from '../../systems/crafting';
 import { classIdsThatCanUse, findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
-import { craftableItemLevelRange, previewBaseStatRanges } from '../../systems/items';
+import { previewBaseStatRanges } from '../../systems/items';
 import { highestUnlockedTier } from '../unlockedTier';
 
 export interface IngredientView {
@@ -34,7 +33,7 @@ export interface WorkshopRecipeView {
   isUnlocked: boolean;
   craftSeconds: number;
   isCrafterBusy: boolean;
-  itemLevelRange: { lowest: number; highest: number };
+  itemLevel: number;
   statRanges: Record<string, [number, number]>;
   upgradeChance: number;
 }
@@ -61,7 +60,6 @@ export function listCrafters(state: GameState): CrafterView[] {
 
 export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
   const tiers = Array.from({ length: highestUnlockedTier(state) }, (_, index) => index + 1);
-  const highestHeroLevel = state.company.reduce((highest, hero) => Math.max(highest, hero.level), 1);
   return tiers.flatMap((tier) =>
     listRecipes(tier).map((recipe) => {
       const base = requireById(BASE_ITEMS, recipe.baseId);
@@ -87,8 +85,8 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         craftSeconds: craftSeconds(recipe.requiredCraftLevel),
         isCrafterBusy: state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession),
         upgradeChance: upgradeStepChance(1, crafterLevel - recipe.requiredCraftLevel),
-        itemLevelRange: craftableItemLevelRange(tier, highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO),
-        statRanges: previewBaseStatRanges(recipe.baseId, tier, highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO),
+        itemLevel: recipe.itemLevel,
+        statRanges: previewBaseStatRanges(recipe.baseId, recipe.itemLevel),
       };
     }),
   );

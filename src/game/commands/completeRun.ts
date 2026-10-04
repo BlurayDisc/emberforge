@@ -24,7 +24,7 @@ function finalHealthFractionOf(hero: Hero, plan: PlannedEncounter): number {
 }
 
 function applyOutcomeToHero(hero: Hero, performance: HeroPerformance, plan: PlannedEncounter, won: boolean, nowMs: number): HeroOutcome {
-  const experienceGained = won ? experienceForDefeatedMonsters(plan.monsterUnits, hero.level) : 0;
+  const experienceGained = won ? experienceForDefeatedMonsters(plan.monsterUnits) : 0;
   const leveledHero = applyExperience(hero, experienceGained);
   const statistics = hero.statistics;
   return {

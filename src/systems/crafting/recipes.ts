@@ -24,6 +24,8 @@ export interface Recipe {
   setMaterialId: string | null;
   profession: ProfessionId;
   requiredCraftLevel: number;
+  // The hero level that equips the item. It equals the recipe level, and never goes above the end of the tier.
+  itemLevel: number;
   feeCopper: number;
   ingredients: RecipeIngredient[];
 }
@@ -54,6 +56,7 @@ function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: Mater
     setMaterialId: setMaterial?.id ?? null,
     profession: base.profession,
     requiredCraftLevel,
+    itemLevel: Math.min(requiredCraftLevel, tier * LEVELS_PER_BRACKET),
     feeCopper: craftFeeCopper(requiredCraftLevel),
     ingredients: [
       { materialId: mainMaterial.id, quantity: mainQuantity },

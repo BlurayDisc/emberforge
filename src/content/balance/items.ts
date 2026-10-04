@@ -4,8 +4,6 @@ export const QUALITY_WEIGHTS = data.qualityWeights;
 export const CATALYST_MATERIAL_ID = data.catalystMaterialId;
 
 export const LEVELS_PER_BRACKET = data.levelsPerBracket;
-export const ITEM_LEVEL_ABOVE_HIGHEST_HERO = data.itemLevelAboveHighestHero;
-export const ITEM_LEVEL_ROLLS_KEEP_HIGHEST = data.itemLevelRollsKeepHighest;
 
 export const BASE_STAT_GROWTH_PER_ITEM_LEVEL = data.baseStatGrowthPerItemLevel;
 export const BASE_STAT_SPREAD_FRACTION = data.baseStatSpreadFraction;

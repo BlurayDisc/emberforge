@@ -52,7 +52,7 @@
   },
   {
     "id": "priest",
-    "unlockAfterDungeonId": "goblin-camp",
+    "unlockAfterDungeonId": "goblin-chief-lair",
     "recoveryRate": 1.25,
     "displayName": "Priest",
     "roleDescription": "Heals allies below half health.",

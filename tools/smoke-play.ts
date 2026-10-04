@@ -54,6 +54,7 @@ import { simulateBattle } from '../src/systems/battle';
 import { itemDisplayName } from '../src/ui/displayNames';
 import { createEncounter, createMonsterUnit } from '../src/systems/dungeons';
 import { createHero } from '../src/systems/heroes';
+import { classIdsThatCanUse, findEquipProblem } from '../src/systems/equipment';
 import { equipSpell, learnSpell } from '../src/systems/spells';
 
 function createStore(seed: number): GameStore {
@@ -101,7 +102,7 @@ function levelUpCrafter(store: GameStore, baseId: string, professionId: string, 
 }
 
 function generateSwordForMigration(): Item {
-  return generateCraftedItem({ itemId: 'old-sword', baseId: 'sword', tier: 1, setMaterialId: null, maximumItemLevel: 1, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(1));
+  return generateCraftedItem({ itemId: 'old-sword', baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 1, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(1));
 }
 
 // A save always loads. A good save comes back unchanged. A broken part is dropped, and the heroes, levels, gear and dungeon progress stay.
@@ -164,11 +165,12 @@ function playSession(seed: number): string {
   const offersAtStart = listTavernOffers(store.getState());
   assert.deepEqual(offersAtStart.filter((offer) => offer.lockedUntilDungeonId === null).map((offer) => offer.classId), ['warrior', 'archer', 'mage'], 'only warrior, archer and mage are open at the start');
   const stateBeforeUnlock = store.getState();
-  store.execute((state) => ({ ...state, clearedDungeonIds: [...state.clearedDungeonIds, 'wolf-trail'] }));
+  store.execute((state) => ({ ...state, clearedDungeonIds: [...state.clearedDungeonIds, 'wolf-trail', 'goblin-camp'] }));
   assert.equal(rejectionKey(store, hireHeroCommand('thief')), 'reject.classLocked', 'clearing Wolf Trail does not open the thief');
+  assert.equal(rejectionKey(store, hireHeroCommand('priest')), 'reject.classLocked', 'clearing the Goblin Camp does not open the priest');
   store.execute((state) => ({ ...state, clearedDungeonIds: [...state.clearedDungeonIds, 'goblin-chief-lair'] }));
   assert.notEqual(rejectionKey(store, hireHeroCommand('thief')), 'reject.classLocked', 'clearing the first town opens the thief');
-  assert.equal(rejectionKey(store, hireHeroCommand('priest')), 'reject.classLocked', 'the priest stays locked');
+  assert.notEqual(rejectionKey(store, hireHeroCommand('priest')), 'reject.classLocked', 'clearing the first town opens the priest');
   store.execute(() => stateBeforeUnlock);
   for (const baseId of ['greataxe', 'maul', 'knuckles', 'cestus']) assert.ok(findRecipe(baseId, 1), `${baseId} has a tier 1 recipe`);
 
@@ -425,7 +427,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const everySetRecipeIsOneLevelHigher = listRecipes(1).filter((recipe) => recipe.setMaterialId !== null).every((recipe) => recipe.requiredCraftLevel >= (findRecipe(recipe.baseId, 1)?.requiredCraftLevel ?? Infinity) + 1);
   assert.ok(everySetRecipeIsOneLevelHigher, 'a set recipe needs a crafter level at least 1 above the basic recipe');
   assert.equal(findRecipe('sword', 1, 'sharp-fang'), undefined, 'only armour pieces have set recipes');
-  const makeHelm = (setMaterialId: string | null): Item => generateCraftedItem({ itemId: 'helm', baseId: 'helm-heavy', tier: 1, setMaterialId, maximumItemLevel: 1, upgradeLevel: 0, craftingCostCopper: 1 }, createRandom(4));
+  const makeHelm = (setMaterialId: string | null): Item => generateCraftedItem({ itemId: 'helm', baseId: 'helm-heavy', tier: 1, setMaterialId, itemLevel: 1, upgradeLevel: 0, craftingCostCopper: 1 }, createRandom(4));
   const warrior = createHero('warrior', 1, createRandom(3));
   const skillWith = (helm: Item): number => computeHeroSheet({ ...warrior, equipment: { helm } }).skill;
   assert.equal(makeHelm('sharp-fang').materialId, 'sharp-fang', 'a set piece keeps its set material');
@@ -463,15 +465,15 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   assert.ok(countAtLeast(60, 1) > countAtLeast(0, 1), 'a far higher crafter gets more upgrades');
   assert.ok(countAtLeast(60, 3) < countAtLeast(60, 1), '+3 is rarer than +1');
   assert.ok(countAtLeast(100, 8) === 0, 'no upgrade passes +7');
-  const upgraded = generateCraftedItem({ itemId: 'up', baseId: 'sword', tier: 1, setMaterialId: null, maximumItemLevel: 1, upgradeLevel: 5, craftingCostCopper: 10 }, createRandom(3));
-  const plain = generateCraftedItem({ itemId: 'plain', baseId: 'sword', tier: 1, setMaterialId: null, maximumItemLevel: 1, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(3));
+  const upgraded = generateCraftedItem({ itemId: 'up', baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 1, upgradeLevel: 5, craftingCostCopper: 10 }, createRandom(3));
+  const plain = generateCraftedItem({ itemId: 'plain', baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 1, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(3));
   assert.ok((upgraded.baseStats.physicalDamage ?? 0) > (plain.baseStats.physicalDamage ?? 0), 'an upgrade level raises base stats');
   assert.equal(upgraded.itemLevel, plain.itemLevel, 'an upgrade level does not change the item level');
 }
 
 // The name of an upgraded item always ends with its level, from +1 to +7.
 for (let level = 1; level <= 7; level++) {
-  const upgradedItem = generateCraftedItem({ itemId: `named-${level}`, baseId: 'sword', tier: 1, setMaterialId: null, maximumItemLevel: 5, upgradeLevel: level, craftingCostCopper: 10 }, createRandom(level + 3));
+  const upgradedItem = generateCraftedItem({ itemId: `named-${level}`, baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 5, upgradeLevel: level, craftingCostCopper: 10 }, createRandom(level + 3));
   assert.ok(itemDisplayName(upgradedItem).endsWith(` +${level}`), `the name of a +${level} item ends with +${level}`);
 }
 
@@ -626,6 +628,25 @@ for (let level = 1; level <= 7; level++) {
   const warriorWeapons = BASE_ITEMS.filter((base) => base.slot === 'mainHand' && requireById(CLASSES, 'warrior').weaponTypes.includes(base.gearType)).map((base) => base.id);
   assert.deepEqual(warriorWeapons.sort(), ['axe', 'battle-axe', 'broadsword', 'longsword', 'sword'], 'the warrior has five own weapons');
   assert.ok(!requireById(CLASSES, 'warrior').weaponTypes.includes('mace'), 'the warrior does not share maces with the priest');
+}
+
+// An item has one fixed level, taken from its recipe. A hero of the right class can equip it at that level, and not below.
+{
+  for (const recipe of listRecipes(1)) {
+    const base = requireById(BASE_ITEMS, recipe.baseId);
+    const item = generateCraftedItem({ itemId: 'item-1', baseId: base.id, tier: 1, setMaterialId: recipe.setMaterialId, itemLevel: recipe.itemLevel, upgradeLevel: 0, craftingCostCopper: 10 }, createRandom(5));
+    assert.equal(item.itemLevel, Math.min(recipe.requiredCraftLevel, 10), `${base.id} has the level of its recipe`);
+    for (const classId of classIdsThatCanUse(base)) {
+      const heroAtItemLevel = { ...createHero(classId, 1, createRandom(3)), level: item.itemLevel };
+      assert.equal(findEquipProblem(heroAtItemLevel, item), null, `a level ${item.itemLevel} ${classId} can equip ${base.id}`);
+      if (item.itemLevel > 1) assert.notEqual(findEquipProblem({ ...heroAtItemLevel, level: item.itemLevel - 1 }, item), null, `a ${classId} below level ${item.itemLevel} cannot equip ${base.id}`);
+    }
+  }
+  for (const heroClass of CLASSES) {
+    const levelOneBases = BASE_ITEMS.filter((base) => classIdsThatCanUse(base).includes(heroClass.id) && findRecipe(base.id, 1)?.itemLevel === 1);
+    assert.ok(levelOneBases.some((base) => base.slot === 'mainHand'), `${heroClass.id} has a level 1 weapon`);
+    assert.ok(levelOneBases.some((base) => base.slot === 'armour' || base.slot === 'helm'), `${heroClass.id} has level 1 armour`);
+  }
 }
 
 // The Bank sells backpack rows and merchant sale slots.

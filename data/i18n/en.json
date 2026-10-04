@@ -875,7 +875,7 @@
   "workshop.crafting": "Crafting: {name}",
   "workshop.upgradeChance": "Chance of +1 or better: {percent}%",
   "workshop.fee": "Crafter fee: ",
-  "workshop.itemLevel": "Item level {first}-{last}",
+  "workshop.itemLevel": "Item level {level}",
   "workshop.recipeLevel": "Lv {level}",
   "workshop.hint": "Materials come from monster drops. A recipe uses materials of one tier only. Item level depends on your best hero.",
   "workshop.leave": "Leave the workshop",

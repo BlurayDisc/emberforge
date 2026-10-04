@@ -1,4 +1,3 @@
-import { ITEM_LEVEL_ABOVE_HIGHEST_HERO } from '../../content/balance/items';
 import { BASE_ITEMS } from '../../content/baseItems';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
@@ -39,17 +38,17 @@ export function craftItemCommand(baseId: string, tier: number, setMaterialId: st
       0,
     );
     const craftingCostCopper = ingredientValueCopper + recipe.feeCopper;
-    const highestHeroLevel = state.company.reduce((highest, hero) => Math.max(highest, hero.level), 1);
+    const base = requireById(BASE_ITEMS, baseId);
     const itemNumber = state.itemsCrafted + 1;
 
     const upgradeLevel = rollUpgradeLevel(crafter.level - recipe.requiredCraftLevel, createRandom(state.seed).fork(`craft-${itemNumber}-upgrade`));
     const item = generateCraftedItem(
       {
         itemId: `item-${itemNumber}`,
-        baseId: requireById(BASE_ITEMS, baseId).id,
+        baseId: base.id,
         tier,
         setMaterialId,
-        maximumItemLevel: highestHeroLevel + ITEM_LEVEL_ABOVE_HIGHEST_HERO,
+        itemLevel: recipe.itemLevel,
         upgradeLevel,
         craftingCostCopper,
       },

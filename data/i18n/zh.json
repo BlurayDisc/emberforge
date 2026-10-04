@@ -875,7 +875,7 @@
   "workshop.crafting": "制作中：{name}",
   "workshop.upgradeChance": "获得 +1 或更高的几率：{percent}%",
   "workshop.fee": "工匠费用：",
-  "workshop.itemLevel": "物品等级 {first}-{last}",
+  "workshop.itemLevel": "物品等级 {level}",
   "workshop.recipeLevel": "等级 {level}",
   "workshop.hint": "材料来自怪物掉落。每个配方只使用同一阶的材料。物品等级取决于你最强的英雄。",
   "workshop.leave": "离开工坊",

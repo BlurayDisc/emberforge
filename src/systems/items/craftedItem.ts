@@ -2,8 +2,6 @@ import { BASE_ITEMS, type BaseItemDefinition } from '../../content/baseItems';
 import {
   BASE_STAT_GROWTH_PER_ITEM_LEVEL,
   BASE_STAT_SPREAD_FRACTION,
-  ITEM_LEVEL_ROLLS_KEEP_HIGHEST,
-  LEVELS_PER_BRACKET,
   QUALITY_WEIGHTS,
   RARE_NAME_FIRST_PARTS,
   RARE_NAME_SECOND_PARTS,
@@ -13,7 +11,6 @@ import {
 } from '../../content/balance/items';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
-import { clamp } from '../../kernel/math';
 import type { Random } from '../../kernel/random';
 import type { Item, StatBonuses } from '../../model/item';
 import { rollAffixes } from './rollAffixes';
@@ -23,7 +20,7 @@ export interface CraftedItemRequest {
   baseId: string;
   tier: number;
   setMaterialId: string | null;
-  maximumItemLevel: number;
+  itemLevel: number;
   upgradeLevel: number;
   craftingCostCopper: number;
 }
@@ -63,10 +60,7 @@ function computeSellValue(craftingCostCopper: number, quality: CraftableQuality,
 
 export function generateCraftedItem(request: CraftedItemRequest, random: Random): Item {
   const base = requireById(BASE_ITEMS, request.baseId);
-  const { lowest: lowestItemLevel, highest: highestAllowedLevel } = craftableItemLevelRange(request.tier, request.maximumItemLevel);
-  const itemLevel = Math.max(
-    ...Array.from({ length: ITEM_LEVEL_ROLLS_KEEP_HIGHEST }, () => random.nextInt(lowestItemLevel, highestAllowedLevel)),
-  );
+  const { itemLevel } = request;
 
   const mainMaterial = MATERIALS.find((material) => material.tier === request.tier && material.category === base.mainCategory);
   if (!mainMaterial) throw new Error(`Tier ${request.tier} has no ${base.mainCategory} material for ${base.id}`);
@@ -94,24 +88,17 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
   };
 }
 
-// The crafter rolls an item level inside the tier bracket, up to the cap that the best hero sets.
-export function craftableItemLevelRange(tier: number, maximumItemLevel: number): { lowest: number; highest: number } {
-  const lowest = (tier - 1) * LEVELS_PER_BRACKET + 1;
-  return { lowest, highest: clamp(maximumItemLevel, lowest, tier * LEVELS_PER_BRACKET) };
-}
-
-export function previewBaseStatRanges(baseId: string, tier: number, maximumItemLevel: number): Record<string, [number, number]> {
+export function previewBaseStatRanges(baseId: string, itemLevel: number): Record<string, [number, number]> {
   const base = requireById(BASE_ITEMS, baseId);
-  const bracketStart = (tier - 1) * LEVELS_PER_BRACKET + 1;
-  const highestLevel = clamp(maximumItemLevel, bracketStart, tier * LEVELS_PER_BRACKET);
+  const levelFactor = 1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
   const ranges: Record<string, [number, number]> = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[string, number]>) {
     if (UNSCALED_BASE_STATS.includes(stat)) {
       ranges[stat] = [value, value];
       continue;
     }
-    const lowest = value * (1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (bracketStart - 1)) * (1 - BASE_STAT_SPREAD_FRACTION);
-    const highest = value * (1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (highestLevel - 1)) * (1 + BASE_STAT_SPREAD_FRACTION);
+    const lowest = value * levelFactor * (1 - BASE_STAT_SPREAD_FRACTION);
+    const highest = value * levelFactor * (1 + BASE_STAT_SPREAD_FRACTION);
     ranges[stat] = [Math.max(1, Math.round(lowest)), Math.max(1, Math.round(highest))];
   }
   return ranges;

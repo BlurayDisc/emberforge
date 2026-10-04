@@ -5,6 +5,7 @@ import type { ClassId, Hero } from '../../src/model/hero';
 import { simulateBattle } from '../../src/systems/battle';
 import { createEncounter } from '../../src/systems/dungeons';
 import { equipItem } from '../../src/systems/equipment';
+import { findRecipe } from '../../src/systems/crafting';
 import { generateCraftedItem } from '../../src/systems/items';
 import { equipSpell, learnSpell } from '../../src/systems/spells';
 import { NORMAL_SPELL_SLOT_COUNT } from '../../src/content/balance/spells';
@@ -55,13 +56,15 @@ function equipCraftedGear(hero: Hero, random: Random, gearMode: GearMode): Hero 
   const tier = Math.ceil(hero.level / LEVELS_PER_TIER);
   const baseIds = gearMode === 'best weapon only' ? GEAR_BASE_IDS_BY_CLASS[hero.classId].slice(0, 1) : GEAR_BASE_IDS_BY_CLASS[hero.classId];
   return baseIds.reduce((equippedHero, baseId, index) => {
+    const recipe = findRecipe(baseId, tier);
+    if (!recipe) throw new Error(`No tier ${tier} recipe for ${baseId}`);
     const item = generateCraftedItem(
       {
         itemId: `sim-item-${hero.id}-${index}`,
         baseId,
         tier,
         setMaterialId: null,
-        maximumItemLevel: hero.level,
+        itemLevel: recipe.itemLevel,
         upgradeLevel: 0,
         craftingCostCopper: 10,
       },

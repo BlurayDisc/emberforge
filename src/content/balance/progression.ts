@@ -9,8 +9,4 @@ export const EXPERIENCE_TO_NEXT_LEVEL_EXPONENT = data.experienceToNextLevelExpon
 export const KILLS_PER_LEVEL_BASE = data.killsPerLevelBase;
 export const KILLS_PER_LEVEL_GROWTH = data.killsPerLevelGrowth;
 
-export const LEVEL_GAP_STEP = data.levelGapStep;
-export const LEVEL_GAP_FACTOR_MINIMUM = data.levelGapFactorMinimum;
-export const LEVEL_GAP_FACTOR_MAXIMUM = data.levelGapFactorMaximum;
-
 export const EXPERIENCE_RANK_MULTIPLIER: Record<UnitRank, number> = data.experienceRankMultiplier;
