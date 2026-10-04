@@ -1,9 +1,19 @@
 {
   "levelCap": 100,
-  "experienceToNextLevelBase": 40,
-  "experienceToNextLevelExponent": 1.5,
-  "killsPerLevelBase": 3.7,
-  "killsPerLevelGrowth": 0.3,
+  "experienceToNextLevelByLevel": [400, 480, 570, 680, 820, 980, 1170, 1400, 1680, 2000],
+  "normalKillExperienceByHeroLevelThenMonsterLevel": [
+    [100],
+    [96, 137],
+    [81, 104, 142],
+    [85, 105, 136, 194],
+    [78, 91, 109, 137, 182],
+    [89, 103, 122, 151, 196, 280],
+    [84, 94, 106, 123, 146, 180, 234],
+    [97, 108, 122, 140, 165, 200, 255, 350],
+    [96, 105, 116, 129, 146, 168, 198, 240, 305],
+    [105, 114, 125, 138, 154, 174, 200, 235, 286, 364]
+  ],
+  "experienceToNextLevelExponentAfterTable": 1.5,
   "experienceRankMultiplier": {
     "hero": 0,
     "normal": 1,

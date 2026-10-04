@@ -220,7 +220,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       hud.appendLogEntry({ kind: 'result', won: encounter.partyWon });
       if (encounter.partyWon) {
         for (const hero of encounter.partyUnits) {
-          hud.appendLogEntry({ kind: 'experience', hero: logUnitOf(hero), amount: experienceForDefeatedMonsters(encounter.monsterUnits) });
+          hud.appendLogEntry({ kind: 'experience', hero: logUnitOf(hero), amount: experienceForDefeatedMonsters(encounter.monsterUnits, hero.level) });
         }
       }
     }

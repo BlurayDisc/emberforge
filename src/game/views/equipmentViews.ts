@@ -1,7 +1,8 @@
 import type { GameState } from '../../model/gameState';
+import type { ClassId } from '../../model/hero';
 import type { EquipmentSlot, Item } from '../../model/item';
 import type { HeroSheet } from '../../model/heroSheet';
-import { equipItem, findEquipProblem, slotsForItem, type EquipProblem } from '../../systems/equipment';
+import { classIdsThatCanUse, equipItem, findEquipProblem, slotsForItem, type EquipProblem } from '../../systems/equipment';
 import { computeHeroPower, computeHeroSheet } from '../../systems/stats';
 
 export interface SlotCandidate {
@@ -15,6 +16,11 @@ export interface EquipComparison {
   after: HeroSheet;
   powerBefore: number;
   powerAfter: number;
+}
+
+// The classes that may use this item. A list of every class means the item has no class limit.
+export function classIdsThatCanUseItem(item: Item): ClassId[] {
+  return classIdsThatCanUse(item);
 }
 
 export function listItemsForSlot(state: GameState, heroId: string, slot: EquipmentSlot): SlotCandidate[] {

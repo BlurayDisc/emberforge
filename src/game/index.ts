@@ -29,7 +29,7 @@ export { describeMill, type MillView } from './views/millViews';
 export { describeStorage, findBackpackMoveAnchor, sizeOfBackpackEntry, type StorageView } from './views/storageViews';
 export { backpackRowsOf, merchantSaleSlotsOf } from './storage';
 export { describeHero, describeMoney, listTavernOffers, type HeroView, type TavernOffer } from './views/gameViews';
-export { compareEquip, listItemsForSlot, type EquipComparison, type SlotCandidate } from './views/equipmentViews';
+export { classIdsThatCanUseItem, compareEquip, listItemsForSlot, type EquipComparison, type SlotCandidate } from './views/equipmentViews';
 export { listSpellOffers, type SpellOffer } from './views/spellViews';
 export { crafterJob, listSaleJobs, saleDurationSeconds } from './views/jobViews';
 export {

@@ -406,6 +406,12 @@
 }
 
 .level-ok { color: var(--green); }
+
+/* The level an item needs is the first thing a player checks, so it is bold and gold. */
+.item-level-requirement {
+  color: var(--gold);
+  font-weight: bold;
+}
 .level-low,
 .locked-note { color: #ff8a7a; }
 

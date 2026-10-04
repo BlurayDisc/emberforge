@@ -1,0 +1,7 @@
+{
+  "description": "A solo hero fights the best dungeon without a boss that its level allows. All loot materials are sold. Shows the fights and the copper for each level.",
+  "firstLevel": 1,
+  "lastLevel": 10,
+  "games": 200,
+  "firstSeed": 1
+}

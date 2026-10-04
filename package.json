@@ -1,13 +1,14 @@
 {
   "name": "emberforge",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "npm run check && vite build",
     "preview": "vite preview",
     "balance": "tsx tools/balance-sim/run.ts",
+    "scenarios": "tsx tools/balance-sim/scenarios.ts",
     "check": "tsc --noEmit -p . && tsc --noEmit -p tools && tsx tools/check-boundaries.ts && tsx tools/validate-data.ts && tsx tools/smoke-play.ts",
     "validate": "tsx tools/validate-data.ts",
     "smoke": "tsx tools/smoke-play.ts"

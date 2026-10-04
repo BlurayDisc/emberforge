@@ -7,10 +7,8 @@ import { createEncounter } from '../../src/systems/dungeons';
 import { equipItem } from '../../src/systems/equipment';
 import { findRecipe } from '../../src/systems/crafting';
 import { generateCraftedItem } from '../../src/systems/items';
-import { equipSpell, learnSpell } from '../../src/systems/spells';
-import { NORMAL_SPELL_SLOT_COUNT } from '../../src/content/balance/spells';
-import { spellsOfClass } from '../../src/content/spells';
 import { heroToBattleUnit } from '../../src/systems/stats';
+import { createSimulatedHero, learnSpellsFor } from './simulatedHero';
 
 const BATTLES_PER_CASE = 300;
 const SHORT_FIGHT_SECONDS_AT_LEVEL_ONE = 7;
@@ -38,7 +36,7 @@ const GEAR_BASE_IDS_BY_CLASS: Record<ClassId, readonly string[]> = {
   warrior: ['broadsword', 'shield', 'helm-heavy', 'armour-heavy', 'gloves-heavy', 'boots-heavy', 'belt', 'amulet', 'ring', 'ring'],
   archer: ['warbow', 'quiver', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
   mage: ['arcane-staff', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
-  priest: ['scepter', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
+  priest: ['flanged-mace', 'tome', 'helm-light', 'armour-light', 'gloves-light', 'boots-light', 'belt', 'amulet', 'ring', 'ring'],
   barbarian: ['greataxe', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
   fighter: ['steel-claws', 'cestus', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
   thief: ['kris', 'parrying-dagger', 'helm-medium', 'armour-medium', 'gloves-medium', 'boots-medium', 'belt', 'amulet', 'ring', 'ring'],
@@ -74,23 +72,12 @@ function equipCraftedGear(hero: Hero, random: Random, gearMode: GearMode): Hero 
   }, hero);
 }
 
-// First spells: the hero keeps the spells that were learned first, as when the player never changes the slots.
-// Best spells: the hero equips the highest level spells it can use and its highest ultimate.
-function learnSpellsFor(hero: Hero, gearMode: GearMode): Hero {
-  const available = spellsOfClass(hero.classId).filter((spell) => spell.unlockLevel <= hero.level);
-  const learned = available.reduce(learnSpell, hero);
-  if (gearMode === 'gear + first spells') return learned;
-  const bestNormal = available.filter((spell) => !spell.isUltimate).slice(-NORMAL_SPELL_SLOT_COUNT);
-  const bestUltimate = available.filter((spell) => spell.isUltimate).slice(-1);
-  return [...bestNormal, ...bestUltimate].reduce((equipped, spell, index) => equipSpell(equipped, spell, index), learned);
-}
-
 function createParty(classIds: readonly ClassId[], level: number, gearMode: GearMode, random: Random): Hero[] {
   return classIds.map((classId, index) => {
-    const hero: Hero = { id: `hero-${index}`, name: classId, classId, level, experience: 0, healthFraction: 1, healthAsOfMs: 0, downedUntilMs: null, equipment: {}, learnedSpellIds: [], equippedSpellIds: Array.from({ length: NORMAL_SPELL_SLOT_COUNT }, () => null), equippedUltimateId: null, statistics: { monstersDefeated: 0, damageDealt: 0, damageTaken: 0, healingDone: 0, secondsFought: 0, battlesWon: 0, battlesLost: 0 } };
+    const hero = createSimulatedHero(classId, level, index);
     if (gearMode === 'no gear') return hero;
     const geared = equipCraftedGear(hero, random.fork('gear'), gearMode);
-    return gearMode === 'gear + first spells' || gearMode === 'gear + best spells' ? learnSpellsFor(geared, gearMode) : geared;
+    return gearMode === 'gear + first spells' || gearMode === 'gear + best spells' ? learnSpellsFor(geared, gearMode === 'gear + best spells') : geared;
   });
 }
 

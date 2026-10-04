@@ -10,34 +10,34 @@ import { experienceForKill, experienceToNextLevel } from '../../src/systems/prog
 const LAST_LEVEL = 10;
 const RUNS_FOR_AVERAGE = 200;
 
-interface LevelMilestone {
+export interface LevelMilestone {
   fights: number;
   copperFromSoldMaterials: number;
 }
 
-function dungeonForLevel(heroLevel: number) {
+export function dungeonForLevel(heroLevel: number) {
   const fightable = DUNGEONS.filter((dungeon) => dungeon.level <= heroLevel && dungeon.bossMonsterId === null);
   return fightable[fightable.length - 1] ?? DUNGEONS[0]!;
 }
 
 // A solo hero wins every fight in the dungeon that fits its level. The table shows how much copper it holds when it reaches each level.
-function playUntilLevels(seed: number): Map<number, LevelMilestone> {
+export function playUntilLevels(seed: number, lastLevel: number = LAST_LEVEL): Map<number, LevelMilestone> {
   const random = createRandom(seed);
   const milestones = new Map<number, LevelMilestone>();
   let level = 1;
   let experience = 0;
   let fights = 0;
   let copperFromSoldMaterials = 0;
-  while (level < LAST_LEVEL) {
+  while (level < lastLevel) {
     const dungeon = dungeonForLevel(level);
     const monsters = createEncounter(dungeon, 1, random.fork(`encounter-${fights}`));
     fights += 1;
     for (const monster of monsters) {
       const loot = rollMonsterLoot(monster.definitionId, random.fork(`loot-${fights}-${monster.id}`));
       copperFromSoldMaterials += loot.materials.reduce((sum, stack) => sum + stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper, 0);
-      experience += experienceForKill(monster.level, monster.rank);
+      experience += experienceForKill(monster.level, level, monster.rank);
     }
-    while (experience >= experienceToNextLevel(level) && level < LAST_LEVEL) {
+    while (experience >= experienceToNextLevel(level) && level < lastLevel) {
       experience -= experienceToNextLevel(level);
       level += 1;
       milestones.set(level, { fights, copperFromSoldMaterials });

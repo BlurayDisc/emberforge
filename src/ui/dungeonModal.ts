@@ -4,12 +4,12 @@ import { MONSTER_SPELLS } from '../content/monsterSpells';
 import { MONSTERS, type MonsterDefinition } from '../content/monsters';
 import { describeMonsterStatistics } from '../game';
 import { dungeonBackdropCanvas, monsterSpriteCanvas } from './artProviders';
-import { element } from './dom';
+import { actionButton, element } from './dom';
 import { materialName } from './displayNames';
 import { statName } from './itemStatTable';
 import { t } from './i18n';
 import { createMaterialIcon } from './iconArt';
-import { openModal } from './modal';
+import { openModal, type ModalHandle } from './modal';
 import { describeMonsterSpell, spellName } from './spellText';
 import { MATERIALS } from '../content/materials';
 
@@ -37,6 +37,8 @@ function renderLootLine(drop: MonsterDefinition['drops'][number]): HTMLElement {
 export interface DungeonViewOptions {
   showsDropRates: boolean;
   showsMonsterStatistics: boolean;
+  // Set only for a dungeon that is free to start. The details window then shows the same Fight button as the list.
+  fight?: { isEnabled: boolean; start: () => void };
 }
 
 function renderStatisticsLine(monster: MonsterDefinition, dungeon: DungeonDefinition): HTMLElement {
@@ -82,15 +84,23 @@ export function openDungeonView(dungeonId: string, options: DungeonViewOptions):
   const dungeon = requireById(DUNGEONS, dungeonId);
   const backdrop = dungeonBackdropCanvas(dungeon.id);
   const monsters = monsterIdsOf(dungeon).map((monsterId) => requireById(MONSTERS, monsterId));
+  let handle: ModalHandle;
+  const fightButton = options.fight
+    ? actionButton(t('dungeons.start'), () => {
+        handle.close();
+        options.fight?.start();
+      }, { className: 'action-button primary', disabled: !options.fight.isEnabled })
+    : null;
   const content = element(
     'div',
     'dungeon-view',
     element('div', 'dungeon-portrait', backdrop ?? ''),
     element('p', 'card-text', t(`dungeon.${dungeon.id}.description`)),
     element('div', 'card-text small', t('dungeons.levelRange', { min: dungeon.minimumHeroLevel, max: dungeon.recommendedMaxLevel })),
+    ...(fightButton ? [fightButton] : []),
     element('div', 'section-title', t('dungeons.creeps')),
     ...monsters.map((monster) => renderMonsterEntry(monster, dungeon, options)),
     ...(options.showsDropRates ? [element('p', 'hint', t('dungeons.lootHint'))] : []),
   );
-  openModal(t(`dungeon.${dungeon.id}`), content);
+  handle = openModal(t(`dungeon.${dungeon.id}`), content);
 }

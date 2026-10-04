@@ -82,12 +82,12 @@ function openHeroChooser(context: PanelContext, dungeon: DungeonDefinition): voi
 }
 
 // The whole row opens the dungeon details. Buttons inside the row keep their own action.
-function makeDetailsClickable(context: PanelContext, row: HTMLElement, dungeonId: string): HTMLElement {
+function makeDetailsClickable(context: PanelContext, row: HTMLElement, dungeonId: string, fight?: { isEnabled: boolean; start: () => void }): HTMLElement {
   row.classList.add('clickable');
   addDungeonBackdrop(row, dungeonId);
   row.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('button')) return;
-    openDungeonView(dungeonId, { showsDropRates: hasBankUnlock(context.store.getState(), 'dropRates'), showsMonsterStatistics: hasBankUnlock(context.store.getState(), 'monsterStatistics') });
+    openDungeonView(dungeonId, { showsDropRates: hasBankUnlock(context.store.getState(), 'dropRates'), showsMonsterStatistics: hasBankUnlock(context.store.getState(), 'monsterStatistics'), fight });
   });
   return row;
 }
@@ -164,7 +164,7 @@ function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): H
       ...(isCleared ? [element('div', 'card-text small', t('dungeons.cleared'))] : []),
     ],
     actions: [actionButton(t('dungeons.start'), () => sendHeroToDungeon(context, dungeon), { disabled: !hasHeroToSend })],
-  }), dungeon.id);
+  }), dungeon.id, { isEnabled: hasHeroToSend, start: () => sendHeroToDungeon(context, dungeon) });
 }
 
 function renderBusyDungeon(context: PanelContext, dungeon: DungeonDefinition, run: DungeonRun): HTMLElement {

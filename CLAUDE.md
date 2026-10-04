@@ -15,6 +15,7 @@ Pixel-art, turn-based crafting RPG. Stack: three.js + TypeScript + Vite. Static 
 | `npm run check` | Type check + architecture boundary check + data and translation validation + headless smoke play. Run it before you finish any task. |
 | `npm run build` | `check` + production build into `dist/` |
 | `npm run balance` | Balance simulator (`tools/balance-sim/run.ts`). Prints win rate, duration and HP lost per dungeon and party. |
+| `npm run scenarios` | Four balance scenarios from the preset files in `tools/balance-sim/presets/`: `economy`, `experience`, `mob-kill-time`, `boss-fight`. The hero wears the best gear it can equip at its level. Run one with `npm run scenarios -- boss-fight`. Change a preset file, not the code. |
 | `npm run smoke` | Headless smoke play (`tools/smoke-play.ts`): hire, craft, equip, sell, and several dungeon runs at once, and a same-seed check. Fails on a broken rule. |
 | `npm run validate` | Data validator (`tools/validate-data.ts`). `check` and `build` run it too. |
 

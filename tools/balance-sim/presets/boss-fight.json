@@ -1,0 +1,10 @@
+{
+  "description": "One hero against the boss of the first town. The hero wears the best gear it can equip at its level and uses its best spells.",
+  "dungeonId": "goblin-chief-lair",
+  "heroLevels": [8, 9, 10],
+  "classIds": ["warrior", "archer", "mage", "priest", "thief", "barbarian", "fighter"],
+  "battlesPerCase": 300,
+  "seed": 2024,
+  "targetSeconds": 125,
+  "targetWinRatePercent": 90
+}
