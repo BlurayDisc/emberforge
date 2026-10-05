@@ -6,6 +6,7 @@ import './ui/styles/theme.css';
 import './ui/styles/components.css';
 import './ui/styles/stage.css';
 import './ui/styles/panels.css';
+import './ui/styles/story.css';
 import { mountApp } from './app/mountApp';
 import { configureAudio } from './audio';
 import { createBrowserSaveStorage, createGameStore, loadAudioPreferences } from './game';

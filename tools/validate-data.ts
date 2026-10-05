@@ -558,7 +558,7 @@ function expectedEnglishNames(): Array<[string, string]> {
 
 function expectedKeysWithoutEnglishSource(): string[] {
   const keys = PANEL_IDS.map((panelId) => `panel.${panelId}`);
-  keys.push('lore.prologue.title', 'lore.prologue.1', 'lore.prologue.2', 'lore.prologue.3', 'lore.begin');
+  keys.push('lore.prologue.title', 'lore.prologue.1', 'lore.prologue.2', 'lore.prologue.3', 'lore.prologue.4', 'lore.prologue.5', 'lore.begin', 'lore.next', 'lore.skip');
   keys.push('castle.leave', 'castle.farewell');
   for (let screen = 0; screen < CASTLE_SCREEN_COUNT; screen++) keys.push(`castle.screen.${screen}`);
   for (const spot of castleSpots) {

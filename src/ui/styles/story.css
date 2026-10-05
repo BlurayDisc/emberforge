@@ -1,0 +1,67 @@
+/* Opening story: language choice and picture pages. Slots keep their place when the page changes. */
+.story-picture-frame {
+  aspect-ratio: 128 / 72;
+  background: var(--ink);
+  box-shadow: var(--outline-2);
+}
+
+.story-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.story-stack {
+  display: grid;
+}
+
+.story-slot {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  margin: 0;
+}
+
+.story-slot-active {
+  visibility: visible;
+}
+
+.story-text {
+  margin-top: 4px;
+}
+
+.story-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.story-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--wood-700);
+  box-shadow: var(--outline-2);
+}
+
+.story-dot.active {
+  background: var(--gold);
+}
+
+.story-footer {
+  justify-content: space-between;
+}
+
+.story-hidden {
+  visibility: hidden;
+}
+
+.language-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.language-choice-button {
+  font-size: 20px;
+}
