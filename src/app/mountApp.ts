@@ -16,7 +16,8 @@ import { createBottomBar } from '../ui/bottomBar';
 import { createCastleOverlay } from '../ui/castleOverlay';
 import { element } from '../ui/dom';
 import { createPanelHost } from '../ui/panelHost';
-import { getModalHost } from '../ui/modal';
+import { closeTopModal, getModalHost } from '../ui/modal';
+import { createGameHud } from '../ui/gameHud';
 import { createRunHud } from '../ui/runHud';
 import { createTownOverlay } from '../ui/townOverlay';
 import { createTownSpeech } from '../ui/townSpeech';
@@ -29,7 +30,7 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   registerArtProviders({ dungeonBackdrop: drawBattleBackdrop, monsterSprite: (spriteKey) => CREATURE_DRAWERS[spriteKey]?.() ?? null, castleFigure: (look) => FIGURE_DRAWERS[look]?.() ?? null });
   const canvasHost = element('div', 'stage-canvas-host');
   const panelHost = createPanelHost(store);
-  const hud = createRunHud(store);
+  const hud = createRunHud(store, () => panelHost.open('dungeons'));
   const stageArea = element('div', 'stage-area', hud.element, canvasHost, hud.logElement, panelHost.element, getModalHost(), createBuildBadge());
   root.replaceChildren(stageArea, createBottomBar(store, panelHost));
 
@@ -53,10 +54,16 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
     goToScreen: castleView.goToScreen,
     onScroll: castleView.onScroll,
   });
-  stage.overlay.append(townOverlay.element, castleOverlay);
+  stage.overlay.append(townOverlay.element, castleOverlay, createGameHud(store));
   startRunPlayback(store, stage, { battleView, townView: combineTownAndCastle(townView, castleView) }, hud);
   startFlowController(store, panelHost);
   startJobTicker(store, panelHost);
+
+  // Escape closes the top window first, then the open panel. Capture phase, so it runs before the castle handler.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (closeTopModal() || panelHost.closeActivePanel()) event.stopPropagation();
+  }, true);
 
   document.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('button')) playSound('ui-click');

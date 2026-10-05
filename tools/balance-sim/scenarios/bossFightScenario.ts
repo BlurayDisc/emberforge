@@ -15,7 +15,7 @@ export function runBossFightScenario(): void {
       preset.classIds.map((classId) => {
         const measurements = preset.partnerClassIds.map((partnerClassId) => ({
           partnerClassId,
-          ...measureParty([{ classId, level: heroLevel }, { classId: partnerClassId, level: partnerLevel }], dungeon, preset.battlesPerCase, preset.seed),
+          ...measureParty([{ classId, level: heroLevel }, { classId: partnerClassId, level: partnerLevel }], dungeon, preset.battlesPerCase, preset.seed, preset.gearFloor),
         }));
         const averageWinRate = Math.round(measurements.reduce((sum, measurement) => sum + measurement.winRatePercent, 0) / measurements.length);
         const worst = measurements.reduce((lowest, measurement) => (measurement.winRatePercent < lowest.winRatePercent ? measurement : lowest));

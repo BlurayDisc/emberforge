@@ -25,7 +25,7 @@ function deliverCraft(state: GameState, job: CraftJob): GameState | null {
 // A finished sale pays at once. A finished craft needs backpack room. Without room, the item stays at
 // the crafter, marked as waiting, so no item is ever lost and the crafter stays busy until it is collected.
 function finishJob(state: GameState, job: TimedJob): GameState {
-  if (job.kind === 'sell') return { ...state, jobs: state.jobs.filter((candidate) => candidate.id !== job.id), copper: state.copper + job.copper };
+  if (job.kind === 'sell') return { ...state, backpack: state.backpack.filter((entry) => entry.saleJobId !== job.id), jobs: state.jobs.filter((candidate) => candidate.id !== job.id), copper: state.copper + job.copper };
   return deliverCraft(state, job) ?? { ...state, jobs: state.jobs.map((candidate) => (candidate.id === job.id ? { ...job, isWaitingForCollection: true } : candidate)) };
 }
 

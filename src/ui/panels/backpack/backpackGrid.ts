@@ -5,6 +5,8 @@ import { MATERIALS } from '../../../content/materials';
 import { backpackRowsOf, sizeOfBackpackEntry, type GameStore } from '../../../game';
 import type { BackpackEntry } from '../../../model/backpack';
 import { element } from '../../dom';
+import { t } from '../../i18n';
+import { createJobBar } from '../../liveBars';
 import { itemDisplayName, materialName } from '../../displayNames';
 import { createItemIcon, createMaterialIcon } from '../../iconArt';
 import type { ScreenPoint } from '../../modal';
@@ -21,7 +23,7 @@ function placeInGrid(target: HTMLElement, column: number, row: number, width: nu
   target.style.gridRow = `${row + 1} / span ${height}`;
 }
 
-function createEntryCell(entry: BackpackEntry, options: BackpackGridOptions): HTMLElement {
+function createEntryCell(store: GameStore, entry: BackpackEntry, options: BackpackGridOptions): HTMLElement {
   const content = entry.content;
   const { width, height } = sizeOfBackpackEntry(entry);
   const cell = element('button', 'grid-entry');
@@ -38,6 +40,11 @@ function createEntryCell(entry: BackpackEntry, options: BackpackGridOptions): HT
     cell.classList.add(`category-${material.category}`);
     cell.title = materialName(material.id);
     cell.append(createMaterialIcon(material.id, material.category, 2));
+  }
+  const saleJob = entry.saleJobId === undefined ? undefined : store.getState().jobs.find((job) => job.id === entry.saleJobId);
+  if (saleJob) {
+    cell.classList.add('on-sale');
+    cell.append(element('div', 'grid-sale-bar', createJobBar(saleJob, t('job.paying'))));
   }
   if (options.isSelected?.(entry)) cell.classList.add('selected');
   cell.addEventListener('click', (event) => {
@@ -65,6 +72,6 @@ export function createBackpackGrid(store: GameStore, options: BackpackGridOption
       grid.append(emptyCell);
     }
   }
-  state.backpack.forEach((entry) => grid.append(createEntryCell(entry, options)));
+  state.backpack.forEach((entry) => grid.append(createEntryCell(store, entry, options)));
   return grid;
 }

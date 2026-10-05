@@ -3,10 +3,8 @@ import { CRAFT_FEE_BASE_COPPER, CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER } from '../.
 import {
   LARGE_ITEM_CELL_THRESHOLD,
   LEVELS_PER_BRACKET,
-  MAIN_INGREDIENT_CELLS_PER_UNIT,
   SET_MATERIAL_LARGE_ITEM,
   SET_MATERIAL_SMALL_ITEM,
-  SET_RECIPE_LEVEL_STEP,
   SET_RECIPE_SLOTS,
 } from '../../content/balance/items';
 import { MATERIALS, type MaterialDefinition } from '../../content/materials';
@@ -39,25 +37,9 @@ export function craftFeeCopper(requiredCraftLevel: number): number {
   return Math.round(CRAFT_FEE_BASE_COPPER + CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER * requiredCraftLevel);
 }
 
-function setFloorOffset(setMaterial: MaterialDefinition, slot: BaseItemDefinition['slot']): number {
-  return (slot === 'armour' ? setMaterial.setBodyArmourCraftLevelOffset : setMaterial.setCraftLevelOffset) ?? 0;
-}
-
-// A set recipe is 1 crafter level above the basic recipe, and the dungeon of the set material sets a floor.
-// The pieces of one set open in the order of their basic recipes, each at least 1 level after the piece before it.
-// No set recipe goes above the last crafter level of the tier, so a level 10 crafter can make every item. Late pieces of a late set then share level 10.
-function setPieceCraftLevelOffset(base: BaseItemDefinition, setMaterial: MaterialDefinition): number {
-  const setPieces = SET_RECIPE_SLOTS.flatMap((slot) => BASE_ITEMS.filter((piece) => piece.slot === slot && piece.armourWeight === base.armourWeight)).sort(
-    (first, second) => first.craftLevelOffset - second.craftLevelOffset,
-  );
-  let previousPieceOffset = 0;
-  for (const piece of setPieces) {
-    const ownOffset = Math.max(piece.craftLevelOffset + SET_RECIPE_LEVEL_STEP, setFloorOffset(setMaterial, piece.slot));
-    const pieceOffset = Math.min(LEVELS_PER_BRACKET, Math.max(ownOffset, previousPieceOffset + 1));
-    if (piece.id === base.id) return pieceOffset;
-    previousPieceOffset = pieceOffset;
-  }
-  return base.craftLevelOffset;
+// A set recipe opens when the crafter reaches the dungeon of its set material, and never before the basic recipe of the same base item.
+function setRecipeCraftLevelOffset(base: BaseItemDefinition, setMaterial: MaterialDefinition): number {
+  return Math.min(LEVELS_PER_BRACKET, Math.max(base.craftLevelOffset, setMaterial.setCraftLevelOffset ?? 0));
 }
 
 function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: MaterialDefinition | null): Recipe | null {
@@ -65,9 +47,8 @@ function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: Mater
   if (!mainMaterial) return null;
 
   const cells = base.width * base.height;
-  const craftLevelOffset = setMaterial ? setPieceCraftLevelOffset(base, setMaterial) : base.craftLevelOffset;
+  const craftLevelOffset = setMaterial ? setRecipeCraftLevelOffset(base, setMaterial) : base.craftLevelOffset;
   const requiredCraftLevel = (tier - 1) * LEVELS_PER_BRACKET + craftLevelOffset;
-  const mainQuantity = Math.max(1, Math.ceil(cells / MAIN_INGREDIENT_CELLS_PER_UNIT));
   const setMaterialQuantity = cells >= LARGE_ITEM_CELL_THRESHOLD ? SET_MATERIAL_LARGE_ITEM : SET_MATERIAL_SMALL_ITEM;
   return {
     baseId: base.id,
@@ -78,7 +59,7 @@ function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: Mater
     itemLevel: Math.min(requiredCraftLevel, tier * LEVELS_PER_BRACKET),
     feeCopper: craftFeeCopper(requiredCraftLevel),
     ingredients: [
-      { materialId: mainMaterial.id, quantity: mainQuantity },
+      { materialId: mainMaterial.id, quantity: base.mainIngredientQuantity },
       ...(setMaterial ? [{ materialId: setMaterial.id, quantity: setMaterialQuantity }] : []),
     ],
   };

@@ -3,6 +3,7 @@ import {
   CRITICAL_CHANCE_PER_SKILL_POINT,
   CRITICAL_DAMAGE_MULTIPLIER,
   MAXIMUM_CRITICAL_CHANCE,
+  MAXIMUM_DAMAGE_CUT,
   MITIGATION_BASE,
   MITIGATION_PER_ATTACKER_LEVEL,
 } from '../../content/balance/battle';
@@ -119,7 +120,11 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     resistance: stats.resistance,
     speed: stats.speed,
     critChance: criticalChanceOf(stats, hero),
+    damageVarianceFraction: classDefinition.damageVarianceFraction,
     criticalDamageMultiplier: criticalDamageMultiplierOf(hero),
+    mainAttribute: classDefinition.primaryAttribute,
+    mainAttributeValue: stats[classDefinition.primaryAttribute],
+    skill: stats.skill,
     lifeSteal: lifeStealOf(hero),
     behavior: classDefinition.behavior,
     resourceId: classDefinition.resourceId,
@@ -132,7 +137,7 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
 
 export function computeHeroPower(hero: Hero): number {
   const unit = heroToBattleUnit({ ...hero, healthFraction: 1 });
-  const reduction = unit.defence / (unit.defence + MITIGATION_BASE + MITIGATION_PER_ATTACKER_LEVEL * unit.level);
+  const reduction = Math.min(MAXIMUM_DAMAGE_CUT, unit.defence / (unit.defence + MITIGATION_BASE + MITIGATION_PER_ATTACKER_LEVEL * unit.level));
   const offence = unit.attack * (unit.speed / ACTION_THRESHOLD) * (1 + unit.critChance * (unit.criticalDamageMultiplier - 1));
   const durability = unit.maxHp / (1 - reduction);
   return Math.round(Math.sqrt(offence * durability));

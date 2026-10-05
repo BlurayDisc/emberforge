@@ -17,8 +17,12 @@ export interface SpellPresentation {
   startsCast: boolean;
   // The place of this hit among the hits of one cast. A spell with many hits shows them one after the other.
   hitIndex: number;
+  // False for the second arrow at the same enemy. The inflicted status shows once for each enemy.
+  isFirstHitOnTarget: boolean;
   // How long the status lasts on the target: for a buff, a debuff, or the debuff that a damage hit inflicts.
   statusDurationSeconds: number | null;
+  // A damage spell that also gives the caster a status (Evasive Shot): how long it lasts. The buff look shows on the caster once for each cast.
+  selfStatusDurationSeconds: number | null;
 }
 
 function findBattleSpell(spellId: string): BattleSpell | undefined {
@@ -37,7 +41,7 @@ function roleOf(spell: BattleSpell, event: BattleEvent, unitsById: ReadonlyMap<s
 }
 
 function statusDurationOf(spell: BattleSpell, role: SpellRole): number | null {
-  if (spell.effect.kind === 'status') return spell.effect.durationSeconds;
+  if (spell.effect.kind === 'status' || spell.effect.kind === 'shield') return spell.effect.durationSeconds;
   if (role === 'damage' && spell.effect.kind === 'damage') return spell.effect.inflicts?.durationSeconds ?? null;
   return null;
 }
@@ -51,7 +55,10 @@ export function describeSpellEvent(events: readonly BattleEvent[], eventIndex: n
   const role = roleOf(spell, event, unitsById);
   let castStartIndex = eventIndex;
   while (castStartIndex > 0 && isSameCast(events[castStartIndex - 1] as BattleEvent, event)) castStartIndex -= 1;
-  const hitsBefore = events.slice(castStartIndex, eventIndex).filter((earlier) => earlier.kind === event.kind && earlier.targetId === event.targetId).length;
+  // Hits that a spread spell sends to different enemies still fall one after the other.
+  const isSpread = spell.effect.kind === 'damage' && spell.effect.target === 'spreadEnemies';
+  const hitsBefore = events.slice(castStartIndex, eventIndex).filter((earlier) => earlier.kind === event.kind && (isSpread || earlier.targetId === event.targetId)).length;
+  const isFirstHitOnTarget = !events.slice(castStartIndex, eventIndex).some((earlier) => earlier.kind === event.kind && earlier.targetId === event.targetId);
   const showsLook = role !== 'heal' || spell.effect.kind === 'heal';
   return {
     spellId: spell.id,
@@ -60,6 +67,8 @@ export function describeSpellEvent(events: readonly BattleEvent[], eventIndex: n
     sounds: showsLook ? SPELL_SOUNDS[spell.id] : undefined,
     startsCast: castStartIndex === eventIndex,
     hitIndex: hitsBefore,
+    isFirstHitOnTarget,
     statusDurationSeconds: statusDurationOf(spell, role),
+    selfStatusDurationSeconds: spell.effect.kind === 'damage' ? spell.effect.alsoOnSelf?.durationSeconds ?? null : null,
   };
 }

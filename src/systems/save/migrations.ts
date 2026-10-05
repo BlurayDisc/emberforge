@@ -6,6 +6,9 @@ import { migrateBackpackGrid } from './migrateBackpackGrid';
 import { migrateWaitingLoot } from './migrateWaitingLoot';
 import { migrateRenamedBases } from './migrateRenamedBases';
 import { migrateSpells } from './migrateSpells';
+import { migrateDroppedItems } from './migrateDroppedItems';
+import { migrateHealthLoss } from './migrateHealthLoss';
+import { migrateSalesInPlace } from './migrateSalesInPlace';
 import { migrateUpgradeLevels } from './migrateUpgradeLevels';
 import { migrateUnstackedMaterials } from './migrateUnstackedMaterials';
 import { migrateWeaponDamageAndSmiths } from './migrateWeaponDamageAndSmiths';
@@ -86,5 +89,20 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
     // Version 19: the Mill holds 1 material at first, and the Bank sells Mill upgrades.
     fromVersion: 18,
     migrate: migrateMillUpgrades,
+  },
+  {
+    // Version 20: monsters can drop items.
+    fromVersion: 19,
+    migrate: migrateDroppedItems,
+  },
+  {
+    // Version 21: a hero result holds the health lost in the fight.
+    fromVersion: 20,
+    migrate: migrateHealthLoss,
+  },
+  {
+    // Version 22: goods on sale stay in their backpack cell.
+    fromVersion: 21,
+    migrate: migrateSalesInPlace,
   },
 ];

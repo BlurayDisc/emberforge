@@ -14,6 +14,7 @@ export interface BaseItemDefinition {
   height: number;
   profession: ProfessionId;
   mainCategory: MaterialCategory;
+  mainIngredientQuantity: number;
   baseStats: StatBonuses;
   craftLevelOffset: number;
 }

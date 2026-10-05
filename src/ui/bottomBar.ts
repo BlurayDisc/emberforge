@@ -1,7 +1,6 @@
-import type { GameStore } from '../game';
+import { backpackPressureOf, type GameStore } from '../game';
 import { actionButton, element } from './dom';
 import { onLanguageChange, t } from './i18n';
-import { createMoneyDisplay } from './moneyDisplay';
 import { PANEL_CATALOG, panelTitleKey } from './panelCatalog';
 import type { PanelHost } from './panelHost';
 import { createPixelIcon } from './pixelIcons';
@@ -17,8 +16,7 @@ export function createBottomBar(store: GameStore, panelHost: PanelHost): HTMLEle
     if (panel.id === 'dungeons') button.append(badge);
     return [{ id: panel.id, button, label, badge }];
   });
-  const moneySlot = element('div', 'bar-money');
-  bar.append(element('div', 'bar-buttons', ...buttons.map((entry) => entry.button)), moneySlot);
+  bar.append(element('div', 'bar-buttons', ...buttons.map((entry) => entry.button)));
 
   const refreshButtons = (): void => {
     buttons.forEach(({ id, button }) => button.classList.toggle('active', panelHost.activePanelId() === id));
@@ -37,17 +35,24 @@ export function createBottomBar(store: GameStore, panelHost: PanelHost): HTMLEle
       badge.classList.toggle('has-results', reports.length > 0);
     });
   };
-  const refreshMoney = (): void => {
-    moneySlot.replaceChildren(createMoneyDisplay(store.getState().copper));
+  // The warning is a quiet colour on the Inventory button: a small square and a thin line. It does not move or flash.
+  const refreshBackpackWarning = (): void => {
+    const pressure = backpackPressureOf(store.getState());
+    const inventoryButton = buttons.find(({ id }) => id === 'inventory')?.button;
+    if (!inventoryButton) return;
+    inventoryButton.classList.toggle('storage-warning', pressure === 'warning');
+    inventoryButton.classList.toggle('storage-urgent', pressure === 'urgent');
+    inventoryButton.title = pressure === 'none' ? '' : t(`storage.${pressure}`);
   };
 
   panelHost.onChange(refreshButtons);
-  store.subscribe(refreshMoney);
   store.subscribe(refreshBadges);
+  store.subscribe(refreshBackpackWarning);
+  onLanguageChange(refreshBackpackWarning);
   onLanguageChange(refreshLabels);
   refreshButtons();
   refreshLabels();
-  refreshMoney();
   refreshBadges();
+  refreshBackpackWarning();
   return bar;
 }

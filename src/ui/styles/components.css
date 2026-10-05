@@ -49,6 +49,33 @@
   font-size: 15px;
 }
 
+/* Top right corner. The town screen title is in the top left corner. The castle Leave button sits under this HUD. */
+.game-hud {
+  --hud-font-size: max(11px, calc(var(--u) * 5));
+  position: absolute;
+  top: calc(var(--u) * 2);
+  right: calc(var(--u) * 2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--hud-font-size);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.game-hud-money,
+.game-hud-clock {
+  padding: 2px 8px;
+  background: rgba(23, 17, 13, 0.72);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.game-hud-clock {
+  color: var(--parchment-dim);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 .bottom-bar {
   flex: none;
   display: flex;
@@ -73,12 +100,6 @@
   gap: 8px;
   padding: 8px 16px;
   min-height: 48px;
-}
-
-.bar-money {
-  padding: 6px 12px;
-  background: var(--wood-900);
-  box-shadow: var(--outline-2), inset 2px 2px 0 var(--ink);
 }
 
 .money {
@@ -111,6 +132,7 @@
 }
 
 .panel-host.open {
+  z-index: 2;
   pointer-events: auto;
 }
 
@@ -247,8 +269,17 @@
   background-image: repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.45) 6px 8px);
 }
 
+.bar-experience { background: #2a2a3d; }
 .bar-health .bar-fill { background: var(--green); }
 .bar-experience .bar-fill { background: var(--blue); }
+.bar-health .bar-loss {
+  position: absolute;
+  top: 0;
+  background: var(--crimson);
+  transform-origin: left;
+  animation: gain-grow 0.8s steps(8) both;
+}
+
 .bar-experience .bar-gain {
   position: absolute;
   top: 0;
@@ -273,6 +304,27 @@
   box-shadow: var(--outline-4), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-900);
   pointer-events: none;
 }
+
+.bar-button {
+  position: relative;
+}
+
+/* A small square in the corner and a thin line under the label. No animation, so it informs and does not nag. */
+.bar-button.storage-warning::after,
+.bar-button.storage-urgent::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.bar-button.storage-warning::after { background: var(--warning-soft); }
+.bar-button.storage-urgent::after { background: var(--alert-soft); }
+.bar-button.storage-warning { box-shadow: var(--outline-2), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-800), inset 0 -3px 0 var(--warning-soft); }
+.bar-button.storage-urgent { box-shadow: var(--outline-2), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-800), inset 0 -3px 0 var(--alert-soft); }
 
 .bar-badge {
   min-width: 18px;
@@ -447,3 +499,48 @@
 .class-tag-thief { background: #c9a2e8; }
 .class-tag-barbarian { background: #c98a52; }
 .class-tag-fighter { background: #e8c24a; }
+
+/* Phone layout: seven buttons share one row, icon above label. Money sits above them, so the bar stays two short lines. */
+@media (max-width: 640px) {
+  .bottom-bar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .bar-buttons {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+
+  .bar-button {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    margin: 0;
+    padding: 4px 0;
+    min-height: 48px;
+    font-size: 10px;
+  }
+
+  .bar-button {
+    position: relative;
+  }
+
+  .bar-badge {
+    position: absolute;
+    top: -6px;
+    right: -2px;
+  }
+
+  .bar-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+}

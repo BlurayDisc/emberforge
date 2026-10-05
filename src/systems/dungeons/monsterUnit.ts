@@ -1,4 +1,4 @@
-import { CRITICAL_DAMAGE_MULTIPLIER } from '../../content/balance/battle';
+import { CRITICAL_DAMAGE_MULTIPLIER, MONSTER_DAMAGE_VARIANCE_FRACTION } from '../../content/balance/battle';
 import {
   MONSTER_ATTACK,
   MONSTER_CRITICAL_CHANCE,
@@ -54,9 +54,15 @@ export function createMonsterUnit(monsterId: string, level: number, unitId: stri
     resistance: stats.resistance,
     speed: definition.speed,
     critChance: MONSTER_CRITICAL_CHANCE,
+    damageVarianceFraction: MONSTER_DAMAGE_VARIANCE_FRACTION,
+    mainAttribute: 'strength',
+    mainAttributeValue: 0,
+    skill: 0,
     criticalDamageMultiplier: CRITICAL_DAMAGE_MULTIPLIER,
     lifeSteal: 0,
     behavior: 'fighter',
+    targetPriority: definition.targetPriority,
+    armourPenetration: definition.armourPenetration,
     resourceId: 'mana',
     maxResource: 0,
     resource: 0,

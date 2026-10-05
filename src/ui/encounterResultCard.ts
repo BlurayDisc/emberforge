@@ -1,15 +1,18 @@
+import { BASE_ITEMS } from '../content/baseItems';
 import { requireById } from '../content/lookup';
 import { MATERIALS } from '../content/materials';
 import type { EncounterResult } from '../model/gameState';
 import type { Hero } from '../model/hero';
+import type { Item } from '../model/item';
 import type { MaterialStack } from '../model/material';
 import { element } from './dom';
-import { className, heroDisplayName, listOf, materialName } from './displayNames';
+import { className, heroDisplayName, itemDisplayName, listOf, materialName } from './displayNames';
 import { t } from './i18n';
-import { createMaterialIcon } from './iconArt';
-import { openMaterialView } from './itemModals';
+import { createItemIcon, createMaterialIcon } from './iconArt';
+import { openItemView, openMaterialView } from './itemModals';
 import { experienceToNextLevel } from '../game';
-import { createExperienceGainBar } from './liveBars';
+import { createExperienceGainBar, createHealthLossBar } from './liveBars';
+import { createMaterialTooltip } from './materialBoxes';
 import { createMoneyDisplay } from './moneyDisplay';
 import { createPortrait } from './portraitArt';
 
@@ -19,7 +22,11 @@ function formatNumber(value: number): string {
 
 function createExperienceBarOf(result: EncounterResult['heroes'][number]): HTMLElement {
   const experienceGainedInThisLevel = result.reachedLevel === null ? Math.min(result.experienceGained, result.experienceAfter) : result.experienceAfter;
-  return createExperienceGainBar(result.experienceAfter - experienceGainedInThisLevel, experienceGainedInThisLevel, experienceToNextLevel(result.levelAfter));
+  return createExperienceGainBar(result.experienceAfter - experienceGainedInThisLevel, experienceGainedInThisLevel, experienceToNextLevel(result.levelAfter), t('result.experienceLabel', { level: result.levelAfter, experience: result.experienceGained }));
+}
+
+function createHealthLossBarOf(result: EncounterResult['heroes'][number]): HTMLElement {
+  return createHealthLossBar(result.healthLost, result.maxHealth, t('result.healthLost', { lost: result.healthLost }));
 }
 
 function createHeroResultRow(result: EncounterResult['heroes'][number], hero: Hero | undefined, durationSeconds: number): HTMLElement {
@@ -31,7 +38,7 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
   ];
   const text = element('div', 'result-hero-text', element('div', 'card-title', hero ? `${name} (${className(hero.classId)})` : name), element('div', 'card-text small', listOf(lines)));
   if (result.reachedLevel !== null) text.append(element('div', 'level-up', t('result.levelUp', { level: result.reachedLevel })));
-  text.append(createExperienceBarOf(result));
+  text.append(createHealthLossBarOf(result), createExperienceBarOf(result));
   return element('div', 'result-hero', hero ? createPortrait(hero.classId, hero.name, 2) : element('span', ''), text);
 }
 
@@ -39,16 +46,20 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
 function createLootBoxes(stacks: readonly MaterialStack[]): HTMLElement[] {
   return stacks.map((stack) => {
     const material = requireById(MATERIALS, stack.materialId);
-    const tooltip = element(
-      'span',
-      'loot-tooltip',
-      element('strong', '', materialName(material.id)),
-      element('span', 'card-text small', t('inventory.materialInfo', { tier: material.tier, category: t(`category.${material.category}`) })),
-      createMoneyDisplay(material.sellValueCopper),
-    );
-    const box = element('button', 'loot-box', createMaterialIcon(material.id, material.category, 4), element('span', 'loot-quantity', `x${stack.quantity}`), tooltip);
+    const box = element('button', 'loot-box', createMaterialIcon(material.id, material.category, 4), element('span', 'loot-quantity', `x${stack.quantity}`), createMaterialTooltip(material.id));
     box.type = 'button';
     box.addEventListener('click', () => openMaterialView(material.id));
+    return box;
+  });
+}
+
+// A dropped item shows its quality as a coloured frame. A tap opens the item details.
+function createItemLootBoxes(items: readonly Item[]): HTMLElement[] {
+  return items.map((item) => {
+    const tooltip = element('span', 'loot-tooltip', element('strong', `quality-${item.quality}`, itemDisplayName(item)), createMoneyDisplay(item.sellValueCopper));
+    const box = element('button', `loot-box quality-border-${item.quality}`, createItemIcon(item.baseId, item.materialId, requireById(BASE_ITEMS, item.baseId).mainCategory, 4), tooltip);
+    box.type = 'button';
+    box.addEventListener('click', () => openItemView(item));
     return box;
   });
 }
@@ -58,8 +69,8 @@ export function createEncounterResultCard(result: EncounterResult, company: read
     createHeroResultRow(heroResult, company.find((hero) => hero.id === heroResult.heroId), result.durationSeconds),
   );
   const loot = element('div', 'result-loot');
-  if (result.materials.length === 0) loot.append(element('span', 'card-text small', t('result.noLoot')));
-  else loot.append(...createLootBoxes(result.materials));
+  if (result.materials.length === 0 && result.items.length === 0) loot.append(element('span', 'card-text small', t('result.noLoot')));
+  else loot.append(...createLootBoxes(result.materials), ...createItemLootBoxes(result.items));
   const card = element(
     'div',
     'result-card',
@@ -71,6 +82,9 @@ export function createEncounterResultCard(result: EncounterResult, company: read
   );
   if (result.materialsWaiting.length > 0) {
     card.append(element('div', 'danger-text', t('report.materialsWaiting', { list: listOf(result.materialsWaiting.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`)) })));
+  }
+  if (result.itemsWaiting.length > 0) {
+    card.append(element('div', 'danger-text', t('report.itemsWaiting', { list: listOf(result.itemsWaiting.map(itemDisplayName)) })));
   }
   return card;
 }

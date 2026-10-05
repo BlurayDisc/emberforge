@@ -1,5 +1,5 @@
 .backpack-grid {
-  --cell: min(46px, 7.5vw);
+  --cell: min(46px, calc((100vw - 64px) / 10));
   display: grid;
   grid-template-columns: repeat(10, var(--cell));
   grid-auto-rows: var(--cell);
@@ -53,9 +53,11 @@
 .category-catalyst { background: #a8761e; }
 
 .quality-common { color: var(--quality-common); }
+.quality-uncommon { color: var(--quality-uncommon); }
 .quality-magic { color: var(--quality-magic); }
 .quality-rare { color: var(--quality-rare); }
 .quality-unique { color: var(--quality-unique); }
+.quality-border-uncommon { box-shadow: inset 2px 2px 0 var(--quality-uncommon), inset -2px -2px 0 var(--quality-uncommon); }
 .quality-border-magic { box-shadow: inset 2px 2px 0 var(--quality-magic), inset -2px -2px 0 var(--quality-magic); }
 .quality-border-rare { box-shadow: inset 2px 2px 0 var(--quality-rare), inset -2px -2px 0 var(--quality-rare); }
 .quality-border-unique { box-shadow: inset 2px 2px 0 var(--quality-unique), inset -2px -2px 0 var(--quality-unique); }
@@ -144,11 +146,25 @@
   color: var(--wood-500);
 }
 
-.ingredient {
-  margin-right: 8px;
+.ingredient-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0;
 }
 
-.ingredient.missing {
+.loot-box.ingredient-box {
+  width: 56px;
+  height: 56px;
+}
+
+.ingredient-box .loot-quantity {
+  right: 3px;
+  bottom: 2px;
+  font-size: 13px;
+}
+
+.ingredient-box.missing .loot-quantity {
   color: #e07a6a;
 }
 
@@ -348,6 +364,29 @@
   color: var(--gold);
 }
 
+/* Goods on sale keep their cell. The timer sits on the bottom edge of the cell, so nothing moves when a sale starts or ends. */
+.grid-entry.on-sale {
+  position: relative;
+  box-shadow: inset 2px 2px 0 var(--crimson), inset -2px -2px 0 var(--crimson);
+}
+
+.grid-sale-bar {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  left: 2px;
+}
+
+.grid-sale-bar .bar.run-progress {
+  width: 100%;
+  height: 12px;
+  margin: 0;
+}
+
+.grid-sale-bar .progress-label {
+  font-size: 9px;
+}
+
 .list-row.fighting {
   box-shadow: var(--outline-2), inset 2px 2px 0 var(--crimson), inset -2px -2px 0 var(--crimson);
 }
@@ -396,6 +435,7 @@
   box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--wood-700);
 }
 
+.item-portrait.quality-border-uncommon { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-uncommon); }
 .item-portrait.quality-border-magic { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-magic); }
 .item-portrait.quality-border-rare { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-rare); }
 .item-portrait.quality-border-unique { box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--quality-unique); }
@@ -456,6 +496,7 @@
   box-shadow: 0 0 0 2px var(--ink), inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--wood-700);
 }
 
+.slot-box.quality-border-uncommon { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-uncommon); }
 .slot-box.quality-border-magic { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-magic); }
 .slot-box.quality-border-rare { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-rare); }
 .slot-box.quality-border-unique { box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 3px var(--quality-unique); }
@@ -639,18 +680,53 @@
 }
 
 .bar.downed .bar-fill { background: var(--red, #b23a3a); }
-.bar.run-progress.bar-health { height: 16px; }
+.bar.run-progress.bar-health { height: 16px; max-width: 100%; flex: none; }
+
+.health-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.health-time-note {
+  white-space: nowrap;
+}
 .crafter-job { margin-top: 4px; }
+
+.panel-world {
+  width: 100%;
+  height: 100%;
+}
+
+.world-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The map keeps the 200:125 shape of the drawing and grows to the largest size that fits the free space. */
+.world-map-area {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
 
 .world-map {
   position: relative;
+  width: min(calc(100cqw - 16px), calc((100cqh - 16px) * 1.6));
+  aspect-ratio: 200 / 125;
+  container-type: inline-size;
   box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--wood-700);
 }
 
 .world-map canvas {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   image-rendering: pixelated;
 }
 
@@ -668,8 +744,8 @@
 }
 
 .map-pin {
-  width: 14px;
-  height: 14px;
+  width: clamp(14px, 2.4cqw, 28px);
+  height: clamp(14px, 2.4cqw, 28px);
   background: #b23a3a;
   box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px #f2c14e;
 }
@@ -682,7 +758,7 @@
 .map-label {
   margin-top: 3px;
   padding: 1px 5px;
-  font-size: 12px;
+  font-size: clamp(12px, 2.2cqw, 22px);
   font-weight: 700;
   white-space: nowrap;
   color: var(--parchment);
@@ -786,6 +862,12 @@
 }
 
 /* Tiles: a grid of cards that wrap to the width of the panel. */
+.workshop-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .tile-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -1002,6 +1084,12 @@
 }
 
 /* The details sit beside the grid on a wide panel. On a phone the flex wrap puts them under the grid. */
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
 .inventory-layout {
   display: flex;
   flex-wrap: wrap;
@@ -1010,7 +1098,7 @@
 }
 
 .inventory-grid-column {
-  --cell: min(46px, 7.5vw);
+  --cell: min(46px, calc((100vw - 64px) / 10));
   /* The width is the grid width, so a long item name in the selection bar cannot widen the column. */
   width: calc(var(--cell) * 10 + 9 * 2px + 8px);
   max-width: 100%;
@@ -1247,4 +1335,218 @@
 @media (prefers-reduced-motion: reduce) {
   .victory-rays, .victory-confetti, .victory-trophy { animation: none; }
   .victory-stat-fill { animation-duration: 0.01s; }
+}
+
+/* The team strip sits at the top of the Dungeons panel. The chips wrap into rows, so nothing hides behind a sideways scroll. */
+.hero-strip {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hero-chip {
+  flex: 0 0 auto;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px;
+  padding: 3px 6px;
+  font: inherit;
+  text-align: left;
+  color: var(--parchment);
+  background: var(--leather);
+  border: 0;
+  cursor: pointer;
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--wood-700);
+}
+
+.hero-chip .pixel-portrait {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
+.hero-chip-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-chip-name {
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hero-chip .bar.run-progress.bar-health {
+  height: 12px;
+  margin-top: 0;
+}
+
+.hero-chip .progress-label {
+  font-size: 10px;
+}
+
+/* Phone layout: a row keeps its text wide. The buttons drop under the text. */
+@media (max-width: 640px) {
+  .list-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .row-body {
+    flex: 1 1 140px;
+  }
+
+  .row-actions:empty {
+    display: none;
+  }
+
+  .row-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .row-actions .action-button {
+    flex: 1 1 auto;
+  }
+
+  .list-row.has-backdrop .row-backdrop-shade {
+    background: linear-gradient(90deg, rgba(23, 17, 13, 0.92) 0%, rgba(23, 17, 13, 0.75) 60%, rgba(23, 17, 13, 0.4) 100%);
+  }
+
+  .panel-host {
+    padding: 4px;
+  }
+
+  .panel-title {
+    font-size: 24px;
+  }
+
+  .panel-body {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .action-button {
+    padding: 8px 12px;
+  }
+
+  /* All crafters fit on a small screen: two compact tiles in a row, each with a small picture beside the text. */
+  .tile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .crafter-tile {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    text-align: left;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .crafter-tile .row-art {
+    min-width: 0;
+    padding: 2px;
+  }
+
+  .crafter-tile .row-art img {
+    display: block;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+  }
+
+  .crafter-tile .row-body {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+  }
+
+  .crafter-tile .card-title {
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+
+  .crafter-intro .pixel-portrait,
+  .crafter-intro canvas,
+  .crafter-intro img {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (max-width: 640px) {
+  .loot-box {
+    width: 64px;
+    height: 64px;
+  }
+
+  .result-loot {
+    min-height: 80px;
+    gap: 8px;
+  }
+}
+
+/* Four tabs share one row on a phone. */
+@media (max-width: 640px) {
+  .tab-row {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+
+  .tab-row .action-button {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    padding: 8px 2px;
+    font-size: 14px;
+  }
+}
+
+/* A hero in a fight has a gold frame in the strip. */
+.hero-chip.away {
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--gold-dark), inset -2px -2px 0 var(--gold-dark);
+}
+
+.panel-host:has(.panel-world) {
+  padding: 4px;
+  align-items: stretch;
+}
+
+/* Every dungeon row has the room of the tallest state (a fight with a bar and two buttons), so a row that changes state moves no row below it. */
+.dungeon-row {
+  min-height: 128px;
+  box-sizing: border-box;
+}
+
+.crafter-status {
+  min-height: 84px;
+}
+
+@media (max-width: 640px) {
+  .dungeon-row {
+    min-height: 150px;
+  }
+}
+
+/* The action row at the bottom of a screen. It sticks to the bottom of the scrolling panel, so it is always in view. */
+.panel-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0 2px;
+  background: var(--wood-800);
+  box-shadow: 0 -4px 0 var(--wood-800);
 }

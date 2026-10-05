@@ -1,4 +1,3 @@
-import type { BackpackContent } from './backpack';
 import type { Item } from './item';
 
 // Selling and crafting both take time. A job holds the work until finishesAtMs.
@@ -10,7 +9,6 @@ interface JobBase {
 
 export interface SaleJob extends JobBase {
   kind: 'sell';
-  content: BackpackContent;
   copper: number;
 }
 

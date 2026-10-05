@@ -32,5 +32,6 @@ function renderTownMarker(town: TownDefinition, isCurrent: boolean): HTMLElement
 export const renderWorldPanel: PanelRenderer = (context: PanelContext) => {
   const currentTownId = context.store.getState().townId;
   const map = element('div', 'world-map', drawWorldMap(TOWNS), ...TOWNS.map((town) => renderTownMarker(town, town.id === currentTownId)));
-  return element('div', 'panel-body', element('p', 'hint', t('world.tapHint')), map, element('p', 'hint', t('world.hint')));
+  const mapArea = element('div', 'world-map-area', map);
+  return element('div', 'panel-body world-body', element('p', 'hint', t('world.tapHint')), mapArea, element('p', 'hint', t('world.hint')));
 };

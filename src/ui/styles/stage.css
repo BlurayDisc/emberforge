@@ -231,7 +231,8 @@
   position: absolute;
   margin-top: calc(var(--u) * 3);
   display: flex;
-  flex-direction: column;
+  /* The Collect button sits under the timer, so it appearing never moves the timer. */
+  flex-direction: column-reverse;
   align-items: center;
   gap: calc(var(--u) * 2);
   pointer-events: none;
@@ -299,6 +300,18 @@
 
 .floating-text.heal {
   color: var(--green);
+}
+
+.floating-text.absorb {
+  color: var(--log-hero);
+}
+
+.floating-text.burn {
+  color: var(--log-crit);
+}
+
+.floating-text.dodge {
+  color: var(--parchment);
 }
 
 @keyframes float-up {
@@ -416,6 +429,8 @@
 .modal-backdrop {
   position: absolute;
   inset: 0;
+  /* A stacking context per modal: a raised child (hovered loot box) must not paint above a modal opened later. */
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,7 +462,7 @@
   position: absolute;
   right: 6px;
   bottom: 4px;
-  z-index: 5;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -591,7 +606,8 @@
 
 .castle-leave-button {
   position: absolute;
-  top: calc(var(--u) * 4);
+  /* Under the gold and clock HUD in the same corner. */
+  top: calc(var(--u) * 4 + max(11px, calc(var(--u) * 5)) * 2.6);
   right: calc(var(--u) * 4);
   width: auto;
   margin: 0;

@@ -14,6 +14,8 @@ export interface ClassDefinition {
   attackKind: AttackKind;
   // Like the main attribute in Warcraft or Dota: it gives this class its attack damage, one point for one damage.
   primaryAttribute: PrimaryAttribute;
+  // How far one hit swings from its base damage (0.1 means 90-110%). A steady class has a small number, a wild class a big one.
+  damageVarianceFraction: number;
   behavior: UnitBehavior;
   resourceId: ResourceId;
   spriteKey: string;

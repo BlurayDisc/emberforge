@@ -1,7 +1,7 @@
 import type { GameState } from '../../model/gameState';
 import type { BackpackEntry } from '../../model/backpack';
 import { findMoveAnchor, sizeOfContent, usedCellCount, type GridPosition } from '../../systems/inventory';
-import { BACKPACK_COLUMNS } from '../../content/balance/backpack';
+import { BACKPACK_COLUMNS, BACKPACK_URGENT_FILL_FRACTION, BACKPACK_WARNING_FILL_FRACTION } from '../../content/balance/backpack';
 import { nextStorageUpgradeCostCopper } from '../commands/buyStorageUpgrade';
 import { millSettingsOf } from '../millSettings';
 import { MILL_PRODUCTION_INTERVAL_SECONDS_BY_SPEED_UPGRADE } from '../../content/balance/mill';
@@ -43,4 +43,15 @@ export function describeStorage(state: GameState): StorageView {
 // Where the entry's top-left corner goes when the player taps an empty cell. Null when the entry fits nowhere around that cell.
 export function findBackpackMoveAnchor(state: GameState, from: GridPosition, tapped: GridPosition): GridPosition | null {
   return findMoveAnchor(state.backpack, from, tapped, backpackRowsOf(state));
+}
+
+export type BackpackPressure = 'none' | 'warning' | 'urgent';
+
+// Urgent also covers items that found no room: dungeon drops that wait (pendingLoot) and finished crafts that wait for collection.
+export function backpackPressureOf(state: GameState): BackpackPressure {
+  const { usedCells, totalCells } = describeStorage(state);
+  const hasItemsWaitingForSpace = Object.values(state.pendingLoot).some((stacks) => stacks.length > 0) || state.jobs.some((job) => job.kind === 'craft' && job.isWaitingForCollection);
+  const fillFraction = usedCells / totalCells;
+  if (hasItemsWaitingForSpace || fillFraction >= BACKPACK_URGENT_FILL_FRACTION) return 'urgent';
+  return fillFraction >= BACKPACK_WARNING_FILL_FRACTION ? 'warning' : 'none';
 }

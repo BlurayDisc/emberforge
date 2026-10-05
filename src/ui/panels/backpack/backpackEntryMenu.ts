@@ -1,6 +1,6 @@
 import { MATERIALS } from '../../../content/materials';
 import { requireById } from '../../../content/lookup';
-import { sellBackpackEntryCommand } from '../../../game';
+import { cancelSaleCommand, sellBackpackEntryCommand } from '../../../game';
 import type { BackpackEntry } from '../../../model/backpack';
 import { actionButton } from '../../dom';
 import { itemDisplayName, materialName } from '../../displayNames';
@@ -24,12 +24,21 @@ export interface BackpackEntryActionOptions {
 export function createBackpackEntryActions(context: PanelContext, entry: BackpackEntry, options: BackpackEntryActionOptions = {}): HTMLButtonElement[] {
   const { onEquipOnHero, afterAction } = options;
   const { content } = entry;
-  return [
-    actionButton(t('slot.menuView'), () => {
+  const viewButton = actionButton(t('slot.menuView'), () => {
+    afterAction?.();
+    if (content.kind === 'item') openItemView(content.item);
+    else openMaterialView(content.materialId);
+  });
+  if (entry.saleJobId !== undefined) {
+    const saleJobId = entry.saleJobId;
+    return [viewButton, actionButton(t('merchant.cancelSale'), () => {
+      const result = context.store.execute(cancelSaleCommand(saleJobId));
+      if (!result.accepted) context.notify(describeRejection(result.rejection));
       afterAction?.();
-      if (content.kind === 'item') openItemView(content.item);
-      else openMaterialView(content.materialId);
-    }),
+    })];
+  }
+  return [
+    viewButton,
     ...(content.kind === 'item' && onEquipOnHero ? [actionButton(t('slot.menuEquip'), () => {
       afterAction?.();
       openEquipHeroChoice(context, content.item, onEquipOnHero);

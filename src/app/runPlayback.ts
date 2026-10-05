@@ -71,9 +71,11 @@ function logEntriesForEvent(event: BattleEvent, encounter: EncounterPlayback): L
   const spellName = event.spellId === undefined ? undefined : spellNameOf(event.spellId);
   const actorUnit = encounter.unitsById.get(event.actorId);
   const resourceSpent = event.resourceSpent !== undefined && actorUnit ? { resourceName: resourceName(actorUnit.resourceId), amount: event.resourceSpent } : undefined;
-  if (event.kind === 'effect') entries.push({ kind: 'effect', actor, target, spellName: spellName ?? '', resourceSpent });
+  if (event.isDamageOverTime) entries.push({ kind: 'burn', target, amount: event.amount, absorbed: event.absorbed });
+  else if (event.isDodge) entries.push({ kind: 'dodge', actor, target, spellName, resourceSpent });
+  else if (event.kind === 'effect') entries.push({ kind: 'effect', actor, target, spellName: spellName ?? '', resourceSpent });
   else if (event.kind === 'heal') entries.push({ kind: 'heal', actor, target, amount: event.amount, spellName, resourceSpent });
-  else entries.push({ kind: 'hit', actor, target, amount: event.amount, isCritical: event.isCritical, spellName, resourceSpent });
+  else entries.push({ kind: 'hit', actor, target, amount: event.amount, isCritical: event.isCritical, absorbed: event.absorbed, spellName, resourceSpent });
   if (targetUnit && event.targetHpAfter === 0) entries.push({ kind: 'defeated', unit: target });
   return entries;
 }
@@ -84,7 +86,9 @@ function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, Batt
   const actor = unitsById.get(event.actorId);
   const target = unitsById.get(event.targetId);
   if (!actor || !target) return;
+  if (event.isDamageOverTime) return;
   if (spell) playSpellSounds(spell);
+  if (event.isDodge) return;
   if (event.kind === 'heal' || event.kind === 'effect') {
     if (!spell) playSound('heal-chime');
     return;
@@ -114,8 +118,11 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
 
   // A spell with a look (data/spell-visuals.json) shows its own effects. Any other event keeps the plain hit and heal look.
   const showSpellOnView = (event: BattleEvent, spell: SpellPresentation & { visual: NonNullable<SpellPresentation['visual']> }): void => {
-    if (spell.startsCast) view.playSpellCast(event.actorId, spell.visual);
-    if (spell.role === 'damage') view.playSpellHit(event.actorId, event.targetId, event.amount, event.isCritical, spell.visual, spell.hitIndex, spell.statusDurationSeconds);
+    if (spell.startsCast) {
+      view.playSpellCast(event.actorId, spell.visual);
+      if (spell.selfStatusDurationSeconds !== null && spell.visual.buff) view.playSpellStatus(event.actorId, event.actorId, spell.visual, 'buff', spell.selfStatusDurationSeconds);
+    }
+    if (spell.role === 'damage') view.playSpellHit(event.actorId, event.targetId, event.amount, event.isCritical, spell.visual, spell.hitIndex, spell.isFirstHitOnTarget ? spell.statusDurationSeconds : null);
     else if (spell.role === 'heal') view.playSpellHeal(event.actorId, event.targetId, event.amount, spell.visual);
     else if (spell.statusDurationSeconds !== null) view.playSpellStatus(event.actorId, event.targetId, spell.visual, spell.role, spell.statusDurationSeconds);
   };
@@ -123,12 +130,23 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   const applyEventToView = (event: BattleEvent, encounter: EncounterPlayback, eventIndex: number): void => {
     const target = encounter.unitsById.get(event.targetId);
     if (target) view.setUnitHealth(target.id, event.targetHpAfter);
-    showResourcesAfterEvent(event);
     const spell = describeSpellEvent(encounter.events, eventIndex, encounter.unitsById);
+    if (target && event.targetShieldAfter !== undefined) view.setUnitShield(target.id, event.targetShieldAfter, event.kind === 'effect' ? spell?.statusDurationSeconds ?? undefined : undefined);
+    showResourcesAfterEvent(event);
     const spellWithLook = spell?.visual ? { ...spell, visual: spell.visual } : null;
-    if (spellWithLook) showSpellOnView(event, spellWithLook);
-    else if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount, event.isCritical);
-    else if (event.kind === 'heal') view.playHeal(event.actorId, event.targetId, event.amount);
+    const absorbed = event.absorbed ?? 0;
+    if (event.isDamageOverTime) {
+      view.playDamageOverTime(event.targetId, event.amount - absorbed);
+      if (absorbed > 0) view.playAbsorb(event.targetId, absorbed);
+    } else if (event.isDodge) {
+      if (spellWithLook?.startsCast) view.playSpellCast(event.actorId, spellWithLook.visual);
+      view.playDodge(event.targetId, t('battle.dodge'));
+    } else {
+      if (spellWithLook) showSpellOnView({ ...event, amount: event.amount - absorbed }, spellWithLook);
+      else if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount - absorbed, event.isCritical);
+      else if (event.kind === 'heal') view.playHeal(event.actorId, event.targetId, event.amount);
+      if (absorbed > 0) view.playAbsorb(event.targetId, absorbed);
+    }
     playEventSounds(event, encounter.unitsById, spellWithLook);
     logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
     if (target && event.targetHpAfter === 0) view.markDefeated(target.id);

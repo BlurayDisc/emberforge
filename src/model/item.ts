@@ -33,7 +33,9 @@ export type GearType =
   | 'accessory';
 
 export type ArmourWeight = 'heavy' | 'medium' | 'light';
-export type ItemQuality = 'common' | 'magic' | 'rare' | 'unique';
+// Legendary is reserved between Rare and Unique. It has no rules yet, so it is not an ItemQuality.
+export const ITEM_QUALITY_ORDER = ['common', 'uncommon', 'magic', 'rare', 'legendary', 'unique'] as const;
+export type ItemQuality = Exclude<(typeof ITEM_QUALITY_ORDER)[number], 'legendary'>;
 export type AffixKind = 'prefix' | 'suffix';
 // Percent points, not class stats. A hero only gets them from gear.
 export const COMBAT_BONUS_STATS = ['criticalChance', 'criticalDamage', 'lifeSteal'] as const;

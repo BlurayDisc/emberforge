@@ -2,6 +2,7 @@ import { BACKPACK_BASE_ROWS, BACKPACK_COLUMNS, BACKPACK_ROWS_PER_EXPANSION } fro
 import { MATERIALS } from '../../../content/materials';
 import type { BackpackContent, BackpackEntry } from '../../../model/backpack';
 import type { MaterialStack } from '../../../model/material';
+import type { TimedJob } from '../../../model/timedJob';
 import { readEach, readRecord, readWholeNumber, type SalvageTally } from './lenientReaders';
 import { salvageItem } from './salvageItem';
 
@@ -28,6 +29,16 @@ function sizeOf(content: BackpackContent): { width: number; height: number } {
   return { width: material?.width ?? 1, height: material?.height ?? 1 };
 }
 
+// A sale mark with no sale job behind it would lock the goods for ever, so the mark is removed.
+export function clearOrphanSaleMarks(entries: readonly BackpackEntry[], jobs: readonly TimedJob[]): BackpackEntry[] {
+  const saleJobIds = new Set(jobs.filter((job) => job.kind === 'sell').map((job) => job.id));
+  return entries.map((entry) => {
+    if (entry.saleJobId === undefined || saleJobIds.has(entry.saleJobId)) return entry;
+    const { saleJobId, ...entryWithoutSaleMark } = entry;
+    return entryWithoutSaleMark;
+  });
+}
+
 // An entry that sits outside the grid, or on top of an entry that was kept before it, is dropped.
 export function salvageBackpack(value: unknown, expansionsBought: number, tally: SalvageTally): BackpackEntry[] {
   const rowCount = BACKPACK_BASE_ROWS + BACKPACK_ROWS_PER_EXPANSION * expansionsBought;
@@ -42,6 +53,7 @@ export function salvageBackpack(value: unknown, expansionsBought: number, tally:
     const cells = Array.from({ length: width * height }, (_, index) => `${column + (index % width)},${row + Math.floor(index / width)}`);
     if (column + width > BACKPACK_COLUMNS || row + height > rowCount || cells.some((cell) => occupiedCells.has(cell))) return null;
     cells.forEach((cell) => occupiedCells.add(cell));
-    return { column, row, content };
+    const saleJobId = readWholeNumber(record?.saleJobId, 0, Number.MAX_SAFE_INTEGER, -1);
+    return saleJobId < 0 ? { column, row, content } : { column, row, content, saleJobId };
   }, tally);
 }

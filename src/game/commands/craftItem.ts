@@ -1,11 +1,11 @@
 import { BASE_ITEMS } from '../../content/baseItems';
 import { requireById } from '../../content/lookup';
-import { MATERIALS } from '../../content/materials';
 import { createRandom } from '../../kernel/random';
 import type { BackpackEntry } from '../../model/backpack';
 import { craftSeconds, craftingExperienceForCraft, findRecipe, rollUpgradeLevel, type Recipe } from '../../systems/crafting';
 import { removeMaterials } from '../../systems/inventory';
 import { generateCraftedItem } from '../../systems/items';
+import { craftingCostCopperOf, ingredientCountOf } from '../recipeCost';
 import { CommandRejected, type Command } from '../gameStore';
 import { highestUnlockedTier } from '../unlockedTier';
 
@@ -33,11 +33,7 @@ export function craftItemCommand(baseId: string, tier: number, setMaterialId: st
     if (state.copper < recipe.feeCopper) throw new CommandRejected('reject.notEnoughMoney');
 
     const backpackAfterPayment = consumeIngredients(state.backpack, recipe);
-    const ingredientValueCopper = recipe.ingredients.reduce(
-      (total, ingredient) => total + requireById(MATERIALS, ingredient.materialId).sellValueCopper * ingredient.quantity,
-      0,
-    );
-    const craftingCostCopper = ingredientValueCopper + recipe.feeCopper;
+    const craftingCostCopper = craftingCostCopperOf(recipe);
     const base = requireById(BASE_ITEMS, baseId);
     const itemNumber = state.itemsCrafted + 1;
 
@@ -51,6 +47,7 @@ export function craftItemCommand(baseId: string, tier: number, setMaterialId: st
         itemLevel: recipe.itemLevel,
         upgradeLevel,
         craftingCostCopper,
+        ingredientCount: ingredientCountOf(recipe),
       },
       createRandom(state.seed).fork(`craft-${itemNumber}`),
     );

@@ -11,6 +11,7 @@ export interface PanelHost {
   toggle(panelId: string): void;
   open(panelId: string): void;
   activePanelId(): string | null;
+  closeActivePanel(): boolean;
   notify(message: string): void;
   onChange(listener: () => void): void;
 }
@@ -42,9 +43,21 @@ export function createPanelHost(store: GameStore): PanelHost {
   };
   let renderedPanelId: string | null = null;
 
+  // Going into a sub screen (for example a crafter) saves the list position. Coming back restores it, and the sub screen itself starts at the top.
+  const savedScrollOffsets: number[][] = [];
+  let scrollOffsetsForNextRender: number[] | null = null;
+  const enterSubScreen = (): void => {
+    savedScrollOffsets.push(readScrollOffsets());
+    scrollOffsetsForNextRender = [];
+  };
+  const leaveSubScreen = (): void => {
+    scrollOffsetsForNextRender = savedScrollOffsets.pop() ?? [];
+  };
+
   const render = (): void => {
     const toast = host.querySelector('.toast');
-    const scrollOffsets = renderedPanelId === activeId ? readScrollOffsets() : [];
+    const scrollOffsets = scrollOffsetsForNextRender ?? (renderedPanelId === activeId ? readScrollOffsets() : []);
+    scrollOffsetsForNextRender = null;
     const definition = PANEL_CATALOG.find((panel) => panel.id === activeId);
     host.replaceChildren();
     host.classList.toggle('open', definition !== undefined);
@@ -55,10 +68,12 @@ export function createPanelHost(store: GameStore): PanelHost {
         closePanel: () => setActive(null),
         openPanel: (panelId) => setActive(panelId),
         notify,
+        enterSubScreen,
+        leaveSubScreen,
       };
       const header = element('div', 'panel-header', element('span', 'panel-title', t(panelTitleKey(definition.id))));
       if (!isActivePanelLocked()) header.append(actionButton('x', () => setActive(null), { className: 'action-button close-button' }));
-      host.append(element('div', 'panel', header, definition.render(context)));
+      host.append(element('div', `panel panel-${definition.id}`, header, definition.render(context)));
     }
     if (toast) host.append(toast);
     restoreScrollOffsets(scrollOffsets);
@@ -70,6 +85,7 @@ export function createPanelHost(store: GameStore): PanelHost {
     const previousId = activeId;
     activeId = panelId !== null && PANEL_CATALOG.some((panel) => panel.id === panelId) ? panelId : null;
     if (previousId !== activeId) {
+      savedScrollOffsets.length = 0;
       PANEL_CATALOG.find((panel) => panel.id === previousId)?.onClose?.();
       host.querySelector('.toast')?.remove();
     }
@@ -94,6 +110,11 @@ export function createPanelHost(store: GameStore): PanelHost {
     toggle: (panelId) => setActive(activeId === panelId ? null : panelId),
     open: (panelId) => setActive(panelId),
     activePanelId: () => activeId,
+    closeActivePanel: () => {
+      if (activeId === null || isActivePanelLocked()) return false;
+      setActive(null);
+      return true;
+    },
     notify,
     onChange: (listener) => {
       changeListeners.push(listener);

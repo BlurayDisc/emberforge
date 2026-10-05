@@ -5,6 +5,7 @@ export interface ModalHandle {
 }
 
 const modalHost = element('div', 'modal-host');
+const closeFunctionOfBackdrop = new WeakMap<Element, () => void>();
 
 export function getModalHost(): HTMLElement {
   return modalHost;
@@ -22,6 +23,7 @@ const NEAR_POINTER_MARGIN_PIXELS = 8;
 export function openModal(title: string, content: HTMLElement, onClose?: () => void, nearPoint?: ScreenPoint): ModalHandle {
   const backdrop = element('div', `modal-backdrop${nearPoint ? ' modal-backdrop-near' : ''}`);
   const close = (): void => {
+    closeFunctionOfBackdrop.delete(backdrop);
     backdrop.remove();
     onClose?.();
   };
@@ -31,6 +33,7 @@ export function openModal(title: string, content: HTMLElement, onClose?: () => v
   backdrop.addEventListener('click', (event) => {
     if (event.target === backdrop) close();
   });
+  closeFunctionOfBackdrop.set(backdrop, close);
   modalHost.append(backdrop);
   if (nearPoint) placeNearPoint(modal, nearPoint);
   return { close };
@@ -49,4 +52,13 @@ function placeNearPoint(modal: HTMLElement, point: ScreenPoint): void {
 
 export function closeAllModals(): void {
   modalHost.replaceChildren();
+}
+
+// Returns false when no modal is open. Used by the Escape key.
+export function closeTopModal(): boolean {
+  const topBackdrop = modalHost.lastElementChild;
+  const close = topBackdrop ? closeFunctionOfBackdrop.get(topBackdrop) : undefined;
+  if (!close) return false;
+  close();
+  return true;
 }

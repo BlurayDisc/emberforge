@@ -1,12 +1,14 @@
 import { GUARANTEED_MATERIAL_DROPS } from '../../content/balance/dungeonRun';
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
-import { MONSTERS, type DropEntry } from '../../content/monsters';
+import { MONSTERS, type DropEntry, type ItemDropEntry } from '../../content/monsters';
 import type { Random } from '../../kernel/random';
 import type { MaterialStack } from '../../model/material';
 
 export interface LootRoll {
   materials: MaterialStack[];
+  // Ready items. The game layer builds them, because a system never imports another system.
+  items: Array<Omit<ItemDropEntry, 'chance'>>;
 }
 
 const NON_CRAFTING_CATEGORIES = ['essence', 'catalyst'];
@@ -35,5 +37,6 @@ export function rollMonsterLoot(monsterId: string, random: Random): LootRoll {
   const bonus = definition.drops
     .filter((drop) => !guaranteedDrops.has(drop) && random.chance(drop.chance))
     .map((drop) => rollQuantity(drop, random));
-  return { materials: [...guaranteed, ...bonus] };
+  const items = (definition.itemDrops ?? []).filter((drop) => random.chance(drop.chance)).map(({ chance: _chance, ...item }) => item);
+  return { materials: [...guaranteed, ...bonus], items };
 }

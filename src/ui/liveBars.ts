@@ -1,5 +1,6 @@
 import { describeHero, type GameStore } from '../game';
 import type { TimedJob } from '../model/timedJob';
+import { healthBarLength, type HealthBarLengthScale } from '../kernel/healthBarLength';
 import { element } from './dom';
 import { t } from './i18n';
 import { addLiveUpdate, formatDuration } from './liveUpdate';
@@ -10,20 +11,30 @@ function createBar(className: string): { bar: HTMLElement; fill: HTMLElement; la
   return { bar: element('div', `bar run-progress ${className}`, fill, label), fill, label };
 }
 
-// Health bar that follows regeneration. A downed hero shows the time until the hero returns.
-export function createLiveHealthBar(store: GameStore, heroId: string): HTMLElement {
+const MENU_HEALTH_BAR_SCALE: HealthBarLengthScale = { lengthPerRootPoint: 11, minimum: 64, maximum: 160 };
+
+export function menuHealthBarWidthPixels(maximumHealth: number): number {
+  return healthBarLength(maximumHealth, MENU_HEALTH_BAR_SCALE);
+}
+
+// Health bar that follows regeneration. Its length follows the hero maximum health, like the bars on the stage.
+// The bar shows the health numbers. The time until the hero is full or back stands beside it, unless the row is too small for it.
+export function createLiveHealthBar(store: GameStore, heroId: string, options: { showsTimeNote: boolean } = { showsTimeNote: true }): HTMLElement {
   const { bar, fill, label } = createBar('bar-health');
+  const timeNote = element('span', 'card-text small health-time-note');
   addLiveUpdate(bar, () => {
     const state = store.getState();
     const hero = state.company.find((candidate) => candidate.id === heroId);
     if (!hero) return;
     const view = describeHero(state, hero, Date.now());
+    bar.style.width = `${menuHealthBarWidthPixels(view.sheet.health)}px`;
     fill.style.width = `${Math.round(view.healthFraction * 100)}%`;
     bar.classList.toggle('downed', view.isDowned);
-    if (view.isDowned) label.textContent = t('heroes.downed', { time: formatDuration(view.secondsToRevive) });
-    else label.textContent = view.secondsToFullHealth > 0 ? t('heroes.rested', { time: formatDuration(view.secondsToFullHealth) }) : '';
+    label.textContent = view.isDowned ? t('party.downed') : `${Math.ceil(view.healthFraction * view.sheet.health)} / ${view.sheet.health}`;
+    if (view.isDowned) timeNote.textContent = t('heroes.downed', { time: formatDuration(view.secondsToRevive) });
+    else timeNote.textContent = view.secondsToFullHealth > 0 ? t('heroes.rested', { time: formatDuration(view.secondsToFullHealth) }) : '';
   });
-  return bar;
+  return element('div', 'health-line', bar, ...(options.showsTimeNote ? [timeNote] : []));
 }
 
 export function createExperienceBar(current: number, next: number): HTMLElement {
@@ -36,7 +47,7 @@ export function createExperienceBar(current: number, next: number): HTMLElement 
 }
 
 // Experience after a fight: blue is what the hero had, gold is what the fight gave. A level up leaves only the gold part.
-export function createExperienceGainBar(experienceBefore: number, experienceGained: number, experienceToNext: number): HTMLElement {
+export function createExperienceGainBar(experienceBefore: number, experienceGained: number, experienceToNext: number, labelText = ''): HTMLElement {
   const toFraction = (experience: number): number => (experienceToNext > 0 ? Math.max(0, Math.min(1, experience / experienceToNext)) : 0);
   const gainStart = toFraction(experienceBefore);
   const gainEnd = toFraction(experienceBefore + experienceGained);
@@ -45,7 +56,18 @@ export function createExperienceGainBar(experienceBefore: number, experienceGain
   const gain = element('div', 'bar-fill bar-gain');
   gain.style.left = `${Math.round(gainStart * 100)}%`;
   gain.style.width = `${Math.round((gainEnd - gainStart) * 100)}%`;
-  return element('div', 'bar run-progress bar-experience', base, gain);
+  return element('div', 'bar run-progress bar-experience', base, gain, element('span', 'progress-label', labelText));
+}
+
+// The reverse of the experience bar: green is the health that is left, red is the health that the fight took.
+export function createHealthLossBar(healthLost: number, maximumHealth: number, labelText: string): HTMLElement {
+  const remainingFraction = Math.max(0, Math.min(1, 1 - healthLost / maximumHealth));
+  const remaining = element('div', 'bar-fill');
+  remaining.style.width = `${Math.round(remainingFraction * 100)}%`;
+  const loss = element('div', 'bar-fill bar-loss');
+  loss.style.left = `${Math.round(remainingFraction * 100)}%`;
+  loss.style.width = `${Math.round((1 - remainingFraction) * 100)}%`;
+  return element('div', 'bar run-progress bar-health', remaining, loss, element('span', 'progress-label', labelText));
 }
 
 // Progress bar of a sale or craft job.

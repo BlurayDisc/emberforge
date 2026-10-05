@@ -4,7 +4,7 @@ import { MATERIALS } from '../../../content/materials';
 import type { Item, ItemAffix, ItemQuality, StatBonuses } from '../../../model/item';
 import { readEach, readList, readRecord, readText, readWholeNumber, type SalvageTally, type UnknownRecord } from './lenientReaders';
 
-const QUALITIES: readonly ItemQuality[] = ['common', 'magic', 'rare', 'unique'];
+const QUALITIES: readonly ItemQuality[] = ['common', 'uncommon', 'magic', 'rare', 'unique'];
 const MAXIMUM_NUMBER = Number.MAX_SAFE_INTEGER;
 
 function salvageAffix(value: unknown): ItemAffix | null {

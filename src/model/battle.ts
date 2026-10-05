@@ -6,6 +6,8 @@ export type MonsterRank = 'normal' | 'rare' | 'boss';
 export type UnitRank = 'hero' | MonsterRank;
 export type AttackKind = 'physical' | 'magic';
 export type UnitBehavior = 'fighter' | 'healer';
+// A unit without a priority keeps the default choice. 'highestDefence' attacks the opponent with the most Defence first (the frontline).
+export type TargetPriority = 'highestDefence';
 export type BattleActionKind = 'attack' | 'heal' | 'effect';
 
 export interface BattleUnit {
@@ -24,10 +26,19 @@ export interface BattleUnit {
   resistance: number;
   speed: number;
   critChance: number;
+  // How far one hit can swing from its base damage, as a fraction: 0.1 means 90-110%.
+  damageVarianceFraction: number;
   criticalDamageMultiplier: number;
+  // The main attribute of the unit and its value. Empower raises the attack from it, and raises the critical chance when it is Skill. A monster has none (value 0).
+  mainAttribute: 'strength' | 'magic' | 'skill';
+  mainAttributeValue: number;
+  skill: number;
   // The fraction of damage dealt that the unit heals.
   lifeSteal: number;
   behavior: UnitBehavior;
+  targetPriority?: TargetPriority;
+  // The share of the target's Defence that this unit's physical hits ignore. A boss uses it so a wall of Defence does not make it harmless.
+  armourPenetration?: number;
   resourceId: ResourceId;
   maxResource: number;
   resource: number;
@@ -46,6 +57,15 @@ export interface BattleEvent {
   targetResourceAfter: number;
   // Set on the first event of a spell cast: what the cast cost the actor.
   resourceSpent?: number;
+  // True for damage that Thorns sent back. The actor is the unit that wore the Thorns.
+  isReflect?: boolean;
+  // True when the target dodged the hit (the amount is 0).
+  isDodge?: boolean;
+  // True for the damage that a Burn does each second. No spell look plays for it.
+  isDamageOverTime?: boolean;
+  // Damage that the shield of the target took, and what is left in the shield after the event.
+  absorbed?: number;
+  targetShieldAfter?: number;
   // Set when a spell caused the event. A spell with several targets gives one event for each target.
   spellId?: string;
 }

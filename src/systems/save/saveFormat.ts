@@ -1,7 +1,7 @@
 import type { GameState } from '../../model/gameState';
 import { SAVE_MIGRATIONS } from './migrations';
 
-export const CURRENT_SAVE_VERSION = 19;
+export const CURRENT_SAVE_VERSION = 22;
 
 export function serializeGameState(state: GameState): string {
   return JSON.stringify(state);

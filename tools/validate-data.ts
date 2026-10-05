@@ -8,6 +8,8 @@ import { ITEM_SHAPE_ROWS } from '../src/ui/itemShapes';
 import { SPELL_ICON_MOTIFS } from '../src/content/spellVisuals';
 import { SPELL_ICON_GLYPHS } from '../src/ui/spellIconGlyphs';
 import { BUFF_ART_IDS, CAST_ART_IDS, DEBUFF_ART_IDS, IMPACT_ART_IDS, PROJECTILE_ART_IDS } from '../src/content/spellVisuals';
+import { PROFESSION_IDS } from '../src/content/baseItems';
+import { WORKSHOP_SECTIONS } from '../src/content/workshopSections';
 import { SPELL_THEMES } from '../src/render/spellEffects/spellThemes';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,7 +23,6 @@ interface Material extends Identified {
   craftedItemPrefix?: string;
   setBonus?: { stat: string; value: number };
   setCraftLevelOffset?: number;
-  setBodyArmourCraftLevelOffset?: number;
   tier: number;
   category: string;
   sellValueCopper: number;
@@ -41,9 +42,11 @@ interface Monster extends Identified {
   attackFactor?: number;
   defenceFactor?: number;
   fixedStats?: { hp: number; attack: number; defence: number; resistance: number };
+  armourPenetration?: number;
   rank: string;
   spriteKey: string;
   drops: Drop[];
+  itemDrops?: Array<{ baseId: string; quality: string; itemLevel: number; chance: number }>;
 }
 interface Dungeon extends Identified {
   name: string;
@@ -66,7 +69,6 @@ interface Town extends Identified {
 }
 const RECIPE_OFFSETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const ARMOUR_PROFESSIONS = ['armoursmithing', 'tailoring'];
-const ODD_RECIPE_OFFSETS = RECIPE_OFFSETS.filter((offset) => offset % 2 === 1);
 interface BaseItem extends Identified {
   name: string;
   slot: string;
@@ -91,6 +93,7 @@ interface HeroClass extends Identified {
   armourWeights: string[];
   attackKind: string;
   primaryAttribute: string;
+  damageVarianceFraction: number;
 }
 interface Advancement extends Identified {
   baseClassId: string;
@@ -122,7 +125,7 @@ const advancements = load<Advancement[]>('advancements.json');
 const affixes = load<Affix[]>('affixes.json');
 const heroNames = load<string[]>('hero-names.json');
 const professions = load<Record<string, string>>('professions.json');
-const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
+const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; setRecipeSlots: string[]; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
 interface SpellEffectData {
   kind: string;
   target: string;
@@ -130,8 +133,17 @@ interface SpellEffectData {
   hits?: number;
   strength?: number;
   durationSeconds?: number;
-  inflicts?: { status: string; strength: number; durationSeconds: number };
+  inflicts?: { status: string; strength: number; durationSeconds: number; charges?: number };
+  alsoOnSelf?: { status: string; strength: number; durationSeconds: number; charges?: number };
+  charges?: number;
+  resourceFraction?: number;
+  absorbPerResourcePoint?: number;
+  defencePower?: number;
+  magicPower?: number;
+  status?: string;
 }
+const SPELL_STATUSES = ['guard', 'fortify', 'thorns', 'sunder', 'haste', 'weaken', 'slow', 'wound', 'evade', 'burn', 'hex', 'empower'];
+const SPELL_TARGETS = ['self', 'ally', 'allAllies', 'enemy', 'allEnemies', 'spreadEnemies'];
 interface SpellData extends Identified {
   classId: string;
   unlockLevel: number;
@@ -139,6 +151,9 @@ interface SpellData extends Identified {
   cooldownSeconds: number;
   resourceCost: number;
   effect: SpellEffectData;
+  familyId?: string;
+  rank?: number;
+  reservedFor?: string;
 }
 const spells = load<SpellData[]>('spells.json');
 const monsterSpells = load<Array<Omit<SpellData, 'classId' | 'unlockLevel'>>>('monster-spells.json');
@@ -177,6 +192,12 @@ const materialsById = new Map(materials.map((material) => [material.id, material
 const monstersById = new Map(monsters.map((monster) => [monster.id, monster]));
 const townsById = new Map(townsFile.towns.map((town) => [town.id, town]));
 const bracketOf = (level: number): number => Math.ceil(level / itemBalance.levelsPerBracket);
+
+const professionsInSections = WORKSHOP_SECTIONS.flatMap((section) => section.professionIds);
+professionsInSections.forEach((professionId, index) => {
+  if (!PROFESSION_IDS.includes(professionId)) report(`workshop-sections.json: unknown profession '${professionId}'`);
+  if (professionsInSections.indexOf(professionId) !== index) report(`workshop-sections.json: profession '${professionId}' is in two sections`);
+});
 
 if (!townsById.has(townsFile.startingTownId)) report(`towns.json: unknown startingTownId '${townsFile.startingTownId}'`);
 townsFile.towns.forEach((town, index) => {
@@ -227,6 +248,12 @@ for (const monster of monsters) {
     if (!materialsById.has(drop.materialId)) report(`monsters.json: '${monster.id}' drops unknown material '${drop.materialId}'`);
     if (drop.chance <= 0 || drop.chance > 1) report(`monsters.json: '${monster.id}' drop '${drop.materialId}' needs a chance between 0 and 1`);
     if (drop.minQuantity < 1 || drop.minQuantity > drop.maxQuantity) report(`monsters.json: '${monster.id}' drop '${drop.materialId}' has a bad quantity range`);
+  }
+  for (const itemDrop of monster.itemDrops ?? []) {
+    if (!baseItems.some((base) => base.id === itemDrop.baseId)) report(`monsters.json: '${monster.id}' drops unknown base item '${itemDrop.baseId}'`);
+    if (!['common', 'uncommon', 'magic', 'rare'].includes(itemDrop.quality)) report(`monsters.json: '${monster.id}' item drop '${itemDrop.baseId}' has an unknown quality '${itemDrop.quality}'`);
+    if (itemDrop.chance <= 0 || itemDrop.chance > 1) report(`monsters.json: '${monster.id}' item drop '${itemDrop.baseId}' needs a chance between 0 and 1`);
+    if (!Number.isInteger(itemDrop.itemLevel) || itemDrop.itemLevel < 1 || itemDrop.itemLevel > itemBalance.levelsPerBracket) report(`monsters.json: '${monster.id}' item drop '${itemDrop.baseId}' needs an item level from 1 to ${itemBalance.levelsPerBracket}`);
   }
 }
 
@@ -304,7 +331,6 @@ for (const base of baseItems) {
   else if (shapeRows.length !== 12 || shapeRows.some((row) => row.length !== 12)) report(`ui/itemShapes.ts: the picture of '${base.id}' must be 12 rows of 12 letters`);
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
   if (!RECIPE_OFFSETS.includes(base.craftLevelOffset)) report(`base-items.json: '${base.id}' needs a craftLevelOffset of ${RECIPE_OFFSETS.join(', ')}`);
-  if (!ARMOUR_PROFESSIONS.includes(base.profession) && !ODD_RECIPE_OFFSETS.includes(base.craftLevelOffset)) report(`base-items.json: '${base.id}' needs an odd craftLevelOffset (${ODD_RECIPE_OFFSETS.join(', ')}), only armour bases may use even levels`);
   if (base.craftLevelOffset < 1 || base.craftLevelOffset > itemBalance.levelsPerBracket) report(`base-items.json: '${base.id}' needs a craftLevelOffset from 1 to ${itemBalance.levelsPerBracket}`);
   if (base.width < 1 || base.height < 1) report(`base-items.json: '${base.id}' has an invalid size`);
   for (const tier of tiersWithMaterials) {
@@ -351,14 +377,19 @@ for (const material of setMaterials) {
   const { setBonus, setCraftLevelOffset } = material;
   if (!setBonus || !STAT_NAMES.includes(setBonus.stat) || !(setBonus.value > 0)) report(`materials.json: set material '${material.id}' needs a bonus on a known stat above 0`);
   if (!material.craftedItemPrefix) report(`materials.json: set material '${material.id}' needs a craftedItemPrefix`);
-  if (material.setBodyArmourCraftLevelOffset === undefined || material.setBodyArmourCraftLevelOffset < (setCraftLevelOffset ?? 0) || material.setBodyArmourCraftLevelOffset > itemBalance.levelsPerBracket) report(`materials.json: set material '${material.id}' needs a setBodyArmourCraftLevelOffset from its setCraftLevelOffset up to ${itemBalance.levelsPerBracket}`);
   const sources = dungeonsDroppingMaterial(material.id);
   if (sources.length !== 1) report(`materials.json: set material '${material.id}' must drop in exactly one dungeon (found ${sources.length})`);
   const source = sources[0];
-  if (source && (setCraftLevelOffset === undefined || setCraftLevelOffset < source.level - (material.tier - 1) * itemBalance.levelsPerBracket || setCraftLevelOffset > itemBalance.levelsPerBracket)) {
-    report(`materials.json: set material '${material.id}' needs a setCraftLevelOffset from the level of '${source.id}' up to ${itemBalance.levelsPerBracket}`);
+  if (source && (setCraftLevelOffset === undefined || setCraftLevelOffset !== source.level - (material.tier - 1) * itemBalance.levelsPerBracket)) {
+    report(`materials.json: set material '${material.id}' needs a setCraftLevelOffset equal to the level of '${source.id}' inside its bracket`);
   }
 }
+// A set material from a later dungeon sells for more than one from an earlier dungeon.
+const setMaterialsByDungeonLevel = [...setMaterials].sort((first, second) => (first.setCraftLevelOffset ?? 0) - (second.setCraftLevelOffset ?? 0));
+setMaterialsByDungeonLevel.forEach((material, index) => {
+  const earlier = setMaterialsByDungeonLevel[index - 1];
+  if (earlier && material.sellValueCopper <= earlier.sellValueCopper) report(`materials.json: set material '${material.id}' (dungeon level ${material.setCraftLevelOffset}) must sell for more than '${earlier.id}'`);
+});
 for (const dungeon of dungeons) {
   const firstLevelOfBracket = Math.min(...dungeons.filter((other) => bracketOf(other.level) === bracketOf(dungeon.level)).map((other) => other.level));
   if (dungeon.level === firstLevelOfBracket) continue;
@@ -383,36 +414,42 @@ for (const base of baseItems) {
   }
 }
 
-// Armour sets come one piece at a time. The set pieces open on the odd crafter levels, one every 2 levels, and the body armour is the last piece.
-// Other armour bases (shield, belt, tome) open on even levels, so no two armour bases of a profession share a crafter level.
-const ARMOUR_SET_LEVEL_STEP = 2;
+// Armour set pieces open on different crafter levels, and the body armour is the last piece.
+// Each profession keeps a level for each slot, so a crafter gets a new armour base on the levels of its own pieces.
 const ARMOUR_SET_PIECE_SLOTS = ['helm', 'gloves', 'boots', 'legs', 'armour'];
-const ARMOUR_EXTRA_SLOTS = ['belt', 'offHand'];
 for (const professionId of ARMOUR_PROFESSIONS) {
-  const armourBases = baseItems.filter((base) => base.profession === professionId && [...ARMOUR_SET_PIECE_SLOTS, ...ARMOUR_EXTRA_SLOTS].includes(base.slot));
-  const setPieces = armourBases.filter((base) => ARMOUR_SET_PIECE_SLOTS.includes(base.slot));
-  const lastOtherOffset = Math.max(...armourBases.filter((base) => base.slot !== 'armour').map((base) => base.craftLevelOffset));
-  for (const bodyArmour of setPieces.filter((base) => base.slot === 'armour')) {
-    if (bodyArmour.craftLevelOffset <= lastOtherOffset) report(`base-items.json: body armour '${bodyArmour.id}' (offset ${bodyArmour.craftLevelOffset}) must come after every other piece of ${professionId} (last offset ${lastOtherOffset})`);
+  for (const weight of ['heavy', 'medium', 'light']) {
+    const pieces = baseItems.filter((base) => base.profession === professionId && base.armourWeight === weight && ARMOUR_SET_PIECE_SLOTS.includes(base.slot));
+    if (pieces.length === 0) continue;
+    const offsets = pieces.map((base) => base.craftLevelOffset);
+    if (new Set(offsets).size !== offsets.length) report(`base-items.json: the ${weight} armour pieces of ${professionId} must open at different crafter levels`);
+    const bodyArmour = pieces.find((base) => base.slot === 'armour');
+    if (bodyArmour && bodyArmour.craftLevelOffset !== Math.max(...offsets)) report(`base-items.json: body armour '${bodyArmour.id}' must be the last ${weight} piece of its set`);
   }
-  const offsets = [...new Set(setPieces.map((base) => base.craftLevelOffset))].sort((first, second) => first - second);
-  offsets.forEach((offset, index) => {
-    const expectedOffset = 1 + ARMOUR_SET_LEVEL_STEP * index;
-    if (offset !== expectedOffset) report(`base-items.json: ${professionId} set pieces must unlock every ${ARMOUR_SET_LEVEL_STEP} crafter levels from 1, but found offset ${offset} where ${expectedOffset} is expected`);
+}
+// A class gets something new to craft on every crafter level from 1 to the end of the bracket: a basic recipe (weapon, off-hand item, armour piece, belt or jewellery) or a set recipe.
+function basesForClass(heroClass: (typeof classes)[number]) {
+  return baseItems.filter((base) => {
+    if (base.slot === 'mainHand') return heroClass.weaponTypes.includes(base.gearType);
+    if (base.slot === 'offHand') return heroClass.offHandTypes.includes(base.gearType);
+    if (base.armourWeight !== null) return heroClass.armourWeights.includes(base.armourWeight);
+    return true;
   });
-  const distinctSlotOffsets = new Map<number, string>();
-  for (const base of armourBases) {
-    const clashingSlot = distinctSlotOffsets.get(base.craftLevelOffset);
-    if (clashingSlot !== undefined && clashingSlot !== base.slot) report(`base-items.json: ${professionId} slots '${clashingSlot}' and '${base.slot}' both open at crafter level ${base.craftLevelOffset}`);
-    distinctSlotOffsets.set(base.craftLevelOffset, base.slot);
+}
+for (const heroClass of classes) {
+  const classBases = basesForClass(heroClass);
+  const openedLevels = new Set(classBases.map((base) => base.craftLevelOffset));
+  for (const base of classBases.filter((candidate) => itemBalance.setRecipeSlots.includes(candidate.slot))) {
+    for (const setMaterial of setMaterials) openedLevels.add(Math.min(itemBalance.levelsPerBracket, Math.max(base.craftLevelOffset, setMaterial.setCraftLevelOffset ?? 0)));
   }
-  for (const base of armourBases.filter((candidate) => ARMOUR_EXTRA_SLOTS.includes(candidate.slot))) {
-    if (base.craftLevelOffset % 2 !== 0) report(`base-items.json: '${base.id}' is not a set piece, so it needs an even crafter level (found ${base.craftLevelOffset})`);
+  for (const level of RECIPE_OFFSETS) {
+    if (!openedLevels.has(level)) report(`base-items.json: class '${heroClass.id}' gets nothing new to craft at crafter level ${level}`);
   }
 }
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
   if (!['strength', 'skill', 'magic'].includes(heroClass.primaryAttribute)) report(`classes.json: '${heroClass.id}' has an unknown primaryAttribute '${heroClass.primaryAttribute}'`);
+  if (!(heroClass.damageVarianceFraction >= 0 && heroClass.damageVarianceFraction < 0.5)) report(`classes.json: '${heroClass.id}' damageVarianceFraction must be from 0 to below 0.5`);
   if (heroClass.attackKind === 'magic' && heroClass.primaryAttribute !== 'magic') report(`classes.json: '${heroClass.id}' attacks with magic, so its primaryAttribute must be magic`);
   if (heroClass.attackKind === 'physical' && heroClass.primaryAttribute === 'magic') report(`classes.json: '${heroClass.id}' attacks with physical damage, so its primaryAttribute must be strength or skill`);
   if (!(heroClass.recoveryRate > 0)) report(`classes.json: '${heroClass.id}' needs a recoveryRate above 0`);
@@ -465,7 +502,16 @@ const advancementParentIds = new Set([...classes.map((heroClass) => heroClass.id
 for (const advancement of advancements) {
   if (!advancementParentIds.has(advancement.promotesFrom)) report(`advancements.json: '${advancement.id}' promotes from unknown class '${advancement.promotesFrom}'`);
 }
-const progressionBalance = load<{ victoryDungeonId: string }>('balance/progression.json');
+const progressionBalance = load<{ victoryDungeonId: string; levelCap: number }>('balance/progression.json');
+// The spell price curve must be anchored up to the level cap. When the cap grows, the designer adds an anchor from the economy sim, so no level runs on a guess.
+const spellBalance = load<{ learnCostAnchors: Array<{ level: number; copper: number }> }>('balance/spells.json');
+spellBalance.learnCostAnchors.forEach((anchor, index) => {
+  const previous = spellBalance.learnCostAnchors[index - 1];
+  if (!(anchor.level > 0 && anchor.copper > 0)) report(`balance/spells.json: learnCostAnchors[${index}] needs a level and a copper price above 0`);
+  if (previous && (anchor.level <= previous.level || anchor.copper <= previous.copper)) report(`balance/spells.json: learnCostAnchors[${index}] must have a higher level and a higher price than the anchor before it`);
+});
+if (spellBalance.learnCostAnchors.length < 2) report('balance/spells.json: learnCostAnchors needs at least 2 anchors');
+if ((spellBalance.learnCostAnchors.at(-1)?.level ?? 0) < progressionBalance.levelCap) report(`balance/spells.json: learnCostAnchors must reach the level cap (${progressionBalance.levelCap}). Add an anchor from the economy sim for the new levels`);
 const victoryDungeon = dungeons.find((dungeon) => dungeon.id === progressionBalance.victoryDungeonId);
 if (!victoryDungeon) report(`balance/progression.json: victoryDungeonId '${progressionBalance.victoryDungeonId}' is not a dungeon`);
 else if (!victoryDungeon.bossMonsterId) report(`balance/progression.json: victory dungeon '${victoryDungeon.id}' needs a boss`);
@@ -476,7 +522,7 @@ for (const affix of affixes) {
 
 const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tavern', 'workshop', 'merchant', 'bank', 'academy', 'mill'];
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
-  quality: ['common', 'magic', 'rare', 'unique'],
+  quality: ['common', 'uncommon', 'magic', 'rare', 'unique'],
   resource: ['mana', 'stamina', 'hatred', 'rage'],
   statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'],
   slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
@@ -589,19 +635,52 @@ function checkResources(): void {
 
 checkResources();
 
+// Evade dodges whole hits: it has a number of charges and a strength of exactly 1. Every other status has a strength between 0 and 1.
+function checkInflictedStatus(file: string, spellId: string, inflicted: { status: string; strength: number; durationSeconds: number; charges?: number }): void {
+  if (!SPELL_STATUSES.includes(inflicted.status)) report(`${file}: '${spellId}' has unknown status '${inflicted.status}'`);
+  if (!(inflicted.durationSeconds > 0)) report(`${file}: '${spellId}' status needs a duration`);
+  if (inflicted.status === 'evade') {
+    if (inflicted.strength !== 1 || !((inflicted.charges ?? 0) >= 1)) report(`${file}: '${spellId}' evade needs a strength of 1 and at least 1 charge`);
+    return;
+  }
+  if (inflicted.charges !== undefined) report(`${file}: '${spellId}' only evade has charges`);
+  if (!(inflicted.strength > 0 && inflicted.strength < 1)) report(`${file}: '${spellId}' status needs a strength between 0 and 1`);
+}
+
 function checkSpellEffect(file: string, spell: Omit<SpellData, 'classId' | 'unlockLevel'>): void {
   if (spell.cooldownSeconds <= 0 || spell.resourceCost < 0) report(`${file}: '${spell.id}' needs a positive cooldown and a resource cost of 0 or more`);
   const { effect } = spell;
   const needsPower = effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'heal';
   if (needsPower && !(effect.power !== undefined && effect.power > 0)) report(`${file}: '${spell.id}' needs a positive power`);
-  if (effect.kind === 'status' && !((effect.strength ?? 0) > 0 && (effect.strength ?? 0) < 1 && (effect.durationSeconds ?? 0) > 0)) report(`${file}: '${spell.id}' status needs a strength between 0 and 1 and a duration`);
-  if (!['damage', 'drain', 'heal', 'status'].includes(effect.kind)) report(`${file}: '${spell.id}' has unknown effect '${effect.kind}'`);
+  if (effect.kind === 'status') checkInflictedStatus(file, spell.id, { status: effect.status ?? '', strength: effect.strength ?? 0, durationSeconds: effect.durationSeconds ?? 0, charges: effect.charges });
+  if (!SPELL_TARGETS.includes(effect.target)) report(`${file}: '${spell.id}' has unknown target '${effect.target}'`);
+  if (effect.target === 'spreadEnemies' && (effect.kind !== 'damage' || (effect.hits ?? 0) < 2)) report(`${file}: '${spell.id}' can only spread the hits of a damage effect with 2 hits or more`);
+  if (effect.kind === 'shield') {
+    if (effect.target !== 'self') report(`${file}: '${spell.id}' a shield can only protect the caster`);
+    if (!((effect.resourceFraction ?? 0) > 0 && (effect.resourceFraction ?? 0) <= 1)) report(`${file}: '${spell.id}' shield needs a resource fraction above 0 and at most 1`);
+    if (!((effect.absorbPerResourcePoint ?? 0) > 0 && (effect.durationSeconds ?? 0) > 0)) report(`${file}: '${spell.id}' shield needs a positive absorb value and duration`);
+    if (spell.resourceCost !== 0) report(`${file}: '${spell.id}' shield cost comes from its resource fraction, so resourceCost must be 0`);
+  }
+  if (!['damage', 'drain', 'heal', 'status', 'shield'].includes(effect.kind)) report(`${file}: '${spell.id}' has unknown effect '${effect.kind}'`);
   if (effect.inflicts) {
     if (effect.kind !== 'damage') report(`${file}: '${spell.id}' can only inflict a status with a damage effect`);
-    if (!['guard', 'haste', 'weaken', 'slow', 'wound'].includes(effect.inflicts.status)) report(`${file}: '${spell.id}' inflicts unknown status '${effect.inflicts.status}'`);
-    if (!(effect.inflicts.strength > 0 && effect.inflicts.strength < 1 && effect.inflicts.durationSeconds > 0)) report(`${file}: '${spell.id}' inflicted status needs a strength between 0 and 1 and a duration`);
+    checkInflictedStatus(file, spell.id, effect.inflicts);
+  }
+  if (effect.kind === 'status' && !SPELL_STATUSES.includes(effect.status ?? '')) report(`${file}: '${spell.id}' has unknown status '${effect.status}'`);
+  if (effect.alsoOnSelf) {
+    if (effect.kind !== 'status' && effect.kind !== 'damage') report(`${file}: '${spell.id}' can only give a second status to the caster with a status or damage effect`);
+    checkInflictedStatus(file, spell.id, effect.alsoOnSelf);
+  }
+  if ((effect.defencePower !== undefined || effect.magicPower !== undefined) && effect.kind !== 'damage') report(`${file}: '${spell.id}' can only add Defence or magic damage to a damage effect`);
+  if ((effect.defencePower ?? 1) <= 0 || (effect.magicPower ?? 1) <= 0) report(`${file}: '${spell.id}' defencePower and magicPower must be positive`);
+}
+
+function checkArmourPenetration(): void {
+  for (const monster of monsters) {
+    if (monster.armourPenetration !== undefined && !(monster.armourPenetration > 0 && monster.armourPenetration < 1)) report(`monsters.json: '${monster.id}' armourPenetration must be above 0 and below 1`);
   }
 }
+checkArmourPenetration();
 
 function checkMonsterSpells(): void {
   const castSpellIds = new Set(monsters.flatMap((monster) => monster.spellIds ?? []));
@@ -618,6 +697,19 @@ function checkMonsterSpells(): void {
 }
 checkMonsterSpells();
 
+// A rank above 1 belongs to the family of its rank 1 spell, and each rank needs the rank below it at a lower level.
+function checkSpellRank(spell: SpellData): void {
+  if ((spell.familyId === undefined) !== (spell.rank === undefined)) report(`spells.json: '${spell.id}' needs both familyId and rank, or neither`);
+  if (spell.rank === undefined || spell.familyId === undefined) return;
+  if (spell.rank < 2) report(`spells.json: '${spell.id}' rank must be 2 or more (rank 1 has no familyId)`);
+  const familyHead = spells.find((candidate) => candidate.id === spell.familyId);
+  if (!familyHead || familyHead.classId !== spell.classId || familyHead.rank !== undefined) report(`spells.json: '${spell.id}' family '${spell.familyId}' must be a rank 1 spell of the same class`);
+  const lowerRank = spells.find((candidate) => (candidate.familyId ?? candidate.id) === spell.familyId && (candidate.rank ?? 1) === spell.rank! - 1);
+  if (!lowerRank) report(`spells.json: '${spell.id}' has no rank ${spell.rank - 1} in its family`);
+  else if (lowerRank.unlockLevel >= spell.unlockLevel) report(`spells.json: '${spell.id}' must unlock at a higher level than rank ${spell.rank - 1}`);
+  if (lowerRank && lowerRank.isUltimate !== spell.isUltimate) report(`spells.json: '${spell.id}' must be the same kind as the rank below it`);
+}
+
 function checkSpells(): void {
   const classIds = new Set(classes.map((heroClass) => heroClass.id));
   for (const spell of spells) {
@@ -625,12 +717,15 @@ function checkSpells(): void {
     if (!spell.id.startsWith(`${spell.classId}.`)) report(`spells.json: '${spell.id}' must start with its class id`);
     if (spell.unlockLevel < 1 || spell.unlockLevel > 100) report(`spells.json: '${spell.id}' unlock level is outside 1-100`);
     checkSpellEffect('spells.json', spell);
+    checkSpellRank(spell);
+    if (spell.reservedFor !== undefined && spell.reservedFor !== 'specialisation') report(`spells.json: '${spell.id}' has unknown reservedFor '${spell.reservedFor}'`);
   }
   for (const heroClass of classes) {
     const own = spells.filter((spell) => spell.classId === heroClass.id);
     if (!own.some((spell) => spell.unlockLevel === 2 && !spell.isUltimate)) report(`spells.json: class '${heroClass.id}' needs a normal spell at level 2`);
     if (!own.some((spell) => spell.isUltimate)) report(`spells.json: class '${heroClass.id}' needs an ultimate spell`);
-    if (new Set(own.map((spell) => `${spell.unlockLevel}-${spell.isUltimate}`)).size !== own.length) report(`spells.json: class '${heroClass.id}' has two spells of one kind at one level`);
+    const inBaseTree = own.filter((spell) => spell.reservedFor === undefined);
+    if (new Set(inBaseTree.map((spell) => `${spell.unlockLevel}-${spell.isUltimate}`)).size !== inBaseTree.length) report(`spells.json: class '${heroClass.id}' has two spells of one kind at one level`);
   }
 }
 
@@ -683,6 +778,8 @@ function checkSpellLooks(): void {
     const { effect } = spell;
     if ((effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'heal') && !look.impact) report(`spell-visuals.json: '${spellId}' needs an impact look`);
     if (effect.kind === 'damage' && effect.inflicts && !look.debuff) report(`spell-visuals.json: '${spellId}' inflicts a status, so it needs a debuff look`);
+    if (effect.kind === 'damage' && effect.alsoOnSelf && !look.buff) report(`spell-visuals.json: '${spellId}' gives the caster a status, so it needs a buff look`);
+    if (effect.kind === 'shield' && !look.buff) report(`spell-visuals.json: '${spellId}' is a shield, so it needs a buff look`);
     if (effect.kind === 'status') {
       const isBuff = effect.target === 'self' || effect.target === 'allAllies';
       if (isBuff && !look.buff) report(`spell-visuals.json: '${spellId}' helps allies, so it needs a buff look`);

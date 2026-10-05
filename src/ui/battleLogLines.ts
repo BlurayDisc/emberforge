@@ -15,7 +15,9 @@ export interface ResourceSpent {
 export type LogEntry =
   | { kind: 'turn'; turn: number }
   | { kind: 'fight'; monsters: string }
-  | { kind: 'hit'; actor: LogUnit; target: LogUnit; amount: number; isCritical: boolean; spellName?: string; resourceSpent?: ResourceSpent }
+  | { kind: 'hit'; actor: LogUnit; target: LogUnit; amount: number; isCritical: boolean; absorbed?: number; spellName?: string; resourceSpent?: ResourceSpent }
+  | { kind: 'dodge'; actor: LogUnit; target: LogUnit; spellName?: string; resourceSpent?: ResourceSpent }
+  | { kind: 'burn'; target: LogUnit; amount: number; absorbed?: number }
   | { kind: 'heal'; actor: LogUnit; target: LogUnit; amount: number; spellName?: string; resourceSpent?: ResourceSpent }
   | { kind: 'effect'; actor: LogUnit; target: LogUnit; spellName: string; resourceSpent?: ResourceSpent }
   | { kind: 'defeated'; unit: LogUnit }
@@ -64,7 +66,17 @@ export function createLogLine(entry: LogEntry): HTMLElement {
         ? sentence('log.hit', { actor: unitName(entry.actor), target: unitName(entry.target), amount })
         : sentence('log.spellHit', { actor: unitName(entry.actor), spell: spellChip(entry.spellName), target: unitName(entry.target), amount })));
       if (entry.isCritical) line.append(element('span', 'log-crit-text', t('log.crit')));
+      if (entry.absorbed) line.append(element('span', 'log-resource', t('log.absorbed', { amount: entry.absorbed })));
       return appendResourceSpent(line, entry.resourceSpent);
+    }
+    case 'dodge':
+      return appendResourceSpent(element('div', 'log-line', ...(entry.spellName === undefined
+        ? sentence('log.dodge', { actor: unitName(entry.actor), target: unitName(entry.target) })
+        : sentence('log.spellDodge', { actor: unitName(entry.actor), spell: spellChip(entry.spellName), target: unitName(entry.target) }))), entry.resourceSpent);
+    case 'burn': {
+      const line = element('div', 'log-line', ...sentence('log.burn', { target: unitName(entry.target), amount: amountChip(entry.amount, 'dealt') }));
+      if (entry.absorbed) line.append(element('span', 'log-resource', t('log.absorbed', { amount: entry.absorbed })));
+      return line;
     }
     case 'heal': {
       const amount = amountChip(entry.amount, 'heal');

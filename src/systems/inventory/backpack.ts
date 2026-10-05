@@ -39,6 +39,11 @@ export function sizeOfContent(content: BackpackEntry['content']): { width: numbe
   return { width, height };
 }
 
+// Goods on sale are promised to the merchant: crafting and equipping cannot use them.
+export function isOnSale(entry: BackpackEntry): boolean {
+  return entry.saleJobId !== undefined;
+}
+
 export function usedCellCount(entries: readonly BackpackEntry[]): number {
   return entries.reduce((total, entry) => {
     const { width, height } = sizeOfContent(entry.content);
@@ -107,13 +112,13 @@ export function addItem(entries: readonly BackpackEntry[], item: Item, rowCount:
 
 export function findItem(entries: readonly BackpackEntry[], itemId: string): Item | undefined {
   for (const entry of entries) {
-    if (entry.content.kind === 'item' && entry.content.item.id === itemId) return entry.content.item;
+    if (!isOnSale(entry) && entry.content.kind === 'item' && entry.content.item.id === itemId) return entry.content.item;
   }
   return undefined;
 }
 
 export function removeItem(entries: readonly BackpackEntry[], itemId: string): BackpackEntry[] {
-  return entries.filter((entry) => !(entry.content.kind === 'item' && entry.content.item.id === itemId));
+  return entries.filter((entry) => isOnSale(entry) || !(entry.content.kind === 'item' && entry.content.item.id === itemId));
 }
 
 export function findEntryAt(entries: readonly BackpackEntry[], position: GridPosition): BackpackEntry | undefined {
@@ -127,7 +132,7 @@ export function removeEntryAt(entries: readonly BackpackEntry[], position: GridP
 export function countMaterial(entries: readonly BackpackEntry[], materialId: string): number {
   return entries.reduce(
     (total, entry) =>
-      entry.content.kind === 'material' && entry.content.materialId === materialId ? total + entry.content.quantity : total,
+      !isOnSale(entry) && entry.content.kind === 'material' && entry.content.materialId === materialId ? total + entry.content.quantity : total,
     0,
   );
 }
@@ -142,7 +147,7 @@ export function removeMaterials(
   const entries: BackpackEntry[] = [];
   for (const entry of currentEntries) {
     const content = entry.content;
-    if (content.kind !== 'material' || content.materialId !== materialId || remaining === 0) {
+    if (isOnSale(entry) || content.kind !== 'material' || content.materialId !== materialId || remaining === 0) {
       entries.push(entry);
       continue;
     }

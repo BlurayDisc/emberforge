@@ -2,6 +2,7 @@ import { DUNGEONS } from '../../../content/dungeons';
 import type { DungeonRun, EncounterResult, HeroEncounterResult, RunReport } from '../../../model/gameState';
 import { readEach, readList, readNumber, readRecord, readText, readWholeNumber, type SalvageTally } from './lenientReaders';
 import { salvageMaterialStack } from './salvageBackpack';
+import { salvageItem } from './salvageItem';
 
 const MAXIMUM_NUMBER = Number.MAX_SAFE_INTEGER;
 
@@ -29,6 +30,8 @@ function salvageHeroResult(value: unknown): HeroEncounterResult | null {
     reachedLevel: record.reachedLevel === null ? null : readWholeNumber(record.reachedLevel, 1, MAXIMUM_NUMBER, 1),
     levelAfter: readWholeNumber(record.levelAfter, 1, MAXIMUM_NUMBER, 1),
     experienceAfter: count('experienceAfter'),
+    healthLost: count('healthLost'),
+    maxHealth: readNumber(record.maxHealth, 1, MAXIMUM_NUMBER, 1),
   };
 }
 
@@ -41,6 +44,8 @@ function salvageResult(value: unknown, tally: SalvageTally): EncounterResult | n
     monsterIds: readList(record.monsterIds).filter((id): id is string => typeof id === 'string'),
     materials: readEach(record.materials, salvageMaterialStack, tally),
     materialsWaiting: readEach(record.materialsWaiting, salvageMaterialStack, tally),
+    items: readEach(record.items, (entry) => salvageItem(entry, tally), tally),
+    itemsWaiting: readEach(record.itemsWaiting, (entry) => salvageItem(entry, tally), tally),
     heroes: readEach(record.heroes, salvageHeroResult, tally),
   };
 }

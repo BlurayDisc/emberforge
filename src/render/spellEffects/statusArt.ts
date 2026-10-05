@@ -86,6 +86,26 @@ const frostChill: EffectArtBuilder = ({ main, light, dark }) => ({
   }),
 });
 
+// Small flames lick the body of a burning unit and embers rise from it.
+const burnFlames: EffectArtBuilder = ({ main, light, dark }) => ({
+  anchor: 'body',
+  framesPerSecond: 8,
+  looping: true,
+  frames: buildFrames(4, SIZE, SIZE, (frame, _progress, index) => {
+    [-10, -3, 5, 11].forEach((offsetX, tongue) => {
+      const height = 5 + ((index + tongue * 2) % 4) * 2;
+      const baseY = CENTER + 8 - (tongue % 2) * 4;
+      frame.fill(dark as `#${string}`, CENTER + offsetX - 1, baseY - height, 3, height);
+      frame.fill(main as `#${string}`, CENTER + offsetX, baseY - height + 1, 2, height - 1);
+      plotPixel(frame, light, CENTER + offsetX, baseY - Math.round(height * 0.5));
+    });
+    for (let ember = 0; ember < 3; ember++) {
+      const offset = scatterOffset(ember, 10);
+      plotPixel(frame, light, CENTER + offset.x, CENTER - 4 - ((index * 3 + ember * 5) % 12));
+    }
+  }),
+});
+
 export const BUFF_ART: Readonly<Record<BuffArtId, EffectArtBuilder>> = {
   'guard-shield': guardShield,
   'rage-flames': rageFlames,
@@ -95,4 +115,5 @@ export const BUFF_ART: Readonly<Record<BuffArtId, EffectArtBuilder>> = {
 export const DEBUFF_ART: Readonly<Record<DebuffArtId, EffectArtBuilder>> = {
   'weaken-mark': weakenMark,
   'frost-chill': frostChill,
+  'burn-flames': burnFlames,
 };

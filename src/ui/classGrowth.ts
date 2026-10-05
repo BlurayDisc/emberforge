@@ -45,12 +45,12 @@ function createGrowthGroup(classId: ClassId, stats: readonly (keyof StatBlock)[]
   );
 }
 
-// For a list row where space is tight: the bars always show. The numbers wait for the Bank purchase of their group.
+// For a list row where space is tight. The attribute bars always show, and their numbers wait for the Bank purchase. The main stat group waits for its own Bank purchase.
 export function createGrowthBars(classId: ClassId, visibility: GrowthNumberVisibility): HTMLElement {
   return element(
     'div',
     'growth-bars',
     createGrowthGroup(classId, ATTRIBUTE_STATS, visibility.attributes),
-    createGrowthGroup(classId, MAIN_STATS, visibility.mainStats),
+    ...(visibility.mainStats ? [createGrowthGroup(classId, MAIN_STATS, true)] : []),
   );
 }

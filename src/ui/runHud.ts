@@ -15,7 +15,7 @@ export interface RunHud {
   clearLog(): void;
 }
 
-export function createRunHud(store: GameStore): RunHud {
+export function createRunHud(store: GameStore, openDungeonList: () => void): RunHud {
   const bar = element('div', 'run-bar');
   const title = element('div', 'hud-title');
   const logTitle = element('div', 'log-title');
@@ -25,7 +25,10 @@ export function createRunHud(store: GameStore): RunHud {
     const runNumber = focusedRunNumber();
     if (runNumber !== null) store.execute(runAwayCommand(runNumber, elapsedSecondsOfRun(runNumber), Date.now()));
   }, { className: 'action-button danger' });
-  const townButton = actionButton('', () => focusRun(null));
+  const townButton = actionButton('', () => {
+    focusRun(null);
+    openDungeonList();
+  });
   bar.append(title, element('div', 'hud-controls', townButton, stopButton));
 
   const refresh = (): void => {

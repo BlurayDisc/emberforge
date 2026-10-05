@@ -20,6 +20,7 @@ function createNextProductionLine(context: PanelContext): HTMLElement {
   return line;
 }
 
+// The buttons come before the list. The list grows while the Mill works, so it must be the last thing on the screen.
 export const renderMillPanel: PanelRenderer = (context) => {
   const mill = describeMill(context.store.getState());
   const storedRows = mill.storedMaterials.map((stack) => {
@@ -39,8 +40,7 @@ export const renderMillPanel: PanelRenderer = (context) => {
     element('p', 'hint', t('mill.hint')),
     element('div', 'card-text small', t('mill.usage', { stored: mill.storedCount, capacity: mill.capacity })),
     createNextProductionLine(context),
+    element('div', 'hero-choice-row', collectButton, actionButton(t('mill.leave'), context.closePanel)),
     storedRows.length > 0 ? createList(...storedRows) : element('p', 'hint', t('mill.empty')),
-    collectButton,
-    actionButton(t('mill.leave'), context.closePanel),
   );
 };

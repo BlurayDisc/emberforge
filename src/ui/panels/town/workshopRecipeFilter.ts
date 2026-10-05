@@ -1,5 +1,6 @@
 import { CLASSES } from '../../../content/classes';
 import { BASE_ITEMS } from '../../../content/baseItems';
+import { WORKSHOP_SECTIONS } from '../../../content/workshopSections';
 import { loadRecipeFilterPreferences, saveRecipeFilterPreferences, type WorkshopRecipeView } from '../../../game';
 import type { ClassId } from '../../../model/hero';
 import type { ItemSlot } from '../../../model/item';
@@ -12,7 +13,10 @@ import { t } from '../../i18n';
 const ALL = 'all';
 
 const KNOWN_CLASS_IDS: readonly string[] = CLASSES.map((definition) => definition.id);
-const KNOWN_SLOTS: readonly string[] = BASE_ITEMS.map((base) => base.slot);
+const SHOWN_PROFESSION_IDS = WORKSHOP_SECTIONS.flatMap((section) => section.professionIds);
+// Every crafter offers the same slot list, so one choice means the same thing at every crafter. A crafter with no such recipe shows the empty message.
+const SELECTABLE_SLOTS: readonly ItemSlot[] = [...new Set(BASE_ITEMS.filter((base) => SHOWN_PROFESSION_IDS.includes(base.profession)).map((base) => base.slot))];
+const KNOWN_SLOTS: readonly string[] = SELECTABLE_SLOTS;
 
 // The filter stays when the player moves between crafters, and it is saved in the browser, so one choice applies to every visit.
 // A saved value that no longer exists in the game data falls back to "all".
@@ -37,11 +41,9 @@ function slotLabel(slot: ItemSlot): string {
   return t(slot === 'ring' ? 'slot.ringOne' : `slot.${slot}`);
 }
 
-// Only the slots that the crafter can make appear in the slot dropdown.
-export function createRecipeFilterBar(craftableRecipes: readonly WorkshopRecipeView[], requestRender: () => void): HTMLElement {
-  const slots = [...new Set(craftableRecipes.map((recipe) => recipe.slot))];
+export function createRecipeFilterBar(requestRender: () => void): HTMLElement {
   const classOptions = [{ value: ALL, text: t('workshop.filterAllClasses') }, ...CLASSES.map((definition) => ({ value: definition.id, text: className(definition.id) }))];
-  const slotOptions = [{ value: ALL, text: t('workshop.filterAllSlots') }, ...slots.map((slot) => ({ value: slot, text: slotLabel(slot) }))];
+  const slotOptions = [{ value: ALL, text: t('workshop.filterAllSlots') }, ...SELECTABLE_SLOTS.map((slot) => ({ value: slot, text: slotLabel(slot) }))];
   const sortOptions = [
     { value: 'up', text: t('workshop.sortLevelUp') },
     { value: 'down', text: t('workshop.sortLevelDown') },

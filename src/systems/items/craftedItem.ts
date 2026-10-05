@@ -5,7 +5,10 @@ import {
   QUALITY_WEIGHTS,
   RARE_NAME_FIRST_PARTS,
   RARE_NAME_SECOND_PARTS,
-  SELL_GROWTH_PER_ITEM_LEVEL,
+  SELL_GROWTH_PER_UPGRADE_LEVEL,
+  SELL_ADDED_VALUE_COPPER_PER_AFFIX,
+  SELL_ADDED_VALUE_COPPER_PER_INGREDIENT,
+  SELL_ADDED_VALUE_COPPER_PER_ITEM,
   SELL_QUALITY_FACTOR,
   UNSCALED_BASE_STATS,
 } from '../../content/balance/items';
@@ -23,9 +26,12 @@ export interface CraftedItemRequest {
   itemLevel: number;
   upgradeLevel: number;
   craftingCostCopper: number;
+  ingredientCount: number;
+  // A dropped item has a fixed quality. A crafted item rolls it.
+  quality?: CraftableQuality;
 }
 
-type CraftableQuality = 'common' | 'magic' | 'rare';
+type CraftableQuality = 'common' | 'uncommon' | 'magic' | 'rare';
 
 function rollQuality(random: Random): CraftableQuality {
   const qualities = Object.keys(QUALITY_WEIGHTS) as CraftableQuality[];
@@ -52,10 +58,13 @@ function rollRareNameParts(quality: CraftableQuality, random: Random): [string, 
   return [random.pick(RARE_NAME_FIRST_PARTS), random.pick(RARE_NAME_SECOND_PARTS)];
 }
 
-// The cost is the ingredients plus the crafter fee. A better quality item sells for a multiple of it.
-function computeSellValue(craftingCostCopper: number, quality: CraftableQuality, itemLevel: number): number {
-  const levelFactor = 1 + SELL_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
-  return Math.max(1, Math.round(craftingCostCopper * SELL_QUALITY_FACTOR[quality] * levelFactor));
+// The cost is the ingredients plus the crafter fee. Every ingredient adds copper on top of it, so a craft that eats more material earns more.
+// A better quality multiplies that price, every affix adds a flat amount, and every item adds a small flat amount, so a rolled item sells for clearly more but not for double.
+// The item level adds nothing of its own: the crafter fee already grows with the recipe level. Only an upgrade level adds a small share.
+function computeSellValue(craftingCostCopper: number, ingredientCount: number, quality: CraftableQuality, affixCount: number, upgradeLevel: number): number {
+  const upgradeFactor = 1 + SELL_GROWTH_PER_UPGRADE_LEVEL * upgradeLevel;
+  const materialsAndQualityCopper = (craftingCostCopper + SELL_ADDED_VALUE_COPPER_PER_INGREDIENT * ingredientCount) * SELL_QUALITY_FACTOR[quality];
+  return Math.max(1, Math.round((materialsAndQualityCopper + SELL_ADDED_VALUE_COPPER_PER_AFFIX * affixCount + SELL_ADDED_VALUE_COPPER_PER_ITEM) * upgradeFactor));
 }
 
 export function generateCraftedItem(request: CraftedItemRequest, random: Random): Item {
@@ -66,7 +75,7 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
   if (!mainMaterial) throw new Error(`Tier ${request.tier} has no ${base.mainCategory} material for ${base.id}`);
 
   const setMaterial = request.setMaterialId === null ? undefined : requireById(MATERIALS, request.setMaterialId);
-  const quality = rollQuality(random);
+  const quality = request.quality ?? rollQuality(random);
   const affixes = rollAffixes(quality, itemLevel, random);
   return {
     id: request.itemId,
@@ -84,7 +93,7 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
     height: base.height,
     baseStats: rollBaseStats(base, itemLevel + request.upgradeLevel, random),
     affixes,
-    sellValueCopper: computeSellValue(request.craftingCostCopper, quality, itemLevel + request.upgradeLevel),
+    sellValueCopper: computeSellValue(request.craftingCostCopper, request.ingredientCount, quality, affixes.length, request.upgradeLevel),
   };
 }
 

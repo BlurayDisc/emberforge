@@ -1,5 +1,6 @@
 import type { ClassId } from '../../../src/model/hero';
 import type { UnitRank } from '../../../src/model/battle';
+import type { GearFloorProfile } from './bestEquippableGear';
 import bossFightData from '../presets/boss-fight.json';
 import economyData from '../presets/economy.json';
 import experienceCurveData from '../presets/experience-curve.json';
@@ -8,6 +9,8 @@ import resourceUseData from '../presets/resource-use.json';
 
 export interface EconomyPreset {
   description: string;
+  // The share of the crafted income that the spells of one hero may take at each level. The rest pays for hiring and the Bank.
+  spellBudgetPercent: number;
   firstLevel: number;
   lastLevel: number;
   games: number;
@@ -47,6 +50,8 @@ export interface BossFightPreset {
   seed: number;
   targetSeconds: number;
   targetWinRatePercent: number;
+  // When set, each hero wears Common gear plus this many prefixed items. When null, the gear is crafted at the normal quality odds.
+  gearFloor: GearFloorProfile | null;
 }
 
 export interface ResourceUsePreset {

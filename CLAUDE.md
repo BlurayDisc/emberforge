@@ -106,6 +106,46 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - The spell gallery (`npm run gallery`) reads `SPELL_VISUALS`, so a new spell with a visual shows in it with no extra step. A new art id, a new theme or a new kind of effect (for example a new status) may need a change in `tools/spell-gallery/main.ts` too. The gallery is a dev tool. `vite build` does not include it.
 - When you add or change a spell animation: start the gallery (`npm run gallery`, or tell the user to run it), open the new spell in the browser, look at it with a screenshot, and show the user the page. Keep the gallery working for the new effect kind. Do not leave the dev server running when you finish.
 
+## UI rules (layout, buttons, mobile and desktop)
+
+Read these before you touch any file in `src/ui/` or any CSS. Keep them true. When the user agrees a new UI rule, add it here in the same step.
+
+**Screen order (top to bottom)**
+1. Tabs, if the screen has them (heroes, settings).
+2. Main content first: the grid, the list or the map. The thing the player came for is at the top.
+3. Short info lines (space, gold, counts). Long descriptions are hidden on a phone, or left out.
+4. Content that grows over time (stored materials, lists of results) is last, above the footer.
+5. Footer row: the action buttons, always last, in the class `panel-footer` (sticky, so a short desktop window never hides it). Leave / Back is the last button. Links to another screen (for example "Upgrade ... at the bank") sit in the same footer.
+- Never put action buttons in the middle of a list, or above the content they act on.
+
+**No dynamic movement (most important)**
+- A timer or an automatic event must never move or resize anything on a screen. Only a player action may change the content, and even then the other elements keep their place.
+- Give a thing that comes and goes a fixed slot: one tile for each merchant sale slot (empty or not), a selection bar of fixed height, a status area with a fixed `min-height`.
+- Rows that change state (dungeon free / fighting / results) share the `min-height` of the tallest state.
+- Do not swap a grid for a text line when it is empty. Show the empty grid.
+- A new element goes below the things that exist, or into a reserved slot. It never pushes them.
+- Warnings are quiet: a static colour or a small mark. No flash, no pulse, no movement (see the backpack warning).
+
+**Mobile and desktop**
+- Mobile first. Check every change at about 360x640 and at about 1280x720.
+- Every action works with touch. No information only on hover (a `title` is an extra, not the only place).
+- Touch targets are about 44 px high. Tile grids use a fixed column count that fits a phone (2 for big tiles, up to 6 for small tiles).
+- No sideways scroll. Wrap chips and buttons into rows.
+- A panel is at most 820 px wide. The world map panel is full screen.
+- Use the shared classes (`panel-body`, `list`, `list-row`, `tile-grid`, `tab-row`, `hero-choice-row`, `status-row`, `panel-footer`) before you write a new one.
+
+**Where things live**
+- Gold and the local date and time are on the stage, in the top right corner (`ui/gameHud.ts`). A panel covers the stage, so a screen that deals with gold shows it again as an info line.
+- The team (hero chips) is at the top of the Dungeons panel.
+- Nothing else sits in the top corners of the stage: the town title is top left, the castle Leave button is under the gold in the top right.
+- Text goes through `t()` in both languages. Colours come from `theme.css`.
+
+**Before you finish a UI task**
+- Ask: "What moves when a timer fires or a sale ends here?" The answer must be: nothing.
+- Say clearly if you did not look at the screen in a browser.
+
+**Known gaps** (older screens that do not follow the footer rule yet): Leave buttons in Workshop, Mill, Tavern and Bank are the last element of the body but not sticky. Move them to `panel-footer` when you touch those screens.
+
 ## Pixel-art rules
 
 - Logical resolution 480×270. The stage scales to fill the window, so the scale can be a fraction. `image-rendering: pixelated` keeps the pixels hard-edged.

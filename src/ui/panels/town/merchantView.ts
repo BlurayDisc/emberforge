@@ -1,50 +1,11 @@
-import { BASE_ITEMS } from '../../../content/baseItems';
-import { requireById } from '../../../content/lookup';
-import { MATERIALS } from '../../../content/materials';
-import { cancelSaleCommand, listSaleJobs, merchantSaleSlotsOf } from '../../../game';
-import type { SaleJob } from '../../../model/timedJob';
-import { createJobBar } from '../../liveBars';
+import { listSaleJobs, merchantSaleSlotsOf } from '../../../game';
+import type { GameState } from '../../../model/gameState';
 import { actionButton, element } from '../../dom';
-import { materialName } from '../../displayNames';
-import { createItemNameElement } from '../../itemNameElement';
-import { describeRejection, t } from '../../i18n';
-import { createItemIcon, createMaterialIcon } from '../../iconArt';
-import { createList, createListRow } from '../../listRow';
+import { t } from '../../i18n';
 import { createMoneyDisplay } from '../../moneyDisplay';
 import { createBackpackGrid } from '../backpack/backpackGrid';
 import { createMerchantSelectionBar } from '../backpack/merchantSelectionBar';
 import type { PanelContext, PanelRenderer } from '../panelContext';
-
-// A material in the backpack is one unit. A sale from an old save can hold a few units.
-function quantityTitle(name: string, quantity: number): string {
-  return quantity === 1 ? name : `${name} x${quantity}`;
-}
-
-function renderSaleJob(context: PanelContext, job: SaleJob): HTMLElement {
-  const cancelButton = actionButton(t('merchant.cancelSale'), () => {
-    const result = context.store.execute(cancelSaleCommand(job.id));
-    if (!result.accepted) context.notify(describeRejection(result.rejection));
-  }, { className: 'action-button small-button' });
-  if (job.content.kind === 'item') {
-    const { item } = job.content;
-    const base = requireById(BASE_ITEMS, item.baseId);
-    return createListRow({
-      art: createItemIcon(item.baseId, item.materialId, base.mainCategory, 3),
-      title: createItemNameElement(item),
-      lines: [createJobBar(job, t('job.paying'))],
-      actions: [createMoneyDisplay(job.copper), cancelButton],
-      className: 'fighting',
-    });
-  }
-  const material = requireById(MATERIALS, job.content.materialId);
-  return createListRow({
-    art: createMaterialIcon(material.id, material.category, 3),
-    title: quantityTitle(materialName(material.id), job.content.quantity),
-    lines: [createJobBar(job, t('job.paying'))],
-    actions: [createMoneyDisplay(job.copper), cancelButton],
-    className: 'fighting',
-  });
-}
 
 interface SelectedPosition {
   column: number;
@@ -57,35 +18,40 @@ export function resetMerchantSelection(): void {
   selectedPosition = null;
 }
 
-function renderSellTab(context: PanelContext): HTMLElement {
+// The goods on sale show their timer in their own backpack cell. This line has one fixed height, so a new sale moves nothing.
+function renderSaleStatus(state: GameState): HTMLElement {
+  const used = listSaleJobs(state).length;
+  const slots = merchantSaleSlotsOf(state);
+  return element('div', `section-title${used >= slots ? ' danger-text' : ''}`, t('merchant.salesInProgress', { used, slots }));
+}
+
+function renderSellSections(context: PanelContext): HTMLElement[] {
   const state = context.store.getState();
   const selected = state.backpack.find((entry) => entry.column === selectedPosition?.column && entry.row === selectedPosition?.row);
   if (!selected) selectedPosition = null;
-  const saleJobs = listSaleJobs(state);
-  return element(
-    'div',
-    'panel-body',
-    element('p', 'hint', t('merchant.hint')),
-    element('div', 'section-title', t('merchant.salesInProgress', { used: saleJobs.length, slots: merchantSaleSlotsOf(state) })),
-    saleJobs.length > 0 ? createList(...saleJobs.map((job) => renderSaleJob(context, job))) : element('p', 'hint', t('merchant.noSales')),
-    element('div', 'section-title', t('merchant.backpackGoods')),
-    ...(state.backpack.length > 0
-      ? [
-          createMerchantSelectionBar(context, selected, () => {
-            selectedPosition = null;
-            context.requestRender();
-          }),
-          createBackpackGrid(context.store, {
-            isSelected: (entry) => entry === selected,
-            onEntryClick: (entry) => {
-              selectedPosition = entry === selected ? null : { column: entry.column, row: entry.row };
-              context.requestRender();
-            },
-          }),
-        ]
-      : [element('p', 'hint', t('merchant.empty'))]),
-  );
+  // The grid and the selection bar always show, even for an empty backpack, so the panel keeps its size.
+  const backpackSection = [
+    createBackpackGrid(context.store, {
+      isSelected: (entry) => entry === selected,
+      onEntryClick: (entry) => {
+        selectedPosition = entry === selected ? null : { column: entry.column, row: entry.row };
+        context.requestRender();
+      },
+    }),
+    createMerchantSelectionBar(context, selected, () => {
+      selectedPosition = null;
+      context.requestRender();
+    }),
+  ];
+  return [renderSaleStatus(state), ...backpackSection];
 }
 
+// The gold is an info line at the top. The buttons are the footer row: always last, and sticky, so a short desktop window never hides them.
 export const renderMerchantPanel: PanelRenderer = (context) =>
-  element('div', 'panel-body', renderSellTab(context), actionButton(t('merchant.leave'), context.closePanel));
+  element(
+    'div',
+    'panel-body',
+    element('div', 'merchant-gold-line', createMoneyDisplay(context.store.getState().copper)),
+    ...renderSellSections(context),
+    element('div', 'panel-footer', actionButton(t('merchant.upgradeShop'), () => context.openPanel('bank')), actionButton(t('merchant.leave'), context.closePanel)),
+  );

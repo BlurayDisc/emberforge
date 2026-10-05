@@ -30,6 +30,9 @@ interface SideColors {
   fillLight: string;
 }
 
+const SHIELD_COLOR = '#4a8fd6';
+const SHIELD_COLOR_LIGHT = '#9ccbff';
+
 const COLORS_BY_SIDE: Record<BattleSide, SideColors> = {
   party: { badge: '#3b6fd6', fill: '#4f9a3a', fillLight: '#8bc86f' },
   enemy: { badge: '#8a2a2a', fill: '#c0392b', fillLight: '#e8786a' },
@@ -50,6 +53,8 @@ export interface HealthBar {
   sprite: Sprite;
   setHealth(hp: number, nowSeconds: number): void;
   setResource(value: number): void;
+  // The shield has its own counter, drawn after the health. durationSeconds is given when a shield is made: the bar clears it when the time is up.
+  setShield(value: number, nowSeconds: number, durationSeconds?: number): void;
   update(nowSeconds: number, deltaSeconds: number): void;
   setVisible(isVisible: boolean): void;
   dispose(): void;
@@ -97,6 +102,8 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
   let ghostHp = options.hp;
   let ghostHoldUntilSeconds = 0;
   let resourceValue = options.resource?.value ?? 0;
+  let shieldValue = 0;
+  let shieldExpiresAtSeconds = 0;
 
   const widthOf = (value: number): number => Math.round((Math.max(0, value) / options.maxHp) * innerWidth);
 
@@ -121,6 +128,16 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
     context.fillRect(barLeft + 1, 2, widthOf(hp), 5);
     context.fillStyle = colors.fillLight;
     context.fillRect(barLeft + 1, 2, widthOf(hp), 2);
+
+    if (shieldValue > 0) {
+      // The shield starts where the health ends. A shield that does not fit is pushed back from the right end, so it shows on a full bar too.
+      const shieldWidth = Math.min(innerWidth, Math.max(1, widthOf(shieldValue)));
+      const shieldStart = Math.min(widthOf(hp), innerWidth - shieldWidth);
+      context.fillStyle = SHIELD_COLOR;
+      context.fillRect(barLeft + 1 + shieldStart, 2, shieldWidth, 5);
+      context.fillStyle = SHIELD_COLOR_LIGHT;
+      context.fillRect(barLeft + 1 + shieldStart, 2, shieldWidth, 2);
+    }
 
     context.fillStyle = '#17110d';
     for (let tick = 1; tick * tickUnit < options.maxHp; tick++) {
@@ -153,7 +170,17 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
       resourceValue = value;
       draw();
     },
+    setShield: (value, nowSeconds, durationSeconds) => {
+      if (durationSeconds !== undefined) shieldExpiresAtSeconds = nowSeconds + durationSeconds;
+      if (value === shieldValue) return;
+      shieldValue = value;
+      draw();
+    },
     update: (nowSeconds, deltaSeconds) => {
+      if (shieldValue > 0 && nowSeconds >= shieldExpiresAtSeconds) {
+        shieldValue = 0;
+        draw();
+      }
       if (ghostHp <= hp || nowSeconds < ghostHoldUntilSeconds) return;
       ghostHp = Math.max(hp, ghostHp - options.maxHp * GHOST_DRAIN_PER_SECOND * deltaSeconds);
       draw();

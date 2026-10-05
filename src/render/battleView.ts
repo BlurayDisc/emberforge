@@ -3,6 +3,7 @@ import type { BattleUnit } from '../model/battle';
 import { drawBattleBackdrop } from './battleBackdrops';
 import { PALETTE } from './palette';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, type PixelStage } from './pixelStage';
+import { healthBarLength, type HealthBarLengthScale } from '../kernel/healthBarLength';
 import { createHealthBar, type HealthBar } from './healthBarArt';
 import { createPixelTexture, createBattleSprite } from './pixelSprites';
 import { createProjectileLayer } from './projectileLayer';
@@ -11,6 +12,7 @@ import type { SpellVisualSpec } from '../content/spellVisuals';
 import { createSpellEffectPlayer } from './spellEffects/spellEffectPlayer';
 
 const HEALTH_BAR_GAP_ABOVE_HEAD = 6;
+const STAGE_HEALTH_BAR_SCALE: HealthBarLengthScale = { lengthPerRootPoint: 4, minimum: 28, maximum: 56 };
 const SIDE_OFFSET_X = 105;
 const FLASH_SECONDS = 0.18;
 const LUNGE_SECONDS = 0.28;
@@ -27,11 +29,16 @@ export interface BattleView {
   showUnits(units: readonly BattleUnit[]): void;
   setUnitHealth(unitId: string, hp: number): void;
   setUnitResource(unitId: string, value: number): void;
+  // durationSeconds is set on the event that makes a shield. Later hits on the shield leave it out.
+  setUnitShield(unitId: string, value: number, durationSeconds?: number): void;
+  playDodge(targetId: string, text: string): void;
+  playAbsorb(targetId: string, amount: number): void;
+  playDamageOverTime(targetId: string, amount: number): void;
   playHit(actorId: string, targetId: string, amount: number, isCritical: boolean): void;
   playHeal(actorId: string, targetId: string, amount: number): void;
   markDefeated(unitId: string): void;
   playSpellCast(casterId: string, visual: SpellVisualSpec): void;
-  // hitIndex counts the hits of one cast on one target. debuffSeconds is set when the hit inflicts a status.
+  // hitIndex counts the hits of one cast. debuffSeconds is set on the first hit at an enemy that gets a status.
   playSpellHit(actorId: string, targetId: string, amount: number, isCritical: boolean, visual: SpellVisualSpec, hitIndex: number, debuffSeconds: number | null): void;
   playSpellHeal(actorId: string, targetId: string, amount: number, visual: SpellVisualSpec | undefined): void;
   playSpellStatus(actorId: string, targetId: string, visual: SpellVisualSpec, role: 'buff' | 'debuff', durationSeconds: number): void;
@@ -135,7 +142,7 @@ export function createBattleView(stage: PixelStage): BattleView {
     target.flashUntilSeconds = latestElapsedSeconds + FLASH_SECONDS;
     target.shakeStartSeconds = latestElapsedSeconds;
     spawnParticles(target, isCritical ? PALETTE.gold : '#ffffff', isCritical ? 10 : 5);
-    spawnFloatingText(target, isCritical ? `${amount}!` : String(amount), isCritical ? 'critical' : 'damage');
+    if (amount > 0) spawnFloatingText(target, isCritical ? `${amount}!` : String(amount), isCritical ? 'critical' : 'damage');
   };
 
   const applyAnimation = (visual: UnitVisual, elapsedSeconds: number): void => {
@@ -209,7 +216,7 @@ export function createBattleView(stage: PixelStage): BattleView {
           const shadow = createFlatMesh('#000000', shadowWidth, 6, -0.5);
           shadow.position.set(worldX, feetWorldY + 1, -0.5);
           (shadow.material as MeshBasicMaterial).opacity = 0.35;
-          const barWidth = Math.max(32, Math.min(56, Math.round(sprite.scale.x) + 8));
+          const barWidth = healthBarLength(unit.maxHp, STAGE_HEALTH_BAR_SCALE);
           const healthBar = createHealthBar({ hp: unit.hp, maxHp: unit.maxHp, level: unit.level, side, rank: unit.rank, barWidth, resource: side === 'party' && unit.maxResource > 0 ? { id: unit.resourceId, value: unit.resource, max: unit.maxResource } : undefined });
           healthBar.sprite.position.set(worldX, Math.round(feetWorldY + sprite.scale.y + HEALTH_BAR_GAP_ABOVE_HEAD), 3);
           const visual: UnitVisual = {
@@ -230,6 +237,25 @@ export function createBattleView(stage: PixelStage): BattleView {
     },
     setUnitResource: (unitId, value) => {
       visualsByUnitId.get(unitId)?.healthBar.setResource(value);
+    },
+    setUnitShield: (unitId, value, durationSeconds) => {
+      visualsByUnitId.get(unitId)?.healthBar.setShield(value, latestElapsedSeconds, durationSeconds);
+    },
+    playDodge: (targetId, text) => {
+      const target = visualsByUnitId.get(targetId);
+      if (target) spawnFloatingText(target, text, 'dodge');
+    },
+    playAbsorb: (targetId, amount) => {
+      const target = visualsByUnitId.get(targetId);
+      if (!target) return;
+      spawnParticles(target, PALETTE.waterLight, 5);
+      spawnFloatingText(target, `-${amount}`, 'absorb');
+    },
+    playDamageOverTime: (targetId, amount) => {
+      const target = visualsByUnitId.get(targetId);
+      if (!target) return;
+      target.flashUntilSeconds = latestElapsedSeconds + FLASH_SECONDS;
+      spawnFloatingText(target, String(amount), 'burn');
     },
     playHit: (actorId, targetId, amount, isCritical) => {
       const actor = visualsByUnitId.get(actorId);
@@ -263,7 +289,7 @@ export function createBattleView(stage: PixelStage): BattleView {
       const land = (): void => {
         showHitOn(target, amount, isCritical);
         spellEffects.playImpact(targetId, visual);
-        if (debuffSeconds !== null && hitIndex === 0) spellEffects.playStatus(targetId, visual, 'debuff', debuffSeconds);
+        if (debuffSeconds !== null) spellEffects.playStatus(targetId, visual, 'debuff', debuffSeconds);
       };
       const delaySeconds = hitIndex * SPELL_HIT_SPACING_SECONDS;
       if (!spellEffects.playProjectile(actorId, targetId, visual, delaySeconds, land)) spellEffects.later(delaySeconds, land);

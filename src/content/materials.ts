@@ -18,10 +18,8 @@ export interface MaterialDefinition {
   height: number;
   craftedItemPrefix?: string;
   setBonus?: SetBonus;
-  // The recipe offset inside the bracket from which a crafter can use this set material.
+  // The level of the dungeon that drops this set material. Every set recipe opens at this crafter level or at the level of its base item, whichever is higher.
   setCraftLevelOffset?: number;
-  // The body armour is the last piece of a set, so it can ask for a crafter level beyond the bracket.
-  setBodyArmourCraftLevelOffset?: number;
 }
 
 export const MATERIALS = materialsData as unknown as readonly MaterialDefinition[];

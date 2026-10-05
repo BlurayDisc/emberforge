@@ -7,11 +7,14 @@ import {
 } from '../../content/balance/battle';
 import type { Random } from '../../kernel/random';
 import type { BattleEvent, BattleReport, BattleUnit } from '../../model/battle';
-import { combatantOf, damageFactorBetween, livingUnitsOf, statusStrength, type Combatant } from './combatant';
+import { combatantOf, damageFactorBetween, defenceFactorOf, empowerBonusesOf, livingUnitsOf, statusStrength, type Combatant } from './combatant';
 import { rollDamage } from './damage';
+import { burnTickEvents, dodgeEvent, dodgesHit, shieldFieldsOf, takeDamage } from './damageTaken';
 import { applyLifeSteal } from './lifeSteal';
+import { frontlineOpponent } from './frontlineTarget';
 import { gainResourceFromHit, regenerateResource } from './resourcePool';
 import { tryCastSpell } from './spellCasting';
+import { reflectThorns } from './thorns';
 
 function healthFractionOf(unit: BattleUnit): number {
   return unit.hp / unit.maxHp;
@@ -23,6 +26,7 @@ function findHealTarget(allies: readonly BattleUnit[]): BattleUnit | undefined {
 }
 
 function chooseAttackTarget(actor: BattleUnit, opponents: readonly BattleUnit[], random: Random): BattleUnit {
+  if (actor.targetPriority === 'highestDefence') return frontlineOpponent(opponents);
   if (actor.side === 'enemy') return random.pick(opponents);
   return [...opponents].sort((first, second) => first.hp - second.hp)[0] as BattleUnit;
 }
@@ -56,8 +60,14 @@ function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeS
   }
 
   const target = chooseAttackTarget(actor, opponents, random);
-  const damage = rollDamage(actor, target, random, { statusFactor: damageFactorBetween(actingCombatant, combatantOf(combatants, target), timeSeconds) });
-  target.hp = Math.max(0, target.hp - damage.amount);
+  const targetCombatant = combatantOf(combatants, target);
+  if (dodgesHit(targetCombatant, timeSeconds)) return [dodgeEvent(actingCombatant, targetCombatant, timeSeconds)];
+  const damage = rollDamage(actor, target, random, {
+    statusFactor: damageFactorBetween(actingCombatant, targetCombatant, timeSeconds),
+    targetDefenceFactor: defenceFactorOf(targetCombatant, timeSeconds),
+    ...empowerBonusesOf(actingCombatant, timeSeconds),
+  });
+  const taken = takeDamage(targetCombatant, damage.amount, timeSeconds);
   gainResourceFromHit(actor, target);
   const attackEvent: BattleEvent = {
     timeSeconds,
@@ -69,14 +79,16 @@ function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeS
     targetHpAfter: target.hp,
     actorResourceAfter: actor.resource,
     targetResourceAfter: target.resource,
+    ...shieldFieldsOf(targetCombatant, taken),
   };
-  return [attackEvent, ...applyLifeSteal(actor, damage.amount, timeSeconds)];
+  const damageThatLanded = damage.amount - taken.absorbed;
+  return [attackEvent, ...applyLifeSteal(actor, damageThatLanded, timeSeconds), ...reflectThorns(actingCombatant, targetCombatant, damageThatLanded, timeSeconds)];
 }
 
 // The whole fight is simulated at once from a seed, then replayed by the screen.
 // This keeps results identical after a reload and lets the balance tool run without a screen.
 export function simulateBattle(units: readonly BattleUnit[], random: Random): BattleReport {
-  const combatants: Combatant[] = units.map((unit) => ({ unit: { ...unit }, charge: 0, statuses: [], spellReadyAtSeconds: {} }));
+  const combatants: Combatant[] = units.map((unit) => ({ unit: { ...unit }, charge: 0, statuses: [], shield: null, spellReadyAtSeconds: {} }));
   const events: BattleEvent[] = [];
   const maximumTicks = Math.round(MAXIMUM_BATTLE_SECONDS / SECONDS_PER_TICK);
   let tick = 0;
@@ -85,6 +97,9 @@ export function simulateBattle(units: readonly BattleUnit[], random: Random): Ba
     if (livingUnitsOf(combatants, 'party').length === 0 || livingUnitsOf(combatants, 'enemy').length === 0) break;
     tick += 1;
     const timeSeconds = Math.round(tick * SECONDS_PER_TICK * 10) / 10;
+
+    events.push(...burnTickEvents(combatants, timeSeconds));
+    if (livingUnitsOf(combatants, 'party').length === 0 || livingUnitsOf(combatants, 'enemy').length === 0) break;
 
     for (const combatant of combatants) {
       if (combatant.unit.hp <= 0) continue;

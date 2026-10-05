@@ -7,9 +7,11 @@ import { TOWNS } from '../../content/towns';
 import type { BankUnlockId } from '../../model/bankUnlock';
 import type { CrafterProgress, DungeonRun, GameState } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
+import type { Item } from '../../model/item';
 import type { MaterialStack } from '../../model/material';
 import { readEach, readList, readNumber, readRecord, readTexts, readWholeNumber, type SalvageTally, type UnknownRecord } from './salvage/lenientReaders';
-import { salvageBackpack, salvageMaterialStack } from './salvage/salvageBackpack';
+import { clearOrphanSaleMarks, salvageBackpack, salvageMaterialStack } from './salvage/salvageBackpack';
+import { salvageItem } from './salvage/salvageItem';
 import { salvageHero } from './salvage/salvageHero';
 import { salvageJob } from './salvage/salvageJobs';
 import { salvageReport, salvageRun } from './salvage/salvageRuns';
@@ -59,6 +61,11 @@ function salvagePendingLoot(value: unknown, tally: SalvageTally): Record<string,
   return Object.fromEntries(DUNGEONS.filter((dungeon) => record[dungeon.id] !== undefined).map((dungeon) => [dungeon.id, readEach(record[dungeon.id], salvageMaterialStack, tally)]));
 }
 
+function salvagePendingItems(value: unknown, tally: SalvageTally): Record<string, Item[]> {
+  const record = readRecord(value) ?? {};
+  return Object.fromEntries(DUNGEONS.filter((dungeon) => record[dungeon.id] !== undefined).map((dungeon) => [dungeon.id, readEach(record[dungeon.id], (entry) => salvageItem(entry, tally), tally)]));
+}
+
 function salvageMill(value: unknown, freshMill: GameState['mill'], tally: SalvageTally): GameState['mill'] {
   const record: UnknownRecord = readRecord(value) ?? {};
   return {
@@ -85,7 +92,7 @@ export function salvageGameState(savedValue: unknown, freshState: GameState): Sa
     copper: readWholeNumber(saved.copper, 0, MAXIMUM_NUMBER, freshState.copper),
     company,
     heroesHired: Math.max(company.length, readWholeNumber(saved.heroesHired, 0, MAXIMUM_NUMBER, 0)),
-    backpack: salvageBackpack(saved.backpack, backpackExpansions, tally),
+    backpack: clearOrphanSaleMarks(salvageBackpack(saved.backpack, backpackExpansions, tally), jobs),
     backpackExpansions,
     merchantExtraSlots: readWholeNumber(saved.merchantExtraSlots, 0, MAXIMUM_NUMBER, 0),
     millCapacityUpgrades: readWholeNumber(saved.millCapacityUpgrades, 0, MILL_STORAGE_CAPACITY_UPGRADE_COSTS_COPPER.length, 0),
@@ -100,6 +107,7 @@ export function salvageGameState(savedValue: unknown, freshState: GameState): Sa
     jobs,
     jobsStarted: Math.max(jobs.reduce((next, job) => Math.max(next, job.id + 1), 0), readWholeNumber(saved.jobsStarted, 0, MAXIMUM_NUMBER, 0)),
     pendingLoot: salvagePendingLoot(saved.pendingLoot, tally),
+    pendingItems: salvagePendingItems(saved.pendingItems, tally),
     mill: salvageMill(saved.mill, freshState.mill, tally),
   };
   return { state, droppedCount: tally.droppedCount };

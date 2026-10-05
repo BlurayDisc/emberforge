@@ -10,6 +10,7 @@ export {
   findItem,
   findFreePosition,
   findMoveAnchor,
+  isOnSale,
   moveEntry,
   removeEntryAt,
   removeItem,

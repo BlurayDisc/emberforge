@@ -27,6 +27,7 @@ export function createNewGameState(seed: number): GameState {
     jobs: [],
     jobsStarted: 0,
     pendingLoot: {},
+    pendingItems: {},
     mill: { productionClockStartedAtMs: null, productionsMade: 0, storedMaterials: [] },
   };
 }

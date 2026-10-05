@@ -1,10 +1,7 @@
 import { AFFIXES, type AffixDefinition } from '../../content/affixes';
 import {
   AFFIX_GROWTH_PER_ITEM_LEVEL,
-  MAGIC_AFFIX_COUNTS,
-  MAXIMUM_AFFIXES_PER_KIND_MAGIC,
-  MAXIMUM_AFFIXES_PER_KIND_RARE,
-  RARE_AFFIX_COUNTS,
+  AFFIX_RULES_BY_QUALITY,
 } from '../../content/balance/items';
 import type { Random } from '../../kernel/random';
 import type { AffixKind, ItemAffix, ItemQuality } from '../../model/item';
@@ -34,9 +31,8 @@ function rollAffixValue(definition: AffixDefinition, itemLevel: number, random: 
 }
 
 export function rollAffixes(quality: ItemQuality, itemLevel: number, random: Random): ItemAffix[] {
-  if (quality !== 'magic' && quality !== 'rare') return [];
-  const counts = quality === 'magic' ? MAGIC_AFFIX_COUNTS : RARE_AFFIX_COUNTS;
-  const maximumPerKind = quality === 'magic' ? MAXIMUM_AFFIXES_PER_KIND_MAGIC : MAXIMUM_AFFIXES_PER_KIND_RARE;
+  if (quality === 'common' || quality === 'unique') return [];
+  const { counts, maximumPerKind } = AFFIX_RULES_BY_QUALITY[quality];
   const split = splitAffixCount(random.pick(counts), maximumPerKind, random);
 
   const chosen = [

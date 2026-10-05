@@ -1,5 +1,6 @@
-import { SPELL_LEARN_COST_BASE_COPPER, SPELL_LEARN_COST_LEVEL_EXPONENT, ULTIMATE_LEARN_COST_FACTOR } from '../../content/balance/spells';
-import { findSpell } from '../../content/spells';
+import { SPELL_LEARN_COST_CURVE, ULTIMATE_LEARN_COST_FACTOR } from '../../content/balance/spells';
+import { familyIdOf, findSpell, lowerRankOf, rankOf } from '../../content/spells';
+import { interpolatePowerCurve } from '../../kernel/math';
 import type { Hero } from '../../model/hero';
 import type { SpellDefinition } from '../../model/spell';
 
@@ -10,18 +11,37 @@ export interface SpellProblem {
 
 export function learnCostCopper(spell: SpellDefinition): number {
   const kindFactor = spell.isUltimate ? ULTIMATE_LEARN_COST_FACTOR : 1;
-  return Math.max(1, Math.round(SPELL_LEARN_COST_BASE_COPPER * spell.unlockLevel ** SPELL_LEARN_COST_LEVEL_EXPONENT * kindFactor));
+  return Math.max(1, Math.round(interpolatePowerCurve(SPELL_LEARN_COST_CURVE, spell.unlockLevel) * kindFactor));
+}
+
+// The highest rank that the hero knows in the family of the spell. 0 when it knows none.
+export function knownRankOf(hero: Hero, spell: SpellDefinition): number {
+  return hero.learnedSpellIds.reduce((highest, id) => {
+    const known = findSpell(id);
+    return known && familyIdOf(known) === familyIdOf(spell) ? Math.max(highest, rankOf(known)) : highest;
+  }, 0);
 }
 
 export function findLearnProblem(hero: Hero, spell: SpellDefinition): SpellProblem | null {
   if (spell.classId !== hero.classId) return { key: 'reject.spellWrongClass' };
-  if (hero.learnedSpellIds.includes(spell.id)) return { key: 'reject.spellAlreadyLearned' };
+  if (knownRankOf(hero, spell) >= rankOf(spell)) return { key: 'reject.spellAlreadyLearned' };
   if (hero.level < spell.unlockLevel) return { key: 'reject.spellLevelTooLow', params: { level: spell.unlockLevel } };
+  if (rankOf(spell) > 1 && knownRankOf(hero, spell) < rankOf(spell) - 1) return { key: 'reject.spellNeedsLowerRank' };
   return null;
 }
 
-// A new spell takes the first free slot of its kind, so a hero fights with it at once.
+// A higher rank takes the place of the lower rank, in the same slot. A new spell takes the first free slot of its kind, so a hero fights with it at once.
 export function learnSpell(hero: Hero, spell: SpellDefinition): Hero {
+  const replacedId = lowerRankOf(spell)?.id;
+  if (replacedId !== undefined && hero.learnedSpellIds.includes(replacedId)) {
+    const replaceRank = (id: string | null): string | null => (id === replacedId ? spell.id : id);
+    return {
+      ...hero,
+      learnedSpellIds: hero.learnedSpellIds.map((id) => replaceRank(id) as string),
+      equippedSpellIds: hero.equippedSpellIds.map(replaceRank),
+      equippedUltimateId: replaceRank(hero.equippedUltimateId),
+    };
+  }
   const learnedSpellIds = [...hero.learnedSpellIds, spell.id];
   if (spell.isUltimate) return { ...hero, learnedSpellIds, equippedUltimateId: hero.equippedUltimateId ?? spell.id };
   const freeSlotIndex = hero.equippedSpellIds.indexOf(null);

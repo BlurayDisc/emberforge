@@ -1,5 +1,6 @@
 import { BASE_ITEMS, type ProfessionId } from '../../../content/baseItems';
 import { requireById } from '../../../content/lookup';
+import { WORKSHOP_SECTIONS, type WorkshopSection } from '../../../content/workshopSections';
 import { MATERIALS } from '../../../content/materials';
 import { playSound } from '../../../audio';
 import {
@@ -9,11 +10,10 @@ import {
   listCrafters,
   listWorkshopRecipes,
   type CrafterView,
-  type IngredientView,
   type WorkshopRecipeView,
 } from '../../../game';
 import { actionButton, element, percentBar } from '../../dom';
-import { craftedBaseName, itemBaseDisplayName, itemDisplayName, materialName } from '../../displayNames';
+import { craftedBaseName, itemBaseDisplayName, itemDisplayName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
 import { createItemIcon } from '../../iconArt';
 import { createRecipePortrait } from '../../itemPortrait';
@@ -21,6 +21,7 @@ import { createClassTags } from '../../classTags';
 import { createCrafterPortrait } from '../../crafterPortraitArt';
 import { createRecipeStatTable, createSetBonusLine } from '../../itemStatTable';
 import { formatDuration } from '../../liveUpdate';
+import { createIngredientBoxes } from '../../materialBoxes';
 import { createJobBar } from '../../liveBars';
 import { createList, createListRow } from '../../listRow';
 import { createMoneyDisplay } from '../../moneyDisplay';
@@ -34,12 +35,6 @@ export function resetWorkshopSelection(): void {
   selectedProfessionId = null;
 }
 
-function describeIngredients(ingredients: readonly IngredientView[]): HTMLElement[] {
-  return ingredients.map((ingredient) =>
-    element('span', ingredient.owned >= ingredient.needed ? 'ingredient' : 'ingredient missing', `${materialName(ingredient.materialId)} ${ingredient.owned}/${ingredient.needed}`),
-  );
-}
-
 function craft(context: PanelContext, recipe: WorkshopRecipeView): boolean {
   const result = context.store.execute(craftItemCommand(recipe.baseId, recipe.tier, recipe.setMaterialId, Date.now()));
   if (!result.accepted) {
@@ -48,6 +43,7 @@ function craft(context: PanelContext, recipe: WorkshopRecipeView): boolean {
   }
   context.notify(t('workshop.started', { name: craftedBaseName(recipe.resultMaterialId, recipe.baseId) }));
   selectedProfessionId = null;
+  context.leaveSubScreen();
   context.requestRender();
   return true;
 }
@@ -62,7 +58,7 @@ function openRecipe(context: PanelContext, recipe: WorkshopRecipeView): void {
     createRecipeStatTable(recipe.baseId, recipe.statRanges),
     ...(recipe.setMaterialId === null ? [] : createSetBonusLine(recipe.setMaterialId)),
     element('div', 'card-text small', t('workshop.craftTime', { time: formatDuration(recipe.craftSeconds) })),
-    element('div', 'card-text small', ...describeIngredients(recipe.ingredients)),
+    createIngredientBoxes(recipe.ingredients),
     element('div', 'card-row', t('workshop.fee'), createMoneyDisplay(recipe.feeCopper)),
     element('div', 'card-text small', t('workshop.upgradeChance', { percent: Math.round(recipe.upgradeChance * 100) })),
   );
@@ -85,7 +81,7 @@ function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView): HTMLEl
   const base = requireById(BASE_ITEMS, recipe.baseId);
   const resultMaterial = requireById(MATERIALS, recipe.resultMaterialId);
   const art = createItemIcon(recipe.baseId, resultMaterial.id, base.mainCategory, 3);
-  const info = element('div', 'card-text small', ...describeIngredients(recipe.ingredients));
+  const info = createIngredientBoxes(recipe.ingredients);
   const classes = createClassTags(recipe.usableByClassIds);
   const fee = element('div', 'card-row', t('workshop.fee'), createMoneyDisplay(recipe.feeCopper));
   const row = createListRow({
@@ -114,7 +110,7 @@ function collectWaitingItem(context: PanelContext, crafter: CrafterView): void {
   }
 }
 
-function renderCrafterStatus(context: PanelContext, crafter: CrafterView): HTMLElement {
+function renderCrafterStatusContent(context: PanelContext, crafter: CrafterView): HTMLElement {
   const job = crafterJob(context.store.getState(), crafter.professionId);
   if (job?.isWaitingForCollection) {
     return element(
@@ -130,6 +126,11 @@ function renderCrafterStatus(context: PanelContext, crafter: CrafterView): HTMLE
   return job
     ? element('div', 'crafter-job', element('div', 'card-text small', t('workshop.crafting', { name: itemBaseDisplayName(job.item) })), createJobBar(job, t('job.waitingForSpace')))
     : element('div', 'card-text small', t('workshop.crafterIdle'));
+}
+
+// Idle, crafting and waiting for collection need different room. The area has one fixed height, so a craft that starts or ends moves nothing.
+function renderCrafterStatus(context: PanelContext, crafter: CrafterView): HTMLElement {
+  return element('div', 'crafter-status', renderCrafterStatusContent(context, crafter));
 }
 
 function renderCrafterHeader(context: PanelContext, crafter: CrafterView): HTMLElement {
@@ -155,20 +156,27 @@ function renderCrafterRow(context: PanelContext, crafter: CrafterView): HTMLElem
     className: 'clickable crafter-tile',
   });
   row.addEventListener('click', () => {
+    context.enterSubScreen();
     selectedProfessionId = crafter.professionId;
     context.requestRender();
   });
   return row;
 }
 
-function renderCrafterList(context: PanelContext, crafters: readonly CrafterView[]): HTMLElement {
+function renderSection(context: PanelContext, section: WorkshopSection, crafters: readonly CrafterView[]): HTMLElement | null {
+  const sectionCrafters = crafters.filter((crafter) => section.professionIds.includes(crafter.professionId));
+  if (sectionCrafters.length === 0) return null;
   return element(
     'div',
-    'panel-body',
-    element('p', 'hint', t('workshop.chooseCrafter')),
-    element('div', 'tile-grid', ...crafters.map((crafter) => renderCrafterRow(context, crafter))),
-    actionButton(t('workshop.leave'), context.closePanel),
+    'workshop-section',
+    element('div', 'section-title', t(`workshop.section.${section.id}`)),
+    element('div', 'tile-grid', ...sectionCrafters.map((crafter) => renderCrafterRow(context, crafter))),
   );
+}
+
+function renderCrafterList(context: PanelContext, crafters: readonly CrafterView[]): HTMLElement {
+  const sections = WORKSHOP_SECTIONS.map((section) => renderSection(context, section, crafters)).filter((section): section is HTMLElement => section !== null);
+  return element('div', 'panel-body', element('p', 'hint', t('workshop.chooseCrafter')), ...sections, actionButton(t('workshop.leave'), context.closePanel));
 }
 
 // Recipes above the crafter level stay hidden, so the player sees only what the crafter can make now.
@@ -180,12 +188,13 @@ function renderCrafterScreen(context: PanelContext, crafter: CrafterView, recipe
     'div',
     'panel-body',
     element('div', 'crafter-intro', createCrafterPortrait(crafter.professionId, 4), renderCrafterHeader(context, crafter)),
-    createRecipeFilterBar(craftableRecipes, context.requestRender),
+    createRecipeFilterBar(context.requestRender),
     shownRecipes.length === 0 ? element('p', 'hint', t('workshop.noRecipesMatch')) : createList(...shownRecipes.map((recipe) => renderRecipe(context, recipe))),
   );
   if (nextRecipeLevel !== Infinity) body.append(element('p', 'hint', t('workshop.nextRecipeAt', { level: nextRecipeLevel })));
   body.append(actionButton(t('workshop.back'), () => {
     selectedProfessionId = null;
+    context.leaveSubScreen();
     context.requestRender();
   }));
   return body;

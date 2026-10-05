@@ -8,10 +8,12 @@ export const CRITICAL_DAMAGE_MULTIPLIER = data.criticalDamageMultiplier;
 export const CRITICAL_CHANCE_PER_SKILL_POINT = data.criticalChancePerSkillPoint;
 export const MAXIMUM_CRITICAL_CHANCE = data.maximumCriticalChance;
 
+export const MAXIMUM_DAMAGE_CUT = data.maximumDamageCut;
 export const MITIGATION_BASE = data.mitigationBase;
 export const MITIGATION_PER_ATTACKER_LEVEL = data.mitigationPerAttackerLevel;
-export const DAMAGE_VARIANCE_FRACTION = data.damageVarianceFraction;
+export const MONSTER_DAMAGE_VARIANCE_FRACTION = data.monsterDamageVarianceFraction;
 
 export const HEAL_BELOW_HEALTH_FRACTION = data.healBelowHealthFraction;
 export const HEAL_POWER_MULTIPLIER = data.healPowerMultiplier;
 export const LOG_TURN_SECONDS = data.logTurnSeconds;
+export const BURN_TICK_SECONDS = data.burnTickSeconds;

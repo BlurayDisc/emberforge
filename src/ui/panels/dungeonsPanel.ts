@@ -3,10 +3,12 @@ import { requireById } from '../../content/lookup';
 import { collectDungeonLootCommand, describeHero, hasBankUnlock, isDungeonUnlocked, loadStaysOnDungeonScreen, runInDungeon, runOfHero, runAwayCommand, saveStaysOnDungeonScreen, startDungeonRunCommand } from '../../game';
 import type { DungeonRun, RunReport } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
+import type { Item } from '../../model/item';
 import type { MaterialStack } from '../../model/material';
 import { actionButton, element } from '../dom';
+import { createTeamStrip } from '../heroStatusStrip';
 import { createExperienceBar, createLiveHealthBar } from '../liveBars';
-import { className, heroDisplayName, listOf, materialName } from '../displayNames';
+import { className, heroDisplayName, itemDisplayName, listOf, materialName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
 import { openPartyChooser } from './dungeonPartyChooser';
 import { openDungeonView } from '../dungeonModal';
@@ -143,7 +145,7 @@ function renderFinishedDungeon(context: PanelContext, dungeon: DungeonDefinition
 }
 
 // Drops that found no room wait at the dungeon. The dungeon stays closed until the player collects them.
-function renderPendingLootDungeon(context: PanelContext, dungeon: DungeonDefinition, waiting: readonly MaterialStack[]): HTMLElement {
+function renderPendingLootDungeon(context: PanelContext, dungeon: DungeonDefinition, waiting: readonly MaterialStack[], waitingItems: readonly Item[]): HTMLElement {
   const collect = (): void => {
     const result = context.store.execute(collectDungeonLootCommand(dungeon.id));
     if (!result.accepted) context.notify(describeRejection(result.rejection));
@@ -152,7 +154,7 @@ function renderPendingLootDungeon(context: PanelContext, dungeon: DungeonDefinit
     art: element('div', 'fight-art', createDungeonIcon(dungeon.id, 3)),
     title: dungeonTitle(dungeon),
     lines: [
-      element('div', 'fight-status lost', t('dungeons.lootWaiting', { list: listOf(waiting.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`)) })),
+      element('div', 'fight-status lost', t('dungeons.lootWaiting', { list: listOf([...waiting.map((stack) => `${materialName(stack.materialId)} x${stack.quantity}`), ...waitingItems.map(itemDisplayName)]) })),
       element('div', 'card-text small', t('dungeons.lootWaitingHint')),
     ],
     actions: [actionButton(t('dungeons.collectLoot'), collect, { className: 'action-button primary' })],
@@ -213,22 +215,31 @@ function renderStayOnScreenToggle(): HTMLElement {
   return element('label', 'stay-toggle', checkbox, element('span', 'card-text', t('dungeons.stayOnScreen')));
 }
 
+function renderDungeonRow(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
+  const state = context.store.getState();
+  const run = runInDungeon(state, dungeon.id);
+  if (run) return renderBusyDungeon(context, dungeon, run);
+  const unreadReport = state.reports.find((report) => report.dungeonId === dungeon.id);
+  if (unreadReport) return renderFinishedDungeon(context, dungeon, unreadReport);
+  const waitingLoot = state.pendingLoot[dungeon.id] ?? [];
+  const waitingItems = state.pendingItems[dungeon.id] ?? [];
+  if (waitingLoot.length > 0 || waitingItems.length > 0) return renderPendingLootDungeon(context, dungeon, waitingLoot, waitingItems);
+  return isDungeonUnlocked(state, dungeon) ? renderFreeDungeon(context, dungeon) : renderLockedDungeon(context, dungeon);
+}
+
 export const renderDungeonsPanel: PanelRenderer = (context) => {
   const state = context.store.getState();
   const body = element('div', 'panel-body');
   const dungeons = DUNGEONS.filter((dungeon) => dungeon.townId === state.townId);
   body.append(
+    ...(state.company.length > 0 ? [element('div', 'section-title', t('dungeons.team')), createTeamStrip(context.store, () => context.openPanel('heroes'))] : []),
     element('p', 'hint', t('dungeons.oneFightHint')),
     ...(hasBankUnlock(state, 'quickDispatch') ? [renderStayOnScreenToggle()] : []),
     createList(
       ...dungeons.map((dungeon) => {
-        const run = runInDungeon(state, dungeon.id);
-        if (run) return renderBusyDungeon(context, dungeon, run);
-        const unreadReport = state.reports.find((report) => report.dungeonId === dungeon.id);
-        if (unreadReport) return renderFinishedDungeon(context, dungeon, unreadReport);
-        const waitingLoot = state.pendingLoot[dungeon.id] ?? [];
-        if (waitingLoot.length > 0) return renderPendingLootDungeon(context, dungeon, waitingLoot);
-        return isDungeonUnlocked(state, dungeon) ? renderFreeDungeon(context, dungeon) : renderLockedDungeon(context, dungeon);
+        const row = renderDungeonRow(context, dungeon);
+        row.classList.add('dungeon-row');
+        return row;
       }),
     ),
   );

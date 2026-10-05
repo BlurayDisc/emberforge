@@ -29,7 +29,7 @@ export { createBrowserSaveStorage } from './saveStorage';
 export { loadAudioPreferences, loadLanguagePreference, loadRecipeFilterPreferences, loadSeenChangelogVersion, loadStaysOnDungeonScreen, saveAudioPreferences, saveLanguagePreference, saveRecipeFilterPreferences, saveSeenChangelogVersion, saveStaysOnDungeonScreen } from './settingsStorage';
 export { describeMill, type MillView } from './views/millViews';
 export { millSettingsOf } from './millSettings';
-export { describeStorage, findBackpackMoveAnchor, sizeOfBackpackEntry, type StorageView } from './views/storageViews';
+export { backpackPressureOf, describeStorage, findBackpackMoveAnchor, sizeOfBackpackEntry, type BackpackPressure, type StorageView } from './views/storageViews';
 export { backpackRowsOf, merchantSaleSlotsOf } from './storage';
 export { describeHero, describeMoney, listTavernOffers, type HeroView, type TavernOffer } from './views/gameViews';
 export { classIdsThatCanUseItem, compareEquip, listItemsForSlot, type EquipComparison, type SlotCandidate } from './views/equipmentViews';

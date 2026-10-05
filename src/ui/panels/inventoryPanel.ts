@@ -7,6 +7,7 @@ import { actionButton, element } from '../dom';
 import { openModal } from '../modal';
 import { heroDisplayName, materialName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
+import { createMoneyDisplay } from '../moneyDisplay';
 import { createItemNameElement } from '../itemNameElement';
 import { createItemCard } from '../itemText';
 import type { PanelContext, PanelRenderer } from './panelContext';
@@ -61,15 +62,15 @@ function tryMove(context: PanelContext, from: SelectedPosition, column: number, 
   context.requestRender();
 }
 
-// Sorting is a Bank upgrade. Before it, the panel says why the button is missing.
-function renderSortControl(context: PanelContext): HTMLElement {
-  if (!hasBankUnlock(context.store.getState(), 'backpackSorting')) return element('p', 'hint', t('inventory.sortLocked'));
-  return actionButton(t('inventory.sort'), () => {
+// Sorting is a Bank upgrade. Before it, the button is missing.
+function renderSortControl(context: PanelContext): HTMLElement[] {
+  if (!hasBankUnlock(context.store.getState(), 'backpackSorting')) return [];
+  return [actionButton(t('inventory.sort'), () => {
     const result = context.store.execute(sortBackpackCommand());
     context.notify(result.accepted ? t('inventory.sorted') : describeRejection(result.rejection));
     selectedPosition = null;
     context.requestRender();
-  });
+  })];
 }
 
 // The merchant slot count can grow with a Bank upgrade, so the ceiling comes from the state. The line turns red when no slot is free.
@@ -77,7 +78,7 @@ function renderMerchantSaleStatus(context: PanelContext): HTMLElement {
   const state = context.store.getState();
   const used = listSaleJobs(state).length;
   const slots = merchantSaleSlotsOf(state);
-  return element('p', `hint${used >= slots ? ' danger-text' : ''}`, t('inventory.merchantSales', { used, slots }));
+  return element('span', used >= slots ? 'danger-text' : '', t('inventory.merchantSales', { used, slots }));
 }
 
 // The action bar has a fixed place and a fixed height above the grid, so the grid does not jump when the selection changes.
@@ -114,15 +115,19 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
     onEmptyCellClick: selected ? (column, row) => tryMove(context, selected, column, row) : undefined,
   });
   const body = element('div', 'panel-body');
+  // The detail card is last, so it never pushes the grid, the status line or the buttons when it appears.
   body.append(
-    element('p', 'hint inventory-intro', t('inventory.hint')),
-    element('p', 'hint inventory-intro', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })),
-    renderMerchantSaleStatus(context),
-    renderSortControl(context),
     element(
       'div',
       'inventory-layout',
-      element('div', 'inventory-grid-column', renderSelectionBar(context, selected), grid),
+      element(
+        'div',
+        'inventory-grid-column',
+        grid,
+        renderSelectionBar(context, selected),
+        element('div', 'hint status-row', createMoneyDisplay(context.store.getState().copper), element('span', '', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })), renderMerchantSaleStatus(context)),
+        element('div', 'hero-choice-row', ...renderSortControl(context), actionButton(t('inventory.upgradeBackpack'), () => context.openPanel('bank'))),
+      ),
       element('div', 'inventory-detail-column', ...(selected ? [renderDetail(selected)] : [])),
     ),
   );

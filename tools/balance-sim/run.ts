@@ -65,6 +65,7 @@ function equipCraftedGear(hero: Hero, random: Random, gearMode: GearMode): Hero 
         itemLevel: recipe.itemLevel,
         upgradeLevel: 0,
         craftingCostCopper: 10,
+        ingredientCount: 1,
       },
       random.fork(`${hero.id}-${index}`),
     );

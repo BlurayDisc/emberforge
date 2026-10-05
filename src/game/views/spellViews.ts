@@ -1,7 +1,8 @@
 import { spellsOfClass } from '../../content/spells';
 import type { GameState } from '../../model/gameState';
 import type { SpellDefinition } from '../../model/spell';
-import { findLearnProblem, isSpellEquipped, learnCostCopper, type SpellProblem } from '../../systems/spells';
+import { familyIdOf, rankOf } from '../../content/spells';
+import { findLearnProblem, isSpellEquipped, knownRankOf, learnCostCopper, type SpellProblem } from '../../systems/spells';
 
 export interface SpellOffer {
   spell: SpellDefinition;
@@ -19,11 +20,12 @@ export interface SpellOffer {
 export function listSpellOffers(state: GameState, heroId: string): SpellOffer[] {
   const hero = state.company.find((candidate) => candidate.id === heroId);
   if (!hero) return [];
-  return spellsOfClass(hero.classId).map((spell) => ({
+  const classSpells = spellsOfClass(hero.classId);
+  return classSpells.map((spell) => ({
     spell,
     costCopper: learnCostCopper(spell),
-    isLearned: hero.learnedSpellIds.includes(spell.id),
-    isEquipped: isSpellEquipped(hero, spell.id),
+    isLearned: knownRankOf(hero, spell) >= rankOf(spell),
+    isEquipped: classSpells.some((candidate) => familyIdOf(candidate) === familyIdOf(spell) && rankOf(candidate) >= rankOf(spell) && isSpellEquipped(hero, candidate.id)),
     isAffordable: state.copper >= learnCostCopper(spell),
     isInReach: hero.level >= spell.unlockLevel,
     problem: findLearnProblem(hero, spell),

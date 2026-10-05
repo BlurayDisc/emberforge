@@ -13,14 +13,15 @@ import { createBattleView } from '../../src/render/battleView';
 import { createPixelStage } from '../../src/render/pixelStage';
 
 const DEMO_DAMAGE = 42;
+const DEMO_SHIELD = 40;
 const DEMO_STATUS_SECONDS = 6;
 const SECONDS_BETWEEN_SPELLS_IN_PLAY_ALL = 4000;
 
 function createDemoUnit(id: string, side: BattleUnit['side'], definitionId: string, name: string, spriteKey: string): BattleUnit {
   return {
     id, definitionId, name, side, rank: side === 'party' ? 'hero' : 'normal', spriteKey, level: 10,
-    maxHp: 100, hp: 100, attack: 1, attackKind: 'physical', defence: 0, resistance: 0, speed: 100, critChance: 0,
-    criticalDamageMultiplier: 1.5, lifeSteal: 0, behavior: 'fighter', resourceId: 'rage', maxResource: 0, resource: 0, spells: [],
+    maxHp: 100, hp: 100, attack: 1, attackKind: 'physical', defence: 0, resistance: 0, speed: 100, critChance: 0, damageVarianceFraction: 0,
+    criticalDamageMultiplier: 1.5, mainAttribute: 'strength', mainAttributeValue: 0, skill: 0, lifeSteal: 0, behavior: 'fighter', resourceId: 'rage', maxResource: 0, resource: 0, spells: [],
   };
 }
 
@@ -48,7 +49,7 @@ function describeVisual(visual: SpellVisualSpec): string {
 }
 
 function playSoundsOfHit(spell: SpellDefinition, visual: SpellVisualSpec, role: SpellRole, hitIndex: number, statusDurationSeconds: number | null): void {
-  const presentation: SpellPresentation = { spellId: spell.id, role, visual, sounds: SPELL_SOUNDS[spell.id], startsCast: hitIndex === 0, hitIndex, statusDurationSeconds };
+  const presentation: SpellPresentation = { spellId: spell.id, role, visual, sounds: SPELL_SOUNDS[spell.id], startsCast: hitIndex === 0, hitIndex, isFirstHitOnTarget: hitIndex === 0, statusDurationSeconds, selfStatusDurationSeconds: null };
   playSpellSounds(presentation);
 }
 
@@ -56,6 +57,7 @@ function playSpell(spell: SpellDefinition, visual: SpellVisualSpec): void {
   resetUnits();
   const effect = spell.effect;
   view.playSpellCast(caster.id, visual);
+  if (effect.kind === 'damage' && effect.alsoOnSelf && visual.buff) view.playSpellStatus(caster.id, caster.id, visual, 'buff', effect.alsoOnSelf.durationSeconds);
   if (effect.kind === 'damage' || effect.kind === 'drain') {
     const inflictedSeconds = effect.kind === 'damage' ? effect.inflicts?.durationSeconds ?? null : null;
     const hitCount = Math.min(effect.hits, 5);
@@ -71,6 +73,7 @@ function playSpell(spell: SpellDefinition, visual: SpellVisualSpec): void {
     view.playSpellStatus(caster.id, enemy.id, visual, 'debuff', DEMO_STATUS_SECONDS);
     playSoundsOfHit(spell, visual, 'debuff', 0, DEMO_STATUS_SECONDS);
   } else {
+    if (effect.kind === 'shield') view.setUnitShield(caster.id, DEMO_SHIELD, effect.durationSeconds);
     view.playSpellStatus(caster.id, effect.target === 'allAllies' ? ally.id : caster.id, visual, 'buff', DEMO_STATUS_SECONDS);
     if (effect.target === 'allAllies') view.playSpellStatus(caster.id, caster.id, visual, 'buff', DEMO_STATUS_SECONDS);
     playSoundsOfHit(spell, visual, 'buff', 0, DEMO_STATUS_SECONDS);

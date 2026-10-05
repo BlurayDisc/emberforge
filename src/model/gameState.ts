@@ -1,6 +1,7 @@
 import type { BackpackEntry } from './backpack';
 import type { BankUnlockId } from './bankUnlock';
 import type { Hero } from './hero';
+import type { Item } from './item';
 import type { MillState } from './mill';
 import type { TimedJob } from './timedJob';
 import type { MaterialStack } from './material';
@@ -16,6 +17,9 @@ export interface HeroEncounterResult {
   // The hero's level and experience after the fight. The result card draws the experience bar from them.
   levelAfter: number;
   experienceAfter: number;
+  // Health points the hero lost in the fight, and the maximum health. The result card draws the health loss bar from them.
+  healthLost: number;
+  maxHealth: number;
 }
 
 export interface EncounterResult {
@@ -25,6 +29,9 @@ export interface EncounterResult {
   materials: MaterialStack[];
   // Drops that found no room. They wait at the dungeon (see GameState.pendingLoot).
   materialsWaiting: MaterialStack[];
+  // Items that dropped (a ring from a monster, for example), and the ones that found no room.
+  items: Item[];
+  itemsWaiting: Item[];
   heroes: HeroEncounterResult[];
 }
 
@@ -74,5 +81,7 @@ export interface GameState {
   jobsStarted: number;
   // Drops that did not fit in the backpack, by dungeon id. A dungeon with pending loot cannot start a run.
   pendingLoot: Record<string, MaterialStack[]>;
+  // Dropped items that did not fit in the backpack, by dungeon id. They block the dungeon like pending materials do.
+  pendingItems: Record<string, Item[]>;
   mill: MillState;
 }

@@ -35,6 +35,24 @@ const fireball: EffectArtBuilder = ({ main, light, dark }) => ({
   }),
 });
 
+// A big comet: a wide ball with a long, flickering tail. It is much larger than the small ball of the Fire Bolt.
+const greatFireball: EffectArtBuilder = ({ main, light, dark }) => ({
+  anchor: 'body',
+  framesPerSecond: 14,
+  looping: true,
+  frames: buildFrames(4, WIDTH, HEIGHT, (frame, _progress, index) => {
+    ([[1, -2], [0, 0], [1, 2]] as const).forEach(([startX, offsetY], tongue) => {
+      const length = 6 + ((index + tongue) % 3) * 2;
+      plotBlock(frame, dark, startX + length / 2, MIDDLE_Y + offsetY, length, 3);
+      plotBlock(frame, main, startX + length / 2 + 1, MIDDLE_Y + offsetY, Math.max(2, length - 2), 1);
+    });
+    plotDisc(frame, dark, MIDDLE_X + 3, MIDDLE_Y, 5);
+    plotDisc(frame, main, MIDDLE_X + 3, MIDDLE_Y, 4);
+    plotDisc(frame, light, MIDDLE_X + 4, MIDDLE_Y - 1, 2);
+    plotPixel(frame, light, 2 + index * 2, MIDDLE_Y - 4 + (index % 2) * 8);
+  }),
+});
+
 const iceShard: EffectArtBuilder = ({ main, light, dark }) => ({
   anchor: 'body',
   framesPerSecond: 10,
@@ -64,6 +82,7 @@ const arcaneMissile: EffectArtBuilder = ({ main, light, dark }) => ({
 export const PROJECTILE_ART: Readonly<Record<ProjectileArtId, EffectArtBuilder>> = {
   'arrow-glow': arrowGlow,
   fireball,
+  'great-fireball': greatFireball,
   'ice-shard': iceShard,
   'arcane-missile': arcaneMissile,
 };

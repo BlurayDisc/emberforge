@@ -8,4 +8,6 @@ export interface BackpackEntry {
   column: number;
   row: number;
   content: BackpackContent;
+  // Set while the merchant sells this entry. The entry stays in its cell until the sale ends.
+  saleJobId?: number;
 }

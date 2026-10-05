@@ -4,7 +4,7 @@ import { learnCostCopper } from '../../../src/systems/spells';
 import { ECONOMY_PRESET } from './presets';
 import { printTable } from './table';
 
-// Every class has its spells at the same levels and prices up to level 10, so the Warrior stands for all.
+// Every class has the same spell levels and prices, so the Warrior stands for all.
 function spellCostsUpTo(level: number): number {
   return spellsOfClass('warrior').filter((spell) => spell.unlockLevel <= level).reduce((sum, spell) => sum + learnCostCopper(spell), 0);
 }
@@ -36,9 +36,11 @@ export function runEconomyScenario(): void {
       itemsCrafted.toFixed(0),
       craftedCopper.toFixed(0),
       (craftedCopper - spellCostsUpTo(level)).toFixed(0),
+      craftedCopper === 0 ? '-' : `${((100 * spellCostsUpTo(level)) / craftedCopper).toFixed(0)}%`,
+      craftedCopper === 0 || (100 * spellCostsUpTo(level)) / craftedCopper <= preset.spellBudgetPercent ? 'ok' : `over ${preset.spellBudgetPercent}%`,
     ];
   });
   console.log(`\nEconomy: ${preset.description} (average of ${preset.games} games)`);
-  printTable('Copper if every loot material is sold, at the moment the hero reaches each level', ['Level', 'Dungeon fought', 'Fights (total)', 'Fights (last level)', 'Copper (total)', 'Copper (last level)', 'Copper per fight', 'Items crafted', 'Copper if crafted and sold', 'After spells'], rows);
+  printTable('Copper if every loot material is sold, at the moment the hero reaches each level', ['Level', 'Dungeon fought', 'Fights (total)', 'Fights (last level)', 'Copper (total)', 'Copper (last level)', 'Copper per fight', 'Items crafted', 'Copper if crafted and sold', 'After spells', 'Spells share', 'Check'], rows);
   console.log('Crafted: every loot material is crafted into the most profitable basic recipe the hero level allows (crafter level = hero level), and every item is sold. Leftover materials (set materials, essence) are sold as they are. Fees are paid. Quality is the average of the odds. After spells: crafted copper minus the cost of every spell up to that level for one hero.');
 }

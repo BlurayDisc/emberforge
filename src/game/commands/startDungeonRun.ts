@@ -9,7 +9,7 @@ export function startDungeonRunCommand(dungeonId: string, heroIds: readonly stri
     if (!dungeon || dungeon.townId !== state.townId) throw new CommandRejected('reject.dungeonNotInTown');
     if (!isDungeonUnlocked(state, dungeon)) throw new CommandRejected('reject.dungeonLocked');
     if (runInDungeon(state, dungeonId)) throw new CommandRejected('reject.dungeonBusy');
-    if ((state.pendingLoot[dungeonId] ?? []).length > 0) throw new CommandRejected('reject.dungeonHasPendingLoot');
+    if ((state.pendingLoot[dungeonId] ?? []).length > 0 || (state.pendingItems[dungeonId] ?? []).length > 0) throw new CommandRejected('reject.dungeonHasPendingLoot');
     if (heroIds.length === 0) throw new CommandRejected('reject.noHeroSelected');
     if (heroIds.length < dungeon.minimumPartySize) throw new CommandRejected('reject.tooFewHeroes', { min: dungeon.minimumPartySize });
     if (heroIds.length > dungeon.maxPartySize) throw new CommandRejected('reject.tooManyHeroes', { max: dungeon.maxPartySize });

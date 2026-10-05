@@ -6,6 +6,8 @@ export interface PanelContext {
   closePanel(): void;
   openPanel(panelId: string): void;
   notify(message: string): void;
+  enterSubScreen(): void;
+  leaveSubScreen(): void;
 }
 
 export type PanelRenderer = (context: PanelContext) => HTMLElement;

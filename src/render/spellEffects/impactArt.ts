@@ -1,5 +1,6 @@
 import type { ImpactArtId } from '../../content/spellVisuals';
 import { buildFrames, plotBlock, plotDiamond, plotDisc, plotLine, plotPixel, plotRing, plotStar, scatterOffset } from './drawingTools';
+import { STEEL_IMPACT_ART } from './steelImpactArt';
 import { EFFECT_CENTER, EFFECT_FRAME_SIZE, type EffectArtBuilder } from './effectArt';
 
 const SIZE = EFFECT_FRAME_SIZE;
@@ -48,6 +49,35 @@ const flameBurst: EffectArtBuilder = ({ main, light, dark }) => ({
       const angle = (tongue / 6) * Math.PI * 2;
       const distance = 5 + progress * 11;
       plotBlock(frame, tongue % 2 === 0 ? main : dark, CENTER + Math.round(Math.cos(angle) * distance), CENTER + Math.round(Math.sin(angle) * distance) - Math.round(progress * 8), Math.max(1, 4 - Math.round(progress * 3)), Math.max(2, 5 - Math.round(progress * 3)));
+    }
+  }),
+});
+
+// A big blast: a white-hot flash, a ring of fire that races outwards, and smoke that rises. It fills the frame, so it stands out from the small Flame Burst.
+const fireExplosion: EffectArtBuilder = ({ main, light, dark }) => ({
+  anchor: 'body',
+  framesPerSecond: 14,
+  looping: false,
+  frames: buildFrames(9, SIZE, SIZE, (frame, progress) => {
+    const flashRadius = progress < 0.35 ? 4 + Math.round(progress * 30) : Math.max(0, 14 - Math.round((progress - 0.35) * 22));
+    if (flashRadius > 0) {
+      plotDisc(frame, main, CENTER, CENTER, flashRadius + 3);
+      plotDisc(frame, light, CENTER, CENTER, flashRadius);
+    }
+    const ringRadius = 4 + Math.round(progress * 19);
+    plotRing(frame, dark, CENTER, CENTER, ringRadius + 1);
+    plotRing(frame, main, CENTER, CENTER, ringRadius);
+    if (progress < 0.7) plotRing(frame, light, CENTER, CENTER, Math.max(1, ringRadius - 2));
+    for (let tongue = 0; tongue < 10; tongue++) {
+      const angle = (tongue / 10) * Math.PI * 2 + 0.2;
+      const distance = ringRadius + 2 + (tongue % 3) * 2;
+      plotBlock(frame, tongue % 2 === 0 ? main : light, CENTER + Math.round(Math.cos(angle) * distance), CENTER + Math.round(Math.sin(angle) * distance), 3, 3);
+    }
+    if (progress > 0.4) {
+      for (let puff = 0; puff < 4; puff++) {
+        const offset = scatterOffset(puff, 12);
+        plotDisc(frame, dark, CENTER + offset.x, CENTER - 6 - Math.round((progress - 0.4) * 22) - puff * 2, 3 - (puff % 2));
+      }
     }
   }),
 });
@@ -180,6 +210,7 @@ export const IMPACT_ART: Readonly<Record<ImpactArtId, EffectArtBuilder>> = {
   'slash-cross': slashCross,
   'shock-ring': shockRing,
   'flame-burst': flameBurst,
+  'fire-explosion': fireExplosion,
   'ice-burst': iceBurst,
   'arcane-pop': arcanePop,
   'holy-pillar': holyPillar,
@@ -188,4 +219,5 @@ export const IMPACT_ART: Readonly<Record<ImpactArtId, EffectArtBuilder>> = {
   'fist-star': fistStar,
   'crush-burst': crushBurst,
   'heal-sparkles': healSparkles,
+  ...STEEL_IMPACT_ART,
 };
