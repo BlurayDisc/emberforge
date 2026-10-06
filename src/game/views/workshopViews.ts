@@ -84,7 +84,7 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         canAffordFee: state.copper >= recipe.feeCopper,
         usableByClassIds: classIdsThatCanUse(base),
         isUnlocked: crafterLevel >= recipe.requiredCraftLevel,
-        craftSeconds: craftSeconds(recipe.requiredCraftLevel),
+        craftSeconds: craftSeconds(recipe),
         isCrafterBusy: state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession),
         upgradeChance: upgradeStepChance(1, crafterLevel - recipe.requiredCraftLevel),
         itemLevel: recipe.itemLevel,

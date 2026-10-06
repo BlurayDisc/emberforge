@@ -13,7 +13,7 @@ import { createItemCard } from '../itemText';
 import type { PanelContext, PanelRenderer } from './panelContext';
 import { backpackEntryTitle, createBackpackEntryActions } from './backpack/backpackEntryMenu';
 import { createBackpackGrid } from './backpack/backpackGrid';
-import { renderEquipComparison } from './heroes/equipComparison';
+import { equipIntoEmptySlot, renderEquipComparison } from './heroes/equipComparison';
 
 interface SelectedPosition {
   column: number;
@@ -30,6 +30,7 @@ function openEquipPreview(context: PanelContext, heroId: string, item: Item): vo
   const hero = context.store.getState().company.find((candidate) => candidate.id === heroId);
   if (!hero) return;
   const problem = listEquipOptions(context.store.getState(), item).find((option) => option.heroId === heroId)?.problem ?? null;
+  if (equipIntoEmptySlot(context, hero, undefined, item, problem)) return;
   const area = element('div', 'chooser-compare');
   const modal = openModal(t('equip.previewTitle', { hero: heroDisplayName(hero.name) }), area);
   renderEquipComparison(context, hero, undefined, item, problem, area, () => modal.close());

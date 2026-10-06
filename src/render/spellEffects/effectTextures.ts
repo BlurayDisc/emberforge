@@ -1,5 +1,5 @@
-import type { CanvasTexture } from 'three';
-import { createPixelTexture } from '../pixelSprites';
+import type { Texture } from 'pixi.js';
+import { createPixiTexture } from '../pixiTextures';
 import { CAST_ART } from './castArt';
 import type { EffectArt, EffectArtBuilder } from './effectArt';
 import { IMPACT_ART } from './impactArt';
@@ -11,7 +11,7 @@ export type EffectPhase = 'cast' | 'projectile' | 'impact' | 'buff' | 'debuff';
 
 export interface CachedEffect {
   art: EffectArt;
-  textures: CanvasTexture[];
+  textures: Texture[];
   width: number;
   height: number;
 }
@@ -34,7 +34,7 @@ function cacheEffect(key: string, build: EffectArtBuilder, themeId: string): Cac
   const art = build(colors);
   const firstFrame = art.frames[0];
   if (!firstFrame) throw new Error(`Spell effect has no frames: ${key}`);
-  const created: CachedEffect = { art, textures: art.frames.map(createPixelTexture), width: firstFrame.width, height: firstFrame.height };
+  const created: CachedEffect = { art, textures: art.frames.map(createPixiTexture), width: firstFrame.width, height: firstFrame.height };
   cachedEffectsByKey.set(key, created);
   return created;
 }

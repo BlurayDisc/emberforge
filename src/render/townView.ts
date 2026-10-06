@@ -1,86 +1,111 @@
-import { Group, Mesh, MeshBasicMaterial, PlaneGeometry, Sprite, SpriteMaterial } from 'three';
+import { Container } from 'pixi.js';
 import type { BuildingDefinition } from '../content/buildings';
-import { drawBuildingArt } from './buildingArt';
-import { createPixelTexture } from './pixelSprites';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_SCREEN_COUNT, TOWN_WIDTH } from '../kernel/stageSize';
+import { LOGICAL_WIDTH, TOWN_WIDTH } from '../kernel/stageSize';
+import { createBystanders, type BystanderSpeech, type VisibleRange } from './bystanders';
 import type { PixelStage } from './pixelStage';
-import { createScreenScroller } from './screenScroller';
-import type { SlidingView } from './slidingView';
-import { createBystanders, depthFor, type BystanderSpeech, type VisibleRange } from './bystanders';
 import { createTownAnimals } from './townAnimals';
-import { drawTownGroundArt } from './townGroundArt';
-import { TREE_SPRITE_HEIGHT, TREE_SPRITE_WIDTH, drawTreeSprite } from './townTreeArt';
-import { TOWN_ROADS, type Point } from './townLayout';
+import { TOWN_ROADS } from './townLayout';
+import { attachTownInput } from './town/townInput';
+import { createTownInterface } from './town/townInterface';
+import { createTownAmbience } from './town/townAmbience';
+import { createTownGuide } from './town/townGuide';
+import { createTownMillStatus, type MillStatusText } from './town/townMillStatus';
+import { createTownScroll } from './town/townScroll';
+import { createTownSigns, type TownHooks } from './town/townSigns';
+import { createTownSpeechBubble } from './town/townSpeechBubble';
+import { createTownWorld } from './town/townWorld';
+import { createUiTextFactory } from './uiText';
 
-export type TownView = SlidingView;
+export type { TownHooks };
 
-function toWorldX(logicalX: number): number {
-  return logicalX - TOWN_WIDTH / 2;
+export interface TownTexts {
+  // The name of each building that has a sign, by building id.
+  buildingLabels: Readonly<Record<string, string>>;
+  // The name of each screen of the town, from the west to the east.
+  screenTitles: readonly string[];
+  hint: string | null;
 }
 
-function toWorldY(logicalY: number): number {
-  return LOGICAL_HEIGHT / 2 - logicalY;
+export interface TownView {
+  setVisible(isVisible: boolean): void;
+  setTexts(texts: TownTexts): void;
+  setMillStatus(status: MillStatusText): void;
+  // A bobbing arrow over this building, for a new player. Null hides it.
+  setGuide(buildingId: string | null): void;
 }
 
-function createBuildingSprite(building: BuildingDefinition): Sprite {
-  const art = drawBuildingArt(building.style, building.width, building.height);
-  const sprite = new Sprite(new SpriteMaterial({ map: createPixelTexture(art), transparent: true }));
-  sprite.scale.set(art.width, art.height, 1);
-  sprite.position.set(toWorldX(building.x), toWorldY(building.y) + art.height / 2, depthFor(building.y));
-  return sprite;
-}
+const START_CENTER_X = TOWN_WIDTH / 2;
 
-function createTreeSprites(treePositions: readonly Point[]): Sprite[] {
-  const material = new SpriteMaterial({ map: createPixelTexture(drawTreeSprite()), transparent: true });
-  return treePositions.map((tree) => {
-    const sprite = new Sprite(material);
-    sprite.scale.set(TREE_SPRITE_WIDTH, TREE_SPRITE_HEIGHT, 1);
-    // Same depth rule as buildings and walkers: the lower on the screen, the nearer.
-    sprite.position.set(toWorldX(tree.x), toWorldY(tree.y) + TREE_SPRITE_HEIGHT / 2, depthFor(tree.y));
-    return sprite;
-  });
-}
+export function createTownView(stage: PixelStage, buildings: readonly BuildingDefinition[], hooks: TownHooks): TownView {
+  const { pixi } = stage;
+  const root = new Container();
+  root.visible = false;
+  pixi.views.addChild(root);
 
-export function createTownView(stage: PixelStage, buildings: readonly BuildingDefinition[], onSpeech: (speech: BystanderSpeech | null) => void): TownView {
-  const root = new Group();
-  stage.scene.add(root);
+  const textFactory = createUiTextFactory(pixi.renderScale, pixi.onViewResize);
+  const scroll = createTownScroll(TOWN_WIDTH, pixi.viewWidth());
+  const world = createTownWorld(buildings);
+  root.addChild(world.container);
 
-  const groundArt = drawTownGroundArt();
-  const ground = new Mesh(
-    new PlaneGeometry(TOWN_WIDTH, LOGICAL_HEIGHT),
-    new MeshBasicMaterial({ map: createPixelTexture(groundArt.canvas) }),
-  );
-  ground.position.z = -5;
-  root.add(ground);
-  buildings.forEach((building) => root.add(createBuildingSprite(building)));
-  createTreeSprites(groundArt.treePositions).forEach((tree) => root.add(tree));
+  const input = attachTownInput(stage.frame, scroll, pixi.viewWidth, () => !root.visible || hooks.isInputBlocked());
+  const signs = createTownSigns(world.container, buildings, textFactory, hooks, input);
+  const speechBubble = createTownSpeechBubble(world.container, textFactory);
+  const mill = buildings.find((building) => building.id === 'mill');
+  const millStatus = mill ? createTownMillStatus(world.container, mill, textFactory, input, hooks.collectMill) : null;
+  const townInterface = createTownInterface(textFactory, scroll, input, pixi.viewWidth, LOGICAL_WIDTH);
+  root.addChild(townInterface.root);
 
-  const scroller = createScreenScroller(LOGICAL_WIDTH, TOWN_SCREEN_COUNT, 1);
-  scroller.onScroll((scrollLeft) => stage.setCameraX(scrollLeft + LOGICAL_WIDTH / 2 - TOWN_WIDTH / 2));
-  const visibleRange = (): VisibleRange => ({ from: scroller.scrollLeft(), to: scroller.scrollLeft() + LOGICAL_WIDTH });
+  const visibleRange = (): VisibleRange => ({ from: scroll.scrollLeft(), to: scroll.scrollLeft() + pixi.viewWidth() });
+  const showSpeech = (speech: BystanderSpeech | null): void => {
+    if (speech === null) speechBubble.hide();
+    else speechBubble.show(speech, hooks.pickSpeechText());
+  };
+  const bystanders = createBystanders(world.container, TOWN_ROADS, 5, showSpeech, visibleRange);
+  const animals = createTownAnimals(world.container, TOWN_ROADS, 5);
+  const ambience = createTownAmbience(world.container, buildings, world.buildingSprites);
+  const guide = createTownGuide(world.container, buildings);
+
+  let hasBeenShown = false;
   let previousSeconds: number | null = null;
+  pixi.onViewResize(() => {
+    scroll.setViewWidth(pixi.viewWidth());
+    townInterface.layout();
+  });
 
-  const bystanders = createBystanders(root, TOWN_ROADS, 5, onSpeech, visibleRange);
-  const animals = createTownAnimals(root, TOWN_ROADS, 5);
   stage.onFrame((elapsedSeconds) => {
     if (!root.visible) return;
     const deltaSeconds = previousSeconds === null ? 0 : Math.min(0.1, elapsedSeconds - previousSeconds);
     previousSeconds = elapsedSeconds;
-    scroller.advance(deltaSeconds);
+    scroll.advance(deltaSeconds);
+    world.container.position.x = -scroll.scrollLeft();
     bystanders.update(elapsedSeconds);
     animals.update(elapsedSeconds);
+    ambience.update(elapsedSeconds, deltaSeconds);
+    guide.update(elapsedSeconds);
+    townInterface.update(elapsedSeconds);
   });
 
   return {
     setVisible: (isVisible) => {
       root.visible = isVisible;
       previousSeconds = null;
-      // Battle scenes are drawn around x = 0, so the camera goes back there when the town hides.
-      if (isVisible) scroller.announce();
-      else stage.setCameraX(0);
+      if (!isVisible) {
+        speechBubble.hide();
+        return;
+      }
+      stage.setLayout('fill');
+      scroll.setViewWidth(pixi.viewWidth());
+      // The first time, the town opens with the castle gate in the middle.
+      if (!hasBeenShown) scroll.jumpTo(START_CENTER_X - pixi.viewWidth() / 2);
+      hasBeenShown = true;
+      townInterface.layout();
     },
-    goToScreen: scroller.goToScreen,
-    currentScreen: scroller.currentScreen,
-    onScroll: scroller.onScroll,
+    setTexts: (texts) => {
+      signs.setLabels(texts.buildingLabels);
+      townInterface.setTexts(texts.screenTitles, texts.hint);
+    },
+    setMillStatus: (status) => millStatus?.set(status),
+    setGuide: guide.setTarget,
   };
 }
+

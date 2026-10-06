@@ -1,4 +1,5 @@
 import { addHeroOutline, createHeroCanvas } from '../heroCanvas';
+import { paintArcherCloak, paintArcherHood } from '../headgear/archerCloak';
 import { paintElfHead, paintElfPonytail } from '../headgear/archerHead';
 import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
 import { createSpritePainter, type SpritePainter } from '../spritePainter';
@@ -26,17 +27,17 @@ function paintLegs(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(colors.skinShade, 13, 24, 1, 6);
   painter.line(colors.skin, 16, 24, 18, 30, 3);
   painter.line(colors.skinShade, 18, 24, 20, 30);
-  painter.rect(MATERIAL.leather, 11, 29, 3, 7);
-  painter.rect(MATERIAL.leatherLight, 11, 29, 3, 1);
+  painter.rect(colors.clothShade, 11, 29, 3, 7);
+  painter.rect(colors.cloth, 11, 29, 3, 1);
   painter.rect(colors.trim, 11, 30, 3, 1);
-  painter.rect(darken(MATERIAL.leather, 0.7), 13, 31, 1, 5);
-  painter.line(MATERIAL.leather, 18, 30, 19, 35, 3);
-  painter.rect(MATERIAL.leatherLight, 17, 29, 3, 1);
+  painter.rect(darken(colors.clothShade, 0.7), 13, 31, 1, 5);
+  painter.line(colors.clothShade, 18, 30, 19, 35, 3);
+  painter.rect(colors.cloth, 17, 29, 3, 1);
   painter.rect(colors.trim, 17, 30, 3, 1);
-  painter.rect(MATERIAL.boot, 8, 36, 6, 2);
-  painter.rect(MATERIAL.boot, 17, 36, 7, 2);
-  painter.rect(MATERIAL.leatherLight, 8, 36, 6, 1);
-  painter.rect(MATERIAL.leatherLight, 17, 36, 7, 1);
+  painter.rect(darken(colors.clothShade, 0.7), 8, 36, 6, 2);
+  painter.rect(darken(colors.clothShade, 0.7), 17, 36, 7, 2);
+  painter.rect(colors.cloth, 8, 36, 6, 1);
+  painter.rect(colors.cloth, 17, 36, 7, 1);
 }
 
 function paintOutfit(painter: SpritePainter, colors: HeroColors): void {
@@ -63,18 +64,18 @@ function paintOutfit(painter: SpritePainter, colors: HeroColors): void {
   painter.span(colors.clothShade, CENTER_X - 4, CENTER_X + 4, 22);
 }
 
-function paintBowAndArrow(painter: SpritePainter): void {
+function paintBowAndArrow(painter: SpritePainter, colors: HeroColors): void {
   const bowX = (row: number): number => BOW_GRIP_X - Math.round((Math.abs(row - ARROW_Y) / 10) ** 2 * 4);
   for (let row = BOW_TOP_Y; row <= BOW_BOTTOM_Y; row++) {
-    painter.dot(MATERIAL.wood, bowX(row), row);
-    painter.dot(MATERIAL.woodDark, bowX(row) + 1, row);
+    painter.dot(colors.trim, bowX(row), row);
+    painter.dot(colors.clothShade, bowX(row) + 1, row);
   }
-  painter.rect(MATERIAL.leather, BOW_GRIP_X - 1, ARROW_Y - 2, 3, 5);
+  painter.rect(colors.cloth, BOW_GRIP_X - 1, ARROW_Y - 2, 3, 5);
   painter.line(BOW_STRING, bowX(BOW_TOP_Y), BOW_TOP_Y, STRING_HAND_X, ARROW_Y);
   painter.line(BOW_STRING, bowX(BOW_BOTTOM_Y), BOW_BOTTOM_Y, STRING_HAND_X, ARROW_Y);
   painter.rect(ARROW_SHAFT, STRING_HAND_X, ARROW_Y, 15, 1);
-  painter.rect(MATERIAL.red, STRING_HAND_X, ARROW_Y - 1, 2, 1);
-  painter.rect(MATERIAL.red, STRING_HAND_X, ARROW_Y + 1, 2, 1);
+  painter.rect(colors.trim, STRING_HAND_X, ARROW_Y - 1, 2, 1);
+  painter.rect(colors.trim, STRING_HAND_X, ARROW_Y + 1, 2, 1);
   painter.rect('#e8eef4', BOW_GRIP_X + 3, ARROW_Y, 3, 1);
   painter.dot('#e8eef4', BOW_GRIP_X + 3, ARROW_Y - 1);
 }
@@ -93,12 +94,14 @@ function paintArms(painter: SpritePainter, colors: HeroColors): void {
 export function drawArcherSprite(colors: HeroColors): HTMLCanvasElement {
   const art = createHeroCanvas(ARCHER_SPRITE_SIZE.width, ARCHER_SPRITE_SIZE.height);
   const painter = createSpritePainter(art, OUTLINE_MARGIN, OUTLINE_MARGIN);
+  paintArcherCloak(painter, colors, { centerX: CENTER_X, shoulderY: 12, hemY: 33, shoulderHalfWidth: 5, hemHalfWidth: 7, hemSway: 3 });
+  paintArcherHood(painter, colors, CENTER_X, 1, 11);
   paintHair(painter, colors);
   paintLegs(painter, colors);
   paintOutfit(painter, colors);
   paintElfHead(painter, colors, CENTER_X, 1);
   paintArms(painter, colors);
-  paintBowAndArrow(painter);
+  paintBowAndArrow(painter, colors);
   painter.rect(lighten(colors.cloth), CENTER_X - 4, 12, 9, 1);
   addHeroOutline(art);
   return art.canvas;

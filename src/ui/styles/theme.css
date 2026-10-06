@@ -44,6 +44,8 @@
   --upgrade-7: #ff5a5a;
   --outline-4: 0 -4px 0 0 var(--ink), 0 4px 0 0 var(--ink), -4px 0 0 0 var(--ink), 4px 0 0 0 var(--ink);
   --outline-2: 0 -2px 0 0 var(--ink), 0 2px 0 0 var(--ink), -2px 0 0 0 var(--ink), 2px 0 0 0 var(--ink);
+  --raised-shadow: var(--outline-2), inset 3px 3px 0 var(--wood-500), inset -3px -3px 0 var(--wood-800), 0 4px 0 2px var(--ink);
+  --raised-selected-shadow: var(--outline-2), 0 0 0 4px var(--gold), inset 3px 3px 0 var(--gold), inset -3px -3px 0 var(--gold-dark), 0 6px 0 4px var(--ink);
   --checker: linear-gradient(45deg, rgba(0, 0, 0, 0.14) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.14) 75%);
   --font-cjk: 'Fusion Pixel 12px Proportional SC';
   --font-body: 'Pixelify Sans', var(--font-cjk), ui-monospace, monospace;
@@ -147,8 +149,7 @@ html:lang(en) .result-title {
 
 /* Touch: no double-tap zoom delay, no grey tap flash, and a scrolled list does not pull the page to refresh. */
 button,
-.list-row,
-.hero-chip {
+.list-row {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }

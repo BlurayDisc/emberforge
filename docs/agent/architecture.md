@@ -10,8 +10,8 @@ Many small directories. Each game system is independent. `tools/check-boundaries
 | `src/systems/<name>/` | Pure game logic. One system per directory. | kernel, model, content |
 | `src/game/` | Player commands, state store, autosave, storage. The only layer that joins systems. | all except render, ui |
 | `src/heroArt/` | Pixel art of the 7 hero classes, drawn in code: battle sprites (`battle/`) and full-body portraits (`portrait/`). Shared painter, palette and heads. No game state. | kernel, model, content |
-| `src/render/` | three.js stage. Reads state. Never changes it. | kernel, model, content, heroArt |
-| `src/audio/` | Browser sound: synthesized effects and music. No sound files. | kernel, model, content |
+| `src/render/` | Pixi.js town, battle and castle stages. Reads state. Never changes it. | kernel, model, content, heroArt |
+| `src/audio/` | Browser sound (Tone.js): synthesized effects and music. No sound files. | kernel, model, content |
 | `src/ui/` | DOM screens. Sends commands to `game/`. | kernel, model, content, game, audio, heroArt |
 | `src/app/` | Composition root: joins `game`, `render`, `ui` and `audio` (for example battle playback, which runs every active run). | kernel, model, content, game, render, ui, audio, heroArt |
 | `data/` | **Game data as JSON** (classes, materials, monsters, dungeons, towns, buildings, base items, affixes, balance numbers). No code. A wiki tool can scan it. | - |
@@ -21,7 +21,7 @@ Rules:
 
 1. A system never imports another system. If two systems need to work together, `game/` does it.
 2. Other layers import a system only through its `index.ts`.
-3. Only `render/` imports `three`.
+3. Only `render/` imports `pixi.js`. The town, the battle and the castle are Pixi.js views. `render/pixelStage.ts` owns the one Pixi canvas, and each view is a container in `stage.pixi.views`.
 4. Systems are pure: state in, new state out. No DOM. No `Math.random()`. No `Date.now()`. Time and random come in as arguments.
 5. Game state is plain JSON (no classes, Map, Set or functions). A save is `JSON.stringify(state)`.
 6. Never mutate state in place. Return a new object.

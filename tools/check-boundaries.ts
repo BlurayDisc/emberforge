@@ -26,7 +26,7 @@ const forbiddenInsideSystems = [
 ];
 
 const relativeImportPattern = /(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]*)['"]/g;
-const threeImportPattern = /from\s+['"]three(?:\/[^'"]*)?['"]/;
+const renderEngineImportPattern = /from\s+['"]pixi\.js(?:\/[^'"]*)?['"]/;
 
 interface Location {
   layer: string | undefined;
@@ -62,8 +62,8 @@ function findViolations(file: string): string[] {
   const from = locate(file);
   const violations: string[] = [];
 
-  if (from.layer !== 'render' && threeImportPattern.test(source)) {
-    violations.push('only render/ may import three');
+  if (from.layer !== 'render' && renderEngineImportPattern.test(source)) {
+    violations.push('only render/ may import pixi.js');
   }
 
   if (from.layer === 'systems') {

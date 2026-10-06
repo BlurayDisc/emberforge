@@ -1,20 +1,12 @@
-import { CanvasTexture, NearestFilter, SRGBColorSpace, Sprite, SpriteMaterial } from 'three';
+import { Sprite, type Texture } from 'pixi.js';
 import type { BattleUnit } from '../model/battle';
 import type { ClassId } from '../model/hero';
-import { CREATURE_DRAWERS } from './creatureArt';
 import { drawHeroSprite } from '../heroArt/battleSprite';
+import { CREATURE_DRAWERS } from './creatureArt';
+import { createPixiTexture } from './pixiTextures';
 
 const canvasBySpriteId = new Map<string, HTMLCanvasElement>();
-const textureBySpriteId = new Map<string, CanvasTexture>();
-
-export function createPixelTexture(source: HTMLCanvasElement): CanvasTexture {
-  const texture = new CanvasTexture(source);
-  texture.magFilter = NearestFilter;
-  texture.minFilter = NearestFilter;
-  texture.generateMipmaps = false;
-  texture.colorSpace = SRGBColorSpace;
-  return texture;
-}
+const textureBySpriteId = new Map<string, Texture>();
 
 function spriteIdOf(unit: BattleUnit): string {
   return unit.rank === 'hero' ? `hero:${unit.definitionId}:${unit.name}` : unit.spriteKey;
@@ -31,20 +23,12 @@ function canvasForUnit(unit: BattleUnit): HTMLCanvasElement {
   return canvas;
 }
 
-export function spriteSizeOf(unit: BattleUnit): { width: number; height: number } {
-  const canvas = canvasForUnit(unit);
-  return { width: canvas.width, height: canvas.height };
-}
-
 export function createBattleSprite(unit: BattleUnit): Sprite {
   const spriteId = spriteIdOf(unit);
   let texture = textureBySpriteId.get(spriteId);
   if (!texture) {
-    texture = createPixelTexture(canvasForUnit(unit));
+    texture = createPixiTexture(canvasForUnit(unit));
     textureBySpriteId.set(spriteId, texture);
   }
-  const { width, height } = spriteSizeOf(unit);
-  const sprite = new Sprite(new SpriteMaterial({ map: texture, transparent: true }));
-  sprite.scale.set(width, height, 1);
-  return sprite;
+  return new Sprite(texture);
 }

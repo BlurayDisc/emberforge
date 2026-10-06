@@ -1,72 +1,148 @@
-import { Color, OrthographicCamera, Scene, WebGLRenderer } from 'three';
+import { Application, Container } from 'pixi.js';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
 import { PALETTE } from './palette';
 
 export { LOGICAL_HEIGHT, LOGICAL_WIDTH };
 
+// fixed: a 480x270 picture with a frame, as the battle and the castle need. fill: the picture fills the whole stage area, and
+// the width of the view follows the shape of the screen. The town uses fill, so it works on a phone and on a wide window.
+export type StageLayout = 'fixed' | 'fill';
+
+export interface PixiLayer {
+  // The Pixi views (town, battle, castle) are children of this container.
+  readonly views: Container;
+  // Drawn over every view, in screen space. The gold and the clock live here.
+  readonly hud: Container;
+  setLayout(layout: StageLayout): void;
+  // The width of the view in logical pixels. The height is always LOGICAL_HEIGHT.
+  viewWidth(): number;
+  // Screen pixels for one logical pixel. Text is drawn at this scale, so it stays sharp.
+  renderScale(): number;
+  onViewResize(listener: () => void): void;
+}
+
 export interface PixelStage {
-  readonly scene: Scene;
+  readonly pixi: PixiLayer;
   readonly overlay: HTMLElement;
-  // Moves the camera along x, in scene pixels. The town scrolls with it. Battle scenes keep it at 0.
-  setCameraX(sceneX: number): void;
+  // The box that holds the canvases. Pointer events from the picture reach it.
+  readonly frame: HTMLElement;
+  setLayout(layout: StageLayout): void;
   onFrame(update: (elapsedSeconds: number) => void): void;
 }
 
 // The frame outline is a box-shadow outside the frame. This margin keeps it from being cut by the container.
 const FRAME_OUTLINE_MARGIN_PIXELS = 8;
+// A very tall phone shows at least this much of the town. A very wide window stops growing at the maximum.
+const MINIMUM_FILL_VIEW_WIDTH = 170;
+const MAXIMUM_FILL_VIEW_WIDTH = 640;
 
-// The stage grows to fill the window, so the scale is not always a whole number. The canvas is
-// still drawn at 480x270 and scaled with nearest-neighbour, so pixels stay hard-edged.
-function fitFrameToContainer(frame: HTMLElement, container: HTMLElement): void {
+interface ViewGeometry {
+  viewWidth: number;
+  scale: number;
+  frameWidth: number;
+  frameHeight: number;
+}
+
+// The stage grows to fill the window, so the scale is not always a whole number. Pixels are scaled with nearest-neighbour, so they stay hard-edged.
+function fixedGeometry(container: HTMLElement): ViewGeometry {
   const availableWidth = container.clientWidth - 2 * FRAME_OUTLINE_MARGIN_PIXELS;
   const availableHeight = container.clientHeight - 2 * FRAME_OUTLINE_MARGIN_PIXELS;
-  const fittingScale = Math.max(1, Math.min(availableWidth / LOGICAL_WIDTH, availableHeight / LOGICAL_HEIGHT));
-  frame.style.width = `${Math.floor(LOGICAL_WIDTH * fittingScale)}px`;
-  frame.style.height = `${Math.floor(LOGICAL_HEIGHT * fittingScale)}px`;
-  frame.style.setProperty('--stage-scale', fittingScale.toFixed(3));
+  const scale = Math.max(1, Math.min(availableWidth / LOGICAL_WIDTH, availableHeight / LOGICAL_HEIGHT));
+  return { viewWidth: LOGICAL_WIDTH, scale, frameWidth: Math.floor(LOGICAL_WIDTH * scale), frameHeight: Math.floor(LOGICAL_HEIGHT * scale) };
+}
+
+// The height fits the area. The width shows as much of the world as the shape of the screen allows, within the limits.
+function fillGeometry(container: HTMLElement): ViewGeometry {
+  const width = Math.max(1, container.clientWidth);
+  const height = Math.max(1, container.clientHeight);
+  let scale = height / LOGICAL_HEIGHT;
+  let viewWidth = Math.round(width / scale);
+  if (viewWidth < MINIMUM_FILL_VIEW_WIDTH) {
+    viewWidth = MINIMUM_FILL_VIEW_WIDTH;
+    scale = width / viewWidth;
+  } else if (viewWidth > MAXIMUM_FILL_VIEW_WIDTH) {
+    viewWidth = MAXIMUM_FILL_VIEW_WIDTH;
+  }
+  return { viewWidth, scale, frameWidth: Math.floor(viewWidth * scale), frameHeight: Math.floor(LOGICAL_HEIGHT * scale) };
 }
 
 export function createPixelStage(container: HTMLElement): PixelStage {
-  const renderer = new WebGLRenderer({ antialias: false });
-  renderer.setPixelRatio(1);
-  renderer.setSize(LOGICAL_WIDTH, LOGICAL_HEIGHT, false);
-
   const overlay = document.createElement('div');
   overlay.className = 'stage-overlay';
   const frame = document.createElement('div');
   frame.className = 'stage-frame';
-  frame.append(renderer.domElement, overlay);
+  frame.append(overlay);
   container.appendChild(frame);
-  fitFrameToContainer(frame, container);
-  new ResizeObserver(() => fitFrameToContainer(frame, container)).observe(container);
 
-  const scene = new Scene();
-  scene.background = new Color(PALETTE.night);
-  const camera = new OrthographicCamera(
-    -LOGICAL_WIDTH / 2,
-    LOGICAL_WIDTH / 2,
-    LOGICAL_HEIGHT / 2,
-    -LOGICAL_HEIGHT / 2,
-    -10,
-    10,
-  );
+  const pixiApplication = new Application();
+  const pixiViews = new Container();
+  pixiViews.sortableChildren = true;
+  const pixiHud = new Container();
+  let isPixiReady = false;
+  let layout: StageLayout = 'fixed';
+  let geometry: ViewGeometry = fixedGeometry(container);
+  const viewResizeListeners: Array<() => void> = [];
+
+  const applyLayout = (): void => {
+    const previousViewWidth = geometry.viewWidth;
+    geometry = layout === 'fill' ? fillGeometry(container) : fixedGeometry(container);
+    frame.style.width = `${geometry.frameWidth}px`;
+    frame.style.height = `${geometry.frameHeight}px`;
+    frame.style.setProperty('--stage-scale', geometry.scale.toFixed(3));
+    frame.classList.toggle('stage-frame-fill', layout === 'fill');
+    if (isPixiReady) {
+      pixiApplication.renderer.resize(geometry.viewWidth, LOGICAL_HEIGHT, geometry.scale * window.devicePixelRatio);
+      pixiApplication.canvas.style.width = '100%';
+      pixiApplication.canvas.style.height = '100%';
+    }
+    if (geometry.viewWidth !== previousViewWidth || isPixiReady) viewResizeListeners.forEach((listener) => listener());
+  };
+  applyLayout();
+  new ResizeObserver(applyLayout).observe(container);
+
+  // Pixi starts asynchronously. The stage shows its background colour until it is ready.
+  pixiApplication
+    .init({ width: geometry.viewWidth, height: LOGICAL_HEIGHT, antialias: false, resolution: geometry.scale * window.devicePixelRatio, autoDensity: false, roundPixels: true, background: PALETTE.night, autoStart: false, preference: 'webgl' })
+    .then(() => {
+      pixiApplication.ticker.stop();
+      pixiApplication.canvas.className = 'stage-pixi-canvas';
+      frame.insertBefore(pixiApplication.canvas, overlay);
+      pixiApplication.stage.addChild(pixiViews, pixiHud);
+      isPixiReady = true;
+      applyLayout();
+    })
+    .catch((error: unknown) => console.error('Pixi.js could not start', error));
 
   const frameListeners: Array<(elapsedSeconds: number) => void> = [];
   // requestAnimationFrame stops in a hidden browser tab, so the game pauses there.
   const renderFrame = (timestampMilliseconds: number): void => {
     const elapsedSeconds = timestampMilliseconds / 1000;
     frameListeners.forEach((listener) => listener(elapsedSeconds));
-    renderer.render(scene, camera);
+    if (isPixiReady) pixiApplication.render();
     requestAnimationFrame(renderFrame);
   };
   requestAnimationFrame(renderFrame);
 
+  const setLayout = (newLayout: StageLayout): void => {
+    if (newLayout === layout) return;
+    layout = newLayout;
+    applyLayout();
+  };
+
   return {
-    scene,
-    overlay,
-    setCameraX: (sceneX) => {
-      camera.position.x = Math.round(sceneX);
+    pixi: {
+      views: pixiViews,
+      hud: pixiHud,
+      setLayout,
+      viewWidth: () => geometry.viewWidth,
+      renderScale: () => geometry.scale * window.devicePixelRatio,
+      onViewResize: (listener) => {
+        viewResizeListeners.push(listener);
+      },
     },
+    overlay,
+    frame,
+    setLayout,
     onFrame: (update) => {
       frameListeners.push(update);
     },

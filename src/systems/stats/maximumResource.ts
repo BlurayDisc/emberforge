@@ -8,5 +8,5 @@ export function startingResourceOf(resourceId: ResourceId, maxResource: number):
 
 export function maximumResourceOf(resourceId: ResourceId, stats: StatBlock, level: number): number {
   const rules = RESOURCE_RULES[resourceId];
-  return rules.maximumBase + rules.maximumPerLevel * level + rules.maximumPerAttributePoint * stats[rules.attribute];
+  return Math.round(rules.maximumBase + rules.maximumPerLevel * level + rules.maximumPerAttributePoint * stats[rules.attribute]);
 }

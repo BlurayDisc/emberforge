@@ -1,7 +1,7 @@
 # Pixel-art rules
 
 - Logical resolution 480×270. The stage scales to fill the window, so the scale can be a fraction. `image-rendering: pixelated` keeps the pixels hard-edged.
-- Textures use `NearestFilter`, no mipmaps. The renderer has antialiasing off.
+- Textures use nearest-neighbour scaling (`scaleMode = 'nearest'` in Pixi.js), no mipmaps. The renderer has antialiasing off. Pixi.js runs with `roundPixels`.
 - Put sprites and the camera on whole-pixel positions. No sub-pixel movement.
 - Use colors from `render/palette.ts` (stage) and `ui/styles/theme.css` (menus) only. Add a color there first.
 - Keep one pixel scale on the stage. Heroes are drawn in code in `src/heroArt/` (battle sprite: `battle/<class>Art.ts`, full-body portrait: `portrait/<class>Figure.ts`, shared head and palette files next to them). Each class has its own silhouette and pose. Change a class in both files so the sprite and the portrait match. Monsters are in `render/creatureArt.ts`, backdrops in `render/battleBackdrops.ts`, the town in `render/townGroundArt.ts` and `render/buildingArt.ts`. Menu pictures are in `ui/iconArt.ts` and `ui/portraitArt.ts`. The full-body portrait frame (backdrop and border) is in `ui/fullBody/`.

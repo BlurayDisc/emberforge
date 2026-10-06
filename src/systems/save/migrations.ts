@@ -1,6 +1,7 @@
 import type { Hero } from '../../model/hero';
 import { migrateMill } from './migrateMill';
 import { migrateMillUpgrades } from './migrateMillUpgrades';
+import { migrateLevelBefore } from './migrateLevelBefore';
 import { migrateExperienceBars } from './migrateExperienceBars';
 import { migrateBackpackGrid } from './migrateBackpackGrid';
 import { migrateWaitingLoot } from './migrateWaitingLoot';
@@ -110,5 +111,10 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
     // Version 23: a hero result holds the health the hero had when the fight began.
     fromVersion: 22,
     migrate: migrateHealthBefore,
+  },
+  {
+    // Version 24: a hero result holds the level before the fight.
+    fromVersion: 23,
+    migrate: migrateLevelBefore,
   },
 ];

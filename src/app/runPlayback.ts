@@ -2,20 +2,21 @@ import { playMusic, playSound } from '../audio';
 import { LOG_TURN_SECONDS } from '../content/balance/battle';
 import { ARMOUR_HIT_SOUNDS, CLASS_ATTACK_SOUNDS, MONSTER_ATTACK_SOUNDS, MONSTER_HURT_SOUNDS } from '../content/audio';
 import { CLASSES } from '../content/classes';
-import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
 import { completeRunCommand, describeSpellEvent, experienceForDefeatedMonsters, findActiveRun, planNextEncounter, type GameStore, type SpellPresentation } from '../game';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { ClassId } from '../model/hero';
 import type { BattleView } from '../render/battleView';
 import type { PixelStage } from '../render/pixelStage';
-import type { TownView } from '../render/townView';
+import type { SceneToggle } from '../render/slidingView';
 import type { LogEntry, LogUnit } from '../ui/battleLogLines';
 import type { ArmourWeight } from '../model/item';
 import { listOf, resourceName, unitDisplayName } from '../ui/displayNames';
 import { t } from '../ui/i18n';
 import { spellName as spellNameOf } from '../ui/spellText';
+import { isInCastle, onCastleVisitChange } from '../ui/castleVisit';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
+import { chooseMusicTrack } from './sceneMusic';
 import { playSpellSounds } from './spellSounds';
 import { forgetRunProgress, publishRunProgress } from '../ui/runProgress';
 import type { RunHud } from '../ui/runHud';
@@ -25,7 +26,7 @@ const PAUSE_AFTER_FIGHT_SECONDS = 1.5;
 
 export interface SceneViews {
   battleView: BattleView;
-  townView: TownView;
+  townView: SceneToggle;
 }
 
 interface EncounterPlayback {
@@ -197,19 +198,24 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     if (focusedRunNumber() === player.runNumber) presentEncounter(player);
   };
 
+  const updateMusic = (): void => {
+    const watchedPlayer = players.get(focusedRunNumber() ?? -1);
+    const oldestPlayer = players.get(Math.min(...players.keys()));
+    playMusic(chooseMusicTrack(watchedPlayer?.dungeonId ?? null, oldestPlayer?.dungeonId ?? null, isInCastle()));
+  };
+
   const synchronizeScene = (): void => {
     const focused = focusedRunNumber();
     const player = focused === null ? undefined : players.get(focused);
+    updateMusic();
     if (!player) {
       townView.setVisible(true);
       view.setVisible(false);
       displayedRunNumber = null;
-      playMusic('town');
       return;
     }
     townView.setVisible(false);
     view.setVisible(true);
-    playMusic(DUNGEONS.find((dungeon) => dungeon.id === player.dungeonId)?.bossMonsterId ? 'boss' : 'battle');
     if (displayedRunNumber !== player.runNumber) presentEncounter(player);
   };
 
@@ -271,6 +277,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
 
   store.subscribe(reconcilePlayers);
   onRunFocusChange(synchronizeScene);
+  onCastleVisitChange(updateMusic);
   reconcilePlayers();
   hasLoaded = true;
 }

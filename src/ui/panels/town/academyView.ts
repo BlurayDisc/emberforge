@@ -1,4 +1,5 @@
 import { LEVEL_CAP } from '../../../content/balance/progression';
+import { rankOf } from '../../../content/spells';
 import { learnSpellCommand, listSpellOffers, type SpellOffer } from '../../../game';
 import type { Hero } from '../../../model/hero';
 import { actionButton, element } from '../../dom';
@@ -28,7 +29,7 @@ function renderOffer(context: PanelContext, hero: Hero, offer: SpellOffer): HTML
   const { spell } = offer;
   const canLearn = !offer.isLearned && offer.problem === null && offer.isAffordable;
   return createListRow({
-    art: element('div', 'spell-art', createSpellIcon(spell.id, 3), element('div', `spell-badge${spell.isUltimate ? ' ultimate' : ''}`, t('spell.levelBadge', { level: spell.unlockLevel }))),
+    art: element('div', 'spell-art', createSpellIcon(spell.id, 3), element('div', `spell-badge${spell.isUltimate ? ' ultimate' : ''}`, t('spell.levelBadge', { level: rankOf(spell) }))),
     title: spell.isUltimate ? `${spellName(spell.id)} (${t('spell.ultimate')})` : spellName(spell.id),
     lines: [
       element('div', 'card-text small', describeSpell(spell)),
@@ -59,7 +60,7 @@ export const renderAcademyPanel: PanelRenderer = (context) => {
   const body = element('div', 'panel-body');
   const selectedHero = state.company.find((hero) => hero.id === selectedHeroId) ?? state.company[0];
   if (!selectedHero) {
-    body.append(element('p', 'hint', t('academy.noHeroes')), actionButton(t('academy.leave'), context.closePanel));
+    body.append(element('p', 'hint', t('academy.noHeroes')), element('div', 'panel-footer', actionButton(t('academy.leave'), context.closePanel)));
     return body;
   }
   selectedHeroId = selectedHero.id;
@@ -84,7 +85,7 @@ export const renderAcademyPanel: PanelRenderer = (context) => {
     ),
     createList(...offers.filter((offer) => offer.isInReach).map((offer) => renderOffer(context, selectedHero, offer))),
     nextHiddenLevel === Infinity ? element('span', '') : element('p', 'hint', t('academy.nextSpellAt', { level: nextHiddenLevel })),
-    actionButton(t('academy.leave'), context.closePanel),
+    element('div', 'panel-footer', actionButton(t('academy.leave'), context.closePanel)),
   );
   return body;
 };

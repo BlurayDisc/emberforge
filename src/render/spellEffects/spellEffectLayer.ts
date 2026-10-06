@@ -1,7 +1,7 @@
-import { Group, Sprite, SpriteMaterial } from 'three';
+import { Sprite, type Container } from 'pixi.js';
+import { BATTLE_Z } from '../battleLayers';
 import type { CachedEffect } from './effectTextures';
 
-const EFFECT_Z = 2.6;
 const FADE_OUT_SECONDS = 0.4;
 const ABOVE_HEAD_GAP = 14;
 const FEET_LIFT = 2;
@@ -51,10 +51,10 @@ interface WaitingAction {
 
 function centreOnAnchor(anchor: UnitAnchor, cached: CachedEffect): PixelPoint {
   switch (cached.art.anchor) {
-    case 'feet': return { x: anchor.x, y: anchor.feetY + FEET_LIFT };
-    case 'above': return { x: anchor.x, y: anchor.feetY + anchor.height + ABOVE_HEAD_GAP };
-    case 'column': return { x: anchor.x, y: anchor.feetY + cached.height / 2 - FEET_LIFT };
-    case 'body': return { x: anchor.x, y: anchor.feetY + anchor.height * BODY_HEIGHT_FRACTION };
+    case 'feet': return { x: anchor.x, y: anchor.feetY - FEET_LIFT };
+    case 'above': return { x: anchor.x, y: anchor.feetY - anchor.height - ABOVE_HEAD_GAP };
+    case 'column': return { x: anchor.x, y: anchor.feetY - cached.height / 2 + FEET_LIFT };
+    case 'body': return { x: anchor.x, y: anchor.feetY - anchor.height * BODY_HEIGHT_FRACTION };
   }
 }
 
@@ -70,25 +70,31 @@ export interface SpellEffectLayer {
   clear(): void;
 }
 
-export function createSpellEffectLayer(root: Group): SpellEffectLayer {
+function createEffectSprite(cached: CachedEffect, mirror: number): Sprite {
+  const sprite = new Sprite(cached.textures[0]);
+  sprite.anchor.set(0.5);
+  sprite.scale.set(mirror, 1);
+  sprite.zIndex = BATTLE_Z.effect;
+  return sprite;
+}
+
+export function createSpellEffectLayer(root: Container): SpellEffectLayer {
   const activeEffects: ActiveEffect[] = [];
   const flights: Flight[] = [];
   const waitingActions: WaitingAction[] = [];
   let nowSeconds = 0;
 
   const remove = (effect: ActiveEffect): void => {
-    effect.sprite.material.dispose();
-    root.remove(effect.sprite);
+    effect.sprite.destroy();
   };
 
   const place = (effect: ActiveEffect, point: PixelPoint): void => {
-    effect.sprite.position.set(Math.round(point.x), Math.round(point.y), EFFECT_Z);
+    effect.sprite.position.set(Math.round(point.x), Math.round(point.y));
   };
 
   const add = (cached: CachedEffect, mirror: number, lifeSeconds: number, anchorOf: () => UnitAnchor | undefined, key: string | null): ActiveEffect => {
-    const sprite = new Sprite(new SpriteMaterial({ map: cached.textures[0] ?? null, transparent: true }));
-    sprite.scale.set(cached.width * mirror, cached.height, 1);
-    root.add(sprite);
+    const sprite = createEffectSprite(cached, mirror);
+    root.addChild(sprite);
     const effect: ActiveEffect = { sprite, cached, bornSeconds: nowSeconds, lifeSeconds, anchorOf, mirror, key };
     activeEffects.push(effect);
     return effect;
@@ -114,10 +120,9 @@ export function createSpellEffectLayer(root: Group): SpellEffectLayer {
       place(effect, point);
     },
     launchProjectile: (cached, trailSpark, from, to, mirror, onArrive) => {
-      const sprite = new Sprite(new SpriteMaterial({ map: cached.textures[0] ?? null, transparent: true }));
-      sprite.scale.set(cached.width * mirror, cached.height, 1);
-      sprite.position.set(Math.round(from.x), Math.round(from.y), EFFECT_Z);
-      root.add(sprite);
+      const sprite = createEffectSprite(cached, mirror);
+      sprite.position.set(Math.round(from.x), Math.round(from.y));
+      root.addChild(sprite);
       const flightSeconds = Math.max(MINIMUM_FLIGHT_SECONDS, Math.hypot(to.x - from.x, to.y - from.y) / FLIGHT_PIXELS_PER_SECOND);
       flights.push({ sprite, cached, trailSpark, from, to, bornSeconds: nowSeconds, flightSeconds, nextTrailSeconds: nowSeconds, onArrive });
     },
@@ -139,14 +144,13 @@ export function createSpellEffectLayer(root: Group): SpellEffectLayer {
         const progress = (nowSeconds - flight.bornSeconds) / flight.flightSeconds;
         if (progress >= 1) {
           flights.splice(index, 1);
-          flight.sprite.material.dispose();
-          root.remove(flight.sprite);
+          flight.sprite.destroy();
           flight.onArrive();
           continue;
         }
         const point = { x: Math.round(flight.from.x + (flight.to.x - flight.from.x) * progress), y: Math.round(flight.from.y + (flight.to.y - flight.from.y) * progress) };
-        flight.sprite.position.set(point.x, point.y, EFFECT_Z);
-        flight.sprite.material.map = flight.cached.textures[Math.floor((nowSeconds - flight.bornSeconds) * flight.cached.art.framesPerSecond) % flight.cached.textures.length] ?? null;
+        flight.sprite.position.set(point.x, point.y);
+        flight.sprite.texture = flight.cached.textures[Math.floor((nowSeconds - flight.bornSeconds) * flight.cached.art.framesPerSecond) % flight.cached.textures.length] ?? flight.sprite.texture;
         if (nowSeconds >= flight.nextTrailSeconds) {
           flight.nextTrailSeconds = nowSeconds + TRAIL_SECONDS;
           const trail = add(flight.trailSpark, 1, oneShotSeconds(flight.trailSpark), () => undefined, null);
@@ -163,17 +167,14 @@ export function createSpellEffectLayer(root: Group): SpellEffectLayer {
         }
         const { frames, framesPerSecond, looping } = effect.cached.art;
         const frameIndex = looping ? Math.floor(age * framesPerSecond) % frames.length : Math.min(frames.length - 1, Math.floor(age * framesPerSecond));
-        effect.sprite.material.map = effect.cached.textures[frameIndex] ?? null;
-        effect.sprite.material.opacity = looping ? Math.min(1, (effect.lifeSeconds - age) / FADE_OUT_SECONDS) : 1;
+        effect.sprite.texture = effect.cached.textures[frameIndex] ?? effect.sprite.texture;
+        effect.sprite.alpha = looping ? Math.min(1, (effect.lifeSeconds - age) / FADE_OUT_SECONDS) : 1;
         const anchor = effect.anchorOf();
         if (anchor) place(effect, centreOnAnchor(anchor, effect.cached));
       }
     },
     clear: () => {
-      flights.splice(0).forEach((flight) => {
-        flight.sprite.material.dispose();
-        root.remove(flight.sprite);
-      });
+      flights.splice(0).forEach((flight) => flight.sprite.destroy());
       activeEffects.splice(0).forEach(remove);
       waitingActions.length = 0;
     },

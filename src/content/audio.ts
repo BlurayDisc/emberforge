@@ -8,6 +8,8 @@ export type OscillatorWave = 'square' | 'triangle' | 'sawtooth';
 export interface MusicVoice {
   wave: OscillatorWave | 'noise';
   volume: number;
+  // 0 or missing: every note is a short pluck that falls to silence. Above 0: the note is held at this level, for a pad or a lead.
+  sustain?: number;
   notes: string;
 }
 

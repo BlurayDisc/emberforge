@@ -22,6 +22,20 @@ function compareRow(stat: string, label: string, before: number, after: number):
   return element('div', 'compare-row', element('span', 'stat-name', label), element('span', '', formatStatValue(stat, before)), element('span', '', '>'), element('span', '', formatStatValue(stat, after)), deltaCell(stat, before, after));
 }
 
+function equipAndNotify(context: PanelContext, hero: Hero, item: Item, slot: EquipmentSlot | undefined): boolean {
+  const result = context.store.execute(equipItemCommand(hero.id, item.id, slot));
+  context.notify(result.accepted ? t('heroes.equips', { hero: heroDisplayName(hero.name), item: itemDisplayName(item) }) : describeRejection(result.rejection));
+  return result.accepted;
+}
+
+// An empty slot has nothing to compare against, so the item goes on at once. Returns false when the slot is taken or the item does not fit, and the caller shows the comparison.
+export function equipIntoEmptySlot(context: PanelContext, hero: Hero, requestedSlot: EquipmentSlot | undefined, item: Item, problem: SlotCandidate['problem']): boolean {
+  if (problem !== null) return false;
+  const comparison = compareEquip(context.store.getState(), hero.id, item, requestedSlot);
+  if (!comparison || hero.equipment[comparison.slot]) return false;
+  return equipAndNotify(context, hero, item, comparison.slot);
+}
+
 // A requested slot of undefined lets the equipment system pick the slot. The comparison and the equip command then agree on it.
 export function renderEquipComparison(context: PanelContext, hero: Hero, requestedSlot: EquipmentSlot | undefined, item: Item, problem: SlotCandidate['problem'], area: HTMLElement, onEquipped: () => void): void {
   const comparison = compareEquip(context.store.getState(), hero.id, item, requestedSlot);
@@ -33,9 +47,7 @@ export function renderEquipComparison(context: PanelContext, hero: Hero, request
       ]
     : [];
   const equipButton = actionButton(t('equip.confirm'), () => {
-    const result = context.store.execute(equipItemCommand(hero.id, item.id, comparison?.slot));
-    context.notify(result.accepted ? t('heroes.equips', { hero: heroDisplayName(hero.name), item: itemDisplayName(item) }) : describeRejection(result.rejection));
-    if (result.accepted) onEquipped();
+    if (equipAndNotify(context, hero, item, comparison?.slot)) onEquipped();
   }, { disabled: problem !== null, className: 'action-button primary equip-confirm' });
   area.replaceChildren(
     element(

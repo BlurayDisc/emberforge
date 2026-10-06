@@ -1,11 +1,14 @@
-import { Color, Group, Mesh, MeshBasicMaterial, PlaneGeometry, type Sprite } from 'three';
+import { Container, Sprite, type Texture } from 'pixi.js';
 import type { BattleUnit } from '../model/battle';
 import { drawBattleBackdrop } from './battleBackdrops';
 import { PALETTE } from './palette';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, type PixelStage } from './pixelStage';
 import { healthBarLength, type HealthBarLengthScale } from '../kernel/healthBarLength';
 import { createHealthBar, type HealthBar } from './healthBarArt';
-import { createPixelTexture, createBattleSprite } from './pixelSprites';
+import { BATTLE_Z } from './battleLayers';
+import { createBattleSprite } from './battleSprites';
+import { hexToNumber, mixHex } from './colorMath';
+import { createFlatSprite, createPixiTexture } from './pixiTextures';
 import { createProjectileLayer } from './projectileLayer';
 import { RANGED_ATTACK_STYLE_BY_SPRITE_KEY, type RangedAttackStyle } from './rangedAttackStyles';
 import type { SpellVisualSpec } from '../content/spellVisuals';
@@ -14,6 +17,10 @@ import { createSpellEffectPlayer } from './spellEffects/spellEffectPlayer';
 const HEALTH_BAR_GAP_ABOVE_HEAD = 6;
 const STAGE_HEALTH_BAR_SCALE: HealthBarLengthScale = { lengthPerRootPoint: 4, minimum: 28, maximum: 56 };
 const SIDE_OFFSET_X = 105;
+const FLASH_TINT = mixHex(PALETTE.blood, '#ffffff', 0.4);
+const WHITE_TINT = 0xffffff;
+const PARTICLE_SIZE = 2;
+const PARTICLE_GRAVITY = 220;
 const FLASH_SECONDS = 0.18;
 const LUNGE_SECONDS = 0.28;
 const LUNGE_DISTANCE = 16;
@@ -46,12 +53,12 @@ export interface BattleView {
 
 interface UnitVisual {
   sprite: Sprite;
-  shadow: Mesh;
+  shadow: Sprite;
   healthBar: HealthBar;
-  baseColor: Color;
+  baseTint: number;
   spriteHeight: number;
-  worldX: number;
-  feetWorldY: number;
+  centerX: number;
+  feetY: number;
   side: BattleUnit['side'];
   rangedAttackStyle: RangedAttackStyle | null;
   bobPhase: number;
@@ -63,57 +70,50 @@ interface UnitVisual {
 }
 
 interface Particle {
-  mesh: Mesh;
+  sprite: Sprite;
+  x: number;
+  y: number;
   velocityX: number;
   velocityY: number;
   bornSeconds: number;
 }
 
-const unitSquareGeometry = new PlaneGeometry(1, 1);
-
 function feetLogicalY(slotIndex: number, unitCount: number): number {
   return 205 - ((unitCount - 1) * 44) / 2 + slotIndex * 44;
 }
 
-function createFlatMesh(color: string, width: number, height: number, z: number): Mesh {
-  const mesh = new Mesh(unitSquareGeometry, new MeshBasicMaterial({ color, transparent: true }));
-  mesh.scale.set(width, height, 1);
-  mesh.position.z = z;
-  return mesh;
-}
-
 function projectileAnchor(visual: UnitVisual, sideOfUnit: number): { x: number; y: number } {
-  return { x: visual.worldX + sideOfUnit * visual.lungeDirection * 10, y: visual.feetWorldY + visual.spriteHeight * 0.6 };
+  return { x: visual.centerX + sideOfUnit * visual.lungeDirection * 10, y: visual.feetY - visual.spriteHeight * 0.6 };
 }
 
 export function createBattleView(stage: PixelStage): BattleView {
-  const root = new Group();
-  stage.scene.add(root);
+  const root = new Container();
+  root.sortableChildren = true;
+  root.visible = false;
+  stage.pixi.views.addChild(root);
 
-  const ground = new Mesh(new PlaneGeometry(LOGICAL_WIDTH, LOGICAL_HEIGHT), new MeshBasicMaterial());
-  ground.position.z = -5;
-  root.add(ground);
-  const backdropTextures = new Map<string, MeshBasicMaterial['map']>();
+  const ground = new Sprite();
+  ground.zIndex = BATTLE_Z.ground;
+  root.addChild(ground);
+  const backdropTextures = new Map<string, Texture>();
 
   const projectileLayer = createProjectileLayer(root);
   const spellEffects = createSpellEffectPlayer(root, (unitId) => {
     const visual = visualsByUnitId.get(unitId);
-    return visual && { x: visual.worldX, feetY: visual.feetWorldY, height: visual.spriteHeight, facing: visual.lungeDirection };
+    return visual && { x: visual.centerX, feetY: visual.feetY, height: visual.spriteHeight, facing: visual.lungeDirection };
   });
   const visualsByUnitId = new Map<string, UnitVisual>();
   const particles: Particle[] = [];
-  const flashColor = new Color(PALETTE.blood).lerp(new Color('#ffffff'), 0.4);
-  const rareColor = new Color(PALETTE.gold);
+  const rareTint = hexToNumber(PALETTE.gold);
   let latestElapsedSeconds = 0;
 
   const clearUnits = (): void => {
     projectileLayer.clear();
     spellEffects.clear();
     visualsByUnitId.forEach((visual) => {
-      visual.sprite.material.dispose();
-      (visual.shadow.material as MeshBasicMaterial).dispose();
+      visual.sprite.destroy();
+      visual.shadow.destroy();
       visual.healthBar.dispose();
-      root.remove(visual.shadow, visual.healthBar.sprite, visual.sprite);
     });
     visualsByUnitId.clear();
   };
@@ -122,19 +122,20 @@ export function createBattleView(stage: PixelStage): BattleView {
     const label = document.createElement('div');
     label.className = `floating-text ${className}`;
     label.textContent = text;
-    label.style.left = `${((visual.worldX + LOGICAL_WIDTH / 2) / LOGICAL_WIDTH) * 100}%`;
-    label.style.top = `${((LOGICAL_HEIGHT / 2 - (visual.feetWorldY + visual.spriteHeight)) / LOGICAL_HEIGHT) * 100}%`;
+    label.style.left = `${(visual.centerX / LOGICAL_WIDTH) * 100}%`;
+    label.style.top = `${((visual.feetY - visual.spriteHeight) / LOGICAL_HEIGHT) * 100}%`;
     stage.overlay.append(label);
     window.setTimeout(() => label.remove(), FLOATING_TEXT_MILLISECONDS);
   };
 
   const spawnParticles = (visual: UnitVisual, color: string, count: number): void => {
     for (let index = 0; index < count; index++) {
-      const mesh = createFlatMesh(color, 2, 2, 2);
-      mesh.position.set(visual.worldX, visual.feetWorldY + visual.spriteHeight * 0.6, 2);
-      root.add(mesh);
-      const angle = (index / count) * Math.PI * 2 + visual.worldX;
-      particles.push({ mesh, velocityX: Math.cos(angle) * 60, velocityY: Math.sin(angle) * 60 + 30, bornSeconds: latestElapsedSeconds });
+      const sprite = createFlatSprite(color, PARTICLE_SIZE, PARTICLE_SIZE);
+      sprite.zIndex = BATTLE_Z.particle;
+      root.addChild(sprite);
+      const angle = (index / count) * Math.PI * 2 + visual.centerX;
+      // The y axis points down, so an upward speed is negative.
+      particles.push({ sprite, x: visual.centerX, y: visual.feetY - visual.spriteHeight * 0.6, velocityX: Math.cos(angle) * 60, velocityY: -(Math.sin(angle) * 60 + 30), bornSeconds: latestElapsedSeconds });
     }
   };
 
@@ -147,21 +148,23 @@ export function createBattleView(stage: PixelStage): BattleView {
 
   const applyAnimation = (visual: UnitVisual, elapsedSeconds: number): void => {
     let offsetX = 0;
-    let offsetY = visual.defeatedStartSeconds > 0 ? 0 : Math.round(Math.sin(elapsedSeconds * 3 + visual.bobPhase));
+    const offsetY = visual.defeatedStartSeconds > 0 ? 0 : Math.round(Math.sin(elapsedSeconds * 3 + visual.bobPhase));
     const lungeProgress = (elapsedSeconds - visual.lungeStartSeconds) / LUNGE_SECONDS;
     if (visual.lungeStartSeconds > 0 && lungeProgress < 1) offsetX += Math.sin(Math.PI * lungeProgress) * LUNGE_DISTANCE * visual.lungeDirection;
     const shakeProgress = (elapsedSeconds - visual.shakeStartSeconds) / SHAKE_SECONDS;
     if (visual.shakeStartSeconds > 0 && shakeProgress < 1) offsetX += Math.round(Math.sin(shakeProgress * 40) * 3 * (1 - shakeProgress));
 
     const sprite = visual.sprite;
-    sprite.material.color.copy(elapsedSeconds < visual.flashUntilSeconds ? flashColor : visual.baseColor);
+    sprite.tint = elapsedSeconds < visual.flashUntilSeconds ? FLASH_TINT : visual.baseTint;
+    let height = visual.spriteHeight;
     if (visual.defeatedStartSeconds > 0) {
       const collapse = Math.min(1, (elapsedSeconds - visual.defeatedStartSeconds) / DEFEAT_SECONDS);
-      sprite.scale.y = Math.max(2, visual.spriteHeight * (1 - 0.7 * collapse));
-      sprite.material.opacity = 1 - 0.65 * collapse;
-      offsetY -= 0;
+      height = Math.max(2, visual.spriteHeight * (1 - 0.7 * collapse));
+      sprite.alpha = 1 - 0.65 * collapse;
     }
-    sprite.position.set(Math.round(visual.worldX + offsetX), Math.round(visual.feetWorldY + sprite.scale.y / 2 + offsetY), 0.5);
+    sprite.height = height;
+    // The sprite stands on its feet, so a collapse shrinks it toward the ground. The left edge is rounded so the pixels stay on the grid.
+    sprite.position.set(Math.round(visual.centerX + offsetX - sprite.width / 2), Math.round(visual.feetY + offsetY - height));
   };
 
   stage.onFrame((elapsedSeconds) => {
@@ -178,30 +181,32 @@ export function createBattleView(stage: PixelStage): BattleView {
       const particle = particles[index] as Particle;
       const age = elapsedSeconds - particle.bornSeconds;
       if (age > PARTICLE_LIFE_SECONDS) {
-        (particle.mesh.material as MeshBasicMaterial).dispose();
-        root.remove(particle.mesh);
+        particle.sprite.destroy();
         particles.splice(index, 1);
         continue;
       }
-      particle.velocityY -= 220 * deltaSeconds;
-      particle.mesh.position.x = Math.round(particle.mesh.position.x + particle.velocityX * deltaSeconds);
-      particle.mesh.position.y = Math.round(particle.mesh.position.y + particle.velocityY * deltaSeconds);
-      (particle.mesh.material as MeshBasicMaterial).opacity = 1 - age / PARTICLE_LIFE_SECONDS;
+      particle.velocityY += PARTICLE_GRAVITY * deltaSeconds;
+      particle.x += particle.velocityX * deltaSeconds;
+      particle.y += particle.velocityY * deltaSeconds;
+      particle.sprite.position.set(Math.round(particle.x - PARTICLE_SIZE / 2), Math.round(particle.y - PARTICLE_SIZE / 2));
+      particle.sprite.alpha = 1 - age / PARTICLE_LIFE_SECONDS;
     }
   });
 
   return {
     setVisible: (isVisible) => {
       root.visible = isVisible;
+      if (isVisible) stage.setLayout('fixed');
     },
     setBackdrop: (dungeonId) => {
       let texture = backdropTextures.get(dungeonId);
       if (!texture) {
-        texture = createPixelTexture(drawBattleBackdrop(dungeonId));
+        texture = createPixiTexture(drawBattleBackdrop(dungeonId));
         backdropTextures.set(dungeonId, texture);
       }
-      (ground.material as MeshBasicMaterial).map = texture;
-      (ground.material as MeshBasicMaterial).needsUpdate = true;
+      ground.texture = texture;
+      ground.width = LOGICAL_WIDTH;
+      ground.height = LOGICAL_HEIGHT;
     },
     showUnits: (units) => {
       clearUnits();
@@ -209,24 +214,27 @@ export function createBattleView(stage: PixelStage): BattleView {
         const sideUnits = units.filter((unit) => unit.side === side);
         sideUnits.forEach((unit, slotIndex) => {
           const sprite = createBattleSprite(unit);
-          const worldX = (side === 'party' ? -SIDE_OFFSET_X : SIDE_OFFSET_X) - (unit.rank === 'boss' ? 6 : 0);
-          const feetWorldY = LOGICAL_HEIGHT / 2 - feetLogicalY(slotIndex, sideUnits.length);
-          const baseColor = unit.rank === 'rare' ? rareColor.clone() : new Color('#ffffff');
-          const shadowWidth = Math.round(sprite.scale.x * 0.9);
-          const shadow = createFlatMesh('#000000', shadowWidth, 6, -0.5);
-          shadow.position.set(worldX, feetWorldY + 1, -0.5);
-          (shadow.material as MeshBasicMaterial).opacity = 0.35;
+          sprite.zIndex = BATTLE_Z.unit;
+          const spriteHeight = sprite.height;
+          const centerX = LOGICAL_WIDTH / 2 + (side === 'party' ? -SIDE_OFFSET_X : SIDE_OFFSET_X) - (unit.rank === 'boss' ? 6 : 0);
+          const feetY = feetLogicalY(slotIndex, sideUnits.length);
+          const shadowWidth = Math.round(sprite.width * 0.9);
+          const shadow = createFlatSprite('#000000', shadowWidth, 6);
+          shadow.zIndex = BATTLE_Z.shadow;
+          shadow.alpha = 0.35;
+          shadow.position.set(Math.round(centerX - shadowWidth / 2), feetY - 4);
           const barWidth = healthBarLength(unit.maxHp, STAGE_HEALTH_BAR_SCALE);
           const healthBar = createHealthBar({ hp: unit.hp, maxHp: unit.maxHp, level: unit.level, side, rank: unit.rank, barWidth, resource: side === 'party' && unit.maxResource > 0 ? { id: unit.resourceId, value: unit.resource, max: unit.maxResource } : undefined });
-          healthBar.sprite.position.set(worldX, Math.round(feetWorldY + sprite.scale.y + HEALTH_BAR_GAP_ABOVE_HEAD), 3);
+          healthBar.sprite.zIndex = BATTLE_Z.healthBar;
+          healthBar.sprite.position.set(Math.round(centerX - healthBar.sprite.width / 2), Math.round(feetY - spriteHeight - HEALTH_BAR_GAP_ABOVE_HEAD - healthBar.sprite.height / 2));
           const visual: UnitVisual = {
-            sprite, shadow, healthBar, baseColor, spriteHeight: sprite.scale.y, worldX, feetWorldY, side,
+            sprite, shadow, healthBar, baseTint: unit.rank === 'rare' ? rareTint : WHITE_TINT, spriteHeight, centerX, feetY, side,
             rangedAttackStyle: RANGED_ATTACK_STYLE_BY_SPRITE_KEY[unit.spriteKey] ?? null,
             bobPhase: slotIndex * 1.7 + (side === 'party' ? 0 : 0.9),
             flashUntilSeconds: 0, lungeStartSeconds: 0, lungeDirection: side === 'party' ? 1 : -1, shakeStartSeconds: 0, defeatedStartSeconds: 0,
           };
           visualsByUnitId.set(unit.id, visual);
-          root.add(shadow, sprite, healthBar.sprite);
+          root.addChild(shadow, sprite, healthBar.sprite);
           applyAnimation(visual, latestElapsedSeconds);
         });
       });
@@ -317,7 +325,7 @@ export function createBattleView(stage: PixelStage): BattleView {
       if (!visual) return;
       visual.defeatedStartSeconds = latestElapsedSeconds + 0.001;
       visual.healthBar.setVisible(false);
-      (visual.shadow.material as MeshBasicMaterial).opacity = 0.15;
+      visual.shadow.alpha = 0.15;
     },
   };
 }

@@ -1,14 +1,19 @@
 import data from '../../../data/balance/crafting.json';
 
 export const CRAFTING_MAXIMUM_LEVEL = data.maximumLevel;
+export const CRAFTING_EXPERIENCE_TO_NEXT_BY_LEVEL: readonly number[] = data.experienceToNextByLevel;
 export const CRAFTING_EXPERIENCE_TO_NEXT_BASE = data.experienceToNextBase;
 export const CRAFTING_EXPERIENCE_TO_NEXT_EXPONENT = data.experienceToNextExponent;
+export const CRAFTING_MAXIMUM_LEVELS_PER_CRAFT = data.maximumLevelsPerCraft;
+export const CRAFTING_LEVELS_PER_CRAFT_CAP_BELOW_LEVEL = data.levelsPerCraftCapBelowLevel;
 export const CRAFTING_EXPERIENCE_PER_MATERIAL_BASE = data.experiencePerMaterialBase;
 export const CRAFTING_EXPERIENCE_PER_MATERIAL_PER_REQUIRED_LEVEL = data.experiencePerMaterialPerRequiredLevel;
 export const CRAFTING_LEVEL_GAP_STEP = data.levelGapStep;
 export const CRAFTING_LEVEL_GAP_FACTOR_MINIMUM = data.levelGapFactorMinimum;
 export const CRAFT_SECONDS_BASE = data.craftSecondsBase;
 export const CRAFT_SECONDS_PER_REQUIRED_LEVEL = data.craftSecondsPerRequiredLevel;
+export const CRAFT_SECONDS_REFERENCE_MATERIAL_COUNT = data.craftSecondsReferenceMaterialCount;
+export const CRAFT_SECONDS_FACTOR_PER_MATERIAL = data.craftSecondsFactorPerMaterial;
 export const CRAFT_FEE_BASE_COPPER = data.craftFeeBaseCopper;
 export const CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER = data.craftFeePerRequiredLevelCopper;
 export const UPGRADE_MAXIMUM_LEVEL = data.upgradeMaximumLevel;

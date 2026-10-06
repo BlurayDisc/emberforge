@@ -9,6 +9,9 @@ export interface ClassLook {
   trim: string;
   gender?: HeroGender;
   hair?: string;
+  // A class can fix the skin tone, such as the pale moon elf. Without it, the hero draws a human tone from the list.
+  skin?: string;
+  skinShade?: string;
   slender?: boolean;
 }
 
@@ -42,8 +45,8 @@ export function pickHeroAppearance(classId: ClassId, heroName: string): HeroAppe
   const skinIndex = seed % appearanceData.skinTones.length;
   return {
     gender: look.gender ?? (appearanceData.femaleNames.includes(heroName) ? 'female' : 'male'),
-    skin: appearanceData.skinTones[skinIndex] ?? '#f2c9a0',
-    skinShade: appearanceData.skinShades[skinIndex] ?? '#d9a87c',
+    skin: look.skin ?? appearanceData.skinTones[skinIndex] ?? '#f2c9a0',
+    skinShade: look.skinShade ?? appearanceData.skinShades[skinIndex] ?? '#d9a87c',
     hair: look.hair ?? pickFrom(appearanceData.hairColors, seed >> 3),
     eye: pickFrom(appearanceData.eyeColors, seed >> 6),
     look,

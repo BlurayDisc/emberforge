@@ -8,17 +8,18 @@ import { paintMageHead } from './headgear/mageHead';
 import { paintPriestHead } from './headgear/priestHead';
 import { paintThiefHead } from './headgear/thiefHead';
 import { MATERIAL, darken, heroColorsOf, type HeroColors, type Hex } from './heroPalette';
+import { TABARD_BLUE, TABARD_BLUE_DARK } from './paladinParts';
 import { createSpritePainter, type SpritePainter } from './spritePainter';
 import { paintWarriorHelm, paintWarriorPauldrons } from './warriorParts';
 
 export const BUST_SIZE = 32;
 const CENTER_X = 16;
 const BOTTOM_ROW = BUST_SIZE - 1;
-const ORB_GLOW = ['#5a3aa0', '#8ab0ff', '#e8f0ff'] as const;
+const ORB_GLOW = ['#a02a1a', '#ff8a2a', '#fff0a0'] as const;
 const HOLY_LIGHT = '#fff3b0';
 const FUR = '#8a6a48';
 const FUR_LIGHT = '#b89a70';
-const BLADE_STEEL = '#d8e0e8';
+const BLADE_STEEL = '#9fb4c0';
 
 function paintShoulders(painter: SpritePainter, top: number, startHalfWidth: number, fill: Hex, shade: Hex, maxHalfWidth = 13): void {
   for (let row = top; row <= BOTTOM_ROW; row++) {
@@ -77,7 +78,7 @@ function paintMageBust(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(colors.hairShade, 6, 14, 1, 16);
   painter.rect(MATERIAL.wood, 3, 8, 2, 24);
   painter.rect(colors.trim, 2, 7, 4, 2);
-  painter.rect('#5a8fe0', 3, 3, 2, 4);
+  painter.rect('#ff7a2a', 3, 3, 2, 4);
   paintShoulders(painter, 20, 5, colors.cloth, colors.clothShade);
   painter.span(colors.skin, CENTER_X - 1, CENTER_X + 1, 19);
   painter.dot(colors.trim, CENTER_X - 2, 20);
@@ -88,27 +89,41 @@ function paintMageBust(painter: SpritePainter, colors: HeroColors): void {
 }
 
 function paintPriestBust(painter: SpritePainter, colors: HeroColors): void {
-  if (colors.appearance.gender === 'female') {
-    painter.rect(colors.hair, 6, 12, 5, 12);
-    painter.rect(colors.hair, 22, 12, 5, 12);
-  }
-  paintShoulders(painter, 17, 5, colors.cloth, colors.clothShade);
-  painter.rect(MATERIAL.red, CENTER_X - 1, 17, 3, 15);
-  painter.rect(colors.trim, CENTER_X - 2, 17, 1, 15);
-  painter.rect(colors.trim, CENTER_X + 2, 17, 1, 15);
-  painter.rect(colors.trim, CENTER_X - 1, 23, 3, 1);
-  painter.rect(MATERIAL.wood, 28, 12, 2, 20);
-  for (let y = -4; y <= 4; y++) for (let x = -4; x <= 4; x++) if (x * x + y * y <= 17) painter.dot(x * x + y * y <= 8 ? HOLY_LIGHT : colors.trim, 27 + x, 8 + y);
-  paintPriestHead(painter, colors, CENTER_X, 6);
+  painter.rect(MATERIAL.wood, 27, 9, 2, 23);
+  painter.rect(MATERIAL.goldDark, 23, 2, 9, 7);
+  painter.rect(colors.trim, 23, 2, 9, 6);
+  painter.rect(HOLY_LIGHT, 25, 4, 5, 2);
+  painter.rect(MATERIAL.white, 25, 4, 3, 1);
+  paintShoulders(painter, 18, 8, TABARD_BLUE_DARK, TABARD_BLUE_DARK, 14);
+  paintShoulders(painter, 18, 6, colors.cloth, colors.clothShade);
+  painter.span(colors.trim, CENTER_X - 7, CENTER_X + 7, 18);
+  painter.rect(TABARD_BLUE, CENTER_X - 2, 19, 5, 13);
+  painter.rect(TABARD_BLUE_DARK, CENTER_X + 2, 19, 1, 13);
+  painter.rect(colors.trim, CENTER_X - 1, 22, 3, 1);
+  painter.rect(colors.trim, CENTER_X, 21, 1, 3);
+  paintPriestHead(painter, colors, CENTER_X, 5);
+  paintWarriorPauldrons(painter, colors, CENTER_X + 3, CENTER_X - 12, 16);
 }
 
 function paintThiefBust(painter: SpritePainter, colors: HeroColors): void {
-  paintShoulders(painter, 16, 6, colors.cloth, colors.clothShade);
-  painter.line(MATERIAL.leather, CENTER_X - 7, 17, CENTER_X + 4, 31, 2);
-  painter.line(BLADE_STEEL, 4, 31, 10, 21, 2);
-  painter.line(BLADE_STEEL, 28, 31, 22, 21, 2);
-  painter.rect(MATERIAL.red, CENTER_X - 6, 16, 12, 2);
-  painter.rect(MATERIAL.red, CENTER_X + 3, 18, 3, 6);
+  for (const side of [-1, 1] as const) {
+    const bladeBaseX = CENTER_X + side * 12;
+    const bladeTipX = CENTER_X + side * 15;
+    painter.line(BLADE_STEEL, bladeBaseX, 30, bladeTipX, 12, 2);
+    painter.line(colors.trim, bladeBaseX - side, 30, bladeTipX - side, 12);
+  }
+  paintShoulders(painter, 17, 7, colors.cloth, colors.clothShade, 12);
+  painter.span(colors.skin, CENTER_X - 2, CENTER_X + 2, 16);
+  painter.span(colors.skin, CENTER_X - 1, CENTER_X + 1, 17);
+  painter.dot(colors.skin, CENTER_X, 18);
+  painter.line(colors.clothShade, CENTER_X - 7, 18, CENTER_X + 5, 31, 2);
+  painter.line(colors.clothShade, CENTER_X + 7, 18, CENTER_X - 5, 31, 2);
+  painter.dot(colors.trim, CENTER_X, 24);
+  for (const padLeft of [CENTER_X - 13, CENTER_X + 8]) {
+    painter.rect(colors.cloth, padLeft, 17, 6, 4);
+    painter.rect(colors.trim, padLeft, 17, 6, 1);
+    painter.rect(colors.clothShade, padLeft, 20, 6, 1);
+  }
   paintThiefHead(painter, colors, CENTER_X, 5);
   if (colors.appearance.gender === 'female') painter.rect(colors.hair, 4, 12, 5, 8);
 }

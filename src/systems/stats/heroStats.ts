@@ -16,13 +16,8 @@ import type { Hero } from '../../model/hero';
 import type { AffixStat } from '../../model/item';
 import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
+import { classStatsAtLevel, STAT_NAMES } from './classStatsAtLevel';
 import { maximumResourceOf, startingResourceOf } from './maximumResource';
-
-function statAtLevel(base: number, growthPerLevel: number, level: number): number {
-  return Math.round(base + growthPerLevel * (level - 1));
-}
-
-const STAT_NAMES: readonly (keyof StatBlock)[] = ['hp', 'strength', 'magic', 'skill', 'speed', 'defence', 'resistance'];
 
 const FRACTION_PER_PERCENT_POINT = 0.01;
 
@@ -44,11 +39,8 @@ function gearBonusForStat(hero: Hero, stat: keyof StatBlock): number {
 }
 
 export function computeHeroStats(hero: Hero): StatBlock {
-  const { baseStats, growthPerLevel } = requireById(CLASSES, hero.classId);
-  const stats = {} as StatBlock;
-  for (const stat of STAT_NAMES) {
-    stats[stat] = statAtLevel(baseStats[stat], growthPerLevel[stat], hero.level) + gearBonusForStat(hero, stat);
-  }
+  const stats = classStatsAtLevel(hero.classId, hero.level);
+  for (const stat of STAT_NAMES) stats[stat] += gearBonusForStat(hero, stat);
   return stats;
 }
 

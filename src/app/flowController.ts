@@ -1,13 +1,27 @@
 import { playSound } from '../audio';
 import type { GameStore } from '../game';
+import type { RunReport } from '../model/gameState';
+import { heroDisplayName } from '../ui/displayNames';
+import { t } from '../ui/i18n';
 import type { PanelHost } from '../ui/panelHost';
 import { openPrologue } from '../ui/prologue';
 import { focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
 import { openRunReport } from '../ui/runReportModal';
 
-// A run ends while the player watches it: the report opens at once, so the player reads the stats before the next action.
-// A run in the background keeps its report. The dungeon row shows "Results ready" until the player opens it.
-function startReportFlow(store: GameStore, notify: (message: string) => void): void {
+// A small notice for each hero that gained a level, also when the report opens at once or waits in the background.
+function announceLevelUps(store: GameStore, report: RunReport, notify: (message: string) => void): void {
+  const leveledResults = report.result.heroes.filter((heroResult) => heroResult.reachedLevel !== null);
+  if (leveledResults.length > 0) playSound('level-up', 0.4);
+  for (const heroResult of leveledResults) {
+    const hero = store.getState().company.find((candidate) => candidate.id === heroResult.heroId);
+    if (hero) notify(t('notice.heroLevelUp', { hero: heroDisplayName(hero.name), level: heroResult.reachedLevel! }));
+  }
+}
+
+// A run ends while the player watches the battle screen (the stage, with no panel open): the report opens at once.
+// Everywhere else the report waits, so nothing pops up over what the player is doing. The Dungeons button counts it,
+// and the dungeon row shows "Results ready" until the player opens it.
+function startReportFlow(store: GameStore, notify: (message: string) => void, isBattleScreenShown: () => boolean): void {
   const announced = new Set<number>(store.getState().reports.map((report) => report.runNumber));
   let watchedRunNumber: number | null = null;
 
@@ -22,10 +36,10 @@ function startReportFlow(store: GameStore, notify: (message: string) => void): v
       if (announced.has(report.runNumber)) continue;
       announced.add(report.runNumber);
       playSound(report.result.won ? 'victory' : 'defeat-hero');
-      if (report.result.heroes.some((hero) => hero.reachedLevel !== null)) playSound('level-up', 0.4);
+      announceLevelUps(store, report, notify);
       if (report.runNumber === watchedRunNumber) {
         watchedRunNumber = null;
-        openRunReport(store, report, notify);
+        if (isBattleScreenShown()) openRunReport(store, report, notify);
       }
     }
   });
@@ -35,7 +49,7 @@ export function startFlowController(store: GameStore, panelHost: PanelHost): voi
   let previousState = store.getState();
   const startStory = (): void => openPrologue(() => panelHost.open('tavern'));
   if (previousState.company.length === 0) startStory();
-  startReportFlow(store, panelHost.notify);
+  startReportFlow(store, panelHost.notify, () => panelHost.activePanelId() === null);
 
   store.subscribe(() => {
     const currentState = store.getState();

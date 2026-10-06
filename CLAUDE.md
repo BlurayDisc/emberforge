@@ -1,12 +1,13 @@
 # CLAUDE.md - Emberforge
 
 Pixel-art, turn-based crafting RPG. TypeScript strict + Vite. Static web build.
-Render: three.js now, moving to Pixi.js. Audio: Web Audio now, moving to Tone.js. Both new libraries are approved.
+Render: Pixi.js draws the town, the battle and the castle. Audio: Tone.js. Both libraries are approved.
 
 ## Read first
 
 - `design.md` is the source of truth for game rules. Change it in the same step as any rule change.
 - Use the words from the design.md glossary in names: `Company`, `Party`, `Bracket`, `Tier`, `Affix`, `Quality`.
+- `docs/balance/bracket-NN.md` holds the balance tables of each bracket (targets and simulator results). Start a new bracket with `new-bracket-prompt.md`.
 - Read the matching file in `docs/agent/` before you work in that area:
   - `architecture.md` - layers, import rules, determinism. Read before you add or move code.
   - `balance-and-validation.md` - balance simulator and data validator.
@@ -30,6 +31,8 @@ Render: three.js now, moving to Pixi.js. Audio: Web Audio now, moving to Tone.js
 | `npm run smoke` | Headless smoke play (`tools/smoke-play.ts`). Fails on a broken rule. |
 | `npm run gallery` | Spell gallery in the browser. |
 | `npm run sprites` | Headless contact sheet PNG of heroes, creatures or backdrops. No browser. |
+| `npm run shot` | Real headless Chrome: opens a URL, runs steps (click, wait, screenshot), saves PNGs to `out/shots/`. Use it to run the game or the gallery. See Visual validation. |
+| `npm run audio-report` | Renders every music track and sound effect offline in headless Chrome. Prints peak, level, lead silence, length and rough pitch. Start `npm run dev` first and pass its URL. |
 | `npm run animation` | Headless frame strip PNG of a spell (`warrior.cleave`) or one effect (`impact:steel-cleave:steel`). |
 | `npm run validate` | Data validator. `check` and `build` run it too. |
 
@@ -56,7 +59,7 @@ Render: three.js now, moving to Pixi.js. Audio: Web Audio now, moving to Tone.js
 
 After you change sprites, animation, UI, layout or game presentation:
 
-1. Render it. Sprites and animation: use the headless tools and read the PNG in `out/art/` with the image reader (`npm run sprites -- heroes|creatures|backdrops`, `npm run animation -- <spellId>`). They print size, pixel box, color count and soft-alpha count for each sprite. Stage and UI: run the game or the gallery and take a screenshot. Check UI at about 360x640 and 1280x720.
+1. Render it. Sprites and animation: use the headless tools and read the PNG in `out/art/` with the image reader (`npm run sprites -- heroes|creatures|backdrops`, `npm run animation -- <spellId>`). They print size, pixel box, color count and soft-alpha count for each sprite. Stage and UI: run the game or the gallery with `npm run shot` (start `npm run dev` first), for example `npm run shot -- http://127.0.0.1:5173/spell-gallery.html '[{"wait":2500},{"click":"fireball"},{"wait":400},{"shot":"fireball"}]'`. A background browser tab gets no animation frames, so a fight never advances there. Use `shot` for anything that moves. Check UI at about 412x915 (a modern phone) and 1280x720.
 2. Inspect the image yourself.
 3. Check against the intended design: frame order, timing, position, scale, transparency, looping, pixel-art consistency.
 4. Fix the problems and render again. Repeat until it is right.
@@ -65,7 +68,7 @@ After you change sprites, animation, UI, layout or game presentation:
 
 ## Sound validation
 
-- After you change a sound or music pattern, render it offline (planned) and check peak level, length, silence and pitch with numbers. You cannot hear it, so say that the user must listen.
+- After you change a sound or music pattern, run `npm run audio-report -- <dev url>` and check peak level, length, silence and pitch in the numbers. You cannot hear it, so say that the user must listen.
 - `npm run validate` checks the sound mappings.
 
 ## Code style

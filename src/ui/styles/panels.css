@@ -199,13 +199,25 @@
   opacity: 0.5;
 }
 
-.list-row.current,
-.list-row.hero-choice.selected {
+.list-row.current {
   box-shadow: var(--outline-2), inset 2px 2px 0 var(--gold-dark), inset -2px -2px 0 var(--gold-dark);
 }
 
+/* A choice stands out from the panel like a raised button. The chosen one gets a gold frame. */
 .list-row.hero-choice {
+  margin-bottom: 6px;
   cursor: pointer;
+  background: var(--wood-600);
+  box-shadow: var(--raised-shadow);
+}
+
+.list-row.hero-choice:hover:not(.busy) {
+  background: var(--wood-500);
+}
+
+.list-row.hero-choice.selected {
+  background: var(--wood-500);
+  box-shadow: var(--raised-selected-shadow);
 }
 
 .row-art {
@@ -791,8 +803,9 @@
 
 .dropdown {
   position: relative;
-  flex: 1 1 120px;
-  min-width: 0;
+  /* Each dropdown starts at the width of its own text, so a short one stays short. min-content keeps a long label on one line and wraps the dropdown to a new row instead. */
+  flex: 1 1 auto;
+  min-width: min-content;
 }
 
 .dropdown-trigger {
@@ -803,6 +816,7 @@
   font-family: var(--font-body);
   font-size: 17px;
   text-align: left;
+  white-space: nowrap;
   color: var(--parchment);
   text-shadow: 1px 1px 0 var(--ink);
   background-color: var(--wood-600);
@@ -1055,17 +1069,6 @@
   gap: 2px;
 }
 
-@media (max-width: 640px) {
-  /* On a phone the selection bar takes the place of the descriptions, so the grid gets more room. */
-  .inventory-intro,
-  .selection-hint {
-    display: none;
-  }
-
-  .selection-bar {
-    height: 108px;
-  }
-}
 
 /* The details sit beside the grid on a wide panel. On a phone the flex wrap puts them under the grid. */
 .status-row {
@@ -1321,60 +1324,6 @@
   .victory-stat-fill { animation-duration: 0.01s; }
 }
 
-/* The team strip sits at the top of the Dungeons panel. The chips wrap into rows, so nothing hides behind a sideways scroll. */
-.hero-strip {
-  flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.hero-chip {
-  flex: 0 0 auto;
-  max-width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 2px;
-  padding: 3px 6px;
-  font: inherit;
-  text-align: left;
-  color: var(--parchment);
-  background: var(--leather);
-  border: 0;
-  cursor: pointer;
-  box-shadow: var(--outline-2), inset 2px 2px 0 var(--ink), inset -2px -2px 0 var(--wood-700);
-}
-
-.hero-chip .pixel-portrait {
-  flex: none;
-  width: 32px;
-  height: 32px;
-}
-
-.hero-chip-text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hero-chip-name {
-  font-size: 12px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.hero-chip .bar.run-progress.bar-health {
-  height: 12px;
-  margin-top: 0;
-}
-
-.hero-chip .progress-label {
-  font-size: 10px;
-}
-
 /* Phone layout: a row keeps its text wide. The buttons drop under the text. */
 @media (max-width: 640px) {
   .list-row {
@@ -1453,14 +1402,9 @@
     flex: 1 1 0;
     min-width: 0;
     margin: 0;
-    padding: 8px 2px;
+    padding: 8px 6px;
     font-size: 14px;
   }
-}
-
-/* A hero in a fight has a gold frame in the strip. */
-.hero-chip.away {
-  box-shadow: var(--outline-2), inset 2px 2px 0 var(--gold-dark), inset -2px -2px 0 var(--gold-dark);
 }
 
 .panel-host:has(.panel-world) {
@@ -1485,6 +1429,12 @@
 }
 
 /* The action row at the bottom of a screen. It sticks to the bottom of the scrolling panel, so it is always in view. */
+/* A sticky footer sticks above the padding of its scroll container, so list content would show below it. No bottom padding closes that gap. */
+.panel-body:has(> .panel-footer),
+.modal-body:has(.panel-footer) {
+  padding-bottom: 0;
+}
+
 .panel-footer {
   position: sticky;
   bottom: 0;
@@ -1540,7 +1490,7 @@
   min-height: 0;
   text-align: left;
   background: var(--wood-600);
-  box-shadow: var(--outline-2), inset 3px 3px 0 var(--wood-500), inset -3px -3px 0 var(--wood-800), 0 4px 0 2px var(--ink);
+  box-shadow: var(--raised-shadow);
   cursor: pointer;
 }
 
@@ -1596,7 +1546,7 @@
 /* A finished craft waits for a click. The frame is gold and the button is big. It stays still, as the UI rules ask. */
 .crafter-tile.ready {
   background: var(--wood-500);
-  box-shadow: var(--outline-2), 0 0 0 4px var(--gold), inset 3px 3px 0 var(--gold), inset -3px -3px 0 var(--gold-dark), 0 6px 0 4px var(--ink);
+  box-shadow: var(--raised-selected-shadow);
 }
 
 .ready-text {
@@ -1616,22 +1566,24 @@
 }
 
 @media (max-width: 640px) {
-  /* On a phone the sections lose their titles and the six tiles share the screen in two columns. */
+  /* On a phone the sections stay (Weapons, Armour), each with its three tiles in one row. */
   .crafter-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(0, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
 
-  .crafter-grid > .workshop-section,
   .crafter-grid .tile-grid {
-    display: contents;
+    gap: 6px;
   }
 
-  .crafter-grid .section-title,
-  .crafter-list-body > .hint {
-    display: none;
+  .crafter-grid .section-title {
+    margin: 0 0 4px;
+  }
+
+  /* The experience bar of a crafter is a small mark, not a full-width bar. */
+  .crafter-tile .row-body > .bar {
+    width: 70%;
+    height: 6px;
+    margin: 0 auto;
   }
 
   .crafter-tile {
@@ -1643,14 +1595,14 @@
     gap: 2px;
   }
 
-  /* Every tile keeps the same small picture, so a crafter that becomes ready does not change the picture size. */
+  /* Every tile keeps the same picture, so a crafter that becomes ready does not change the picture size. */
   .crafter-tile .row-art {
     flex: none;
     align-self: center;
     aspect-ratio: 1;
-    height: 36px;
-    min-height: 36px;
-    max-height: 36px;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
   }
 
   .crafter-tile .row-body {
@@ -1660,20 +1612,13 @@
 
 
 
-  .crafter-tile .card-title {
-    font-size: 13px;
+  /* html[lang] outweighs the language font rule in theme.css. */
+  html[lang] .crafter-tile .card-title {
+    font-size: 14px;
   }
 
   .crafter-tile .crafter-status {
-    min-height: 38px;
-  }
-
-  .crafter-tile .bar-experience:not(.run-progress) {
-    display: none;
-  }
-
-  .crafter-tile .ready-text {
-    display: none;
+    min-height: 64px;
   }
 
   .collect-button {
@@ -1681,4 +1626,181 @@
     font-size: 13px;
   }
 
+}
+
+/* The dungeon screen: picture, monsters, heroes and the Fight button on one screen with no scroll, on desktop and phone. */
+.dungeon-screen {
+  gap: 10px;
+}
+
+.dungeon-top {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.dungeon-top .dungeon-portrait {
+  flex: none;
+  width: min(300px, 42%);
+  margin: 0;
+}
+
+.dungeon-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.monster-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.monster-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 92px;
+  padding: 6px;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  background: var(--wood-600);
+  box-shadow: var(--outline-2), inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-800);
+}
+
+.monster-tile:hover {
+  background: var(--wood-500);
+}
+
+.monster-tile .monster-sprite {
+  width: 56px;
+  height: 56px;
+}
+
+.monster-tile .monster-sprite canvas {
+  height: 100%;
+  object-fit: contain;
+}
+
+.dungeon-heroes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dungeon-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.dungeon-hero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  background: var(--wood-600);
+  box-shadow: var(--raised-shadow);
+}
+
+.dungeon-hero:hover:not(.busy) {
+  background: var(--wood-500);
+}
+
+.dungeon-hero.selected {
+  background: var(--wood-500);
+  box-shadow: var(--raised-selected-shadow);
+}
+
+.dungeon-hero.busy {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.dungeon-hero-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dungeon-screen > .panel-footer {
+  margin-top: auto;
+  flex-wrap: nowrap;
+}
+
+/* The Fight button takes all the free width, so it is a big target under the thumb. Close stays small. */
+.dungeon-screen > .panel-footer .action-button.primary {
+  flex: 1;
+  min-height: 52px;
+  font-size: 20px;
+}
+
+@media (max-width: 640px) {
+  .dungeon-top {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dungeon-top .dungeon-portrait {
+    width: 100%;
+    max-width: none;
+    height: 96px;
+    padding: 3px;
+    overflow: hidden;
+  }
+
+  .dungeon-top .dungeon-portrait canvas {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .monster-tile {
+    width: 88px;
+    padding: 4px;
+  }
+
+  .monster-tile .monster-sprite {
+    width: 52px;
+    height: 52px;
+  }
+
+  .dungeon-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .dungeon-hero {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+
+  .dungeon-hero .pixel-portrait {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.level-up-growth {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 4px 0;
+}
+
+.growth-chip {
+  padding: 2px 6px;
+  font-size: 13px;
+  color: var(--gold);
+  background: var(--leather);
+  box-shadow: var(--outline-2);
 }

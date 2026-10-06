@@ -40,7 +40,7 @@ export const renderMillPanel: PanelRenderer = (context) => {
     element('p', 'hint', t('mill.hint')),
     element('div', 'card-text small', t('mill.usage', { stored: mill.storedCount, capacity: mill.capacity })),
     createNextProductionLine(context),
-    element('div', 'hero-choice-row', collectButton, actionButton(t('mill.leave'), context.closePanel)),
     storedRows.length > 0 ? createList(...storedRows) : element('p', 'hint', t('mill.empty')),
+    element('div', 'panel-footer', collectButton, actionButton(t('mill.leave'), context.closePanel)),
   );
 };

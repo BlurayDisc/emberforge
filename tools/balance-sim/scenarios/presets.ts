@@ -82,9 +82,10 @@ export interface CrafterCurvePreset {
   firstLevel: number;
   lastLevel: number;
   professionIds: string[];
-  // A case is a share of the hero fights in the level 1 dungeons (the rest are in the best dungeon the hero may enter),
-  // and how many levels the crafter may be behind the hero when the hero is in that case.
-  cases: Array<{ levelOneDungeonFightShare: number; maximumLevelsBehind: number }>;
+  // Fights in one level 1 dungeon before the player crafts, each time the crafter is below the hero level.
+  basicFightsPerRound: number;
+  // The share of all fights in the level 1 dungeons that keeps the crafter level with the hero: lowest and highest allowed.
+  basicFightShareRange: [number, number];
   games: number;
   firstSeed: number;
 }

@@ -1,4 +1,4 @@
-import type { Group } from 'three';
+import type { Container } from 'pixi.js';
 import type { SpellVisualSpec } from '../../content/spellVisuals';
 import { cachedEffectArt, cachedTrailSpark } from './effectTextures';
 import { createSpellEffectLayer, type PixelPoint, type UnitAnchor } from './spellEffectLayer';
@@ -26,10 +26,10 @@ export interface SpellEffectPlayer {
 }
 
 function bodyPoint(place: SpellUnitPlace, sideOfUnit: number): PixelPoint {
-  return { x: place.x + sideOfUnit * place.facing * PROJECTILE_START_OFFSET_X, y: place.feetY + place.height * BODY_HEIGHT_FRACTION };
+  return { x: place.x + sideOfUnit * place.facing * PROJECTILE_START_OFFSET_X, y: place.feetY - place.height * BODY_HEIGHT_FRACTION };
 }
 
-export function createSpellEffectPlayer(root: Group, placeOf: (unitId: string) => SpellUnitPlace | undefined): SpellEffectPlayer {
+export function createSpellEffectPlayer(root: Container, placeOf: (unitId: string) => SpellUnitPlace | undefined): SpellEffectPlayer {
   const layer = createSpellEffectLayer(root);
   const anchorGetter = (unitId: string) => (): UnitAnchor | undefined => placeOf(unitId);
 

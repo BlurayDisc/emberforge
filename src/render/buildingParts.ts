@@ -67,12 +67,11 @@ export function drawHangingSign(art: PixelCanvas, x: number, y: number): void {
   art.fill('parchment', x + 7, y + 4, 4, 1);
 }
 
-export function drawChimneyWithSmoke(art: PixelCanvas, x: number, y: number): void {
+// The smoke above the chimney is animated by the town view (town/townAmbience.ts), so the art holds only the chimney.
+export function drawChimney(art: PixelCanvas, x: number, y: number): void {
   art.fill('brickDark', x, y, 8, 14);
   art.fill('brick', x + 1, y, 6, 14);
   art.fill('stone', x - 1, y, 10, 2);
-  art.fill('ash', x + 2, y - 5, 3, 3);
-  art.fill('stoneLight', x + 5, y - 10, 4, 4);
 }
 
 export function drawAwning(art: PixelCanvas, x: number, y: number, width: number): void {

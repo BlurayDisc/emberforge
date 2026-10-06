@@ -27,6 +27,10 @@ const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'skill' | 'magic'; clas
 let selectedHeroId: string | null = null;
 let activeTab: HeroTab = 'stats';
 
+export function resetHeroesTab(): void {
+  activeTab = 'stats';
+}
+
 function formatNumber(value: number): string {
   return value >= 100 ? String(Math.round(value)) : value.toFixed(1);
 }

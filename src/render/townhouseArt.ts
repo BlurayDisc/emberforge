@@ -2,7 +2,7 @@ import type { BuildingStyle } from '../content/buildings';
 import {
   STONE_COLORS,
   drawBrickWalls,
-  drawChimneyWithSmoke,
+  drawChimney,
   drawDoor,
   drawRoof,
   drawTimberWalls,
@@ -35,7 +35,7 @@ function drawCottage(art: PixelCanvas, width: number, height: number): void {
 function drawTownhouse(art: PixelCanvas, width: number, height: number): void {
   const colors = width % 2 === 0 ? SLATE_TIMBER : RED_TIMBER;
   const roofHeight = Math.round(height * 0.4);
-  drawChimneyWithSmoke(art, width - 18, 6);
+  drawChimney(art, width - 18, 6);
   drawTimberWalls(art, 5, roofHeight, width - 10, height - roofHeight, colors);
   drawRoof(art, 0, 0, width, roofHeight + 2, colors);
   drawWindow(art, 10, roofHeight + 6, 'lamp');

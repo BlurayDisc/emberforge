@@ -1,5 +1,6 @@
 import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
 import type { SpritePainter } from '../spritePainter';
+import { paintSpikedShoulder } from '../gruntParts';
 import { paintBarbarianHead } from '../headgear/barbarianHead';
 import { PORTRAIT_CENTER_X, finishPortrait, startPortrait } from './portraitFrame';
 
@@ -48,10 +49,8 @@ function paintTorso(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(BONE, CENTER_X - 2, TORSO_TOP + 17, 5, 4);
   painter.rect(MATERIAL.boot, CENTER_X - 1, TORSO_TOP + 18, 1, 1);
   painter.rect(MATERIAL.boot, CENTER_X + 1, TORSO_TOP + 18, 1, 1);
-  painter.rect(FUR, CENTER_X - 12, TORSO_TOP - 1, 9, 5);
-  painter.rect(FUR_LIGHT, CENTER_X - 12, TORSO_TOP - 1, 9, 1);
-  painter.rect(FUR, CENTER_X + 4, TORSO_TOP - 1, 9, 5);
-  painter.rect(FUR_LIGHT, CENTER_X + 4, TORSO_TOP - 1, 9, 1);
+  paintSpikedShoulder(painter, CENTER_X - 13, TORSO_TOP - 1, 10, 6);
+  paintSpikedShoulder(painter, CENTER_X + 4, TORSO_TOP - 1, 10, 6);
 }
 
 function paintAxe(painter: SpritePainter): void {

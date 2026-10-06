@@ -1,14 +1,13 @@
-import { Group, Sprite, SpriteMaterial, type CanvasTexture } from 'three';
+import { Sprite, type Container, type Texture } from 'pixi.js';
 import { createRandom } from '../kernel/random';
-import { LOGICAL_HEIGHT, TOWN_WIDTH } from '../kernel/stageSize';
 import { ANIMAL_COATS, animalSpriteSize, drawAnimalFrame, mirrorHorizontally, type AnimalKind, type AnimalPose } from './animalArt';
-import { createPixelTexture } from './pixelSprites';
+import { createPixiTexture } from './pixiTextures';
 import { pointAtDistance, routeLength } from './roadRoute';
 import type { Road } from './townLayout';
 
 const MINIMUM_WALKING_ROUTE_PIXELS = 30;
 const STEPS_PER_SECOND = 5;
-const DEPTH_BEHIND_PEOPLE = 0.005;
+const DRAW_ORDER_BEHIND_PEOPLE = 0.01;
 
 interface AnimalBehaviour {
   minimumSpeedPixelsPerSecond: number;
@@ -25,13 +24,13 @@ const ANIMAL_BEHAVIOUR: Record<AnimalKind, AnimalBehaviour> = {
   hen: { minimumSpeedPixelsPerSecond: 5, maximumSpeedPixelsPerSecond: 8, restChancePerSecond: 0.2, minimumRestSeconds: 2, maximumRestSeconds: 6 },
 };
 
-// Walking art faces right. Three.js ignores a negative sprite scale, so the left-facing frames are drawn mirrored.
+// Walking art faces right. The left-facing frames are drawn mirrored once, so the stage never flips a sprite.
 type Facing = 'right' | 'left';
 
 interface RoamingAnimal {
   kind: AnimalKind;
   sprite: Sprite;
-  framesByFacing: Record<Facing, Record<AnimalPose, CanvasTexture>>;
+  framesByFacing: Record<Facing, Record<AnimalPose, Texture>>;
   route: Road['points'];
   routeLength: number;
   distance: number;
@@ -44,18 +43,18 @@ export interface TownAnimals {
   update(elapsedSeconds: number): void;
 }
 
-function createFramesByFacing(kind: AnimalKind, coatIndex: number): Record<Facing, Record<AnimalPose, CanvasTexture>> {
+function createFramesByFacing(kind: AnimalKind, coatIndex: number): Record<Facing, Record<AnimalPose, Texture>> {
   const coat = ANIMAL_COATS[kind][coatIndex % ANIMAL_COATS[kind].length] as (typeof ANIMAL_COATS)[AnimalKind][number];
   const facingRight = { stepA: drawAnimalFrame(kind, coat, 'stepA'), stepB: drawAnimalFrame(kind, coat, 'stepB'), rest: drawAnimalFrame(kind, coat, 'rest') };
-  const texturesOf = (flip: (canvas: HTMLCanvasElement) => HTMLCanvasElement): Record<AnimalPose, CanvasTexture> => ({
-    stepA: createPixelTexture(flip(facingRight.stepA)),
-    stepB: createPixelTexture(flip(facingRight.stepB)),
-    rest: createPixelTexture(flip(facingRight.rest)),
+  const texturesOf = (flip: (canvas: HTMLCanvasElement) => HTMLCanvasElement): Record<AnimalPose, Texture> => ({
+    stepA: createPixiTexture(flip(facingRight.stepA)),
+    stepB: createPixiTexture(flip(facingRight.stepB)),
+    rest: createPixiTexture(flip(facingRight.rest)),
   });
   return { right: texturesOf((canvas) => canvas), left: texturesOf(mirrorHorizontally) };
 }
 
-export function createTownAnimals(root: Group, roads: readonly Road[], seed: number): TownAnimals {
+export function createTownAnimals(root: Container, roads: readonly Road[], seed: number): TownAnimals {
   const random = createRandom(seed).fork('animals');
   const plans = roads
     .filter((road) => routeLength(road.points) >= MINIMUM_WALKING_ROUTE_PIXELS)
@@ -64,10 +63,8 @@ export function createTownAnimals(root: Group, roads: readonly Road[], seed: num
   const animals: RoamingAnimal[] = plans.map(({ road, kind }) => {
     const behaviour = ANIMAL_BEHAVIOUR[kind];
     const framesByFacing = createFramesByFacing(kind, random.nextInt(0, ANIMAL_COATS[kind].length - 1));
-    const { width, height } = animalSpriteSize(kind);
-    const sprite = new Sprite(new SpriteMaterial({ map: framesByFacing.right.stepA, transparent: true }));
-    sprite.scale.set(width, height, 1);
-    root.add(sprite);
+    const sprite = new Sprite(framesByFacing.right.stepA);
+    root.addChild(sprite);
     const length = routeLength(road.points);
     return {
       kind,
@@ -103,9 +100,10 @@ export function createTownAnimals(root: Group, roads: readonly Road[], seed: num
         }
         const position = pointAtDistance(animal.route, animal.distance);
         const pose: AnimalPose = isResting ? 'rest' : Math.floor(elapsedSeconds * STEPS_PER_SECOND) % 2 === 0 ? 'stepA' : 'stepB';
-        const { height } = animalSpriteSize(animal.kind);
-        animal.sprite.material.map = animal.framesByFacing[animal.direction === 1 ? 'right' : 'left'][pose];
-        animal.sprite.position.set(Math.round(position.x - TOWN_WIDTH / 2), Math.round(LOGICAL_HEIGHT / 2 - position.y + height / 2), position.y * 0.01 - 3 - DEPTH_BEHIND_PEOPLE);
+        const { width, height } = animalSpriteSize(animal.kind);
+        animal.sprite.texture = animal.framesByFacing[animal.direction === 1 ? 'right' : 'left'][pose];
+        animal.sprite.position.set(Math.round(position.x - width / 2), Math.round(position.y - height));
+        animal.sprite.zIndex = position.y - DRAW_ORDER_BEHIND_PEOPLE;
       }
     },
   };

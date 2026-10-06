@@ -1,7 +1,8 @@
 import { addHeroOutline, createHeroCanvas } from '../heroCanvas';
 import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
 import { paintPriestHead } from '../headgear/priestHead';
-import { bodyHalfWidth } from '../maleHeadArt';
+import { paintPaladinBody, paintWarhammer } from '../paladinParts';
+import { paintWarriorPauldrons } from '../warriorParts';
 import { createSpritePainter, type SpritePainter } from '../spritePainter';
 
 const DRAWING_WIDTH = 30;
@@ -15,46 +16,15 @@ const TORSO_TOP = 14;
 const STAFF_X = 25;
 const HOLY_LIGHT = '#fff3b0';
 
-function paintRobe(painter: SpritePainter, colors: HeroColors): void {
-  const shoulder = bodyHalfWidth(colors, 4);
-  for (let row = 0; row < 8; row++) {
-    const halfWidth = Math.max(3, shoulder - Math.floor(row / 3));
-    painter.span(colors.cloth, CENTER_X - halfWidth, CENTER_X + halfWidth, TORSO_TOP + row);
-    painter.dot(colors.clothShade, CENTER_X + halfWidth, TORSO_TOP + row);
-  }
-  for (let row = 0; row < 18; row++) {
-    const halfWidth = 4 + Math.floor(row * 0.4);
-    painter.span(colors.cloth, CENTER_X - halfWidth, CENTER_X + halfWidth, TORSO_TOP + 8 + row);
-    painter.dot(colors.clothShade, CENTER_X + halfWidth, TORSO_TOP + 8 + row);
-    painter.dot(colors.clothShade, CENTER_X - halfWidth, TORSO_TOP + 8 + row);
-    if (row % 4 === 3) painter.span(colors.clothShade, CENTER_X - halfWidth + 1, CENTER_X - 1, TORSO_TOP + 8 + row);
-  }
-  painter.rect(MATERIAL.red, CENTER_X - 1, TORSO_TOP, 3, 24);
-  painter.rect(MATERIAL.redDark, CENTER_X + 1, TORSO_TOP, 1, 24);
-  painter.rect(colors.trim, CENTER_X - 2, TORSO_TOP, 1, 24);
-  painter.rect(colors.trim, CENTER_X + 2, TORSO_TOP, 1, 24);
-  painter.dot(colors.trim, CENTER_X, TORSO_TOP + 5);
-  painter.rect(colors.trim, CENTER_X - 1, TORSO_TOP + 6, 3, 1);
-  painter.dot(colors.trim, CENTER_X, TORSO_TOP + 4);
-  painter.span(MATERIAL.leather, CENTER_X - 4, CENTER_X + 4, TORSO_TOP + 8);
-  painter.span(colors.trim, CENTER_X - 9, CENTER_X + 9, TORSO_TOP + 25);
-  painter.rect(MATERIAL.leather, CENTER_X - 6, TORSO_TOP + 26, 4, 1);
-  painter.rect(MATERIAL.leather, CENTER_X + 3, TORSO_TOP + 26, 4, 1);
+function paintPlateBody(painter: SpritePainter, colors: HeroColors): void {
+  paintPaladinBody(painter, colors, { centerX: CENTER_X, torsoTop: TORSO_TOP, torsoRows: 11, shoulderHalfWidth: 6, waistHalfWidth: 4, legTop: 28, legRows: 8, bootHeight: 3 });
 }
 
-function paintHolyStaff(painter: SpritePainter, colors: HeroColors): void {
-  painter.rect(MATERIAL.wood, STAFF_X, 9, 1, 31);
-  painter.rect(MATERIAL.woodDark, STAFF_X + 1, 9, 1, 31);
-  painter.grid(
-    ['..GGGG..', '.GwwwwG.', 'GwwHHwwG', 'GwHHHHwG', 'GwHHHHwG', 'GwwHHwwG', '.GwwwwG.', '..GGGG..'],
-    { G: colors.trim, w: MATERIAL.white, H: HOLY_LIGHT },
-    STAFF_X - 3,
-    1,
-  );
-  painter.dot(MATERIAL.goldDark, STAFF_X - 3, 8);
+function paintHolyHammer(painter: SpritePainter, colors: HeroColors): void {
+  paintWarhammer(painter, colors, { hastX: STAFF_X, headTop: 2, headHalfWidth: 4, headHeight: 6, hastBottom: 40 });
   painter.line(colors.cloth, CENTER_X + 4, TORSO_TOP, STAFF_X - 1, TORSO_TOP + 8, 2);
   painter.line(colors.clothShade, CENTER_X + 4, TORSO_TOP + 1, STAFF_X - 1, TORSO_TOP + 9);
-  painter.rect(colors.skin, STAFF_X - 1, TORSO_TOP + 8, 3, 3);
+  painter.rect(colors.trim, STAFF_X - 1, TORSO_TOP + 8, 4, 3);
 }
 
 function paintBlessingHand(painter: SpritePainter, colors: HeroColors): void {
@@ -80,10 +50,11 @@ export function drawPriestSprite(colors: HeroColors): HTMLCanvasElement {
   const art = createHeroCanvas(PRIEST_SPRITE_SIZE.width, PRIEST_SPRITE_SIZE.height);
   const painter = createSpritePainter(art, OUTLINE_MARGIN, OUTLINE_MARGIN);
   paintHairBehind(painter, colors);
-  paintRobe(painter, colors);
+  paintPlateBody(painter, colors);
   paintPriestHead(painter, colors, CENTER_X, HEAD_TOP);
   paintBlessingHand(painter, colors);
-  paintHolyStaff(painter, colors);
+  paintHolyHammer(painter, colors);
+  paintWarriorPauldrons(painter, colors, CENTER_X + 5, CENTER_X - 13, 13);
   painter.rect(darken(colors.hair, 0.8), CENTER_X - 2, 13, 5, 1);
   painter.rect(lighten(colors.cloth), CENTER_X - 3, TORSO_TOP + 1, 2, 3);
   addHeroOutline(art);

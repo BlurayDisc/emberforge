@@ -1,6 +1,7 @@
-import { CanvasTexture, NearestFilter, SRGBColorSpace, Sprite, SpriteMaterial } from 'three';
+import { Sprite } from 'pixi.js';
 import type { BattleSide, UnitRank } from '../model/battle';
 import type { ResourceId } from '../model/resource';
+import { createPixiTexture } from './pixiTextures';
 import { RESOURCE_BAR_COLORS } from './resourceColors';
 
 const BAR_HEIGHT = 9;
@@ -87,13 +88,8 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('2D canvas is not available');
 
-  const texture = new CanvasTexture(canvas);
-  texture.magFilter = NearestFilter;
-  texture.minFilter = NearestFilter;
-  texture.generateMipmaps = false;
-  texture.colorSpace = SRGBColorSpace;
-  const sprite = new Sprite(new SpriteMaterial({ map: texture, transparent: true }));
-  sprite.scale.set(canvas.width, canvas.height, 1);
+  const texture = createPixiTexture(canvas);
+  const sprite = new Sprite(texture);
 
   const colors = COLORS_BY_SIDE[options.side];
   const innerWidth = options.barWidth - 2;
@@ -153,7 +149,8 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
       context.fillStyle = RESOURCE_BAR_COLORS[options.resource.id];
       context.fillRect(barLeft + 1, 8, Math.round((Math.min(options.resource.max, Math.max(0, resourceValue)) / options.resource.max) * innerWidth), 2);
     }
-    texture.needsUpdate = true;
+    // The canvas is drawn again, so the GPU copy must be refreshed.
+    texture.source.update();
   };
   draw();
 
@@ -189,8 +186,7 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
       sprite.visible = isVisible;
     },
     dispose: () => {
-      sprite.material.dispose();
-      texture.dispose();
+      sprite.destroy({ texture: true, textureSource: true });
     },
   };
 }

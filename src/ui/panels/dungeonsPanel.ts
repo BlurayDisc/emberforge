@@ -1,22 +1,17 @@
 import { DUNGEONS, type DungeonDefinition } from '../../content/dungeons';
 import { requireById } from '../../content/lookup';
-import { collectDungeonLootCommand, describeHero, hasBankUnlock, isDungeonUnlocked, loadStaysOnDungeonScreen, runInDungeon, runOfHero, runAwayCommand, saveStaysOnDungeonScreen, startDungeonRunCommand } from '../../game';
+import { collectDungeonLootCommand, hasBankUnlock, isDungeonUnlocked, loadStaysOnDungeonScreen, runInDungeon, runOfHero, runAwayCommand, saveStaysOnDungeonScreen, startDungeonRunCommand } from '../../game';
 import type { DungeonRun, RunReport } from '../../model/gameState';
-import type { Hero } from '../../model/hero';
 import type { Item } from '../../model/item';
 import type { MaterialStack } from '../../model/material';
 import { actionButton, element } from '../dom';
-import { createTeamStrip } from '../heroStatusStrip';
-import { createExperienceBar, createLiveHealthBar } from '../liveBars';
-import { className, heroDisplayName, itemDisplayName, listOf, materialName } from '../displayNames';
+import { heroDisplayName, itemDisplayName, listOf, materialName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
-import { openPartyChooser } from './dungeonPartyChooser';
 import { openDungeonView } from '../dungeonModal';
-import { openModal, type ModalHandle } from '../modal';
+import type { ModalHandle } from '../modal';
 import { createDungeonIcon, createFightIcon, createLockIcon } from '../iconArt';
 import { createList, createListRow } from '../listRow';
 import { addDungeonBackdrop } from '../dungeonBackdrop';
-import { createPortrait } from '../portraitArt';
 import { focusRun } from '../runFocus';
 import { createRunProgressBar, elapsedSecondsOfRun } from '../runProgress';
 import { openRunReport, repeatRun } from '../runReportModal';
@@ -43,55 +38,23 @@ function start(context: PanelContext, dungeonId: string, heroIds: string[], choo
   context.closePanel();
 }
 
-// A hero in another run, or one below the dungeon level, shows why it cannot go.
-function heroStatusLine(context: PanelContext, hero: Hero, dungeon: DungeonDefinition): HTMLElement {
-  const run = runOfHero(context.store.getState(), hero.id);
-  if (run) return element('div', 'card-text small busy-note', t('heroes.awayIn', { dungeon: t(`dungeon.${run.dungeonId}`) }));
-  if (hero.level < dungeon.minimumHeroLevel) return element('div', 'card-text small level-low', t('dungeons.heroTooLow', { level: dungeon.minimumHeroLevel }));
-  return createLiveHealthBar(context.store, hero.id);
-}
-
-function renderHeroChoice(context: PanelContext, hero: Hero, dungeon: DungeonDefinition, chooser: ModalHandle): HTMLElement {
-  const isAway = runOfHero(context.store.getState(), hero.id) !== undefined;
-  const isTooLow = hero.level < dungeon.minimumHeroLevel;
-  const entry = createListRow({
-    art: createPortrait(hero.classId, hero.name, 2),
-    title: heroDisplayName(hero.name),
-    lines: [
-      element('div', 'card-text small', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })),
-      heroStatusLine(context, hero, dungeon),
-      createExperienceBar(hero.experience, describeHero(context.store.getState(), hero, Date.now()).experienceToNextLevel),
-    ],
-    className: `hero-choice${isAway || isTooLow ? ' busy' : ''}`,
+// The Fight button and the row open the same dungeon screen. A free dungeon also holds the hero choice there.
+function openDungeonScreen(context: PanelContext, dungeon: DungeonDefinition, canFight: boolean): void {
+  const state = context.store.getState();
+  openDungeonView(dungeon.id, {
+    showsDropRates: hasBankUnlock(state, 'dropRates'),
+    showsMonsterStatistics: hasBankUnlock(state, 'monsterStatistics'),
+    fight: canFight ? { store: context.store, start: (heroIds, screen) => start(context, dungeon.id, heroIds, screen) } : undefined,
   });
-  if (!isAway && !isTooLow) entry.addEventListener('click', () => start(context, dungeon.id, [hero.id], chooser));
-  return entry;
 }
 
-// The first hero in the company is the primary hero. A company of one has nobody to choose, so the fight starts at once.
-// From the second hero on, this window asks which hero goes, and one tap on a hero starts the fight.
-function sendHeroToDungeon(context: PanelContext, dungeon: DungeonDefinition): void {
-  const company = context.store.getState().company;
-  const primaryHero = company[0];
-  if (dungeon.minimumPartySize > 1) openPartyChooser(context, dungeon, (heroIds, chooser) => start(context, dungeon.id, heroIds, chooser));
-  else if (company.length === 1 && primaryHero) start(context, dungeon.id, [primaryHero.id], null);
-  else openHeroChooser(context, dungeon);
-}
-
-function openHeroChooser(context: PanelContext, dungeon: DungeonDefinition): void {
-  const heroes = context.store.getState().company;
-  const list = element('div', 'chooser-list');
-  const handle: ModalHandle = openModal(t('dungeons.chooseHero', { dungeon: t(`dungeon.${dungeon.id}`) }), element('div', 'panel-body', list));
-  list.append(createList(...heroes.map((hero) => renderHeroChoice(context, hero, dungeon, handle))));
-}
-
-// The whole row opens the dungeon details. Buttons inside the row keep their own action.
-function makeDetailsClickable(context: PanelContext, row: HTMLElement, dungeonId: string, fight?: { isEnabled: boolean; start: () => void }): HTMLElement {
+// The whole row opens the dungeon screen. Buttons inside the row keep their own action.
+function makeDetailsClickable(context: PanelContext, row: HTMLElement, dungeon: DungeonDefinition, canFight = false): HTMLElement {
   row.classList.add('clickable');
-  addDungeonBackdrop(row, dungeonId);
+  addDungeonBackdrop(row, dungeon.id);
   row.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('button')) return;
-    openDungeonView(dungeonId, { showsDropRates: hasBankUnlock(context.store.getState(), 'dropRates'), showsMonsterStatistics: hasBankUnlock(context.store.getState(), 'monsterStatistics'), fight });
+    openDungeonScreen(context, dungeon, canFight);
   });
   return row;
 }
@@ -113,7 +76,7 @@ function renderLockedDungeon(context: PanelContext, dungeon: DungeonDefinition):
     title: dungeonTitle(dungeon),
     lines: [levelRangeLine(context, dungeon), element('div', 'card-text small locked-note', t('dungeons.locked', { dungeon: before }))],
     className: 'locked',
-  }), dungeon.id);
+  }), dungeon);
 }
 
 // A finished fight waits for the player. The stats open first, and only then the dungeon can start again.
@@ -159,7 +122,7 @@ function renderPendingLootDungeon(context: PanelContext, dungeon: DungeonDefinit
     ],
     actions: [actionButton(t('dungeons.collectLoot'), collect, { className: 'action-button primary' })],
     className: 'finished',
-  }), dungeon.id);
+  }), dungeon);
 }
 
 function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): HTMLElement {
@@ -175,8 +138,8 @@ function renderFreeDungeon(context: PanelContext, dungeon: DungeonDefinition): H
       levelRangeLine(context, dungeon),
       ...(isCleared ? [element('div', 'card-text small', t('dungeons.cleared'))] : []),
     ],
-    actions: [actionButton(t('dungeons.start'), () => sendHeroToDungeon(context, dungeon), { disabled: !hasHeroToSend })],
-  }), dungeon.id, { isEnabled: hasHeroToSend, start: () => sendHeroToDungeon(context, dungeon) });
+    actions: [actionButton(t('dungeons.start'), () => openDungeonScreen(context, dungeon, true), { disabled: !hasHeroToSend })],
+  }), dungeon, hasHeroToSend);
 }
 
 function renderBusyDungeon(context: PanelContext, dungeon: DungeonDefinition, run: DungeonRun): HTMLElement {
@@ -201,7 +164,7 @@ function renderBusyDungeon(context: PanelContext, dungeon: DungeonDefinition, ru
       actionButton(t('dungeons.runAway'), () => context.store.execute(runAwayCommand(run.runNumber, elapsedSecondsOfRun(run.runNumber), Date.now())), { className: 'action-button danger' }),
     ],
     className: 'fighting',
-  }), dungeon.id);
+  }), dungeon);
 }
 
 function renderStayOnScreenToggle(): HTMLElement {
@@ -232,7 +195,6 @@ export const renderDungeonsPanel: PanelRenderer = (context) => {
   const body = element('div', 'panel-body');
   const dungeons = DUNGEONS.filter((dungeon) => dungeon.townId === state.townId);
   body.append(
-    ...(state.company.length > 0 ? [element('div', 'section-title', t('dungeons.team')), createTeamStrip(context.store, () => context.openPanel('heroes'))] : []),
     element('p', 'hint', t('dungeons.oneFightHint')),
     ...(hasBankUnlock(state, 'quickDispatch') ? [renderStayOnScreenToggle()] : []),
     createList(

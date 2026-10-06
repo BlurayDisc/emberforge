@@ -36,6 +36,12 @@ export function resetWorkshopSelection(): void {
   selectedProfessionId = null;
 }
 
+function leaveCrafterScreen(context: PanelContext): void {
+  selectedProfessionId = null;
+  context.leaveSubScreen();
+  context.requestRender();
+}
+
 function craft(context: PanelContext, recipe: WorkshopRecipeView): boolean {
   const result = context.store.execute(craftItemCommand(recipe.baseId, recipe.tier, recipe.setMaterialId, Date.now()));
   if (!result.accepted) {
@@ -43,9 +49,7 @@ function craft(context: PanelContext, recipe: WorkshopRecipeView): boolean {
     return false;
   }
   context.notify(t('workshop.started', { name: craftedBaseName(recipe.resultMaterialId, recipe.baseId) }));
-  selectedProfessionId = null;
-  context.leaveSubScreen();
-  context.requestRender();
+  leaveCrafterScreen(context);
   return true;
 }
 
@@ -165,7 +169,7 @@ function renderCrafterRow(context: PanelContext, crafter: CrafterView): HTMLElem
       collectWaitingItem(context, crafter.professionId);
       return;
     }
-    context.enterSubScreen();
+    context.enterSubScreen(() => leaveCrafterScreen(context));
     selectedProfessionId = crafter.professionId;
     context.requestRender();
   });
@@ -207,11 +211,7 @@ function renderCrafterScreen(context: PanelContext, crafter: CrafterView, recipe
     shownRecipes.length === 0 ? element('p', 'hint', t('workshop.noRecipesMatch')) : createList(...shownRecipes.map((recipe) => renderRecipe(context, recipe))),
   );
   if (nextRecipeLevel !== Infinity) body.append(element('p', 'hint', t('workshop.nextRecipeAt', { level: nextRecipeLevel })));
-  body.append(actionButton(t('workshop.back'), () => {
-    selectedProfessionId = null;
-    context.leaveSubScreen();
-    context.requestRender();
-  }));
+  body.append(element('div', 'panel-footer', actionButton(t('workshop.back'), () => leaveCrafterScreen(context))));
   return body;
 }
 

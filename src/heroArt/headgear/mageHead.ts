@@ -1,25 +1,28 @@
 import { paintFemaleHead } from '../femaleHeadArt';
-import { MATERIAL, lighten, type HeroColors, type Hex } from '../heroPalette';
+import { lighten, type HeroColors, type Hex } from '../heroPalette';
 import type { SpritePainter } from '../spritePainter';
 
-const EYE_SHADOW: Hex = '#8a4fd0';
+const EYE_SHADOW: Hex = '#d8703a';
 const HAT_HEIGHT_ABOVE_FACE = 3;
+const FLAME: Hex = '#ff8a2a';
+const FLAME_CORE: Hex = '#ffe27a';
+const RUBY: Hex = '#e02a3a';
 
-const HAT_ROWS = [
-  '.......VV........',
-  '......VVVv.......',
-  '.....VVVVVv......',
-  '....VVVVVVVv.....',
-  '...GGGGGGGGGg....',
-  '.vVVVVVVVVVVVVVv.',
-  'dvvvvvvvvvvvvvvvd',
+// Swept-up hair around a small flame, and a gold circlet with a ruby on the brow.
+const CROWN_ROWS = [
+  '........o........',
+  '.......oOo.......',
+  '......HoOoH......',
+  '.....HHHHHHH.....',
+  '....HHHHHHHHH....',
+  '...HHHHHHHHHHH...',
+  '...GGGGGrGGGGG...',
 ];
 
 // The head grid starts three rows under the top of the hat, so the brim covers the hair rows.
 export function paintMageHead(painter: SpritePainter, colors: HeroColors, centerX: number, headTop: number): void {
   paintFemaleHead(painter, colors, centerX - 6, headTop, EYE_SHADOW);
   const hatTop = headTop - HAT_HEIGHT_ABOVE_FACE;
-  painter.grid(HAT_ROWS, { V: colors.cloth, v: colors.clothShade, d: colors.clothDeep, G: colors.trim, g: MATERIAL.goldDark }, centerX - 8, hatTop);
-  painter.dot(lighten(colors.cloth), centerX - 1, hatTop + 2);
-  painter.dot(MATERIAL.white, centerX + 1, hatTop + 4);
+  painter.grid(CROWN_ROWS, { H: colors.hair, G: colors.trim, o: FLAME, O: FLAME_CORE, r: RUBY }, centerX - 8, hatTop);
+  painter.dot(lighten(colors.hair, 1.4), centerX - 3, hatTop + 4);
 }

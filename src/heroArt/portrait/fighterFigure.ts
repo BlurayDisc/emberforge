@@ -7,6 +7,8 @@ const CENTER_X = PORTRAIT_CENTER_X - 1;
 const HEAD_TOP = 3;
 const TORSO_TOP = 14;
 const IMPACT_SPARK = '#fff3b0';
+const FLAME = '#ff9a3a';
+const FLAME_CORE = '#ffd86a';
 const WRAP = '#e8e4d4';
 
 function paintHeadband(painter: SpritePainter): void {
@@ -52,16 +54,21 @@ function paintFists(painter: SpritePainter, colors: HeroColors): void {
   painter.line(colors.skin, CENTER_X + 4, TORSO_TOP + 2, 30, TORSO_TOP + 2, 4);
   painter.line(colors.skinShade, CENTER_X + 4, TORSO_TOP + 4, 30, TORSO_TOP + 4);
   painter.rect(WRAP, 26, TORSO_TOP, 3, 5);
-  painter.rect(MATERIAL.red, 30, TORSO_TOP - 1, 6, 6);
+  painter.rect(colors.trim, 30, TORSO_TOP - 1, 6, 6);
   painter.rect(WRAP, 30, TORSO_TOP - 1, 6, 1);
-  painter.rect(darken(MATERIAL.red, 0.7), 30, TORSO_TOP + 4, 6, 1);
-  for (const [sparkX, sparkY] of [[36, 9], [37, 13], [36, 19], [33, 7]] as const) painter.dot(IMPACT_SPARK, sparkX, sparkY);
+  painter.rect(darken(colors.trim, 0.65), 30, TORSO_TOP + 4, 6, 1);
+  painter.rect(FLAME, 31, TORSO_TOP - 5, 4, 4);
+  painter.rect(FLAME_CORE, 32, TORSO_TOP - 4, 2, 3);
+  painter.dot(FLAME, 32, TORSO_TOP - 7);
+  for (const [sparkX, sparkY] of [[36, 9], [37, 13], [36, 19], [30, 5]] as const) painter.dot(IMPACT_SPARK, sparkX, sparkY);
   painter.line(colors.skin, CENTER_X - 4, TORSO_TOP + 2, 8, TORSO_TOP + 9, 4);
   painter.line(colors.skinShade, CENTER_X - 4, TORSO_TOP + 4, 8, TORSO_TOP + 11);
   painter.rect(WRAP, 10, TORSO_TOP + 8, 3, 5);
-  painter.rect(MATERIAL.red, 3, TORSO_TOP + 7, 6, 6);
+  painter.rect(colors.trim, 3, TORSO_TOP + 7, 6, 6);
   painter.rect(WRAP, 3, TORSO_TOP + 7, 6, 1);
-  painter.rect(darken(MATERIAL.red, 0.7), 3, TORSO_TOP + 12, 6, 1);
+  painter.rect(darken(colors.trim, 0.65), 3, TORSO_TOP + 12, 6, 1);
+  painter.rect(FLAME, 4, TORSO_TOP + 3, 4, 4);
+  painter.rect(FLAME_CORE, 5, TORSO_TOP + 4, 2, 3);
 }
 
 export function drawFighterFigure(colors: HeroColors): HTMLCanvasElement {

@@ -1,5 +1,5 @@
 import { renderDungeonsPanel } from './panels/dungeonsPanel';
-import { renderHeroesPanel } from './panels/heroesPanel';
+import { renderHeroesPanel, resetHeroesTab } from './panels/heroesPanel';
 import { renderInventoryPanel, resetInventorySelection } from './panels/inventoryPanel';
 import type { GameState } from '../model/gameState';
 import type { PanelRenderer } from './panels/panelContext';
@@ -22,7 +22,7 @@ export interface PanelDefinition {
 }
 
 export const PANEL_CATALOG: readonly PanelDefinition[] = [
-  { id: 'heroes', barIcon: 'heroes', render: renderHeroesPanel },
+  { id: 'heroes', barIcon: 'heroes', render: renderHeroesPanel, onClose: resetHeroesTab },
   { id: 'inventory', barIcon: 'inventory', render: renderInventoryPanel, onClose: resetInventorySelection },
   { id: 'workshop', barIcon: 'workshop', render: renderWorkshopPanel, onClose: resetWorkshopSelection },
   { id: 'merchant', barIcon: 'merchant', render: renderMerchantPanel, onClose: resetMerchantSelection },

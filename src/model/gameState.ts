@@ -14,6 +14,8 @@ export interface HeroEncounterResult {
   monstersDefeated: number;
   experienceGained: number;
   reachedLevel: number | null;
+  // The level before the fight. The result card shows what the levels gave.
+  levelBefore: number;
   // The hero's level and experience after the fight. The result card draws the experience bar from them.
   levelAfter: number;
   experienceAfter: number;

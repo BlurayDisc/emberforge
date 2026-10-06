@@ -1,11 +1,15 @@
+import { findSpell, rankOf } from '../content/spells';
 import type { BattleSpell, SpellDefinition, SpellEffect } from '../model/spell';
 import { classResourceName } from './displayNames';
 import { t } from './i18n';
 
 const percentOf = (fraction: number): number => Math.round(fraction * 100);
 
+// The names of rank 2 and up carry their numeral in the translation. Rank 1 gets "I" here, so every ranked spell shows its rank.
 export function spellName(spellId: string): string {
-  return t(`spell.${spellId}`);
+  const spell = findSpell(spellId);
+  const rank1Suffix = spell && !spell.isUltimate && rankOf(spell) === 1 ? ' I' : '';
+  return `${t(`spell.${spellId}`)}${rank1Suffix}`;
 }
 
 function statusPhrase(inflicted: { status: string; strength: number; charges?: number }): string {

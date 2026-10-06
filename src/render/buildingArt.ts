@@ -3,7 +3,7 @@ import type { PaletteColor } from './palette';
 import {
   drawAwning,
   drawBrickWalls,
-  drawChimneyWithSmoke,
+  drawChimney,
   drawCratesAndBarrel,
   drawDoor,
   drawGateArch,
@@ -43,7 +43,7 @@ function drawTavern(art: PixelCanvas, width: number, height: number): void {
 function drawWorkshop(art: PixelCanvas, width: number, height: number): void {
   const colors = COLORS_BY_STYLE.workshop;
   const roofHeight = Math.round(height * 0.42);
-  drawChimneyWithSmoke(art, width - 22, 4);
+  drawChimney(art, width - 22, 4);
   drawBrickWalls(art, 6, roofHeight, width - 12, height - roofHeight, colors);
   drawRoof(art, 0, 0, width, roofHeight + 2, colors);
   drawWindow(art, 16, roofHeight + 8, 'blood');

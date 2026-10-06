@@ -596,7 +596,7 @@ function checkAudio(): void {
     const lengths = track.voices.map((voice) => voice.notes.split(/\s+/).reduce((total, token) => total + Number(token.split(':')[1] ?? 1), 0));
     if (new Set(lengths).size !== 1) report(`audio/music.json: voices of track '${trackId}' must have the same length (found ${lengths.join(', ')})`);
   }
-  for (const required of ['town', 'battle', 'boss']) if (!(required in music.tracks)) report(`audio/music.json: missing track '${required}'`);
+  for (const required of ['town', 'battle', 'boss', 'castle']) if (!(required in music.tracks)) report(`audio/music.json: missing track '${required}'`);
 }
 
 checkAudio();

@@ -28,28 +28,35 @@ function paintTorso(painter: SpritePainter, colors: HeroColors): void {
     painter.span(colors.cloth, 17 - halfWidth, 17 + halfWidth, row);
     painter.span(colors.clothShade, 17 + halfWidth - 1, 17 + halfWidth, row);
   }
-  painter.span(colors.clothLight, 11, 16, 15);
-  painter.span(colors.clothLight, 18, 23, 15);
-  painter.span(colors.clothShade, 12, 16, 19);
-  painter.span(colors.clothShade, 18, 22, 19);
-  painter.rect(colors.clothShade, 17, 15, 1, 5);
-  for (const row of [22, 24, 26]) {
-    painter.span(colors.clothShade, 14, 16, row);
-    painter.span(colors.clothShade, 18, 20, row);
-  }
-  painter.rect(colors.clothShade, 17, 21, 1, 6);
+  painter.span(colors.clothLight, 11, 15, 14);
+  painter.span(colors.clothLight, 19, 23, 14);
+  painter.span(colors.clothShade, 11, 15, 18);
+  painter.span(colors.clothShade, 19, 23, 18);
   painter.rect(MATERIAL.leather, 12, 27, 11, 2);
   painter.rect(colors.trim, 16, 27, 3, 2);
   painter.rect(colors.cloth, 11, 29, 13, 1);
+  paintTabard(painter, colors);
+}
+
+// The tabard hangs over the breastplate and over the belt, down to the thighs.
+function paintTabard(painter: SpritePainter, colors: HeroColors): void {
+  painter.rect(MATERIAL.red, 15, 14, 5, 13);
+  painter.rect(MATERIAL.redDark, 19, 14, 1, 13);
+  painter.rect(colors.trim, 15, 14, 5, 1);
+  painter.rect(colors.trim, 16, 18, 3, 1);
+  painter.rect(colors.trim, 17, 17, 1, 3);
+  painter.rect(MATERIAL.red, 14, 29, 7, 4);
+  painter.rect(MATERIAL.redDark, 20, 29, 1, 4);
+  painter.rect(colors.trim, 14, 32, 7, 1);
 }
 
 function paintSwordArm(painter: SpritePainter, colors: HeroColors): void {
-  painter.rect(colors.skin, 23, 17, 5, 5);
-  painter.rect(lighten(colors.skin, 1.12), 24, 17, 2, 2);
-  painter.rect(colors.skinShade, 23, 20, 5, 2);
-  painter.rect(colors.cloth, 23, 22, 5, 4);
+  painter.rect(colors.cloth, 23, 17, 5, 9);
+  painter.rect(lighten(colors.cloth), 24, 17, 1, 7);
+  painter.rect(colors.clothShade, 26, 17, 2, 9);
+  painter.rect(colors.trim, 23, 21, 5, 1);
+  painter.rect(colors.trim, 23, 17, 5, 1);
   painter.rect(colors.clothShade, 23, 25, 5, 1);
-  painter.rect(colors.trim, 23, 22, 5, 1);
 }
 
 function paintFist(painter: SpritePainter, colors: HeroColors): void {

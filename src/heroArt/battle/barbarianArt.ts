@@ -1,6 +1,7 @@
 import { addHeroOutline, createHeroCanvas } from '../heroCanvas';
 import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
 import { paintBarbarianHead } from '../headgear/barbarianHead';
+import { paintSpikedShoulder } from '../gruntParts';
 import { createSpritePainter, type SpritePainter } from '../spritePainter';
 
 const DRAWING_WIDTH = 32;
@@ -50,20 +51,18 @@ function paintTorso(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(MATERIAL.leather, CENTER_X - 8, TORSO_TOP + 13, 17, 2);
   painter.rect(BONE, CENTER_X - 1, TORSO_TOP + 13, 3, 2);
   painter.dot(MATERIAL.boot, CENTER_X, TORSO_TOP + 14);
-  painter.rect(FUR, CENTER_X - 9, TORSO_TOP - 1, 7, 4);
-  painter.rect(FUR_LIGHT, CENTER_X - 9, TORSO_TOP - 1, 7, 1);
-  painter.rect(FUR, CENTER_X + 3, TORSO_TOP - 1, 7, 4);
-  painter.rect(FUR_LIGHT, CENTER_X + 3, TORSO_TOP - 1, 7, 1);
+  paintSpikedShoulder(painter, CENTER_X - 10, TORSO_TOP - 1, 8, 5);
+  paintSpikedShoulder(painter, CENTER_X + 3, TORSO_TOP - 1, 8, 5);
 }
 
 function paintAxe(painter: SpritePainter): void {
   painter.rect(MATERIAL.wood, AXE_HAFT_X, 3, 2, 34);
   painter.rect(MATERIAL.woodDark, AXE_HAFT_X + 1, 3, 1, 34);
-  for (let row = 3; row <= 15; row++) {
-    const reach = Math.max(1, 5 - Math.floor(Math.abs(row - 9) * 0.8));
+  for (let row = 2; row <= 16; row++) {
+    const reach = Math.max(1, 6 - Math.floor(Math.abs(row - 9) * 0.9));
     painter.span(AXE_STEEL, AXE_HAFT_X - reach, AXE_HAFT_X - 1, row);
     painter.dot(MATERIAL.white, AXE_HAFT_X - reach, row);
-    painter.span(AXE_STEEL_SHADE, AXE_HAFT_X + 2, AXE_HAFT_X + 1 + Math.min(reach, 2), row);
+    painter.span(AXE_STEEL_SHADE, AXE_HAFT_X + 2, AXE_HAFT_X + 1 + Math.min(reach, 3), row);
   }
   painter.rect(AXE_STEEL_DEEP, AXE_HAFT_X - 1, 8, 1, 3);
 }

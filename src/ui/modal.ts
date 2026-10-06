@@ -62,3 +62,8 @@ export function closeTopModal(): boolean {
   close();
   return true;
 }
+
+// Runs the close action of every open modal, top first, so a report is marked as read.
+export function closeEveryModalWithItsCloseAction(): void {
+  while (closeTopModal());
+}

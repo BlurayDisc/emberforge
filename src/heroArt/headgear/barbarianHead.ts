@@ -29,8 +29,8 @@ export function paintBarbarianHead(painter: SpritePainter, colors: HeroColors, c
   painter.grid(
     HELM_HEAD_ROWS,
     {
-      B: MATERIAL.leather,
-      b: MATERIAL.boot,
+      B: '#6f7a8c',
+      b: '#454e60',
       F: FUR_LIGHT,
       H: colors.hair,
       S: colors.skin,

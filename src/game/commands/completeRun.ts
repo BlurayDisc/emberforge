@@ -61,6 +61,7 @@ function applyOutcomeToHero(hero: Hero, performance: HeroPerformance, plan: Plan
       monstersDefeated: performance.monstersDefeated,
       experienceGained,
       reachedLevel: leveledHero.level > hero.level ? leveledHero.level : null,
+      levelBefore: hero.level,
       levelAfter: leveledHero.level,
       experienceAfter: leveledHero.experience,
       ...healthLostOf(hero, plan),

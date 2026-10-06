@@ -99,6 +99,19 @@ export const PALETTE = {
   kiMain: '#4fd0a0',
   kiLight: '#c8ffe8',
   natureLight: '#c4ec90',
+  uiInk: '#17110d',
+  uiWood900: '#241912',
+  uiWood800: '#33241a',
+  uiWood700: '#4a3322',
+  uiWood600: '#664629',
+  uiWood500: '#8a6340',
+  uiGold: '#f2c14e',
+  uiGoldDark: '#b9821f',
+  uiGoldLight: '#ffe9a0',
+  uiParchment: '#ead9a8',
+  uiParchmentDim: '#b9a77a',
+  uiSilver: '#c0c8d0',
+  uiCopper: '#d98a4e',
 } as const;
 
 export type PaletteColor = keyof typeof PALETTE;

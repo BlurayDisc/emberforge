@@ -31,32 +31,40 @@ function paintTorso(painter: SpritePainter, colors: HeroColors): void {
     painter.span(colors.cloth, CENTER_X - halfWidth, CENTER_X + halfWidth, row);
     painter.span(colors.clothShade, CENTER_X + halfWidth - 1, CENTER_X + halfWidth, row);
   }
-  painter.span(colors.clothLight, CENTER_X - 7, CENTER_X - 1, 14);
-  painter.span(colors.clothLight, CENTER_X + 1, CENTER_X + 7, 14);
-  painter.span(colors.clothShade, CENTER_X - 7, CENTER_X - 1, 19);
-  painter.span(colors.clothShade, CENTER_X + 1, CENTER_X + 7, 19);
-  painter.rect(colors.clothShade, CENTER_X, 14, 1, 6);
-  for (const row of [22, 24, 26]) {
-    painter.span(colors.clothShade, CENTER_X - 4, CENTER_X - 1, row);
-    painter.span(colors.clothShade, CENTER_X + 1, CENTER_X + 4, row);
-  }
-  painter.rect(colors.clothShade, CENTER_X, 21, 1, 8);
+  painter.span(colors.clothLight, CENTER_X - 7, CENTER_X - 3, 14);
+  painter.span(colors.clothLight, CENTER_X + 3, CENTER_X + 7, 14);
+  painter.span(colors.clothShade, CENTER_X - 7, CENTER_X - 3, 20);
+  painter.span(colors.clothShade, CENTER_X + 3, CENTER_X + 7, 20);
   painter.rect(MATERIAL.leather, CENTER_X - 7, 29, 15, 2);
   painter.rect(colors.trim, CENTER_X - 2, 29, 5, 2);
-  painter.dot(MATERIAL.white, CENTER_X - 1, 29);
   for (let strip = 0; strip < 4; strip++) {
     const left = CENTER_X - 8 + strip * 4;
     painter.rect(colors.cloth, left, 31, 4, 6);
     painter.rect(colors.clothShade, left + 3, 31, 1, 6);
     painter.rect(colors.trim, left, 36, 4, 1);
   }
+  paintTabard(painter, colors);
+}
+
+// The tabard hangs over the breastplate and over the belt, down to the thighs.
+function paintTabard(painter: SpritePainter, colors: HeroColors): void {
+  painter.rect(MATERIAL.red, CENTER_X - 3, 12, 7, 18);
+  painter.rect(MATERIAL.redDark, CENTER_X + 3, 12, 1, 18);
+  painter.rect(colors.trim, CENTER_X - 3, 12, 7, 1);
+  painter.rect(colors.trim, CENTER_X - 1, 18, 3, 1);
+  painter.rect(colors.trim, CENTER_X, 17, 1, 3);
+  painter.rect(MATERIAL.red, CENTER_X - 3, 31, 7, 10);
+  painter.rect(MATERIAL.redDark, CENTER_X + 3, 31, 1, 10);
+  painter.rect(colors.trim, CENTER_X - 3, 40, 7, 1);
+  painter.rect(MATERIAL.leather, CENTER_X - 7, 29, 15, 2);
+  painter.rect(colors.trim, CENTER_X - 2, 29, 5, 2);
 }
 
 function paintSwordArm(painter: SpritePainter, colors: HeroColors): void {
-  painter.rect(colors.skin, 27, 19, 6, 6);
-  painter.rect(lighten(colors.skin, 1.12), 28, 19, 2, 3);
-  painter.rect(colors.skinShade, 27, 23, 6, 2);
-  painter.rect(colors.cloth, 27, 25, 6, 6);
+  painter.rect(colors.cloth, 27, 19, 6, 12);
+  painter.rect(lighten(colors.cloth), 28, 19, 1, 10);
+  painter.rect(colors.clothShade, 31, 19, 2, 12);
+  painter.rect(colors.trim, 27, 19, 6, 1);
   painter.rect(colors.trim, 27, 25, 6, 1);
   painter.rect(colors.clothShade, 27, 29, 6, 2);
   painter.rect(colors.cloth, 29, 31, 6, 5);

@@ -21,6 +21,7 @@ export { startDungeonRunCommand } from './commands/startDungeonRun';
 export { runAwayCommand } from './commands/runAway';
 export { experienceForDefeatedMonsters } from './encounterExperience';
 export { experienceToNextLevel } from '../systems/progression';
+export { levelUpGains, type LevelUpGains } from '../systems/stats';
 export { describeSpellEvent, type SpellPresentation, type SpellRole } from './spellPresentation';
 export { planNextEncounter, type PlannedEncounter } from './encounterPlanner';
 export { createGameStore, type CommandResult, type GameStore, type MessageParams, type Rejection } from './gameStore';
@@ -29,11 +30,12 @@ export { createBrowserSaveStorage } from './saveStorage';
 export { loadAudioPreferences, loadLanguagePreference, loadRecipeFilterPreferences, loadSeenChangelogVersion, loadStaysOnDungeonScreen, saveAudioPreferences, saveLanguagePreference, saveRecipeFilterPreferences, saveSeenChangelogVersion, saveStaysOnDungeonScreen } from './settingsStorage';
 export { describeMill, type MillView } from './views/millViews';
 export { millSettingsOf } from './millSettings';
-export { backpackPressureOf, describeStorage, findBackpackMoveAnchor, sizeOfBackpackEntry, type BackpackPressure, type StorageView } from './views/storageViews';
+export { describeStorage, findBackpackMoveAnchor, isBackpackFull, sizeOfBackpackEntry, type StorageView } from './views/storageViews';
 export { backpackRowsOf, merchantSaleSlotsOf } from './storage';
 export { describeHero, describeMoney, listTavernOffers, type HeroView, type TavernOffer } from './views/gameViews';
 export { classIdsThatCanUseItem, compareEquip, listItemsForSlot, type EquipComparison, type SlotCandidate } from './views/equipmentViews';
 export { listSpellOffers, type SpellOffer } from './views/spellViews';
+export { dungeonActivityOf, workshopActivityOf, type ActivityBadge } from './views/menuBadgeViews';
 export { crafterJob, listSaleJobs, saleDurationSeconds } from './views/jobViews';
 export {
   listCrafters,

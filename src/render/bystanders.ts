@@ -1,8 +1,7 @@
-import { Group, Sprite, SpriteMaterial, type CanvasTexture } from 'three';
+import { Sprite, type Container, type Texture } from 'pixi.js';
 import { createRandom, type Random } from '../kernel/random';
-import { LOGICAL_HEIGHT, TOWN_WIDTH } from '../kernel/stageSize';
 import { addOutline, createPixelCanvas } from './pixelCanvas';
-import { createPixelTexture } from './pixelSprites';
+import { createPixiTexture } from './pixiTextures';
 import { pointAtDistance, routeLength } from './roadRoute';
 import type { Point, Road } from './townLayout';
 
@@ -12,6 +11,8 @@ const SHIRT_COLORS = ['#a03a32', '#3b6fd6', '#6a8a3a', '#8a5a9a', '#c9a24e', '#5
 const PANTS_COLORS = ['#4a3322', '#3b2a1d', '#2f3b57'] as const;
 
 const MINIMUM_WALKING_ROUTE_PIXELS = 30;
+const WALKER_WIDTH = 12;
+const WALKER_HEIGHT = 18;
 const SPEECH_SECONDS = 6;
 const VISIBLE_MARGIN_PIXELS = 60;
 const SECONDS_BETWEEN_SPEECHES_MINIMUM = 7;
@@ -23,7 +24,7 @@ type HexColor = `#${string}`;
 
 interface Walker {
   sprite: Sprite;
-  frames: [CanvasTexture, CanvasTexture];
+  frames: [Texture, Texture];
   route: readonly Point[];
   routeLength: number;
   distance: number;
@@ -66,8 +67,9 @@ function drawBystanderFrame(random: Random, kind: BystanderKind, frame: 0 | 1, a
   return art.canvas;
 }
 
+// Draw order in the town: the lower a thing stands on the screen, the nearer it is.
 function depthFor(logicalY: number): number {
-  return logicalY * 0.01 - 3;
+  return logicalY;
 }
 
 export interface VisibleRange {
@@ -77,7 +79,7 @@ export interface VisibleRange {
 
 // Only a villager that the player can see starts a speech.
 export function createBystanders(
-  root: Group,
+  root: Container,
   roads: readonly Road[],
   seed: number,
   onSpeech: (speech: BystanderSpeech | null) => void,
@@ -96,13 +98,12 @@ export function createBystanders(
       shirt: random.pick(SHIRT_COLORS),
       pants: random.pick(PANTS_COLORS),
     };
-    const frames: [CanvasTexture, CanvasTexture] = [
-      createPixelTexture(drawBystanderFrame(random, kind, 0, appearance)),
-      createPixelTexture(drawBystanderFrame(random, kind, 1, appearance)),
+    const frames: [Texture, Texture] = [
+      createPixiTexture(drawBystanderFrame(random, kind, 0, appearance)),
+      createPixiTexture(drawBystanderFrame(random, kind, 1, appearance)),
     ];
-    const sprite = new Sprite(new SpriteMaterial({ map: frames[0], transparent: true }));
-    sprite.scale.set(12, 18, 1);
-    root.add(sprite);
+    const sprite = new Sprite(frames[0]);
+    root.addChild(sprite);
     const length = routeLength(road.points);
     return {
       sprite,
@@ -162,8 +163,9 @@ export function createBystanders(
         }
         const position = pointAtDistance(walker.route, walker.distance);
         const frameIndex = isPaused ? 0 : Math.floor(elapsedSeconds * 4) % 2;
-        walker.sprite.material.map = walker.frames[frameIndex as 0 | 1];
-        walker.sprite.position.set(Math.round(position.x - TOWN_WIDTH / 2), Math.round(LOGICAL_HEIGHT / 2 - position.y + 9), depthFor(position.y));
+        walker.sprite.texture = walker.frames[frameIndex as 0 | 1];
+        walker.sprite.position.set(Math.round(position.x - WALKER_WIDTH / 2), Math.round(position.y - WALKER_HEIGHT));
+        walker.sprite.zIndex = depthFor(position.y);
       }
     },
   };

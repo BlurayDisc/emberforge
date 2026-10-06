@@ -13,7 +13,7 @@ import { slotLabel } from '../../itemText';
 import { openModal, type ModalHandle, type ScreenPoint } from '../../modal';
 import { createFullBodyPortrait } from '../../fullBody/fullBodyPortraitArt';
 import type { PanelContext } from '../panelContext';
-import { renderEquipComparison } from './equipComparison';
+import { equipIntoEmptySlot, renderEquipComparison } from './equipComparison';
 
 const SLOTS: readonly EquipmentSlot[] = ['helm', 'amulet', 'gloves', 'belt', 'mainHand', 'offHand', 'ringOne', 'ringTwo', 'legs', 'armour', 'boots'];
 
@@ -43,6 +43,10 @@ function openEquipChooser(context: PanelContext, hero: Hero, slot: EquipmentSlot
   };
 
   const showComparison = (candidate: SlotCandidate): void => {
+    if (equipIntoEmptySlot(context, hero, slot, candidate.item, candidate.problem)) {
+      (handle as ModalHandle).close();
+      return;
+    }
     const compareArea = element('div', 'chooser-compare');
     renderEquipComparison(context, hero, slot, candidate.item, candidate.problem, compareArea, () => (handle as ModalHandle).close());
     screen.replaceChildren(actionButton(t('equip.backToList'), showList), compareArea);

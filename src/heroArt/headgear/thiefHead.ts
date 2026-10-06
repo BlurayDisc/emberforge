@@ -1,32 +1,29 @@
-import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
+import { lighten, type HeroColors } from '../heroPalette';
 import type { SpritePainter } from '../spritePainter';
 
-const HOODED_HEAD_ROWS = [
-  '....CCCCC....',
-  '...CCCCCCC...',
-  '..CCCCCCCCC..',
-  '..CCcccccCC..',
-  '..CcSSSSScC..',
-  '..CcKKSKKcC..',
-  '..CcwESEwcC..',
-  '..CDDDDDDDC..',
-  '..CDDDDDDDC..',
-  '...CDDDDDC...',
-  '....CDDDC....',
+// A blindfolded head with swept-back hair. The eyes glow through the blindfold in the trim colour.
+const BLINDFOLDED_HEAD_ROWS = [
+  '....HHHHH....',
+  '..HHHHHHHHH..',
+  '.HHHHHHHHHHH.',
+  '.HHHHHHHHHHH.',
+  '.HHSSSSSSSHH.',
+  '.HBBBBBBBBBH.',
+  '.HBBGBBBGBBH.',
+  '..HSSSsSSSH..',
+  '..HSSLLLSSH..',
+  '...HSsSSsH...',
+  '....HSsSH....',
 ];
 
-const EYE_ROW = 6;
+const MOUTH = '#8a3a3a';
 
 export function paintThiefHead(painter: SpritePainter, colors: HeroColors, centerX: number, headTop: number): void {
   painter.grid(
-    HOODED_HEAD_ROWS,
-    { C: colors.cloth, c: colors.clothShade, D: colors.clothDeep, S: colors.skin, K: darken(colors.hair, 0.5), w: MATERIAL.white, E: colors.eye },
+    BLINDFOLDED_HEAD_ROWS,
+    { H: colors.hair, S: colors.skin, s: colors.skinShade, B: colors.clothShade, G: colors.trim, L: MOUTH },
     centerX - 6,
     headTop,
   );
-  if (colors.appearance.gender === 'female') {
-    painter.dot(MATERIAL.eyeliner, centerX - 4, headTop + EYE_ROW);
-    painter.dot(MATERIAL.eyeliner, centerX + 4, headTop + EYE_ROW);
-  }
-  painter.dot(lighten(colors.cloth), centerX - 2, headTop + 1);
+  painter.dot(lighten(colors.hair, 1.4), centerX - 2, headTop + 2);
 }

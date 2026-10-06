@@ -1,9 +1,9 @@
+import * as Tone from 'tone';
 import type { AudioPreferences } from '../model/audioPreferences';
 
 export interface AudioBuses {
-  context: AudioContext;
-  music: GainNode;
-  effects: GainNode;
+  music: Tone.Gain;
+  effects: Tone.Gain;
 }
 
 let preferences: AudioPreferences = { musicVolume: 0.5, effectsVolume: 0.7, muted: false };
@@ -36,19 +36,17 @@ export function onAudioReady(listener: (readyBuses: AudioBuses) => void): void {
 }
 
 // Browsers block audio until the player clicks, taps or presses a key.
-// The context is therefore created on the first gesture, not at start-up.
+// Tone.start() must run inside that gesture, so the buses are made on the first gesture, not at start-up.
 function unlock(): void {
   if (buses) return;
-  const context = new AudioContext();
-  const music = context.createGain();
-  const effects = context.createGain();
-  music.connect(context.destination);
-  effects.connect(context.destination);
-  buses = { context, music, effects };
+  const music = new Tone.Gain(0).toDestination();
+  const effects = new Tone.Gain(0).toDestination();
+  buses = { music, effects };
   applyVolumes();
-  void context.resume();
-  unlockListeners.forEach((listener) => listener(buses as AudioBuses));
-  unlockListeners.clear();
+  void Tone.start().then(() => {
+    unlockListeners.forEach((listener) => listener(buses as AudioBuses));
+    unlockListeners.clear();
+  });
 }
 
 export function unlockAudioOnFirstGesture(): void {

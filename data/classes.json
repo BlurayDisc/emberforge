@@ -15,7 +15,7 @@
     "offHandTypes": ["shield"],
     "armourWeights": ["heavy"],
     "baseStats": { "hp": 54, "strength": 9, "magic": 1, "skill": 6, "speed": 100, "defence": 7, "resistance": 2 },
-    "growthPerLevel": { "hp": 10.4, "strength": 1.9, "magic": 0.2, "skill": 0.8, "speed": 0.1, "defence": 3.4, "resistance": 0.6 }
+    "growthPerLevel": { "hp": 9.0, "strength": 1.7, "magic": 0.2, "skill": 0.8, "speed": 0.1, "defence": 2.6, "resistance": 0.6 }
   },
   {
     "id": "archer",
@@ -33,7 +33,7 @@
     "offHandTypes": ["quiver"],
     "armourWeights": ["medium"],
     "baseStats": { "hp": 42, "strength": 9, "magic": 1, "skill": 7.26, "speed": 108, "defence": 1, "resistance": 3 },
-    "growthPerLevel": { "hp": 7.7, "strength": 1, "magic": 0.2, "skill": 2.62, "speed": 0.1, "defence": 0.1, "resistance": 0.7 }
+    "growthPerLevel": { "hp": 8.6, "strength": 1, "magic": 0.2, "skill": 2.62, "speed": 0.1, "defence": 0.4, "resistance": 0.7 }
   },
   {
     "id": "mage",
@@ -69,7 +69,7 @@
     "offHandTypes": ["tome"],
     "armourWeights": ["light"],
     "baseStats": { "hp": 38, "strength": 1, "magic": 9, "skill": 5, "speed": 98, "defence": 3, "resistance": 7 },
-    "growthPerLevel": { "hp": 7, "strength": 0.2, "magic": 1, "skill": 0.6, "speed": 0.1, "defence": 0.6, "resistance": 1.3 }
+    "growthPerLevel": { "hp": 7, "strength": 0.2, "magic": 1, "skill": 0.6, "speed": 0.1, "defence": 1.5, "resistance": 1.3 }
   },
   {
     "id": "thief",
@@ -87,7 +87,7 @@
     "offHandTypes": ["dagger"],
     "armourWeights": ["medium"],
     "baseStats": { "hp": 38, "strength": 12, "magic": 1, "skill": 7.26, "speed": 125, "defence": 1, "resistance": 3 },
-    "growthPerLevel": { "hp": 6.9, "strength": 1.2, "magic": 0.2, "skill": 2.21, "speed": 0.2, "defence": 0.1, "resistance": 0.6 }
+    "growthPerLevel": { "hp": 7.6, "strength": 1.2, "magic": 0.2, "skill": 2.21, "speed": 0.2, "defence": 0.3, "resistance": 0.6 }
   },
   {
     "id": "barbarian",

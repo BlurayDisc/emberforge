@@ -1,15 +1,15 @@
-import { Group, Mesh, MeshBasicMaterial, PlaneGeometry, Sprite, SpriteMaterial, type CanvasTexture } from 'three';
+import { Container, Sprite, type Texture } from 'pixi.js';
 import { CASTLE_SPOTS, castleWorldX as spotWorldX, type CastleSpot } from '../content/castle';
-import { CASTLE_SCREEN_COUNT, CASTLE_WIDTH, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
+import { CASTLE_SCREEN_COUNT, CASTLE_WIDTH, LOGICAL_WIDTH } from '../kernel/stageSize';
 import { createCastlePets } from './castlePets';
 import { drawShadowOval } from './castleAmbientArt';
 import { FIGURE_DRAWERS } from './castleFigureArt';
 import { drawHallBackdrop } from './castleHallArt';
-import { drawFrameTower, FRAME_TOWER_WIDTH } from './castleParapetArt';
+import { drawFrameTower } from './castleParapetArt';
 import { drawRampartsBackdrop } from './castleRampartsArt';
-import { castleWorldX, castleWorldY, createCastleScenery, FRAME_TOWER_DEPTH, HALL_BACKDROP_DEPTH, RAMPARTS_BACKDROP_DEPTH } from './castleScenery';
+import { createCastleScenery, FRAME_TOWER_DEPTH, HALL_BACKDROP_DEPTH, RAMPARTS_BACKDROP_DEPTH } from './castleScenery';
 import type { PixelStage } from './pixelStage';
-import { createPixelTexture } from './pixelSprites';
+import { createPixiTexture } from './pixiTextures';
 import { createScreenScroller } from './screenScroller';
 import type { SlidingView } from './slidingView';
 
@@ -19,9 +19,10 @@ const FIRST_SCREEN = 0;
 const IDLE_BOB_SECONDS = 1.4;
 const SHADOW_WIDTH = 22;
 
-function createBackdrop(canvas: HTMLCanvasElement, screenIndex: number, depth: number): Mesh {
-  const backdrop = new Mesh(new PlaneGeometry(LOGICAL_WIDTH, LOGICAL_HEIGHT), new MeshBasicMaterial({ map: createPixelTexture(canvas) }));
-  backdrop.position.set(castleWorldX(screenIndex * LOGICAL_WIDTH + LOGICAL_WIDTH / 2), 0, depth);
+function createBackdrop(canvas: HTMLCanvasElement, screenIndex: number, depth: number): Sprite {
+  const backdrop = new Sprite(createPixiTexture(canvas));
+  backdrop.position.set(screenIndex * LOGICAL_WIDTH, 0);
+  backdrop.zIndex = depth;
   return backdrop;
 }
 
@@ -31,56 +32,66 @@ interface IdlingFigure {
   phase: number;
 }
 
-function addFigure(root: Group, spot: CastleSpot, figureTextures: Map<string, CanvasTexture>, shadowTexture: CanvasTexture): IdlingFigure {
+function addFigure(root: Container, spot: CastleSpot, figureTextures: Map<string, Texture>, shadowTexture: Texture): IdlingFigure {
   const look = spot.look as string;
   let texture = figureTextures.get(look);
   const drawer = FIGURE_DRAWERS[look];
   if (!drawer) throw new Error(`Unknown castle figure look: ${look}`);
   if (!texture) {
-    texture = createPixelTexture(drawer());
+    texture = createPixiTexture(drawer());
     figureTextures.set(look, texture);
   }
-  const image = texture.image as HTMLCanvasElement;
   const depth = spot.y * 0.01 - 3;
-  const feetX = castleWorldX(spotWorldX(spot));
-  const feetY = castleWorldY(spot.y);
+  const feetX = spotWorldX(spot);
+  const feetY = spot.y;
 
-  const shadow = new Sprite(new SpriteMaterial({ map: shadowTexture, transparent: true }));
-  shadow.scale.set(SHADOW_WIDTH, 6, 1);
-  shadow.position.set(feetX, feetY - 1, depth - 0.001);
-  root.add(shadow);
+  const shadow = new Sprite(shadowTexture);
+  shadow.anchor.set(0.5);
+  shadow.width = SHADOW_WIDTH;
+  shadow.height = 6;
+  shadow.position.set(feetX, feetY + 1);
+  shadow.zIndex = depth - 0.001;
+  root.addChild(shadow);
 
-  const sprite = new Sprite(new SpriteMaterial({ map: texture, transparent: true }));
-  sprite.scale.set(image.width, image.height, 1);
-  const restingY = feetY + image.height / 2;
-  sprite.position.set(feetX, restingY, depth);
-  root.add(sprite);
-  return { sprite, restingY, phase: (spot.x * 0.37) % IDLE_BOB_SECONDS };
+  const sprite = new Sprite(texture);
+  sprite.anchor.set(0.5, 1);
+  sprite.position.set(feetX, feetY);
+  sprite.zIndex = depth;
+  root.addChild(sprite);
+  return { sprite, restingY: feetY, phase: (spot.x * 0.37) % IDLE_BOB_SECONDS };
 }
 
 export function createCastleView(stage: PixelStage): CastleView {
-  const root = new Group();
+  // The root holds the whole castle world. It moves left to scroll, and its children sort by zIndex.
+  const root = new Container();
   root.visible = false;
-  stage.scene.add(root);
+  root.sortableChildren = true;
+  stage.pixi.views.addChild(root);
 
-  root.add(createBackdrop(drawHallBackdrop(), 0, HALL_BACKDROP_DEPTH));
-  root.add(createBackdrop(drawRampartsBackdrop(), 1, RAMPARTS_BACKDROP_DEPTH));
+  root.addChild(createBackdrop(drawHallBackdrop(), 0, HALL_BACKDROP_DEPTH));
+  root.addChild(createBackdrop(drawRampartsBackdrop(), 1, RAMPARTS_BACKDROP_DEPTH));
+  const frameTowerTexture = createPixiTexture(drawFrameTower());
   for (const side of [-1, 1] as const) {
-    const tower = new Sprite(new SpriteMaterial({ map: createPixelTexture(drawFrameTower()), transparent: true }));
-    tower.scale.set(-side * (FRAME_TOWER_WIDTH + 2), LOGICAL_HEIGHT, 1);
+    const tower = new Sprite(frameTowerTexture);
+    tower.anchor.set(0.5, 0);
+    // The right tower is the left one mirrored.
+    tower.scale.x = -side;
     const edgeX = side === -1 ? LOGICAL_WIDTH : CASTLE_WIDTH;
-    tower.position.set(castleWorldX(edgeX) + (side === -1 ? 13 : -13), 0, FRAME_TOWER_DEPTH);
-    root.add(tower);
+    tower.position.set(edgeX + (side === -1 ? 13 : -13), 0);
+    tower.zIndex = FRAME_TOWER_DEPTH;
+    root.addChild(tower);
   }
 
-  const figureTextures = new Map<string, CanvasTexture>();
-  const shadowTexture = createPixelTexture(drawShadowOval(SHADOW_WIDTH));
+  const figureTextures = new Map<string, Texture>();
+  const shadowTexture = createPixiTexture(drawShadowOval(SHADOW_WIDTH));
   const figures = CASTLE_SPOTS.filter((spot) => spot.kind === 'person').map((spot) => addFigure(root, spot, figureTextures, shadowTexture));
   const scenery = createCastleScenery(root);
   const pets = createCastlePets(root);
 
   const scroller = createScreenScroller(LOGICAL_WIDTH, CASTLE_SCREEN_COUNT, FIRST_SCREEN);
-  scroller.onScroll((scrollLeft) => stage.setCameraX(scrollLeft + LOGICAL_WIDTH / 2 - CASTLE_WIDTH / 2));
+  scroller.onScroll((scrollLeft) => {
+    root.x = -Math.round(scrollLeft);
+  });
   let previousSeconds: number | null = null;
 
   stage.onFrame((elapsedSeconds) => {
@@ -91,7 +102,7 @@ export function createCastleView(stage: PixelStage): CastleView {
     scenery.update(elapsedSeconds);
     pets.update(elapsedSeconds);
     // A figure breathes: one whole pixel up for half of each cycle.
-    for (const figure of figures) figure.sprite.position.y = figure.restingY + (((elapsedSeconds + figure.phase) % IDLE_BOB_SECONDS) < IDLE_BOB_SECONDS / 2 ? 0 : 1);
+    for (const figure of figures) figure.sprite.position.y = figure.restingY - (((elapsedSeconds + figure.phase) % IDLE_BOB_SECONDS) < IDLE_BOB_SECONDS / 2 ? 0 : 1);
   });
 
   return {
@@ -101,7 +112,10 @@ export function createCastleView(stage: PixelStage): CastleView {
       root.visible = isVisible;
       previousSeconds = null;
       if (isEntering) scroller.snapToScreen(FIRST_SCREEN);
-      if (isVisible) scroller.announce();
+      if (isVisible) {
+        stage.setLayout('fixed');
+        scroller.announce();
+      }
     },
     goToScreen: scroller.goToScreen,
     currentScreen: scroller.currentScreen,

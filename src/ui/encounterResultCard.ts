@@ -12,6 +12,7 @@ import { createItemIcon, createMaterialIcon } from './iconArt';
 import { openItemView, openMaterialView } from './itemModals';
 import { experienceToNextLevel } from '../game';
 import { createExperienceGainBar, createHealthLossBar } from './liveBars';
+import { createLevelUpGrowth } from './levelUpGrowth';
 import { createMaterialTooltip } from './materialBoxes';
 import { createMoneyDisplay } from './moneyDisplay';
 import { createPortrait } from './portraitArt';
@@ -38,6 +39,7 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
   ];
   const text = element('div', 'result-hero-text', element('div', 'card-title', hero ? `${name} (${className(hero.classId)})` : name), element('div', 'card-text small', listOf(lines)));
   if (result.reachedLevel !== null) text.append(element('div', 'level-up', t('result.levelUp', { level: result.reachedLevel })));
+  if (result.reachedLevel !== null && hero) text.append(createLevelUpGrowth(hero.classId, result.levelBefore, result.levelAfter));
   text.append(createHealthLossBarOf(result), createExperienceBarOf(result));
   return element('div', 'result-hero', hero ? createPortrait(hero.classId, hero.name, 2) : element('span', ''), text);
 }

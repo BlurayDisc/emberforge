@@ -20,20 +20,23 @@ export function createThemedDropdown(label: string, options: readonly DropdownOp
   function close(): void {
     list.hidden = true;
     document.removeEventListener('pointerdown', closeOnOutsidePress, true);
-    document.removeEventListener('keydown', closeOnEscape, true);
+    window.removeEventListener('keydown', closeOnEscape, true);
   }
   // A panel redraw removes the dropdown while it is open, so the listeners remove themselves then.
   function closeOnOutsidePress(event: Event): void {
     if (!dropdown.isConnected) close();
     else if (!dropdown.contains(event.target as Node)) close();
   }
+  // The window runs before the document handler that closes the panel, so Escape closes only the open list.
   function closeOnEscape(event: KeyboardEvent): void {
-    if (event.key === 'Escape') close();
+    if (event.key !== 'Escape') return;
+    close();
+    event.stopPropagation();
   }
   function open(): void {
     list.hidden = false;
     document.addEventListener('pointerdown', closeOnOutsidePress, true);
-    document.addEventListener('keydown', closeOnEscape, true);
+    window.addEventListener('keydown', closeOnEscape, true);
   }
 
   for (const option of options) {

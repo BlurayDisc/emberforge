@@ -1,106 +1,72 @@
-import { DUNGEONS, type DungeonDefinition } from '../content/dungeons';
+import { DUNGEONS } from '../content/dungeons';
+import type { DungeonDefinition } from '../content/dungeons';
 import { requireById } from '../content/lookup';
-import { MONSTER_SPELLS } from '../content/monsterSpells';
 import { MONSTERS, type MonsterDefinition } from '../content/monsters';
-import { describeMonsterStatistics } from '../game';
+import type { GameStore } from '../game';
 import { dungeonBackdropCanvas, monsterSpriteCanvas } from './artProviders';
+import { createDungeonHeroPicker } from './dungeonHeroPicker';
 import { actionButton, element } from './dom';
-import { materialName } from './displayNames';
-import { statName } from './itemStatTable';
 import { t } from './i18n';
-import { createMaterialIcon } from './iconArt';
 import { openModal, type ModalHandle } from './modal';
-import { describeMonsterSpell, spellName } from './spellText';
-import { MATERIALS } from '../content/materials';
+import { monsterRankTag, openMonsterDetail } from './monsterDetailModal';
 
-function monsterIdsOf(dungeon: DungeonDefinition): string[] {
-  return [...dungeon.monsterIds, ...(dungeon.rareMonsterId ? [dungeon.rareMonsterId] : []), ...(dungeon.bossMonsterId ? [dungeon.bossMonsterId] : [])];
-}
-
-function rankTag(monster: MonsterDefinition): string {
-  if (monster.rank === 'rare') return ` (${t('dungeons.rareTag')})`;
-  if (monster.rank === 'boss') return ` (${t('dungeons.bossLabel')})`;
-  return '';
-}
-
-function renderLootLine(drop: MonsterDefinition['drops'][number]): HTMLElement {
-  const material = requireById(MATERIALS, drop.materialId);
-  const quantity = drop.minQuantity === drop.maxQuantity ? String(drop.minQuantity) : `${drop.minQuantity}-${drop.maxQuantity}`;
-  return element(
-    'div',
-    'loot-line',
-    createMaterialIcon(material.id, material.category, 2),
-    element('span', 'card-text small', t('dungeons.dropLine', { material: materialName(material.id), quantity, chance: Math.round(drop.chance * 100) })),
-  );
+export interface DungeonFightOptions {
+  store: GameStore;
+  start: (heroIds: string[], screen: ModalHandle) => void;
 }
 
 export interface DungeonViewOptions {
   showsDropRates: boolean;
   showsMonsterStatistics: boolean;
-  // Set only for a dungeon that is free to start. The details window then shows the same Fight button as the list.
-  fight?: { isEnabled: boolean; start: () => void };
+  // Set only for a dungeon that is free to start. The screen then also holds the hero choice and the Fight button.
+  fight?: DungeonFightOptions;
 }
 
-function renderStatisticsLine(monster: MonsterDefinition, dungeon: DungeonDefinition): HTMLElement {
-  const statistics = describeMonsterStatistics(monster.id, dungeon.level);
-  const parts: Array<[string, number]> = [
-    ['health', statistics.health],
-    ['physicalDamage', statistics.attack],
-    ['armour', statistics.armour],
-    ['resistance', statistics.resistance],
-    ['speed', statistics.speed],
-  ];
-  return element('div', 'card-text small', parts.map(([stat, value]) => `${statName(stat)} ${value}`).join(' - '));
+function monsterIdsOf(dungeon: DungeonDefinition): string[] {
+  return [...dungeon.monsterIds, ...(dungeon.rareMonsterId ? [dungeon.rareMonsterId] : []), ...(dungeon.bossMonsterId ? [dungeon.bossMonsterId] : [])];
 }
 
-function renderMonsterSpellLines(monster: MonsterDefinition): HTMLElement[] {
-  return (monster.spellIds ?? []).flatMap((spellId) => {
-    const spell = MONSTER_SPELLS.find((candidate) => candidate.id === spellId);
-    return spell ? [element('div', 'card-text small', t('dungeons.monsterSpell', { name: spellName(spell.id), effect: describeMonsterSpell(spell), seconds: spell.cooldownSeconds }))] : [];
-  });
-}
-
-function renderMonsterEntry(monster: MonsterDefinition, dungeon: DungeonDefinition, options: DungeonViewOptions): HTMLElement {
+function createMonsterTile(monster: MonsterDefinition, dungeon: DungeonDefinition, options: DungeonViewOptions): HTMLElement {
   const sprite = monsterSpriteCanvas(monster.spriteKey);
-  return element(
-    'div',
-    'monster-entry',
-    element('div', 'monster-sprite', sprite ?? ''),
-    element(
-      'div',
-      'monster-details',
-      element('div', 'card-title', `${t(`monster.${monster.id}`)}${rankTag(monster)}`),
-      element('div', 'card-text small lore-text', t(`monster.${monster.id}.lore`)),
-      element('div', 'card-text small', t('dungeons.monsterLevel', { level: dungeon.level })),
-      options.showsMonsterStatistics ? renderStatisticsLine(monster, dungeon) : element('div', 'card-text small hint', t('dungeons.statisticsLocked')),
-      ...renderMonsterSpellLines(monster),
-      ...(options.showsDropRates ? monster.drops.map(renderLootLine) : [element('div', 'card-text small hint', t('dungeons.dropsLocked'))]),
-    ),
-  );
+  const tile = element('button', 'monster-tile', element('div', 'monster-sprite', sprite ?? ''), element('div', 'card-text small', `${t(`monster.${monster.id}`)}${monsterRankTag(monster)}`));
+  tile.type = 'button';
+  tile.addEventListener('click', () => openMonsterDetail(monster, dungeon, options));
+  return tile;
 }
 
-// A big dungeon picture gives each dungeon an identity. Below it: the monsters and what each one drops.
+// One screen with no scroll: the dungeon picture, its monsters (a tap opens the details), the hero choice and the Fight button.
+// A dungeon that is locked or busy shows the same screen without the hero choice.
 export function openDungeonView(dungeonId: string, options: DungeonViewOptions): void {
   const dungeon = requireById(DUNGEONS, dungeonId);
-  const backdrop = dungeonBackdropCanvas(dungeon.id);
   const monsters = monsterIdsOf(dungeon).map((monsterId) => requireById(MONSTERS, monsterId));
+  const { fight } = options;
   let handle: ModalHandle;
-  const fightButton = options.fight
-    ? actionButton(t('dungeons.start'), () => {
-        handle.close();
-        options.fight?.start();
-      }, { className: 'action-button primary', disabled: !options.fight.isEnabled })
-    : null;
+  const fightButton = actionButton(t(dungeon.minimumPartySize > 1 ? 'dungeons.startParty' : 'dungeons.start'), () => {
+    if (picker) fight?.start(picker.selectedHeroIds(), handle);
+  }, { className: 'action-button primary', disabled: true });
+  const picker = fight ? createDungeonHeroPicker(fight.store, dungeon, () => {
+    fightButton.disabled = !picker?.canFight();
+  }) : null;
+  fightButton.disabled = !picker?.canFight();
+
   const content = element(
     'div',
-    'dungeon-view',
-    element('div', 'dungeon-portrait', backdrop ?? ''),
-    element('p', 'card-text', t(`dungeon.${dungeon.id}.description`)),
-    element('div', 'card-text small', t('dungeons.levelRange', { min: dungeon.minimumHeroLevel, max: dungeon.recommendedMaxLevel })),
-    ...(fightButton ? [fightButton] : []),
-    element('div', 'section-title', t('dungeons.creeps')),
-    ...monsters.map((monster) => renderMonsterEntry(monster, dungeon, options)),
-    ...(options.showsDropRates ? [element('p', 'hint', t('dungeons.lootHint'))] : []),
+    'dungeon-view dungeon-screen',
+    element(
+      'div',
+      'dungeon-top',
+      element('div', 'dungeon-portrait', dungeonBackdropCanvas(dungeon.id) ?? ''),
+      element(
+        'div',
+        'dungeon-info',
+        element('p', 'card-text dungeon-description', t(`dungeon.${dungeon.id}.description`)),
+        element('div', 'card-text small', t('dungeons.levelRange', { min: dungeon.minimumHeroLevel, max: dungeon.recommendedMaxLevel })),
+        element('div', 'section-title', t('dungeons.creeps')),
+        element('div', 'monster-tiles', ...monsters.map((monster) => createMonsterTile(monster, dungeon, options))),
+      ),
+    ),
+    ...(picker ? [picker.element] : []),
+    element('div', 'panel-footer', ...(picker ? [fightButton] : []), actionButton(t('report.close'), () => handle.close())),
   );
   handle = openModal(t(`dungeon.${dungeon.id}`), content);
 }

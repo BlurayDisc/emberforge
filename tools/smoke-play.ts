@@ -22,6 +22,9 @@ import {
   millSettingsOf,
   sortBackpackCommand,
   describeStorage,
+  dungeonActivityOf,
+  isBackpackFull,
+  workshopActivityOf,
   hireHeroCommand,
   listTavernOffers,
   repeatDungeonRunCommand,
@@ -34,6 +37,7 @@ import {
   type GameStore,
 } from '../src/game';
 import { CURRENT_SAVE_VERSION, loadGameState, parseGameState } from '../src/systems/save';
+import { levelUpGains } from '../src/systems/stats';
 import { createNewGameState } from '../src/game/newGame';
 import { LEVEL_CAP } from '../src/content/balance/progression';
 import { applyExperience } from '../src/systems/progression';
@@ -45,7 +49,7 @@ import { rollMonsterLoot } from '../src/systems/loot';
 import { QUALITY_WEIGHTS, SELL_ADDED_VALUE_COPPER_PER_INGREDIENT, SELL_QUALITY_FACTOR } from '../src/content/balance/items';
 import { requireById } from '../src/content/lookup';
 import { MATERIALS } from '../src/content/materials';
-import { craftingExperienceForCraft, findRecipe, listRecipes, rollUpgradeLevel, upgradeReachChance, upgradeStepChance } from '../src/systems/crafting';
+import { applyCraftingExperience, craftingExperienceForCraft, findRecipe, listRecipes, rollUpgradeLevel, upgradeReachChance, upgradeStepChance } from '../src/systems/crafting';
 import { addMaterials, backpackExpansionCostCopper, backpackRowCount, findItem, usedCellCount } from '../src/systems/inventory';
 import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
 import { computeHeroSheet, heroToBattleUnit } from '../src/systems/stats';
@@ -290,6 +294,8 @@ function playSession(seed: number): string {
   assert.ok(finalState.company[0] && finalState.company[0].statistics.battlesWon + finalState.company[0].statistics.battlesLost > 0, 'the fighter records the battle');
   const crafter = finalState.crafters.weaponsmithing;
   assert.ok(crafter && (crafter.level > 1 || crafter.experience > 0), 'crafting gives the crafter experience');
+  assert.equal(applyCraftingExperience({ level: 1, experience: 0 }, 1000).level, 3, 'a new crafter gains at most 2 levels from one craft');
+  assert.equal(applyCraftingExperience({ level: 2, experience: 0 }, 1000).level > 3, true, 'the cap ends at crafter level 2');
   const encounters = finalState.reports.length;
 
   // A sale can be cancelled, and the goods never left their cell.
@@ -769,6 +775,16 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   assert.ok(migratedReport?.healthBefore === 20, 'a version 22 report starts its health bar from full health');
 }
 
+// A version 23 report has no starting level. It shows no level-up growth, and a new level-up gives its growth from the class numbers.
+{
+  const heroResult = { heroId: 'hero-1', damageDealt: 5, damageTaken: 1, healingDone: 0, monstersDefeated: 1, experienceGained: 7, reachedLevel: 3, levelAfter: 3, experienceAfter: 12, healthBefore: 20, healthLost: 4, maxHealth: 20 };
+  const versionTwentyThreeSave = JSON.stringify({ saveVersion: 23, company: [{ id: 'hero-1', classId: 'warrior', level: 3, experience: 12, equipment: {} }], backpack: [], jobs: [], reports: [{ runNumber: 1, dungeonId: 'rat-cellar', firstClear: false, result: { won: true, heroes: [heroResult] } }] });
+  assert.ok(parseGameState(versionTwentyThreeSave)?.reports[0]?.result.heroes[0]?.levelBefore === 3, 'a version 23 report has no level-up growth');
+  const gains = levelUpGains('warrior', 2, 3);
+  assert.ok(gains.stats.hp > 0 && gains.stats.strength >= 0 && gains.resource > 0, 'a level-up gives health and a bigger resource pool');
+  assert.deepEqual(levelUpGains('warrior', 3, 3).stats, { hp: 0, strength: 0, magic: 0, skill: 0, speed: 0, defence: 0, resistance: 0 }, 'no level-up gives no growth');
+}
+
 // A level 1 monster always drops each of its basic materials, 1 most of the time and 2 less often. It never drops none.
 {
   const basicMaterialsOf: Record<string, string[]> = { 'cave-rat': ['rawhide', 'copper-ore'], 'straw-scarecrow': ['linen', 'pine-wood'] };
@@ -930,6 +946,23 @@ for (let level = 1; level <= 7; level++) {
   assert.equal(store.getState().jobs.length, 0, 'the crafter is free again');
   assert.ok(store.getState().backpack.some((entry) => entry.content.kind === 'item'), 'the item is in the backpack');
   assert.equal(rejectionKey(store, collectWaitingCraftCommand(waitingJob.professionId)), 'reject.nothingToCollect');
+}
+
+// Menu badges: one warning level for the backpack, and counts for fights and crafts. The warning ends when the player makes room.
+{
+  const store = createStore(31);
+  const singleCellEntries = (count: number) => Array.from({ length: count }, (_, index) => ({ column: index % 6, row: Math.floor(index / 6), content: { kind: 'material' as const, materialId: 'copper-ore', quantity: 1 } }));
+  assert.equal(isBackpackFull(store.getState()), false, 'an empty backpack has no warning');
+  store.execute((state) => ({ ...state, backpackExpansions: 0, backpack: singleCellEntries(27) }));
+  assert.equal(isBackpackFull(store.getState()), true, 'a nearly full backpack shows the warning');
+  store.execute((state) => ({ ...state, backpack: state.backpack.slice(0, 10) }));
+  assert.equal(isBackpackFull(store.getState()), false, 'making room ends the warning');
+  store.execute((state) => ({ ...state, backpack: singleCellEntries(30), pendingLoot: { 'rat-cellar': [{ materialId: 'copper-ore', quantity: 5 }] } }));
+  assert.equal(isBackpackFull(store.getState()), true, 'loot that does not fit shows the warning');
+  store.execute((state) => ({ ...state, backpack: state.backpack.slice(0, 10) }));
+  assert.equal(isBackpackFull(store.getState()), false, 'loot that fits again ends the warning without a trip to the dungeon');
+  assert.deepEqual(dungeonActivityOf(store.getState()), { inProgress: 0, ready: 0 }, 'no fight and no report at the start');
+  assert.deepEqual(workshopActivityOf(store.getState()), { inProgress: 0, ready: 0 }, 'no craft at the start');
 }
 
 // Drops with no room wait at the dungeon. They block that dungeon until the player collects them.

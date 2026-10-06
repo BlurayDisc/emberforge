@@ -6,7 +6,8 @@ export interface PanelContext {
   closePanel(): void;
   openPanel(panelId: string): void;
   notify(message: string): void;
-  enterSubScreen(): void;
+  // goBack is what the Back button and the Escape key do on the sub screen.
+  enterSubScreen(goBack: () => void): void;
   leaveSubScreen(): void;
 }
 

@@ -1,6 +1,6 @@
 import { addHeroOutline, createHeroCanvas } from '../heroCanvas';
 import { paintMageHead } from '../headgear/mageHead';
-import { MATERIAL, darken, type HeroColors, type Hex } from '../heroPalette';
+import { darken, type HeroColors, type Hex } from '../heroPalette';
 import { createSpritePainter, type SpritePainter } from '../spritePainter';
 
 const DRAWING_WIDTH = 30;
@@ -13,9 +13,9 @@ const HEAD_TOP = 3;
 const TORSO_TOP = 14;
 const ORB_CENTER = { x: 26, y: 8 } as const;
 const STAFF_X = 4;
-const STAFF_GEM_COLOR = '#5a8fe0';
-const ORB_GLOW = ['#5a3aa0', '#8ab0ff', '#e8f0ff'] as const;
-const SPARKLE = '#c8d8ff';
+const STAFF_GEM_COLOR = '#ff7a2a';
+const ORB_GLOW = ['#a02a1a', '#ff8a2a', '#fff0a0'] as const;
+const SPARKLE = '#ffd070';
 
 function paintHair(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(colors.hair, 8, 11, 3, 15);
@@ -39,7 +39,7 @@ function paintRobe(painter: SpritePainter, colors: HeroColors): void {
   painter.dot(colors.trim, CENTER_X - 1, TORSO_TOP + 1);
   painter.dot(colors.trim, CENTER_X + 1, TORSO_TOP + 1);
   painter.rect(colors.trim, CENTER_X - 3, TORSO_TOP + 7, 7, 2);
-  painter.dot(MATERIAL.goldDark, CENTER_X, TORSO_TOP + 8);
+  painter.dot(colors.clothShade, CENTER_X, TORSO_TOP + 8);
   for (let row = 0; row < 12; row++) {
     const halfWidth = 3 + Math.floor(row * 0.45);
     painter.span(colors.cloth, CENTER_X - halfWidth, CENTER_X + halfWidth, TORSO_TOP + 9 + row);
@@ -48,7 +48,7 @@ function paintRobe(painter: SpritePainter, colors: HeroColors): void {
     if (row % 3 === 2) painter.span(colors.clothShade, CENTER_X - halfWidth + 1, CENTER_X - 1, TORSO_TOP + 9 + row);
   }
   painter.span(colors.trim, CENTER_X - 8, CENTER_X + 8, TORSO_TOP + 20);
-  painter.span(MATERIAL.goldDark, CENTER_X - 8, CENTER_X + 8, TORSO_TOP + 21);
+  painter.span(colors.clothShade, CENTER_X - 8, CENTER_X + 8, TORSO_TOP + 21);
 }
 
 function paintLegSlit(painter: SpritePainter, colors: HeroColors): void {
@@ -56,18 +56,18 @@ function paintLegSlit(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(colors.skinShade, CENTER_X + 3, TORSO_TOP + 12, 1, 10);
   painter.rect(colors.trim, CENTER_X + 4, TORSO_TOP + 12, 1, 9);
   painter.rect(colors.trim, CENTER_X + 1, TORSO_TOP + 12, 1, 9);
-  painter.rect(MATERIAL.leather, CENTER_X + 1, TORSO_TOP + 23, 4, 3);
-  painter.rect(MATERIAL.leatherLight, CENTER_X + 1, TORSO_TOP + 23, 4, 1);
-  painter.rect(MATERIAL.boot, CENTER_X + 1, TORSO_TOP + 25, 7, 2);
-  painter.rect(MATERIAL.leather, CENTER_X - 6, TORSO_TOP + 23, 4, 4);
-  painter.rect(MATERIAL.boot, CENTER_X - 7, TORSO_TOP + 25, 5, 2);
+  painter.rect(darken(colors.clothShade, 0.7), CENTER_X + 1, TORSO_TOP + 23, 4, 3);
+  painter.rect(colors.cloth, CENTER_X + 1, TORSO_TOP + 23, 4, 1);
+  painter.rect(darken(colors.clothShade, 0.6), CENTER_X + 1, TORSO_TOP + 25, 7, 2);
+  painter.rect(darken(colors.clothShade, 0.7), CENTER_X - 6, TORSO_TOP + 23, 4, 4);
+  painter.rect(darken(colors.clothShade, 0.6), CENTER_X - 7, TORSO_TOP + 25, 5, 2);
 }
 
 function paintStaff(painter: SpritePainter, colors: HeroColors): void {
-  painter.rect(MATERIAL.wood, STAFF_X, 4, 1, 36);
-  painter.rect(MATERIAL.woodDark, STAFF_X + 1, 4, 1, 36);
+  painter.rect('#8a6340', STAFF_X, 4, 1, 36);
+  painter.rect('#5e4128', STAFF_X + 1, 4, 1, 36);
   painter.rect(colors.trim, STAFF_X - 1, 6, 3, 1);
-  painter.grid(['.GG.', 'GBBG', 'GBwG', '.GG.'], { G: colors.trim, B: STAFF_GEM_COLOR, w: '#e8f0ff' }, STAFF_X - 1, 2);
+  painter.grid(['.GG.', 'GBBG', 'GBwG', '.GG.'], { G: colors.trim, B: STAFF_GEM_COLOR, w: '#fff0a0' }, STAFF_X - 1, 2);
   painter.line(colors.cloth, CENTER_X - 4, TORSO_TOP, STAFF_X + 1, TORSO_TOP + 7, 2);
   painter.line(colors.clothShade, CENTER_X - 3, TORSO_TOP + 1, STAFF_X + 2, TORSO_TOP + 8);
   painter.rect(colors.skin, STAFF_X - 1, TORSO_TOP + 7, 3, 3);

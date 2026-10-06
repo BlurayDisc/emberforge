@@ -44,6 +44,6 @@ export const renderTavernPanel: PanelRenderer = (context) => {
   if (!attributes || !mainStats) content.append(element('p', 'hint', t('tavern.growthLocked')));
   if (offers.length === 0) content.append(element('p', 'hint', t('tavern.full')));
   content.append(createList(...offers.map((offer) => renderOffer(context, offer))));
-  if (state.company.length > 0) content.append(actionButton(t('tavern.leave'), context.closePanel));
+  if (state.company.length > 0) content.append(element('div', 'panel-footer', actionButton(t('tavern.leave'), context.closePanel)));
   return content;
 };

@@ -95,5 +95,5 @@ export const renderBankPanel: PanelRenderer = (context) => {
     ),
     ...(Object.keys(BANK_UNLOCK_COSTS_COPPER) as BankUnlockId[]).map((unlockId) => renderUnlockRow(context, unlockId)),
   );
-  return element('div', 'panel-body', element('p', 'hint', t('bank.hint')), rows, actionButton(t('bank.leave'), context.closePanel));
+  return element('div', 'panel-body', element('p', 'hint', t('bank.hint')), rows, element('div', 'panel-footer', actionButton(t('bank.leave'), context.closePanel)));
 };

@@ -34,6 +34,18 @@
   height: 100%;
 }
 
+/* The town fills the whole stage area. The frame has no outline then. */
+.stage-frame.stage-frame-fill {
+  box-shadow: none;
+}
+
+/* Pixi draws the whole stage: town, battle and castle. */
+.stage-frame .stage-pixi-canvas {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+}
+
 .stage-overlay {
   --u: calc(var(--stage-scale, 1) * 1px);
   position: absolute;
@@ -112,27 +124,6 @@
   pointer-events: none;
 }
 
-.building-hotspot {
-  position: absolute;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.building-hotspot::after {
-  content: '';
-  position: absolute;
-  inset: calc(var(--u) * -2);
-  pointer-events: none;
-}
-
-.building-hotspot:hover::after,
-.building-hotspot:focus-visible::after {
-  box-shadow: 0 0 0 var(--u) var(--gold);
-}
-
 .building-label {
   position: absolute;
   left: 50%;
@@ -160,25 +151,6 @@
   height: calc(var(--u) * 3);
   transform: translateX(-50%);
   background: var(--ink);
-}
-
-.building-hotspot:hover .building-label {
-  color: #fff6d6;
-  background-color: var(--wood-500);
-}
-
-.stage-hint {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--u) * 8);
-  transform: translateX(-50%);
-  max-width: 80%;
-  text-align: center;
-  font-size: calc(var(--u) * 7);
-  padding: calc(var(--u) * 4) calc(var(--u) * 8);
-  color: var(--parchment);
-  background: var(--wood-800);
-  box-shadow: 0 0 0 var(--u) var(--ink), inset var(--u) var(--u) 0 var(--wood-600), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--wood-900);
 }
 
 .run-hud {
@@ -225,60 +197,6 @@
   bottom: calc(var(--u) * 6);
   transform: translateX(-50%);
   width: min(560px, 94%);
-}
-
-.mill-status {
-  position: absolute;
-  margin-top: calc(var(--u) * 3);
-  display: flex;
-  /* The Collect button sits under the timer, so it appearing never moves the timer. */
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: calc(var(--u) * 2);
-  pointer-events: none;
-}
-
-.mill-timer,
-.mill-collect {
-  font-family: var(--font-title);
-  font-size: calc(var(--u) * 9);
-  line-height: 1;
-  padding: calc(var(--u) * 2) calc(var(--u) * 6);
-  white-space: nowrap;
-  color: var(--gold);
-  text-shadow: var(--u) var(--u) 0 var(--ink);
-  background-color: var(--wood-700);
-  box-shadow: 0 calc(var(--u) * -1) 0 var(--ink), 0 var(--u) 0 var(--ink), calc(var(--u) * -1) 0 0 var(--ink), var(--u) 0 0 var(--ink);
-}
-
-.mill-collect {
-  display: none;
-  border: 0;
-  margin: 0;
-  cursor: pointer;
-  pointer-events: auto;
-  color: var(--ink);
-  text-shadow: none;
-  background-color: var(--gold);
-}
-
-.mill-collect:hover,
-.mill-collect:focus-visible {
-  background-color: #fff6d6;
-}
-
-.mill-collect:active {
-  transform: translateY(calc(var(--u) * 2));
-}
-
-.building-hotspot.static {
-  cursor: default;
-  pointer-events: none;
-}
-
-.building-hotspot.static .building-label {
-  opacity: 0.85;
-  color: var(--parchment);
 }
 
 .floating-text {
@@ -487,31 +405,6 @@
 }
 
 
-.speech-bubble {
-  position: absolute;
-  width: max-content;
-  max-width: calc(var(--stage-scale, 1) * 90px);
-  padding: 6px 10px;
-  transform: translate(-50%, -100%);
-  font-family: var(--font-readable);
-  font-size: 14px;
-  line-height: 1.3;
-  color: var(--ink);
-  background: var(--parchment);
-  box-shadow: var(--outline-2);
-  pointer-events: none;
-}
-
-.speech-bubble::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  margin-left: -4px;
-  border: 4px solid transparent;
-  border-top-color: var(--parchment);
-}
-
 /* On a wide screen the log stands beside the stage. That keeps the stage tall enough for a bigger whole-number scale. */
 @media (min-width: 900px) and (min-aspect-ratio: 5/4) {
   .stage-area.run-active {
@@ -606,9 +499,9 @@
 
 .castle-leave-button {
   position: absolute;
-  /* Under the gold and clock HUD in the same corner. */
-  top: calc(var(--u) * 4 + max(11px, calc(var(--u) * 5)) * 2.6);
-  right: calc(var(--u) * 4);
+  /* Under the Pixi gold and clock HUD in the same corner. The HUD is about 50 stage pixels tall. */
+  top: calc(var(--u) * 54);
+  right: calc(var(--u) * 5);
   width: auto;
   margin: 0;
   padding: calc(var(--u) * 2) calc(var(--u) * 8);

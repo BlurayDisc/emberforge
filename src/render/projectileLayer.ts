@@ -1,12 +1,13 @@
-import { Group, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import { Container } from 'pixi.js';
+import { BATTLE_Z } from './battleLayers';
 import { PALETTE } from './palette';
+import { createFlatSprite } from './pixiTextures';
 import type { RangedAttackStyle } from './rangedAttackStyles';
 
-const PROJECTILE_Z = 2.5;
 const FLIGHT_PIXELS_PER_SECOND_BY_STYLE: Readonly<Record<RangedAttackStyle, number>> = { arrow: 1100, magicBolt: 800 };
 
 interface Projectile {
-  group: Group;
+  group: Container;
   startX: number;
   startY: number;
   endX: number;
@@ -27,18 +28,16 @@ export interface PixelPoint {
   y: number;
 }
 
-const squareGeometry = new PlaneGeometry(1, 1);
-
-function addPart(group: Group, color: string, centerX: number, width: number, height: number): void {
-  const part = new Mesh(squareGeometry, new MeshBasicMaterial({ color }));
-  part.scale.set(width, height, 1);
-  part.position.set(centerX, 0, 0);
-  group.add(part);
+function addPart(group: Container, color: string, centerX: number, width: number, height: number): void {
+  const part = createFlatSprite(color, width, height);
+  part.position.set(Math.round(centerX - width / 2), Math.round(-height / 2));
+  group.addChild(part);
 }
 
 // The arrow stays horizontal: a rotated one-pixel line would break the whole-pixel rule.
-function buildProjectileGroup(style: RangedAttackStyle, direction: number): Group {
-  const group = new Group();
+function buildProjectileGroup(style: RangedAttackStyle, direction: number): Container {
+  const group = new Container();
+  group.zIndex = BATTLE_Z.projectile;
   if (style === 'arrow') {
     addPart(group, PALETTE.bone, 0, 8, 1);
     addPart(group, PALETTE.steel, 4 * direction, 2, 3);
@@ -50,19 +49,18 @@ function buildProjectileGroup(style: RangedAttackStyle, direction: number): Grou
   return group;
 }
 
-export function createProjectileLayer(root: Group): ProjectileLayer {
+export function createProjectileLayer(root: Container): ProjectileLayer {
   const flyingProjectiles: Projectile[] = [];
 
   const remove = (projectile: Projectile): void => {
-    projectile.group.children.forEach((part) => ((part as Mesh).material as MeshBasicMaterial).dispose());
-    root.remove(projectile.group);
+    projectile.group.destroy({ children: true });
   };
 
   return {
     launch: (style, from, to, direction, nowSeconds, onArrive) => {
       const group = buildProjectileGroup(style, direction);
-      group.position.set(from.x, from.y, PROJECTILE_Z);
-      root.add(group);
+      group.position.set(from.x, from.y);
+      root.addChild(group);
       const distance = Math.hypot(to.x - from.x, to.y - from.y);
       const flightSeconds = Math.max(0.05, distance / FLIGHT_PIXELS_PER_SECOND_BY_STYLE[style]);
       flyingProjectiles.push({ group, startX: from.x, startY: from.y, endX: to.x, endY: to.y, bornSeconds: nowSeconds, flightSeconds, onArrive });
@@ -77,8 +75,10 @@ export function createProjectileLayer(root: Group): ProjectileLayer {
           projectile.onArrive();
           continue;
         }
-        projectile.group.position.x = Math.round(projectile.startX + (projectile.endX - projectile.startX) * progress);
-        projectile.group.position.y = Math.round(projectile.startY + (projectile.endY - projectile.startY) * progress);
+        projectile.group.position.set(
+          Math.round(projectile.startX + (projectile.endX - projectile.startX) * progress),
+          Math.round(projectile.startY + (projectile.endY - projectile.startY) * progress),
+        );
       }
     },
     clear: () => {

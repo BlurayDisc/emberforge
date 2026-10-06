@@ -6,3 +6,8 @@ export interface SlidingView {
   // Called with the world pixel at the left edge of the view, whenever the view moves.
   onScroll(listener: (scrollLeft: number) => void): void;
 }
+
+// A scene that the app can show or hide.
+export interface SceneToggle {
+  setVisible(isVisible: boolean): void;
+}
