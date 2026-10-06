@@ -12,10 +12,11 @@ const layersEachLayerMayImport: Record<string, readonly string[]> = {
   content: ['kernel', 'model'],
   systems: ['kernel', 'model', 'content'],
   game: ['kernel', 'model', 'content', 'systems'],
-  render: ['kernel', 'model', 'content'],
+  heroArt: ['kernel', 'model', 'content'],
+  render: ['kernel', 'model', 'content', 'heroArt'],
   audio: ['kernel', 'model', 'content'],
-  ui: ['kernel', 'model', 'content', 'game', 'audio'],
-  app: ['kernel', 'model', 'content', 'game', 'render', 'ui', 'audio'],
+  ui: ['kernel', 'model', 'content', 'game', 'audio', 'heroArt'],
+  app: ['kernel', 'model', 'content', 'game', 'render', 'ui', 'audio', 'heroArt'],
 };
 
 const forbiddenInsideSystems = [

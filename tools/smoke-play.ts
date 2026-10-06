@@ -45,7 +45,7 @@ import { rollMonsterLoot } from '../src/systems/loot';
 import { QUALITY_WEIGHTS, SELL_ADDED_VALUE_COPPER_PER_INGREDIENT, SELL_QUALITY_FACTOR } from '../src/content/balance/items';
 import { requireById } from '../src/content/lookup';
 import { MATERIALS } from '../src/content/materials';
-import { findRecipe, listRecipes, rollUpgradeLevel, upgradeReachChance, upgradeStepChance } from '../src/systems/crafting';
+import { craftingExperienceForCraft, findRecipe, listRecipes, rollUpgradeLevel, upgradeReachChance, upgradeStepChance } from '../src/systems/crafting';
 import { addMaterials, backpackExpansionCostCopper, backpackRowCount, findItem, usedCellCount } from '../src/systems/inventory';
 import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
 import { computeHeroSheet, heroToBattleUnit } from '../src/systems/stats';
@@ -97,9 +97,13 @@ function giveStarterMaterials(store: GameStore): void {
 const clock = { nowMs: 1_000_000 };
 const ONE_HOUR_MS = 3_600_000;
 
+// A finished craft waits until the player clicks the crafter, so the helper clicks every crafter that is ready.
 function finishJobs(store: GameStore): void {
   clock.nowMs += ONE_HOUR_MS;
   store.execute(collectFinishedJobsCommand(clock.nowMs));
+  for (const job of store.getState().jobs) {
+    if (job.kind === 'craft' && job.isWaitingForCollection) store.execute(collectWaitingCraftCommand(job.professionId));
+  }
 }
 
 function levelUpCrafter(store: GameStore, baseId: string, professionId: string, targetLevel: number): void {
@@ -259,6 +263,9 @@ function playSession(seed: number): string {
   let finalState = store.getState();
   assert.equal(finalState.dungeonRuns.length, 0, 'the run ends after one fight');
   assert.equal(finalState.reports.length, 1, 'a report waits for the player');
+  const reportedWarrior = finalState.reports[0]?.result.heroes.find((heroResult) => heroResult.heroId === warrior.id);
+  const startingWarriorUnit = plannedFight.partyUnits.find((unit) => unit.id === warrior.id);
+  assert.ok(reportedWarrior && startingWarriorUnit && reportedWarrior.healthBefore === Math.round(startingWarriorUnit.hp) && reportedWarrior.healthBefore >= reportedWarrior.healthLost, 'the report keeps the health the hero had at the start, so the health bar starts from it');
   assert.ok(!finalState.reports[0]?.result.won || (finalState.reports[0]?.result.materials.length ?? 0) > 0, 'a won fight drops crafting material');
   if (finalState.reports[0]?.result.won) {
     assert.ok(finalState.clearedDungeonIds.includes('rat-cellar'), 'a win clears the dungeon');
@@ -603,17 +610,20 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
 // Set recipes: a dungeon material makes an armour piece with a fixed bonus. Basic recipes need only their main material.
 {
   const basicRecipe = findRecipe('helm-heavy', 1);
-  const fangRecipe = findRecipe('helm-heavy', 1, 'sharp-fang');
+  const fangRecipe = findRecipe('gloves-heavy', 1, 'sharp-fang');
   assert.deepEqual(basicRecipe?.ingredients.map((ingredient) => ingredient.materialId), ['copper-ore'], 'a basic recipe needs only its main material');
   assert.deepEqual(fangRecipe?.ingredients.map((ingredient) => ingredient.materialId), ['copper-ore', 'sharp-fang'], 'a set recipe adds the set material');
-  assert.equal(fangRecipe?.requiredCraftLevel, requireById(MATERIALS, 'sharp-fang').setCraftLevelOffset, 'a set recipe opens at the level of its dungeon');
-  const everySetRecipeOpensAtDungeonOrBaseLevel = listRecipes(1)
-    .filter((recipe) => recipe.setMaterialId !== null)
-    .every((recipe) => recipe.requiredCraftLevel === Math.max(findRecipe(recipe.baseId, 1)?.requiredCraftLevel ?? Infinity, requireById(MATERIALS, recipe.setMaterialId as string).setCraftLevelOffset ?? 0));
-  assert.ok(everySetRecipeOpensAtDungeonOrBaseLevel, 'a set recipe opens at its dungeon level, or at the basic recipe level when that is higher, with no extra level');
+  const setRecipes = listRecipes(1).filter((recipe) => recipe.setMaterialId !== null);
+  assert.ok(setRecipes.every((recipe) => recipe.requiredCraftLevel === findRecipe(recipe.baseId, 1)?.requiredCraftLevel), 'every set recipe opens at the level of its basic recipe, even before the player owns the set material');
+  assert.ok(setRecipes.every((recipe) => recipe.itemLevel === findRecipe(recipe.baseId, 1)?.itemLevel), 'every set recipe has the item level of its basic recipe');
+  assert.equal(findRecipe('helm-heavy', 1, 'sharp-fang'), undefined, 'a base item of craft level 1 has no set recipe');
+  assert.equal(findRecipe('sword', 1, 'toadskin'), undefined, 'a weapon of craft level 1 has no set recipe');
+  const bodyArmourVariants = listRecipes(1).filter((recipe) => recipe.baseId === 'armour-heavy');
+  assert.equal(bodyArmourVariants.length, 1 + MATERIALS.filter((material) => material.tier === 1 && material.setBonus !== undefined).length, 'body armour has a basic recipe and one set recipe for each set material');
+  assert.ok(bodyArmourVariants.every((recipe) => recipe.requiredCraftLevel === 8), 'all body armour variants need crafter level 8');
   const setSlots = new Set(listRecipes(1).filter((recipe) => recipe.setMaterialId !== null).map((recipe) => BASE_ITEMS.find((base) => base.id === recipe.baseId)?.slot));
-  for (const slot of ['mainHand', 'offHand', 'helm', 'gloves', 'boots', 'legs', 'armour']) assert.ok(setSlots.has(slot as Item['slot']), `a set recipe exists for the ${slot} slot`);
-  assert.ok(findRecipe('sword', 1, 'sharp-fang'), 'a weapon can be made from a set material');
+  for (const slot of ['mainHand', 'offHand', 'gloves', 'boots', 'legs', 'armour']) assert.ok(setSlots.has(slot as Item['slot']), `a set recipe exists for the ${slot} slot`);
+  assert.ok(findRecipe('axe', 1, 'sharp-fang'), 'a weapon can be made from a set material');
   assert.ok(findRecipe('shield', 1, 'bone-shard'), 'an off-hand item can be made from a set material');
   assert.equal(findRecipe('ring', 1, 'sharp-fang'), undefined, 'jewellery and belts have no set recipe');
   const rolledSetItems = Array.from({ length: 400 }, (_, seed) => generateCraftedItem({ itemId: `set-${seed}`, baseId: 'sword', tier: 1, setMaterialId: 'sharp-fang', itemLevel: 3, upgradeLevel: seed % 8, craftingCostCopper: 10, ingredientCount: 2 }, createRandom(seed)));
@@ -700,12 +710,20 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   assert.equal(bossStore.getState().dungeonRuns[0]?.heroIds.length, 2, 'the run holds both heroes');
 }
 
+// Crafters: Leatherworking makes medium armour and the Belt, Tailoring makes light armour and the Tome.
+{
+  const professionOf = (baseId: string) => BASE_ITEMS.find((base) => base.id === baseId)?.profession;
+  for (const baseId of ['helm-medium', 'gloves-medium', 'boots-medium', 'legs-medium', 'armour-medium', 'belt']) assert.equal(professionOf(baseId), 'leatherworking', `${baseId} is made by the Leatherworker`);
+  for (const baseId of ['helm-light', 'armour-light', 'tome']) assert.equal(professionOf(baseId), 'tailoring', `${baseId} is made by the Tailor`);
+  assert.ok(createNewGameState(1).crafters.leatherworking, 'a new game has a Leatherworking crafter');
+}
+
 // Legs: every armour weight has a legs recipe, a hero of a fitting class wears it, and no two pieces of one set share a crafter level.
 {
   for (const weight of ['heavy', 'medium', 'light']) {
     const pieceLevels = ['helm', 'gloves', 'boots', 'legs', 'armour'].map((slot) => `${slot}-${weight}`);
     for (const setMaterialId of [null, ...MATERIALS.filter((material) => material.tier === 1 && material.setBonus !== undefined).map((material) => material.id)]) {
-      const levels = pieceLevels.map((baseId) => findRecipe(baseId, 1, setMaterialId)?.requiredCraftLevel);
+      const levels = pieceLevels.flatMap((baseId) => findRecipe(baseId, 1, setMaterialId)?.requiredCraftLevel ?? []);
       if (setMaterialId === null) assert.equal(new Set(levels).size, levels.length, `the ${weight} plain pieces open at different crafter levels`);
       assert.ok(levels.every((level, index) => index === 0 || (level as number) >= (levels[index - 1] as number)), 'a set opens in the order helm, gloves, boots, legs, armour');
       assert.ok(levels.every((level) => (level as number) <= 10), `a level 10 crafter can make every ${weight} piece made from ${setMaterialId ?? 'the main material'}`);
@@ -741,6 +759,36 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const versionTwentySave = JSON.stringify({ saveVersion: 20, company: [{ id: 'hero-1', classId: 'warrior', level: 3, experience: 12, equipment: {} }], backpack: [], jobs: [], reports: [{ runNumber: 1, dungeonId: 'rat-cellar', firstClear: false, result: { won: true, heroes: [heroResult] } }] });
   const migratedReport = parseGameState(versionTwentySave)?.reports[0]?.result.heroes[0];
   assert.ok(migratedReport?.healthLost === 0 && migratedReport.maxHealth === 1, 'a version 20 report gets no health loss');
+}
+
+// A version 22 report has no starting health. The bar starts from full health, as it did before.
+{
+  const heroResult = { heroId: 'hero-1', damageDealt: 5, damageTaken: 1, healingDone: 0, monstersDefeated: 1, experienceGained: 7, reachedLevel: null, levelAfter: 3, experienceAfter: 12, healthLost: 4, maxHealth: 20 };
+  const versionTwentyTwoSave = JSON.stringify({ saveVersion: 22, company: [{ id: 'hero-1', classId: 'warrior', level: 3, experience: 12, equipment: {} }], backpack: [], jobs: [], reports: [{ runNumber: 1, dungeonId: 'rat-cellar', firstClear: false, result: { won: true, heroes: [heroResult] } }] });
+  const migratedReport = parseGameState(versionTwentyTwoSave)?.reports[0]?.result.heroes[0];
+  assert.ok(migratedReport?.healthBefore === 20, 'a version 22 report starts its health bar from full health');
+}
+
+// A level 1 monster always drops each of its basic materials, 1 most of the time and 2 less often. It never drops none.
+{
+  const basicMaterialsOf: Record<string, string[]> = { 'cave-rat': ['rawhide', 'copper-ore'], 'straw-scarecrow': ['linen', 'pine-wood'] };
+  for (const [monsterId, materialIds] of Object.entries(basicMaterialsOf)) {
+    const quantitiesOf = (materialId: string): number[] => Array.from({ length: 200 }, (_, seed) => rollMonsterLoot(monsterId, createRandom(seed)).materials.filter((stack) => stack.materialId === materialId).reduce((sum, stack) => sum + stack.quantity, 0));
+    for (const materialId of materialIds) {
+      const quantities = quantitiesOf(materialId);
+      assert.ok(quantities.every((quantity) => quantity === 1 || quantity === 2), `${monsterId} always drops 1 or 2 ${materialId}`);
+      assert.ok(quantities.filter((quantity) => quantity === 2).length < quantities.length / 2, `${monsterId} drops 2 ${materialId} less often than 1`);
+    }
+  }
+}
+
+// Crafter experience follows the main material count: the same recipe level with twice the material pays twice the experience.
+{
+  const sword = findRecipe('sword', 1);
+  const axe = findRecipe('axe', 1);
+  assert.ok(sword && axe, 'the sword and the axe have a tier 1 recipe');
+  const perMaterialOf = (recipe: NonNullable<typeof sword>): number => craftingExperienceForCraft(recipe, recipe.requiredCraftLevel) / recipe.ingredients[0]!.quantity;
+  assert.ok(Math.abs(perMaterialOf(sword) - perMaterialOf({ ...sword, ingredients: [{ ...sword.ingredients[0]!, quantity: sword.ingredients[0]!.quantity * 2 }] })) < 1, 'crafter experience for each main material does not depend on the material count');
 }
 
 // A version 11 save has heroes with no spell fields. They get empty spell slots.
@@ -868,15 +916,17 @@ for (let level = 1; level <= 7; level++) {
   assert.equal(rejectionKey(store, craftItemCommand('sword', 1, null, clock.nowMs)), null);
   fillWithQuartz();
   clock.nowMs += ONE_HOUR_MS;
-  assert.equal(rejectionKey(store, collectFinishedJobsCommand(clock.nowMs)), null, 'the clock tries to hand the item over');
+  assert.equal(rejectionKey(store, collectFinishedJobsCommand(clock.nowMs)), null, 'the clock finishes the craft');
   const waitingJob = store.getState().jobs[0];
-  assert.ok(waitingJob?.kind === 'craft' && waitingJob.isWaitingForCollection, 'the item waits at the crafter');
+  assert.ok(waitingJob?.kind === 'craft' && waitingJob.isWaitingForCollection, 'the item waits at the crafter until the player clicks it');
+  assert.equal(store.getState().crafters[waitingJob.professionId]?.experience, 0, 'the crafter gets its experience only when the player collects');
   assert.equal(rejectionKey(store, collectFinishedJobsCommand(clock.nowMs)), 'reject.nothingDue', 'the clock does not try again for a waiting item');
   assert.equal(rejectionKey(store, craftItemCommand('sword', 1, null, clock.nowMs)), 'reject.crafterBusy', 'a waiting item blocks the crafter');
   assert.equal(rejectionKey(store, collectWaitingCraftCommand(waitingJob.professionId)), 'reject.backpackFullForItem', 'collecting needs room');
   // The item may be tall, so the freed cells must make whole rows.
   store.execute((state) => ({ ...state, backpack: state.backpack.slice(0, -20) }));
   assert.equal(rejectionKey(store, collectWaitingCraftCommand(waitingJob.professionId)), null, 'the player collects the item after making room');
+  assert.ok((store.getState().crafters[waitingJob.professionId]?.level ?? 1) > 1 || (store.getState().crafters[waitingJob.professionId]?.experience ?? 0) > 0, 'collecting pays the crafter experience');
   assert.equal(store.getState().jobs.length, 0, 'the crafter is free again');
   assert.ok(store.getState().backpack.some((entry) => entry.content.kind === 'item'), 'the item is in the backpack');
   assert.equal(rejectionKey(store, collectWaitingCraftCommand(waitingJob.professionId)), 'reject.nothingToCollect');

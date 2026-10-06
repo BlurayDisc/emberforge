@@ -17,7 +17,7 @@ export interface CraftJob extends JobBase {
   professionId: string;
   item: Item;
   crafterExperience: number;
-  // A finished craft that found no room in the backpack waits at the crafter until the player collects it.
+  // A finished craft waits at the crafter until the player clicks the crafter and collects it.
   isWaitingForCollection: boolean;
 }
 

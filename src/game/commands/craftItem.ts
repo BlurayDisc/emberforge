@@ -68,7 +68,7 @@ export function craftItemCommand(baseId: string, tier: number, setMaterialId: st
           finishesAtMs: nowMs + craftSeconds(recipe.requiredCraftLevel) * 1000,
           professionId: recipe.profession,
           item,
-          crafterExperience: craftingExperienceForCraft(recipe.requiredCraftLevel, crafter.level),
+          crafterExperience: craftingExperienceForCraft(recipe, crafter.level),
           isWaitingForCollection: false,
         },
       ],

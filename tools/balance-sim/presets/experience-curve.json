@@ -4,5 +4,13 @@
   "lastLevel": 10,
   "monsterLevels": [1, 3, 5, 7, 9, 10],
   "ranks": ["normal", "rare", "boss"],
-  "targetKillsAtMatchingLevel": { "firstLevel": [4, 5], "lastLevels": [5, 7] }
+  "targetKillsAtMatchingLevel": { "firstLevel": [1.9, 4], "lastLevels": [5, 7] },
+  "levelUpOvershoot": {
+    "description": "A level-up should leave some experience over, so the next bar is never empty. A level-up lands on the line when the experience left is under this share of the next bar.",
+    "levelOneDungeonFightShares": [0, 0.3, 0.5],
+    "games": 300,
+    "firstSeed": 1,
+    "landsOnLineBelowPercent": 1,
+    "maximumPercentOfLevelUpsOnLine": 15
+  }
 }

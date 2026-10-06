@@ -47,10 +47,10 @@ export function findBackpackMoveAnchor(state: GameState, from: GridPosition, tap
 
 export type BackpackPressure = 'none' | 'warning' | 'urgent';
 
-// Urgent also covers items that found no room: dungeon drops that wait (pendingLoot) and finished crafts that wait for collection.
+// Urgent also covers dungeon drops that found no room and wait (pendingLoot).
 export function backpackPressureOf(state: GameState): BackpackPressure {
   const { usedCells, totalCells } = describeStorage(state);
-  const hasItemsWaitingForSpace = Object.values(state.pendingLoot).some((stacks) => stacks.length > 0) || state.jobs.some((job) => job.kind === 'craft' && job.isWaitingForCollection);
+  const hasItemsWaitingForSpace = Object.values(state.pendingLoot).some((stacks) => stacks.length > 0);
   const fillFraction = usedCells / totalCells;
   if (hasItemsWaitingForSpace || fillFraction >= BACKPACK_URGENT_FILL_FRACTION) return 'urgent';
   return fillFraction >= BACKPACK_WARNING_FILL_FRACTION ? 'warning' : 'none';

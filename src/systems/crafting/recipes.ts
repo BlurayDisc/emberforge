@@ -5,6 +5,7 @@ import {
   LEVELS_PER_BRACKET,
   SET_MATERIAL_LARGE_ITEM,
   SET_MATERIAL_SMALL_ITEM,
+  SET_RECIPE_FIRST_BASE_CRAFT_LEVEL_OFFSET,
   SET_RECIPE_SLOTS,
 } from '../../content/balance/items';
 import { MATERIALS, type MaterialDefinition } from '../../content/materials';
@@ -37,18 +38,13 @@ export function craftFeeCopper(requiredCraftLevel: number): number {
   return Math.round(CRAFT_FEE_BASE_COPPER + CRAFT_FEE_PER_REQUIRED_LEVEL_COPPER * requiredCraftLevel);
 }
 
-// A set recipe opens when the crafter reaches the dungeon of its set material, and never before the basic recipe of the same base item.
-function setRecipeCraftLevelOffset(base: BaseItemDefinition, setMaterial: MaterialDefinition): number {
-  return Math.min(LEVELS_PER_BRACKET, Math.max(base.craftLevelOffset, setMaterial.setCraftLevelOffset ?? 0));
-}
-
 function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: MaterialDefinition | null): Recipe | null {
   const mainMaterial = materialOfTier(tier, base.mainCategory);
   if (!mainMaterial) return null;
 
   const cells = base.width * base.height;
-  const craftLevelOffset = setMaterial ? setRecipeCraftLevelOffset(base, setMaterial) : base.craftLevelOffset;
-  const requiredCraftLevel = (tier - 1) * LEVELS_PER_BRACKET + craftLevelOffset;
+  // Every set recipe of a base item opens with its basic recipe, even when the player does not own the set material yet.
+  const requiredCraftLevel = (tier - 1) * LEVELS_PER_BRACKET + base.craftLevelOffset;
   const setMaterialQuantity = cells >= LARGE_ITEM_CELL_THRESHOLD ? SET_MATERIAL_LARGE_ITEM : SET_MATERIAL_SMALL_ITEM;
   return {
     baseId: base.id,
@@ -68,7 +64,7 @@ function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: Mater
 export function listRecipes(tier: number): Recipe[] {
   const setMaterials = MATERIALS.filter((material) => material.tier === tier && material.setBonus !== undefined);
   return BASE_ITEMS.flatMap((base) => {
-    const canMakeSetPieces = SET_RECIPE_SLOTS.includes(base.slot);
+    const canMakeSetPieces = SET_RECIPE_SLOTS.includes(base.slot) && base.craftLevelOffset >= SET_RECIPE_FIRST_BASE_CRAFT_LEVEL_OFFSET;
     const variants = [null, ...(canMakeSetPieces ? setMaterials : [])];
     return variants.flatMap((setMaterial) => {
       const recipe = createRecipe(base, tier, setMaterial);

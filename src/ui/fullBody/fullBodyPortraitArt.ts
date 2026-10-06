@@ -1,11 +1,8 @@
 import { pickHeroAppearance, type ClassLook } from '../../content/heroAppearance';
+import { drawHeroPortraitFigure } from '../../heroArt/portraitFigure';
 import type { ClassId } from '../../model/hero';
 import { createDrawing, drawingToImage, type PixelDrawing } from '../pixelDraw';
-import { outlineOpaquePixels } from '../pixelOutline';
-import { drawBaseFigure } from './baseFigure';
-import { FIGURE_HEIGHT, FIGURE_WIDTH, INK, type Erase } from './figureColors';
-import { GEAR_BY_CLASS } from './gearByClass';
-import { separateBrowsFromHair, slimJaw } from './slimJaw';
+import { FIGURE_HEIGHT, FIGURE_WIDTH, INK } from './figureColors';
 
 const FLOOR_TOP = 58;
 
@@ -25,23 +22,13 @@ function drawBorder(drawing: PixelDrawing): void {
   drawing.fill(INK, FIGURE_WIDTH - 1, 0, 1, FIGURE_HEIGHT);
 }
 
-function buildFullBodyPortrait(classId: ClassId, heroName: string): HTMLCanvasElement {
+export function buildFullBodyPortrait(classId: ClassId, heroName: string): HTMLCanvasElement {
   const appearance = pickHeroAppearance(classId, heroName);
-  const figure = createDrawing(FIGURE_WIDTH, FIGURE_HEIGHT);
-  drawBaseFigure(figure.fill, appearance);
-  const figureContext = figure.canvas.getContext('2d');
-  const erase: Erase = (x, y, width, height) => figureContext?.clearRect(x, y, width, height);
-  GEAR_BY_CLASS[classId](figure.fill, appearance, erase);
-  if (appearance.gender === 'female') {
-    slimJaw(figure.fill, appearance.hair);
-    separateBrowsFromHair(figure.fill, appearance.skin);
-  }
-  // The outline is cut from the figure alone, so the backdrop never gets an outline.
-  outlineOpaquePixels(figure.canvas, INK);
+  const figureCanvas = drawHeroPortraitFigure(classId, heroName);
 
   const portrait = createDrawing(FIGURE_WIDTH, FIGURE_HEIGHT);
   drawBackdrop(portrait, appearance.look);
-  portrait.canvas.getContext('2d')?.drawImage(figure.canvas, 0, 0);
+  portrait.canvas.getContext('2d')?.drawImage(figureCanvas, 0, 0);
   drawBorder(portrait);
   return portrait.canvas;
 }

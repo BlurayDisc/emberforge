@@ -21,6 +21,7 @@ const CRAFTER_LOOKS: Record<ProfessionId, CrafterLook> = {
   armoursmithing: { background: '#33414d', backgroundShade: '#3f5060', cloth: '#8a919c', clothShade: '#5e6672', trim: '#f2c14e', hair: '#8a8a8a', skin: '#c99a76', skinShade: '#9f7552' },
   fletching: { background: '#2c4a2a', backgroundShade: '#385a35', cloth: '#4f7f3f', clothShade: '#355a2a', trim: '#ead9a8', hair: '#8a5a2a', skin: SKIN, skinShade: SKIN_SHADE },
   woodworking: { background: '#4a3a22', backgroundShade: '#5a4729', cloth: '#a07a48', clothShade: '#7a5a32', trim: '#d9b878', hair: '#5a3a1e', skin: '#d29a70', skinShade: '#a8764f' },
+  leatherworking: { background: '#3e2c1c', backgroundShade: '#4b3623', cloth: '#9a6a3a', clothShade: '#6e4825', trim: '#d9b878', hair: '#3a2414', skin: '#d29a70', skinShade: '#a8764f' },
   tailoring: { background: '#4a2a55', backgroundShade: '#5a3566', cloth: '#a85abf', clothShade: '#7a3e8f', trim: '#f2c14e', hair: '#17110d', skin: SKIN, skinShade: SKIN_SHADE },
   jewelcrafting: { background: '#223a5a', backgroundShade: '#2c4a70', cloth: '#5a8fe0', clothShade: '#3a62a8', trim: '#f2c14e', hair: '#c9a24a', skin: '#f0c8a4', skinShade: '#c9966c' },
 };
@@ -81,6 +82,17 @@ const DRAW_TRADE: Record<ProfessionId, (drawing: PixelDrawing, look: CrafterLook
     drawing.fill(look.hair, 10, 17, 12, 3);
     drawing.fill('#c0c8d0', 4, 12, 4, 8);
     drawing.fill('#8a6340', 5, 18, 2, 8);
+  },
+  leatherworking: (drawing, look) => {
+    drawing.fill(look.hair, 10, 6, 12, 3);
+    drawing.fill(look.cloth, 8, 4, 16, 3);
+    drawing.fill(look.clothShade, 8, 7, 16, 1);
+    drawing.fill(look.trim, 14, 4, 4, 1);
+    drawing.fill(look.cloth, 23, 14, 6, 9);
+    drawing.fill(look.clothShade, 23, 22, 6, 1);
+    drawing.fill(look.trim, 25, 16, 2, 1);
+    drawing.fill('#c0c8d0', 5, 20, 1, 6);
+    drawing.fill('#6a4a30', 5, 26, 1, 3);
   },
   tailoring: (drawing, look) => {
     drawing.fill(look.hair, 10, 6, 12, 3);

@@ -2,7 +2,7 @@ import baseItemsData from '../../data/base-items.json';
 import type { ArmourWeight, GearType, ItemSlot, StatBonuses } from '../model/item';
 import type { MaterialCategory } from '../model/material';
 
-export type ProfessionId = 'weaponsmithing' | 'armoursmithing' | 'fletching' | 'woodworking' | 'tailoring' | 'jewelcrafting';
+export type ProfessionId = 'weaponsmithing' | 'armoursmithing' | 'fletching' | 'woodworking' | 'leatherworking' | 'tailoring' | 'jewelcrafting';
 
 export interface BaseItemDefinition {
   id: string;
@@ -21,4 +21,4 @@ export interface BaseItemDefinition {
 
 export const BASE_ITEMS = baseItemsData as unknown as readonly BaseItemDefinition[];
 
-export const PROFESSION_IDS: readonly ProfessionId[] = ['weaponsmithing', 'armoursmithing', 'fletching', 'woodworking', 'tailoring', 'jewelcrafting'];
+export const PROFESSION_IDS: readonly ProfessionId[] = ['weaponsmithing', 'armoursmithing', 'fletching', 'woodworking', 'leatherworking', 'tailoring', 'jewelcrafting'];

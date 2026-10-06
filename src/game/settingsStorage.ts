@@ -9,7 +9,7 @@ interface StoredSettings {
   audio?: Partial<AudioPreferences>;
   staysOnDungeonScreen?: boolean;
   seenChangelogVersion?: string;
-  recipeFilter?: Partial<RecipeFilterPreferences>;
+  recipeFilterByProfessionId?: Record<string, Partial<RecipeFilterPreferences>>;
 }
 
 function readSettings(): StoredSettings {
@@ -87,8 +87,8 @@ export function saveSeenChangelogVersion(seenChangelogVersion: string): void {
 
 const DEFAULT_RECIPE_FILTER: RecipeFilterPreferences = { classId: 'all', slot: 'all', sortDirection: 'up' };
 
-export function loadRecipeFilterPreferences(): RecipeFilterPreferences {
-  const saved = readSettings().recipeFilter ?? {};
+export function loadRecipeFilterPreferences(professionId: string): RecipeFilterPreferences {
+  const saved = readSettings().recipeFilterByProfessionId?.[professionId] ?? {};
   return {
     classId: typeof saved.classId === 'string' ? saved.classId : DEFAULT_RECIPE_FILTER.classId,
     slot: typeof saved.slot === 'string' ? saved.slot : DEFAULT_RECIPE_FILTER.slot,
@@ -96,9 +96,11 @@ export function loadRecipeFilterPreferences(): RecipeFilterPreferences {
   };
 }
 
-export function saveRecipeFilterPreferences(recipeFilter: RecipeFilterPreferences): void {
+export function saveRecipeFilterPreferences(professionId: string, recipeFilter: RecipeFilterPreferences): void {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), recipeFilter }));
+    const settings = readSettings();
+    const recipeFilterByProfessionId = { ...settings.recipeFilterByProfessionId, [professionId]: recipeFilter };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, recipeFilterByProfessionId }));
   } catch {
     return;
   }

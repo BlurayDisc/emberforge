@@ -22,10 +22,12 @@ interface HeroOutcome {
   result: HeroEncounterResult;
 }
 
-function healthLostOf(hero: Hero, plan: PlannedEncounter): { healthLost: number; maxHealth: number } {
+function healthLostOf(hero: Hero, plan: PlannedEncounter): { healthBefore: number; healthLost: number; maxHealth: number } {
   const before = plan.partyUnits.find((candidate) => candidate.id === hero.id);
   const after = plan.report.finalUnits.find((candidate) => candidate.id === hero.id);
-  return before && after ? { healthLost: Math.max(0, Math.round(before.hp - after.hp)), maxHealth: Math.round(before.maxHp) } : { healthLost: 0, maxHealth: 1 };
+  return before && after
+    ? { healthBefore: Math.round(before.hp), healthLost: Math.max(0, Math.round(before.hp - after.hp)), maxHealth: Math.round(before.maxHp) }
+    : { healthBefore: 1, healthLost: 0, maxHealth: 1 };
 }
 
 function finalHealthFractionOf(hero: Hero, plan: PlannedEncounter): number {

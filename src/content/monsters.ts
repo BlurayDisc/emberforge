@@ -6,6 +6,8 @@ export interface DropEntry {
   chance: number;
   minQuantity: number;
   maxQuantity: number;
+  // When set, the quantity is the maximum with this chance and the minimum otherwise. When missing, it is a flat roll from minimum to maximum.
+  maxQuantityChance?: number;
 }
 
 // A monster can drop a ready item. The quality is fixed here: the item rolls its affixes from it.

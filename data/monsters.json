@@ -9,8 +9,8 @@
     "defenceFactor": 0.7,
     "speed": 110,
     "drops": [
-      { "materialId": "rawhide", "chance": 0.55, "minQuantity": 1, "maxQuantity": 2 },
-      { "materialId": "copper-ore", "chance": 0.7, "minQuantity": 1, "maxQuantity": 2 }
+      { "materialId": "rawhide", "chance": 1, "minQuantity": 1, "maxQuantity": 2, "maxQuantityChance": 0.1 },
+      { "materialId": "copper-ore", "chance": 1, "minQuantity": 1, "maxQuantity": 2, "maxQuantityChance": 0.1 }
     ]
   },
   {
@@ -66,8 +66,8 @@
     "defenceFactor": 0.7,
     "speed": 100,
     "drops": [
-      { "materialId": "linen", "chance": 0.6, "minQuantity": 1, "maxQuantity": 2 },
-      { "materialId": "pine-wood", "chance": 0.6, "minQuantity": 1, "maxQuantity": 2 }
+      { "materialId": "linen", "chance": 1, "minQuantity": 1, "maxQuantity": 2, "maxQuantityChance": 0.1 },
+      { "materialId": "pine-wood", "chance": 1, "minQuantity": 1, "maxQuantity": 2, "maxQuantityChance": 0.1 }
     ]
   },
   {
@@ -150,7 +150,7 @@
     "name": "Goblin Chief",
     "rank": "boss",
     "spriteKey": "monster-goblin-chief",
-    "fixedStats": { "hp": 8000, "attack": 7.0, "defence": 18, "resistance": 12 },
+    "fixedStats": { "hp": 8000, "attack": 7.7, "defence": 18, "resistance": 12 },
     "speed": 52,
     "targetPriority": "highestDefence",
     "spellIds": ["goblin-chief.cowing-roar", "goblin-chief.war-cry", "goblin-chief.crushing-cleaver"],
@@ -186,7 +186,7 @@
     "rank": "normal",
     "spriteKey": "monster-hobgoblin",
     "hpFactor": 1.2,
-    "attackFactor": 1.2,
+    "attackFactor": 1.32,
     "defenceFactor": 1.2,
     "speed": 98,
     "drops": [

@@ -276,8 +276,8 @@
   position: absolute;
   top: 0;
   background: var(--crimson);
-  transform-origin: left;
-  animation: gain-grow 0.8s steps(8) both;
+  transform-origin: right;
+  animation: gain-grow 0.5s steps(8) both;
 }
 
 .bar-experience .bar-gain {

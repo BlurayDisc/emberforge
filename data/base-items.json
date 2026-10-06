@@ -76,7 +76,7 @@
     "height": 3,
     "profession": "fletching",
     "mainCategory": "wood",
-    "mainIngredientQuantity": 4,
+    "mainIngredientQuantity": 3,
     "baseStats": {
       "physicalDamage": 6,
       "skill": 1
@@ -193,7 +193,7 @@
     "gearType": "accessory",
     "width": 2,
     "height": 1,
-    "profession": "tailoring",
+    "profession": "leatherworking",
     "mainCategory": "hide",
     "mainIngredientQuantity": 1,
     "baseStats": {
@@ -263,7 +263,7 @@
     "armourWeight": "medium",
     "width": 2,
     "height": 2,
-    "profession": "tailoring",
+    "profession": "leatherworking",
     "mainCategory": "hide",
     "mainIngredientQuantity": 1,
     "baseStats": {
@@ -317,7 +317,7 @@
     "armourWeight": "medium",
     "width": 2,
     "height": 3,
-    "profession": "tailoring",
+    "profession": "leatherworking",
     "mainCategory": "hide",
     "mainIngredientQuantity": 2,
     "baseStats": {
@@ -371,7 +371,7 @@
     "armourWeight": "medium",
     "width": 2,
     "height": 2,
-    "profession": "tailoring",
+    "profession": "leatherworking",
     "mainCategory": "hide",
     "mainIngredientQuantity": 1,
     "baseStats": {
@@ -425,7 +425,7 @@
     "armourWeight": "medium",
     "width": 2,
     "height": 3,
-    "profession": "tailoring",
+    "profession": "leatherworking",
     "mainCategory": "hide",
     "mainIngredientQuantity": 2,
     "baseStats": {
@@ -479,7 +479,7 @@
     "armourWeight": "medium",
     "width": 2,
     "height": 2,
-    "profession": "tailoring",
+    "profession": "leatherworking",
     "mainCategory": "hide",
     "mainIngredientQuantity": 1,
     "baseStats": {
@@ -516,7 +516,7 @@
     "height": 3,
     "profession": "weaponsmithing",
     "mainCategory": "ore",
-    "mainIngredientQuantity": 6,
+    "mainIngredientQuantity": 4,
     "baseStats": {
       "physicalDamage": 13,
       "speed": -1
@@ -533,7 +533,7 @@
     "height": 3,
     "profession": "weaponsmithing",
     "mainCategory": "ore",
-    "mainIngredientQuantity": 5,
+    "mainIngredientQuantity": 3,
     "baseStats": {
       "physicalDamage": 10,
       "defence": 1,
@@ -604,7 +604,7 @@
     "height": 3,
     "profession": "fletching",
     "mainCategory": "wood",
-    "mainIngredientQuantity": 4,
+    "mainIngredientQuantity": 3,
     "baseStats": {
       "physicalDamage": 7,
       "skill": 1
@@ -621,7 +621,7 @@
     "height": 3,
     "profession": "fletching",
     "mainCategory": "wood",
-    "mainIngredientQuantity": 5,
+    "mainIngredientQuantity": 4,
     "baseStats": {
       "physicalDamage": 8,
       "skill": 2
@@ -638,7 +638,7 @@
     "height": 3,
     "profession": "fletching",
     "mainCategory": "wood",
-    "mainIngredientQuantity": 5,
+    "mainIngredientQuantity": 4,
     "baseStats": {
       "physicalDamage": 9,
       "skill": 2
@@ -759,7 +759,7 @@
     "height": 3,
     "profession": "weaponsmithing",
     "mainCategory": "ore",
-    "mainIngredientQuantity": 5,
+    "mainIngredientQuantity": 3,
     "baseStats": {
       "physicalDamage": 11,
       "defence": 1,
@@ -777,7 +777,7 @@
     "height": 3,
     "profession": "weaponsmithing",
     "mainCategory": "ore",
-    "mainIngredientQuantity": 6,
+    "mainIngredientQuantity": 4,
     "baseStats": {
       "physicalDamage": 12,
       "skill": 1,

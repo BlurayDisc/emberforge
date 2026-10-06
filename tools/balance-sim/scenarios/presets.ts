@@ -1,6 +1,7 @@
 import type { ClassId } from '../../../src/model/hero';
 import type { UnitRank } from '../../../src/model/battle';
 import type { GearFloorProfile } from './bestEquippableGear';
+import crafterCurveData from '../presets/crafter-curve.json';
 import bossFightData from '../presets/boss-fight.json';
 import economyData from '../presets/economy.json';
 import experienceCurveData from '../presets/experience-curve.json';
@@ -25,6 +26,15 @@ export interface ExperienceCurvePreset {
   monsterLevels: number[];
   ranks: UnitRank[];
   targetKillsAtMatchingLevel: { firstLevel: [number, number]; lastLevels: [number, number] };
+  levelUpOvershoot: {
+    description: string;
+    // Each share is a case: the part of the hero fights that are in the level 1 dungeons. The rest are in the best dungeon the hero may enter.
+    levelOneDungeonFightShares: number[];
+    games: number;
+    firstSeed: number;
+    landsOnLineBelowPercent: number;
+    maximumPercentOfLevelUpsOnLine: number;
+  };
 }
 
 export interface MobKillTimePreset {
@@ -67,7 +77,20 @@ export interface ResourceUsePreset {
   targetLowestResourcePercentAtLevel: Record<string, number[]>;
 }
 
+export interface CrafterCurvePreset {
+  description: string;
+  firstLevel: number;
+  lastLevel: number;
+  professionIds: string[];
+  // A case is a share of the hero fights in the level 1 dungeons (the rest are in the best dungeon the hero may enter),
+  // and how many levels the crafter may be behind the hero when the hero is in that case.
+  cases: Array<{ levelOneDungeonFightShare: number; maximumLevelsBehind: number }>;
+  games: number;
+  firstSeed: number;
+}
+
 export const ECONOMY_PRESET = economyData as EconomyPreset;
+export const CRAFTER_CURVE_PRESET = crafterCurveData as CrafterCurvePreset;
 export const EXPERIENCE_CURVE_PRESET = experienceCurveData as ExperienceCurvePreset;
 export const MOB_KILL_TIME_PRESET = mobKillTimeData as MobKillTimePreset;
 export const BOSS_FIGHT_PRESET = bossFightData as BossFightPreset;

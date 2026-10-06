@@ -26,7 +26,7 @@ function createExperienceBarOf(result: EncounterResult['heroes'][number]): HTMLE
 }
 
 function createHealthLossBarOf(result: EncounterResult['heroes'][number]): HTMLElement {
-  return createHealthLossBar(result.healthLost, result.maxHealth, t('result.healthLost', { lost: result.healthLost }));
+  return createHealthLossBar(result.healthBefore, result.healthLost, result.maxHealth, t('result.healthLost', { lost: result.healthLost }));
 }
 
 function createHeroResultRow(result: EncounterResult['heroes'][number], hero: Hero | undefined, durationSeconds: number): HTMLElement {

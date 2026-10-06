@@ -21,6 +21,7 @@ export const SELL_GROWTH_PER_UPGRADE_LEVEL = data.sellGrowthPerUpgradeLevel;
 export const LARGE_ITEM_CELL_THRESHOLD = data.largeItemCellThreshold;
 export const SET_MATERIAL_SMALL_ITEM = data.setMaterialSmallItem;
 export const SET_MATERIAL_LARGE_ITEM = data.setMaterialLargeItem;
+export const SET_RECIPE_FIRST_BASE_CRAFT_LEVEL_OFFSET: number = data.setRecipeFirstBaseCraftLevelOffset;
 export const SET_RECIPE_SLOTS: readonly string[] = data.setRecipeSlots;
 
 export const RARE_NAME_FIRST_PARTS: readonly string[] = data.rareNameFirstParts;

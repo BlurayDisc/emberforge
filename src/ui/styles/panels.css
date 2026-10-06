@@ -874,22 +874,6 @@
   gap: 10px;
 }
 
-.crafter-tile {
-  flex-direction: column;
-  align-items: stretch;
-  text-align: center;
-  margin: 0;
-}
-
-.crafter-tile .row-art {
-  display: flex;
-  justify-content: center;
-}
-
-.crafter-tile .row-body {
-  width: 100%;
-}
-
 /* A dungeon row shows its battle picture as a background. The shade keeps the text easy to read. */
 .list-row.has-backdrop {
   position: relative;
@@ -1438,44 +1422,6 @@
     padding: 8px 12px;
   }
 
-  /* All crafters fit on a small screen: two compact tiles in a row, each with a small picture beside the text. */
-  .tile-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .crafter-tile {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    text-align: left;
-    padding: 6px;
-    gap: 6px;
-  }
-
-  .crafter-tile .row-art {
-    min-width: 0;
-    padding: 2px;
-  }
-
-  .crafter-tile .row-art img {
-    display: block;
-    width: 44px;
-    height: 44px;
-    object-fit: contain;
-  }
-
-  .crafter-tile .row-body {
-    flex: 1 1 0;
-    min-width: 0;
-    width: auto;
-  }
-
-  .crafter-tile .card-title {
-    overflow-wrap: anywhere;
-    font-size: 13px;
-  }
-
   .crafter-intro .pixel-portrait,
   .crafter-intro canvas,
   .crafter-intro img {
@@ -1549,4 +1495,190 @@
   padding: 8px 0 2px;
   background: var(--wood-800);
   box-shadow: 0 -4px 0 var(--wood-800);
+}
+
+/* Workshop crafter list: the whole list fits one screen with no scroll. The panel takes the full height, the sections share it, and the tiles share each section. */
+.panel:has(.crafter-list-body) {
+  height: 100%;
+}
+
+.crafter-list-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: hidden;
+}
+
+.crafter-grid {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crafter-grid > .workshop-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.crafter-grid .tile-grid {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* A crafter stands out from the panel like a raised button: light top and left edges, a dark bottom and right edge, and a hard shadow below. */
+.crafter-tile {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px;
+  padding: 10px;
+  min-height: 0;
+  text-align: left;
+  background: var(--wood-600);
+  box-shadow: var(--outline-2), inset 3px 3px 0 var(--wood-500), inset -3px -3px 0 var(--wood-800), 0 4px 0 2px var(--ink);
+  cursor: pointer;
+}
+
+.crafter-tile:hover {
+  background: var(--wood-500);
+}
+
+.crafter-tile:active {
+  margin-top: 3px;
+  margin-bottom: 1px;
+  box-shadow: var(--outline-2), inset 3px 3px 0 var(--wood-800), inset -3px -3px 0 var(--wood-500), 0 1px 0 2px var(--ink);
+}
+
+/* The picture takes the room the tile has left, so it never covers the text below it. */
+.crafter-tile .row-art {
+  position: relative;
+  flex: none;
+  align-self: stretch;
+  aspect-ratio: 1;
+  min-height: 40px;
+  max-height: 96px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.crafter-tile .row-art img {
+  display: block;
+  position: absolute;
+  inset: 3px 3px 5px;
+  margin: auto;
+  height: calc(100% - 8px);
+  width: auto;
+  max-width: calc(100% - 6px);
+  aspect-ratio: 1;
+  box-shadow: 0 0 0 2px var(--ink), 3px 3px 0 2px var(--ink);
+}
+
+.crafter-tile .row-body {
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+}
+
+.crafter-tile .crafter-status {
+  min-height: 64px;
+}
+
+.crafter-tile .row-actions {
+  display: none;
+}
+
+/* A finished craft waits for a click. The frame is gold and the button is big. It stays still, as the UI rules ask. */
+.crafter-tile.ready {
+  background: var(--wood-500);
+  box-shadow: var(--outline-2), 0 0 0 4px var(--gold), inset 3px 3px 0 var(--gold), inset -3px -3px 0 var(--gold-dark), 0 6px 0 4px var(--ink);
+}
+
+.ready-text {
+  color: var(--gold);
+}
+
+.collect-button {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 18px;
+}
+
+.craft-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  /* On a phone the sections lose their titles and the six tiles share the screen in two columns. */
+  .crafter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .crafter-grid > .workshop-section,
+  .crafter-grid .tile-grid {
+    display: contents;
+  }
+
+  .crafter-grid .section-title,
+  .crafter-list-body > .hint {
+    display: none;
+  }
+
+  .crafter-tile {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    text-align: center;
+    padding: 4px;
+    gap: 2px;
+  }
+
+  /* Every tile keeps the same small picture, so a crafter that becomes ready does not change the picture size. */
+  .crafter-tile .row-art {
+    flex: none;
+    align-self: center;
+    aspect-ratio: 1;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+  }
+
+  .crafter-tile .row-body {
+    flex: none;
+    width: 100%;
+  }
+
+
+
+  .crafter-tile .card-title {
+    font-size: 13px;
+  }
+
+  .crafter-tile .crafter-status {
+    min-height: 38px;
+  }
+
+  .crafter-tile .bar-experience:not(.run-progress) {
+    display: none;
+  }
+
+  .crafter-tile .ready-text {
+    display: none;
+  }
+
+  .collect-button {
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+
 }

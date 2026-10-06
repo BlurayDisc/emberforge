@@ -1,6 +1,7 @@
 import { experienceForKill, experienceToNextLevel } from '../../../src/systems/progression';
 import { dungeonForLevel } from '../economy';
 import { EXPERIENCE_CURVE_PRESET } from './presets';
+import { printLevelUpOvershoot } from './levelUpOvershoot';
 import { printTable } from './table';
 
 export function runExperienceScenario(): void {
@@ -39,4 +40,6 @@ export function runExperienceScenario(): void {
     ['Hero lvl', ...monsterColumns],
     levels.map((heroLevel) => [heroLevel, ...preset.monsterLevels.map((monsterLevel) => (monsterLevel > heroLevel ? '-' : experienceForKill(monsterLevel, heroLevel, 'normal')))]),
   );
+
+  printLevelUpOvershoot(preset);
 }

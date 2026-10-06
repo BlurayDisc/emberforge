@@ -12,7 +12,9 @@
     "check": "tsc --noEmit -p . && tsc --noEmit -p tools && tsx tools/check-boundaries.ts && tsx tools/validate-data.ts && tsx tools/smoke-play.ts",
     "validate": "tsx tools/validate-data.ts",
     "smoke": "tsx tools/smoke-play.ts",
-    "gallery": "vite --open /spell-gallery.html"
+    "gallery": "vite --open /spell-gallery.html",
+    "sprites": "tsx tools/headless-art/sprites.ts",
+    "animation": "tsx tools/headless-art/animation.ts"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",

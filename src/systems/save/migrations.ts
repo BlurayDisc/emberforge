@@ -9,6 +9,7 @@ import { migrateSpells } from './migrateSpells';
 import { migrateDroppedItems } from './migrateDroppedItems';
 import { migrateHealthLoss } from './migrateHealthLoss';
 import { migrateSalesInPlace } from './migrateSalesInPlace';
+import { migrateHealthBefore } from './migrateHealthBefore';
 import { migrateUpgradeLevels } from './migrateUpgradeLevels';
 import { migrateUnstackedMaterials } from './migrateUnstackedMaterials';
 import { migrateWeaponDamageAndSmiths } from './migrateWeaponDamageAndSmiths';
@@ -104,5 +105,10 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
     // Version 22: goods on sale stay in their backpack cell.
     fromVersion: 21,
     migrate: migrateSalesInPlace,
+  },
+  {
+    // Version 23: a hero result holds the health the hero had when the fight began.
+    fromVersion: 22,
+    migrate: migrateHealthBefore,
   },
 ];

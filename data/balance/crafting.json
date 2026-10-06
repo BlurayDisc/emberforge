@@ -1,9 +1,9 @@
 {
   "maximumLevel": 100,
-  "experienceToNextBase": 10,
+  "experienceToNextBase": 4,
   "experienceToNextExponent": 1.3,
-  "experienceBase": 14,
-  "experiencePerRequiredLevel": 3,
+  "experiencePerMaterialBase": 12,
+  "experiencePerMaterialPerRequiredLevel": 8,
   "levelGapStep": 0.08,
   "levelGapFactorMinimum": 0.1,
   "craftSecondsBase": 5,

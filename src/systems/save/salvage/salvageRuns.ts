@@ -30,6 +30,7 @@ function salvageHeroResult(value: unknown): HeroEncounterResult | null {
     reachedLevel: record.reachedLevel === null ? null : readWholeNumber(record.reachedLevel, 1, MAXIMUM_NUMBER, 1),
     levelAfter: readWholeNumber(record.levelAfter, 1, MAXIMUM_NUMBER, 1),
     experienceAfter: count('experienceAfter'),
+    healthBefore: readNumber(record.healthBefore, 0, MAXIMUM_NUMBER, 1),
     healthLost: count('healthLost'),
     maxHealth: readNumber(record.maxHealth, 1, MAXIMUM_NUMBER, 1),
   };

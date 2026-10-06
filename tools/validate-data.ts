@@ -34,6 +34,7 @@ interface Drop {
   chance: number;
   minQuantity: number;
   maxQuantity: number;
+  maxQuantityChance?: number;
 }
 interface Monster extends Identified {
   name: string;
@@ -67,14 +68,16 @@ interface Town extends Identified {
   firstLevel: number;
   lastLevel: number;
 }
-const RECIPE_OFFSETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const ARMOUR_PROFESSIONS = ['armoursmithing', 'tailoring'];
+// Set recipes open with their base item, so no level after the last base item (9) opens anything new.
+const RECIPE_OFFSETS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const ARMOUR_PROFESSIONS = ['armoursmithing', 'leatherworking', 'tailoring'];
 interface BaseItem extends Identified {
   name: string;
   slot: string;
   craftLevelOffset: number;
   baseStats: Record<string, number>;
   mainCategory: string;
+  mainIngredientQuantity: number;
   gearType: string;
   armourWeight: string | null;
   profession: string;
@@ -125,7 +128,7 @@ const advancements = load<Advancement[]>('advancements.json');
 const affixes = load<Affix[]>('affixes.json');
 const heroNames = load<string[]>('hero-names.json');
 const professions = load<Record<string, string>>('professions.json');
-const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; setRecipeSlots: string[]; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
+const itemBalance = load<{ catalystMaterialId: string; levelsPerBracket: number; setRecipeFirstBaseCraftLevelOffset: number; setRecipeSlots: string[]; rareNameFirstParts: string[]; rareNameSecondParts: string[] }>('balance/items.json');
 interface SpellEffectData {
   kind: string;
   target: string;
@@ -325,10 +328,12 @@ const tiersWithMaterials = [...new Set(materials.map((material) => material.tier
 for (const material of materials) {
   if (!(material.width >= 1 && material.height >= 1)) report(`materials.json: '${material.id}' needs a width and a height of at least 1`);
 }
+const MAXIMUM_MAIN_INGREDIENT_QUANTITY = 4;
 for (const base of baseItems) {
   const shapeRows = ITEM_SHAPE_ROWS[base.id];
   if (!shapeRows) report(`ui/itemShapes.ts: base item '${base.id}' has no icon picture`);
   else if (shapeRows.length !== 12 || shapeRows.some((row) => row.length !== 12)) report(`ui/itemShapes.ts: the picture of '${base.id}' must be 12 rows of 12 letters`);
+  if (base.mainIngredientQuantity > MAXIMUM_MAIN_INGREDIENT_QUANTITY) report(`base-items.json: '${base.id}' needs more than ${MAXIMUM_MAIN_INGREDIENT_QUANTITY} main ingredients`);
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
   if (!RECIPE_OFFSETS.includes(base.craftLevelOffset)) report(`base-items.json: '${base.id}' needs a craftLevelOffset of ${RECIPE_OFFSETS.join(', ')}`);
   if (base.craftLevelOffset < 1 || base.craftLevelOffset > itemBalance.levelsPerBracket) report(`base-items.json: '${base.id}' needs a craftLevelOffset from 1 to ${itemBalance.levelsPerBracket}`);
@@ -427,7 +432,7 @@ for (const professionId of ARMOUR_PROFESSIONS) {
     if (bodyArmour && bodyArmour.craftLevelOffset !== Math.max(...offsets)) report(`base-items.json: body armour '${bodyArmour.id}' must be the last ${weight} piece of its set`);
   }
 }
-// A class gets something new to craft on every crafter level from 1 to the end of the bracket: a basic recipe (weapon, off-hand item, armour piece, belt or jewellery) or a set recipe.
+// A class gets something new to craft on every crafter level from 1 to the end of the bracket: a basic recipe (weapon, off-hand item, armour piece, belt or jewellery). Set recipes open with their base item, so they add no new level.
 function basesForClass(heroClass: (typeof classes)[number]) {
   return baseItems.filter((base) => {
     if (base.slot === 'mainHand') return heroClass.weaponTypes.includes(base.gearType);
@@ -439,9 +444,6 @@ function basesForClass(heroClass: (typeof classes)[number]) {
 for (const heroClass of classes) {
   const classBases = basesForClass(heroClass);
   const openedLevels = new Set(classBases.map((base) => base.craftLevelOffset));
-  for (const base of classBases.filter((candidate) => itemBalance.setRecipeSlots.includes(candidate.slot))) {
-    for (const setMaterial of setMaterials) openedLevels.add(Math.min(itemBalance.levelsPerBracket, Math.max(base.craftLevelOffset, setMaterial.setCraftLevelOffset ?? 0)));
-  }
   for (const level of RECIPE_OFFSETS) {
     if (!openedLevels.has(level)) report(`base-items.json: class '${heroClass.id}' gets nothing new to craft at crafter level ${level}`);
   }

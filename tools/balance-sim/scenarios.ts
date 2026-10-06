@@ -1,4 +1,5 @@
 import { runBossFightScenario } from './scenarios/bossFightScenario';
+import { runCrafterCurveScenario } from './scenarios/crafterCurveScenario';
 import { runEconomyScenario } from './scenarios/economyScenario';
 import { runExperienceScenario } from './scenarios/experienceScenario';
 import { runMobKillTimeScenario } from './scenarios/mobKillTimeScenario';
@@ -11,6 +12,7 @@ const SCENARIOS: Record<string, () => void> = {
   'mob-kill-time': runMobKillTimeScenario,
   'boss-fight': runBossFightScenario,
   'resource-use': runResourceUseScenario,
+  'crafter-curve': runCrafterCurveScenario,
 };
 
 const requestedNames = process.argv.slice(2);

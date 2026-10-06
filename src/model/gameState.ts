@@ -17,7 +17,8 @@ export interface HeroEncounterResult {
   // The hero's level and experience after the fight. The result card draws the experience bar from them.
   levelAfter: number;
   experienceAfter: number;
-  // Health points the hero lost in the fight, and the maximum health. The result card draws the health loss bar from them.
+  // Health points the hero had when the fight began, the points it lost, and the maximum health. The result card draws the health loss bar from them.
+  healthBefore: number;
   healthLost: number;
   maxHealth: number;
 }

@@ -1,0 +1,12 @@
+{
+  "description": "How far the crafter of a hero's weapon falls behind the hero. The hero fights the best dungeon, but a share of its fights are in the two level 1 dungeons, the only source of basic material. Players are expected to spend 30% to 50% of their fights there. One crafter at a time gets all the basic material it uses. It turns every unit into the best recipe it can make. Fees and crafting time are ignored.",
+  "firstLevel": 2,
+  "lastLevel": 10,
+  "professionIds": ["weaponsmithing", "fletching", "woodworking", "armoursmithing", "leatherworking", "tailoring"],
+  "cases": [
+    { "levelOneDungeonFightShare": 0.3, "maximumLevelsBehind": 2 },
+    { "levelOneDungeonFightShare": 0.5, "maximumLevelsBehind": 0.5 }
+  ],
+  "games": 200,
+  "firstSeed": 1
+}

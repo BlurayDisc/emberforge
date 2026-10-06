@@ -19,6 +19,7 @@ import { createItemIcon } from '../../iconArt';
 import { createRecipePortrait } from '../../itemPortrait';
 import { createClassTags } from '../../classTags';
 import { createCrafterPortrait } from '../../crafterPortraitArt';
+import { openCraftCollectSummary } from '../../craftCollectSummary';
 import { createRecipeStatTable, createSetBonusLine } from '../../itemStatTable';
 import { formatDuration } from '../../liveUpdate';
 import { createIngredientBoxes } from '../../materialBoxes';
@@ -96,18 +97,22 @@ function renderRecipe(context: PanelContext, recipe: WorkshopRecipeView): HTMLEl
   return row;
 }
 
-function collectWaitingItem(context: PanelContext, crafter: CrafterView): void {
-  const levelBefore = context.store.getState().crafters[crafter.professionId]?.level ?? 1;
-  const result = context.store.execute(collectWaitingCraftCommand(crafter.professionId));
+// Clicking a crafter with a finished craft is the only way to take the item. The summary shows what the craft gave.
+function collectWaitingItem(context: PanelContext, professionId: ProfessionId): void {
+  const stateBefore = context.store.getState();
+  const job = crafterJob(stateBefore, professionId);
+  const levelBefore = stateBefore.crafters[professionId]?.level ?? 1;
+  const result = context.store.execute(collectWaitingCraftCommand(professionId));
   if (!result.accepted) {
     context.notify(describeRejection(result.rejection));
     return;
   }
-  const levelAfter = context.store.getState().crafters[crafter.professionId]?.level ?? 1;
-  if (levelAfter > levelBefore) {
-    playSound('crafter-level-up');
-    context.notify(t('workshop.levelUp', { profession: t(`profession.${crafter.professionId}`), level: levelAfter }));
-  }
+  if (!job) return;
+  const crafterAfter = listCrafters(context.store.getState()).find((crafter) => crafter.professionId === professionId);
+  if (!crafterAfter) return;
+  if (crafterAfter.level > levelBefore) playSound('crafter-level-up');
+  openCraftCollectSummary({ crafterAfter, levelBefore, experienceGained: job.crafterExperience, item: job.item });
+  context.requestRender();
 }
 
 function renderCrafterStatusContent(context: PanelContext, crafter: CrafterView): HTMLElement {
@@ -116,11 +121,11 @@ function renderCrafterStatusContent(context: PanelContext, crafter: CrafterView)
     return element(
       'div',
       'crafter-job',
-      element('div', 'card-text small danger-text', t('workshop.waitingForCollection', { name: itemDisplayName(job.item) })),
+      element('div', 'card-text small ready-text', t('workshop.waitingForCollection', { name: itemDisplayName(job.item) })),
       actionButton(t('workshop.collect'), (event) => {
         event.stopPropagation();
-        collectWaitingItem(context, crafter);
-      }, { className: 'action-button primary small-button' }),
+        collectWaitingItem(context, crafter.professionId);
+      }, { className: 'action-button primary collect-button' }),
     );
   }
   return job
@@ -153,9 +158,13 @@ function renderCrafterRow(context: PanelContext, crafter: CrafterView): HTMLElem
       percentBar(crafter.experience / crafter.experienceToNextLevel, 'bar-experience'),
       renderCrafterStatus(context, crafter),
     ],
-    className: 'clickable crafter-tile',
+    className: `clickable crafter-tile${crafterJob(context.store.getState(), crafter.professionId)?.isWaitingForCollection ? ' ready' : ''}`,
   });
   row.addEventListener('click', () => {
+    if (crafterJob(context.store.getState(), crafter.professionId)?.isWaitingForCollection) {
+      collectWaitingItem(context, crafter.professionId);
+      return;
+    }
     context.enterSubScreen();
     selectedProfessionId = crafter.professionId;
     context.requestRender();
@@ -176,19 +185,25 @@ function renderSection(context: PanelContext, section: WorkshopSection, crafters
 
 function renderCrafterList(context: PanelContext, crafters: readonly CrafterView[]): HTMLElement {
   const sections = WORKSHOP_SECTIONS.map((section) => renderSection(context, section, crafters)).filter((section): section is HTMLElement => section !== null);
-  return element('div', 'panel-body', element('p', 'hint', t('workshop.chooseCrafter')), ...sections, actionButton(t('workshop.leave'), context.closePanel));
+  return element(
+    'div',
+    'panel-body crafter-list-body',
+    element('p', 'hint', t('workshop.chooseCrafter')),
+    element('div', 'crafter-grid', ...sections),
+    element('div', 'panel-footer', actionButton(t('workshop.leave'), context.closePanel)),
+  );
 }
 
 // Recipes above the crafter level stay hidden, so the player sees only what the crafter can make now.
 function renderCrafterScreen(context: PanelContext, crafter: CrafterView, recipes: readonly WorkshopRecipeView[]): HTMLElement {
   const craftableRecipes = recipes.filter((recipe) => recipe.professionId === crafter.professionId && recipe.isUnlocked);
-  const shownRecipes = applyRecipeFilter(craftableRecipes);
+  const shownRecipes = applyRecipeFilter(crafter.professionId, craftableRecipes);
   const nextRecipeLevel = recipes.filter((recipe) => recipe.professionId === crafter.professionId && !recipe.isUnlocked).reduce((lowest, recipe) => Math.min(lowest, recipe.requiredCraftLevel), Infinity);
   const body = element(
     'div',
     'panel-body',
     element('div', 'crafter-intro', createCrafterPortrait(crafter.professionId, 4), renderCrafterHeader(context, crafter)),
-    createRecipeFilterBar(context.requestRender),
+    createRecipeFilterBar(crafter.professionId, context.requestRender),
     shownRecipes.length === 0 ? element('p', 'hint', t('workshop.noRecipesMatch')) : createList(...shownRecipes.map((recipe) => renderRecipe(context, recipe))),
   );
   if (nextRecipeLevel !== Infinity) body.append(element('p', 'hint', t('workshop.nextRecipeAt', { level: nextRecipeLevel })));

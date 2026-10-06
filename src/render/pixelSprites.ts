@@ -2,7 +2,7 @@ import { CanvasTexture, NearestFilter, SRGBColorSpace, Sprite, SpriteMaterial } 
 import type { BattleUnit } from '../model/battle';
 import type { ClassId } from '../model/hero';
 import { CREATURE_DRAWERS } from './creatureArt';
-import { drawHeroSprite } from './heroSpriteArt';
+import { drawHeroSprite } from '../heroArt/battleSprite';
 
 const canvasBySpriteId = new Map<string, HTMLCanvasElement>();
 const textureBySpriteId = new Map<string, CanvasTexture>();

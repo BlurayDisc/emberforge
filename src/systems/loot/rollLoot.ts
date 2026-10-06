@@ -18,7 +18,8 @@ function isCraftingMaterialDrop(drop: DropEntry): boolean {
 }
 
 function rollQuantity(drop: DropEntry, random: Random): MaterialStack {
-  return { materialId: drop.materialId, quantity: random.nextInt(drop.minQuantity, drop.maxQuantity) };
+  const quantity = drop.maxQuantityChance === undefined ? random.nextInt(drop.minQuantity, drop.maxQuantity) : random.chance(drop.maxQuantityChance) ? drop.maxQuantity : drop.minQuantity;
+  return { materialId: drop.materialId, quantity };
 }
 
 // A fight always gives crafting material: the guaranteed drops are picked by the drop chances

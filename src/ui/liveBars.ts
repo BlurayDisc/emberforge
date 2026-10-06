@@ -59,15 +59,18 @@ export function createExperienceGainBar(experienceBefore: number, experienceGain
   return element('div', 'bar run-progress bar-experience', base, gain, element('span', 'progress-label', labelText));
 }
 
-// The reverse of the experience bar: green is the health that is left, red is the health that the fight took.
-export function createHealthLossBar(healthLost: number, maximumHealth: number, labelText: string): HTMLElement {
-  const remainingFraction = Math.max(0, Math.min(1, 1 - healthLost / maximumHealth));
-  const remaining = element('div', 'bar-fill');
-  remaining.style.width = `${Math.round(remainingFraction * 100)}%`;
+// The reverse of the experience bar: green is the health the hero had, and the red part grows from its right end to the left, as the fight takes health.
+// The red part covers the green one, so a wounded hero shows an empty part after the green.
+export function createHealthLossBar(healthBefore: number, healthLost: number, maximumHealth: number, labelText: string): HTMLElement {
+  const toFraction = (health: number): number => Math.max(0, Math.min(1, health / maximumHealth));
+  const beforeFraction = toFraction(healthBefore);
+  const remainingFraction = toFraction(healthBefore - healthLost);
+  const before = element('div', 'bar-fill');
+  before.style.width = `${Math.round(beforeFraction * 100)}%`;
   const loss = element('div', 'bar-fill bar-loss');
   loss.style.left = `${Math.round(remainingFraction * 100)}%`;
-  loss.style.width = `${Math.round((1 - remainingFraction) * 100)}%`;
-  return element('div', 'bar run-progress bar-health', remaining, loss, element('span', 'progress-label', labelText));
+  loss.style.width = `${Math.round((beforeFraction - remainingFraction) * 100)}%`;
+  return element('div', 'bar run-progress bar-health', before, loss, element('span', 'progress-label', labelText));
 }
 
 // Progress bar of a sale or craft job.
