@@ -525,7 +525,7 @@ const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tave
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
   quality: ['common', 'uncommon', 'magic', 'rare', 'unique'],
   resource: ['mana', 'stamina', 'hatred', 'rage'],
-  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'attackSeconds', 'attackSpeed', 'strength', 'agility', 'intelligence'],
+  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'attackSeconds', 'attackSpeed', 'movementSpeed', 'strength', 'agility', 'intelligence'],
   slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
   category: ['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'skin', 'silk', 'essence', 'catalyst'],
   armourweight: ['heavy', 'medium', 'light'],

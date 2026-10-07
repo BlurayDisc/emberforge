@@ -1,23 +1,16 @@
-import { playMusic, playSound } from '../audio';
-import { LOG_TURN_SECONDS } from '../content/balance/battle';
-import { ARMOUR_HIT_SOUNDS, CLASS_ATTACK_SOUNDS, MONSTER_ATTACK_SOUNDS, MONSTER_HURT_SOUNDS } from '../content/audio';
-import { CLASSES } from '../content/classes';
-import { requireById } from '../content/lookup';
-import { completeRunCommand, describeSpellEvent, experienceForDefeatedMonsters, findActiveRun, planNextEncounter, type GameStore, type SpellPresentation } from '../game';
-import type { BattleEvent, BattleUnit } from '../model/battle';
-import type { ClassId } from '../model/hero';
+import { playMusic } from '../audio';
+import { completeRunCommand, experienceForDefeatedMonsters, findActiveRun, planNextEncounter, type GameStore } from '../game';
+import type { BattleEvent, BattleReport, BattleUnit } from '../model/battle';
+import type { RealtimeBattleReport } from '../model/realtimeBattle';
 import type { BattleView } from '../render/battleView';
 import type { PixelStage } from '../render/pixelStage';
 import type { SceneToggle } from '../render/slidingView';
-import type { LogEntry, LogUnit } from '../ui/battleLogLines';
-import type { ArmourWeight } from '../model/item';
-import { listOf, resourceName, unitDisplayName } from '../ui/displayNames';
-import { t } from '../ui/i18n';
-import { spellName as spellNameOf } from '../ui/spellText';
+import { listOf, unitDisplayName } from '../ui/displayNames';
 import { isInCastle, onCastleVisitChange } from '../ui/castleVisit';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
+import { presentBattleEvent } from './battleEventPresenter';
+import { logEntriesForEvent, logUnitOf } from './battleLogEntries';
 import { chooseMusicTrack } from './sceneMusic';
-import { playSpellSounds } from './spellSounds';
 import { forgetRunProgress, publishRunProgress } from '../ui/runProgress';
 import type { RunHud } from '../ui/runHud';
 
@@ -34,6 +27,8 @@ interface EncounterPlayback {
   monsterUnits: readonly BattleUnit[];
   events: readonly BattleEvent[];
   unitsById: ReadonlyMap<string, BattleUnit>;
+  // Set when the planner gives a real-time report: the stage then moves the units along its tracks. Null keeps the old fixed slots.
+  realtimeReport: RealtimeBattleReport | null;
   durationSeconds: number;
   partyWon: boolean;
   nextEventIndex: number;
@@ -50,59 +45,8 @@ interface RunPlayer {
   encounter: EncounterPlayback | null;
 }
 
-function logUnitOf(unit: BattleUnit | undefined): LogUnit {
-  return unit ? { name: unitDisplayName(unit), side: unit.side } : { name: t('log.someone'), side: 'enemy' };
-}
-
-// A turn is a fixed span of battle time, so a long fight reads as a list of numbered turns.
-function turnOf(event: BattleEvent): number {
-  return Math.floor(event.timeSeconds / LOG_TURN_SECONDS) + 1;
-}
-
-function logEntriesForEvent(event: BattleEvent, encounter: EncounterPlayback): LogEntry[] {
-  const entries: LogEntry[] = [];
-  const turn = turnOf(event);
-  if (turn !== encounter.lastLoggedTurn) {
-    encounter.lastLoggedTurn = turn;
-    entries.push({ kind: 'turn', turn });
-  }
-  const actor = logUnitOf(encounter.unitsById.get(event.actorId));
-  const targetUnit = encounter.unitsById.get(event.targetId);
-  const target = logUnitOf(targetUnit);
-  const spellName = event.spellId === undefined ? undefined : spellNameOf(event.spellId);
-  const actorUnit = encounter.unitsById.get(event.actorId);
-  const resourceSpent = event.resourceSpent !== undefined && actorUnit ? { resourceName: resourceName(actorUnit.resourceId), amount: event.resourceSpent } : undefined;
-  if (event.isDamageOverTime) entries.push({ kind: 'burn', target, amount: event.amount, absorbed: event.absorbed });
-  else if (event.isDodge) entries.push({ kind: 'dodge', actor, target, spellName, resourceSpent });
-  else if (event.kind === 'effect') entries.push({ kind: 'effect', actor, target, spellName: spellName ?? '', resourceSpent });
-  else if (event.kind === 'heal') entries.push({ kind: 'heal', actor, target, amount: event.amount, spellName, resourceSpent });
-  else entries.push({ kind: 'hit', actor, target, amount: event.amount, isCritical: event.isCritical, absorbed: event.absorbed, spellName, resourceSpent });
-  if (targetUnit && event.targetHpAfter === 0) entries.push({ kind: 'defeated', unit: target });
-  return entries;
-}
-
-// A hero attack sounds as the weapon plus the monster's cry. A monster attack sounds as its own
-// strike plus the hit on the armour type of the hero. A spell with its own sounds plays them instead of the weapon.
-function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>, spell: SpellPresentation | null): void {
-  const actor = unitsById.get(event.actorId);
-  const target = unitsById.get(event.targetId);
-  if (!actor || !target) return;
-  if (event.isDamageOverTime) return;
-  if (spell) playSpellSounds(spell);
-  if (event.isDodge) return;
-  if (event.kind === 'heal' || event.kind === 'effect') {
-    if (!spell) playSound('heal-chime');
-    return;
-  }
-  if (actor.rank === 'hero') {
-    if (!spell) playSound(CLASS_ATTACK_SOUNDS[actor.definitionId as ClassId]);
-    playSound(MONSTER_HURT_SOUNDS[target.spriteKey] ?? '', 0.05);
-  } else {
-    playSound(MONSTER_ATTACK_SOUNDS[actor.spriteKey] ?? '');
-    playSound(ARMOUR_HIT_SOUNDS[requireById(CLASSES, target.definitionId).armourWeights[0] as ArmourWeight], 0.04);
-  }
-  if (event.isCritical) playSound('critical-ping', 0.05);
-  if (event.targetHpAfter === 0) playSound(target.rank === 'hero' ? 'defeat-hero' : 'defeat-monster', 0.12);
+function realtimeReportOf(report: BattleReport): RealtimeBattleReport | null {
+  return 'tracks' in report && 'actionEvents' in report ? (report as RealtimeBattleReport) : null;
 }
 
 export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: SceneViews, hud: RunHud): void {
@@ -117,40 +61,9 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     view.setUnitResource(event.targetId, event.targetResourceAfter);
   };
 
-  // A spell with a look (data/spell-visuals.json) shows its own effects. Any other event keeps the plain hit and heal look.
-  const showSpellOnView = (event: BattleEvent, spell: SpellPresentation & { visual: NonNullable<SpellPresentation['visual']> }): void => {
-    if (spell.startsCast) {
-      view.playSpellCast(event.actorId, spell.visual);
-      if (spell.selfStatusDurationSeconds !== null && spell.visual.buff) view.playSpellStatus(event.actorId, event.actorId, spell.visual, 'buff', spell.selfStatusDurationSeconds);
-    }
-    if (spell.role === 'damage') view.playSpellHit(event.actorId, event.targetId, event.amount, event.isCritical, spell.visual, spell.hitIndex, spell.isFirstHitOnTarget ? spell.statusDurationSeconds : null);
-    else if (spell.role === 'heal') view.playSpellHeal(event.actorId, event.targetId, event.amount, spell.visual);
-    else if (spell.statusDurationSeconds !== null) view.playSpellStatus(event.actorId, event.targetId, spell.visual, spell.role, spell.statusDurationSeconds);
-  };
-
   const applyEventToView = (event: BattleEvent, encounter: EncounterPlayback, eventIndex: number): void => {
-    const target = encounter.unitsById.get(event.targetId);
-    if (target) view.setUnitHealth(target.id, event.targetHpAfter);
-    const spell = describeSpellEvent(encounter.events, eventIndex, encounter.unitsById);
-    if (target && event.targetShieldAfter !== undefined) view.setUnitShield(target.id, event.targetShieldAfter, event.kind === 'effect' ? spell?.statusDurationSeconds ?? undefined : undefined);
-    showResourcesAfterEvent(event);
-    const spellWithLook = spell?.visual ? { ...spell, visual: spell.visual } : null;
-    const absorbed = event.absorbed ?? 0;
-    if (event.isDamageOverTime) {
-      view.playDamageOverTime(event.targetId, event.amount - absorbed);
-      if (absorbed > 0) view.playAbsorb(event.targetId, absorbed);
-    } else if (event.isDodge) {
-      if (spellWithLook?.startsCast) view.playSpellCast(event.actorId, spellWithLook.visual);
-      view.playDodge(event.targetId, t('battle.dodge'));
-    } else {
-      if (spellWithLook) showSpellOnView({ ...event, amount: event.amount - absorbed }, spellWithLook);
-      else if (event.kind === 'attack') view.playHit(event.actorId, event.targetId, event.amount - absorbed, event.isCritical);
-      else if (event.kind === 'heal') view.playHeal(event.actorId, event.targetId, event.amount);
-      if (absorbed > 0) view.playAbsorb(event.targetId, absorbed);
-    }
-    playEventSounds(event, encounter.unitsById, spellWithLook);
+    presentBattleEvent(view, event, encounter.events, eventIndex, encounter.unitsById);
     logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
-    if (target && event.targetHpAfter === 0) view.markDefeated(target.id);
   };
 
   // Rebuild the stage for a fight that is already in progress. Past events only set
@@ -165,6 +78,8 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       return;
     }
     view.showUnits([...encounter.partyUnits, ...encounter.monsterUnits]);
+    view.setRealtimeBattle(encounter.realtimeReport);
+    view.setBattleTime(encounter.elapsedSeconds);
     hud.appendLogEntry({ kind: 'fight', monsters: listOf(encounter.monsterUnits.map((unit) => unitDisplayName(unit))) });
     encounter.lastLoggedTurn = 0;
     for (const event of encounter.events.slice(0, encounter.nextEventIndex)) {
@@ -188,6 +103,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       monsterUnits: plan.monsterUnits,
       events: plan.report.events,
       unitsById: new Map(units.map((unit) => [unit.id, unit])),
+      realtimeReport: realtimeReportOf(plan.report),
       durationSeconds: plan.report.durationSeconds,
       partyWon: plan.report.winner === 'party',
       nextEventIndex: 0,
@@ -248,6 +164,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     const totalSeconds = encounter.durationSeconds + PAUSE_AFTER_FIGHT_SECONDS;
     publishRunProgress(player.runNumber, encounter.elapsedSeconds / totalSeconds, totalSeconds - encounter.elapsedSeconds, encounter.elapsedSeconds);
     const isFocused = focusedRunNumber() === player.runNumber;
+    if (isFocused && encounter.realtimeReport) view.setBattleTime(encounter.elapsedSeconds);
     for (let event = encounter.events[encounter.nextEventIndex]; event && event.timeSeconds <= encounter.elapsedSeconds; event = encounter.events[encounter.nextEventIndex]) {
       if (isFocused) applyEventToView(event, encounter, encounter.nextEventIndex);
       encounter.nextEventIndex += 1;

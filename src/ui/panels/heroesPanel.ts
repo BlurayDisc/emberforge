@@ -17,7 +17,7 @@ import type { PanelContext, PanelRenderer } from './panelContext';
 
 type HeroTab = 'stats' | 'equipment' | 'spells' | 'record';
 
-const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal'];
+const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'movementSpeed'];
 const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'agility' | 'intelligence'; className: string }> = [
   { stat: 'strength', className: 'bar-strength' },
   { stat: 'agility', className: 'bar-agility' },

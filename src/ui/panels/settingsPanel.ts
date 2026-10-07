@@ -1,7 +1,8 @@
 import { currentPreferences, setPreferences } from '../../audio';
 import { BUILD_LABEL } from '../../kernel/buildInfo';
 import { LANGUAGES } from '../../content/translations';
-import { saveAudioPreferences } from '../../game';
+import { saveAudioPreferences, saveWideTownView } from '../../game';
+import { isWideTownView, setWideTownView } from '../../kernel/wideTownView';
 import type { AudioPreferences } from '../../model/audioPreferences';
 import { VICTORY_DUNGEON_ID } from '../../content/balance/progression';
 import { actionButton, element } from '../dom';
@@ -18,6 +19,17 @@ function renderLanguageChoice(): HTMLElement {
     return button;
   });
   return element('div', 'card', element('div', 'card-title', t('settings.language')), element('div', 'tab-row', ...buttons));
+}
+
+function renderWideViewChoice(context: PanelContext): HTMLElement {
+  const toggleButton = actionButton(isWideTownView() ? t('settings.wideViewOn') : t('settings.wideViewOff'), () => {
+    const enabled = !isWideTownView();
+    setWideTownView(enabled);
+    saveWideTownView(enabled);
+    context.requestRender();
+  });
+  toggleButton.classList.toggle('active', isWideTownView());
+  return element('div', 'card', element('div', 'card-title', t('settings.wideView')), element('p', 'hint', t('settings.wideViewHint')), toggleButton);
 }
 
 function updateAudio(changes: Partial<AudioPreferences>): void {
@@ -93,4 +105,4 @@ function renderVictoryReplay(context: PanelContext): HTMLElement | string {
 }
 
 export const renderSettingsPanel: PanelRenderer = (context) =>
-  element('div', 'panel-body', renderLanguageChoice(), renderSoundControls(context), renderVictoryReplay(context), renderVersion(), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));
+  element('div', 'panel-body', renderLanguageChoice(), renderWideViewChoice(context), renderSoundControls(context), renderVictoryReplay(context), renderVersion(), element('p', 'hint', t('settings.autosave')), renderDangerZone(context));

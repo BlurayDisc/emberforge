@@ -1,9 +1,10 @@
 import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
 import { createRandom, type Random } from '../kernel/random';
-import type { BattleReport, BattleUnit } from '../model/battle';
+import type { BattleUnit } from '../model/battle';
 import type { DungeonRun, GameState } from '../model/gameState';
-import { simulateBattle } from '../systems/battle';
+import type { RealtimeBattleReport } from '../model/realtimeBattle';
+import { simulateRealtimeBattle } from '../systems/battle';
 import { createEncounter } from '../systems/dungeons';
 import { heroToBattleUnit } from '../systems/stats';
 import { findActiveRun } from './runStatus';
@@ -11,7 +12,7 @@ import { findActiveRun } from './runStatus';
 export interface PlannedEncounter {
   partyUnits: BattleUnit[];
   monsterUnits: BattleUnit[];
-  report: BattleReport;
+  report: RealtimeBattleReport;
 }
 
 export function encounterRandomFor(state: GameState, run: DungeonRun): Random {
@@ -30,6 +31,6 @@ export function planNextEncounter(state: GameState, runNumber: number): PlannedE
     return heroToBattleUnit(hero);
   });
   const monsterUnits = createEncounter(dungeon, partyUnits.length, random.fork('monsters'));
-  const report = simulateBattle([...partyUnits, ...monsterUnits], random.fork('battle'));
+  const report = simulateRealtimeBattle([...partyUnits, ...monsterUnits], random.fork('battle'));
   return { partyUnits, monsterUnits, report };
 }

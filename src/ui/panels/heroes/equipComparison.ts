@@ -10,7 +10,7 @@ import { createItemPortrait } from '../../itemPortrait';
 import { createItemCard } from '../../itemText';
 import type { PanelContext } from '../panelContext';
 
-const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'strength', 'agility', 'intelligence'];
+const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'movementSpeed', 'strength', 'agility', 'intelligence'];
 
 // A shorter attack time is better, so it counts as a rise.
 const LOWER_IS_BETTER_STATS: readonly string[] = ['attackSeconds'];

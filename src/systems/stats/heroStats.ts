@@ -81,6 +81,7 @@ export function computeHeroSheet(hero: Hero): HeroSheet {
     criticalChance: toPercentPoints(criticalChanceOf(classDefinition, hero)),
     criticalDamage: toPercentPoints(criticalDamageMultiplierOf(hero)),
     lifeSteal: toPercentPoints(lifeStealOf(hero)),
+    movementSpeed: gearBonusForStat(hero, 'movementSpeed'),
   };
 }
 
@@ -109,6 +110,7 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     criticalDamageMultiplier: criticalDamageMultiplierOf(hero),
     mainAttributeValue: stats[classDefinition.primaryAttribute],
     lifeSteal: lifeStealOf(hero),
+    movementSpeedBonus: gearBonusForStat(hero, 'movementSpeed') * FRACTION_PER_PERCENT_POINT,
     behavior: classDefinition.behavior,
     resourceId: classDefinition.resourceId,
     maxResource: sheet.resource,

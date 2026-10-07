@@ -2,7 +2,7 @@ import { printEconomy } from './economy';
 import { DUNGEONS, type DungeonDefinition } from '../../src/content/dungeons';
 import { createRandom, type Random } from '../../src/kernel/random';
 import type { ClassId, Hero } from '../../src/model/hero';
-import { simulateBattle } from '../../src/systems/battle';
+import { simulateRealtimeBattle } from '../../src/systems/battle';
 import { createEncounter } from '../../src/systems/dungeons';
 import { equipItem } from '../../src/systems/equipment';
 import { findRecipe } from '../../src/systems/crafting';
@@ -92,7 +92,7 @@ function measure(partyCase: PartyCase, dungeon: DungeonDefinition, gearMode: Gea
     const random = seedRandom.fork(`battle-${battle}`);
     const partyUnits = createParty(partyCase.classIds, dungeon.level, gearMode, random).map(heroToBattleUnit);
     const monsterUnits = createEncounter(dungeon, partyUnits.length, random.fork('monsters'));
-    const report = simulateBattle([...partyUnits, ...monsterUnits], random.fork('battle'));
+    const report = simulateRealtimeBattle([...partyUnits, ...monsterUnits], random.fork('battle'));
     if (report.winner === 'party') wins += 1;
     totalSeconds += report.durationSeconds;
     const partyAfter = report.finalUnits.filter((unit) => unit.side === 'party');

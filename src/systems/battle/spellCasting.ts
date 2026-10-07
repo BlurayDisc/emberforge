@@ -9,21 +9,10 @@ import { dodgeEvent, dodgesHit, shieldFieldsOf, takeDamage } from './damageTaken
 import { applyLifeSteal } from './lifeSteal';
 import { frontlineOpponent } from './frontlineTarget';
 import { gainResourceFromHit, spendResource } from './resourcePool';
+import { castHeal, castShield } from './supportSpellCasting';
+import { event, healthFractionOf, type CastContext } from './spellCastContext';
 import { reflectThorns } from './thorns';
 
-interface CastContext {
-  actor: Combatant;
-  combatants: readonly Combatant[];
-  allies: BattleUnit[];
-  opponents: BattleUnit[];
-  timeSeconds: number;
-  random: Random;
-  spell: BattleSpell;
-  // The real-time battle aims a single-target spell at the enemy that the caster is fighting. The turn battle leaves it out.
-  focusTarget?: BattleUnit;
-}
-
-const healthFractionOf = (unit: BattleUnit): number => unit.hp / unit.maxHp;
 const isWounded = (unit: BattleUnit): boolean => healthFractionOf(unit) < HEAL_SPELL_CAST_BELOW_HEALTH_FRACTION;
 
 function readyAtSeconds(actor: Combatant, spell: BattleSpell): number {
@@ -50,10 +39,6 @@ function isUseful(effect: SpellEffect, context: CastContext): boolean {
   if (effect.kind === 'heal') return (effect.target === 'self' ? [context.actor.unit] : context.allies).some(isWounded);
   if (effect.kind === 'shield') return context.opponents.length > 0 && !(context.actor.shield && context.actor.shield.expiresAtSeconds > context.timeSeconds);
   return statusTargets(effect, context).some((unit) => lacksStatus(effect, unit, context));
-}
-
-function event(context: CastContext, target: BattleUnit, kind: BattleEvent['kind'], amount: number, isCritical = false): BattleEvent {
-  return { timeSeconds: context.timeSeconds, kind, actorId: context.actor.unit.id, targetId: target.id, amount, isCritical, targetHpAfter: target.hp, actorResourceAfter: context.actor.unit.resource, targetResourceAfter: target.resource, spellId: context.spell.id };
 }
 
 // A hit adds a share of the caster's Defence (with its Fortify) and, for a hybrid spell, a second part that deals magic damage. Each part rolls its own swing and critical hit.
@@ -149,18 +134,6 @@ function castDamage(effect: Extract<SpellEffect, { kind: 'damage' | 'drain' }>, 
   return events;
 }
 
-function castHeal(effect: Extract<SpellEffect, { kind: 'heal' }>, context: CastContext): BattleEvent[] {
-  const wounded = (effect.target === 'self' ? [context.actor.unit] : context.allies).filter((unit) => unit.hp < unit.maxHp);
-  if (wounded.length === 0) return [];
-  const targets = effect.target === 'allAllies' ? wounded : [[...wounded].sort((first, second) => healthFractionOf(first) - healthFractionOf(second))[0] as BattleUnit];
-  return targets.map((target) => {
-    const woundFactor = 1 - statusStrength(combatantOf(context.combatants, target), 'wound', context.timeSeconds);
-    const healed = Math.min(target.maxHp - target.hp, Math.round(context.actor.unit.attack * effect.power * woundFactor));
-    target.hp += healed;
-    return event(context, target, 'heal', healed);
-  });
-}
-
 function castStatus(effect: Extract<SpellEffect, { kind: 'status' }>, context: CastContext): BattleEvent[] {
   const events = statusTargets(effect, context).map((target) => {
     applyStatus(combatantOf(context.combatants, target), activeStatusFrom(effect, context));
@@ -168,13 +141,6 @@ function castStatus(effect: Extract<SpellEffect, { kind: 'status' }>, context: C
   });
   if (effect.alsoOnSelf) applyStatus(context.actor, activeStatusFrom(effect.alsoOnSelf, context));
   return events;
-}
-
-// The shield absorbs a flat amount plus a share of the maximum health, because the resource pool does not grow. It ends when the time runs out or the damage empties it.
-function castShield(effect: Extract<SpellEffect, { kind: 'shield' }>, context: CastContext): BattleEvent[] {
-  const remaining = Math.round(effect.absorbFlat + context.actor.unit.maxHp * effect.absorbMaxHpFraction);
-  context.actor.shield = { remaining, expiresAtSeconds: context.timeSeconds + effect.durationSeconds };
-  return [{ ...event(context, context.actor.unit, 'effect', 0), targetShieldAfter: remaining }];
 }
 
 // A shield costs a share of the whole pool. Every other spell has a fixed cost.

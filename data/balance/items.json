@@ -13,7 +13,7 @@
     }
   },
   "minimumArmourDefence": 2,
-  "unscaledBaseStats": ["attackSpeed", "criticalChance"],
+  "unscaledBaseStats": ["attackSpeed", "criticalChance", "movementSpeed"],
   "affixGrowthPerItemLevel": 0.1,
   "affixRulesByQuality": {
     "uncommon": { "counts": [1], "maximumPerKind": 1 },

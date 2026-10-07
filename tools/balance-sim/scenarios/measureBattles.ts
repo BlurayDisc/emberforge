@@ -1,7 +1,7 @@
 import type { DungeonDefinition } from '../../../src/content/dungeons';
 import { createRandom } from '../../../src/kernel/random';
 import type { ClassId } from '../../../src/model/hero';
-import { simulateBattle } from '../../../src/systems/battle';
+import { simulateRealtimeBattle } from '../../../src/systems/battle';
 import { createEncounter } from '../../../src/systems/dungeons';
 import { heroToBattleUnit } from '../../../src/systems/stats';
 import { createSimulatedHero, learnSpellsFor } from '../simulatedHero';
@@ -34,7 +34,7 @@ export function measureSoloHero(classId: ClassId, heroLevel: number, dungeon: Du
     const hero = learnSpellsFor(equipBestGear(createSimulatedHero(classId, heroLevel, 0), random.fork('gear'), null, gearRule), true);
     const heroUnit = heroToBattleUnit(hero);
     const monsterUnits = createEncounter(dungeon, 1, random.fork('monsters'));
-    const report = simulateBattle([heroUnit, ...monsterUnits], random.fork('battle'));
+    const report = simulateRealtimeBattle([heroUnit, ...monsterUnits], random.fork('battle'));
     const heroAfter = report.finalUnits.find((unit) => unit.side === 'party')!;
     const heroEvents = report.events.filter((fightEvent) => fightEvent.actorId === heroUnit.id);
     const resourceShares = [heroUnit.resource / heroUnit.maxResource, ...heroEvents.map((fightEvent) => fightEvent.actorResourceAfter / heroUnit.maxResource)];

@@ -27,7 +27,7 @@ export { planNextEncounter, type PlannedEncounter } from './encounterPlanner';
 export { createGameStore, type CommandResult, type GameStore, type MessageParams, type Rejection } from './gameStore';
 export { activeRunsOf, findActiveRun, isDungeonUnlocked, runInDungeon, runOfHero } from './runStatus';
 export { createBrowserSaveStorage } from './saveStorage';
-export { loadAudioPreferences, loadLanguagePreference, loadRecipeFilterPreferences, loadSeenChangelogVersion, loadStaysOnDungeonScreen, saveAudioPreferences, saveLanguagePreference, saveRecipeFilterPreferences, saveSeenChangelogVersion, saveStaysOnDungeonScreen } from './settingsStorage';
+export { loadAudioPreferences, loadLanguagePreference, loadRecipeFilterPreferences, loadSeenChangelogVersion, loadStaysOnDungeonScreen, loadWideTownView, saveAudioPreferences, saveLanguagePreference, saveRecipeFilterPreferences, saveSeenChangelogVersion, saveStaysOnDungeonScreen, saveWideTownView } from './settingsStorage';
 export { describeMill, type MillView } from './views/millViews';
 export { millSettingsOf } from './millSettings';
 export { describeStorage, findBackpackMoveAnchor, isBackpackFull, sizeOfBackpackEntry, type StorageView } from './views/storageViews';

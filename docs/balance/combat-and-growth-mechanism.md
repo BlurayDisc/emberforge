@@ -183,36 +183,41 @@ Targets used (soft, tolerance 15%): HP lost on the first fight averages 50% at l
 
 Method of this pass: armour was added first (it cut the average HP lost by about 20%), then HP and damage were lifted together (HP lost grows with HP x damage) until the average sat at 60-68%. Damage went down against pass 2 (112 to 99 at level 10) because armour makes the same damage cost more time. The dips of the first-meeting average at levels 4, 6 and 8 are the gear unlock steps (helm, legs, chest).
 
-Boss (flat numbers in `monsters.json`, level 10 curve = 1,075 / 99 / 13 / 5.5): Goblin Chief HP 4,200 (x3.9), damage 290 (x2.9), armour 44 (x3.4), Resistance 19 (x3.5), attack every 7 s. Common factor x3.4, each stat within 15% of it. Crushing Cleaver power is 1.5 (was 2.0). Result with `boss-fight`: gear floor 59%, normal crafted gear 83%, weapon only 21%, one hero without gear 0%, fight about 60 s. Other tries: factor 2 (HP 2,150, attack 3.3 s) gave the right win rates but a fight of 26 s; factor 2.5 (attack 4.5 s) 38 s; the length grows only with a slower attack, because armour above about 45 stops the heroes.
+Boss (flat numbers in `monsters.json`, level 10 curve = 1,075 / 99 / 13 / 5.5): Goblin Chief HP 1,559 (x1.45), damage 144 (x1.45), armour 19 (x1.46), Resistance 8 (x1.45), basic attack every 1.65 s. One common factor, each stat within 15% of it. Crushing Cleaver power 1.95 (about 281 damage), cooldown 12 s. Result with `boss-fight` on the real-time simulator: gear floor 65%, normal crafted gear 84%, weapon only 19%, one hero without gear 0%, fight about 18 s. Other tries: factor 2 (HP 2,150, cleaver 1.5) gave 3% / 15% / 0% / 0%; factor 1.5 gave 60% / 79% / 14% / 0%; factor 1.2 made the boss too weak (95% at the gear floor, weapon only 55%).
 
 Open in this draft: the class spread of HP lost at levels 7-10 (Mage 78-92% against Warrior 44-56%; the Priest placeholder 95-99%). Attack time is not changed for now. Starting damage includes +5 for every class to offset the run-up time of the real-time battle.
 
-## 12. Real-time battle spec (decided 2026-10-07)
+## 12. Real-time battle spec (decided 2026-10-07, built and wired in stage B)
 
-No rounds. Heroes and monsters move on a battlefield and fight in real time. The simulation uses fixed ticks and stores positions, so the same seed gives the same battle and playback stays deterministic.
+No rounds. Heroes and monsters move on a battlefield and fight in real time. The simulation uses fixed ticks and stores positions, so the same seed gives the same battle and playback stays deterministic. `simulateRealtimeBattle` runs the game, the balance simulator and the checks. The old `simulateBattle` stays only for `tools/balance-sim/realtime-compare.ts`.
 
 | Topic | Decision |
 |---|---|
-| Opening | Both sides start apart. Melee units meet after about 2 to 3 seconds of running. |
+| Opening | Both sides start apart. Melee units meet after about 2.5 seconds of running. |
 | Range | Each class and monster has an attack range. A ranged class covers about 1/3 of the battlefield. A melee unit must touch its target. Abilities may raise the range later. |
-| Blocking | Units block each other. They cannot stand inside one another. |
+| Blocking | Units block each other. They cannot stand inside one another. A blocked unit slides sideways around the blocker. |
 | Targeting | A unit targets the nearest enemy and checks again when a closer enemy arrives. A boss `targetPriority` still overrides this. |
 | Start position | If the team has a melee unit, Archer and Mage (ranged classes) start slightly behind it. Without melee units, all start on one line. |
-| Movement speed | A stat. All melee classes have the same base value. Ranged classes have slightly less. Boots add a small amount. Buffs come later. |
+| Movement speed | A stat. All melee classes and all monsters have the same base value (6 per second). Ranged classes have 0.9 of it. Boots add +5% (percent points, no growth, no spread). Buffs come later. Haste does not change movement speed. |
 | Casting | A hero stands still while it casts (see section 3). |
+| Hit moment | Damage lands at half of the attack time. A ranged projectile is only visual and the damage lands at the release. |
+| Target switching | Switch only when the new enemy is clearly closer (margin 2), or when the current one is out of reach for 1 s, so units do not flicker between targets. |
+| Field shape | A shallow 2D field, 36 long and 8 deep. |
+| Spell range | The range of a spell is the attack range of the unit, unless the spell says otherwise (`spellRangeFieldFractions`). |
+| Monster attack time | Every normal, rare and boss monster of this town has a basic attack time of 1.0 to 2.0 seconds. The Warrior is 1.65 s. The validator checks the range. |
+| Boss | A normal monster lifted by one common factor (x1.45 now). The burst comes from its spells. |
 | Duration targets | Run-up time is not counted in the targets for now. Each class got +5 starting damage to offset it. |
 
-Placeholders to tune in the simulation: battlefield length, start gap, movement speed, body size, range of each class.
+Placeholders to tune in the simulation: battlefield length, start gap, movement speed, body size, range of each class (all in `data/balance/battlefield.json`).
+
+Known limit: a side puts its units in one start line spread over the depth, so each unit gets depth 8 / (units + 1). With 8 or more units on one line this is less than the body width of 1.0 and the bodies overlap. A second rank or a deeper field is needed before such fights exist. Today a fight has at most 3 monsters and a party of at most 2.
 
 Open questions (defaults if no answer):
 
 | Question | Default |
 |---|---|
-| Field shape | A shallow 2D field. A unit that is blocked slides sideways around the blocker. |
-| Target switching | Switch only when the new enemy is clearly closer, or when the current one is out of reach, so units do not flicker between targets. |
-| Hit moment | Damage lands at a fixed point of the attack animation. A ranged projectile is only visual and lands at once. |
-| Spell range | The range of a spell is the attack range of the class, unless the spell says otherwise. |
-| Haste and movement | Haste does not change movement speed. |
+| Ranged units never kite: they stand and shoot even when a monster is on top of them. | Keep for now. |
+| Units act in input order within a tick, so the first unit wins a same-tick trade. | Keep. A tick is 0.05 s. |
 
 ## 13. Later work (planned)
 
@@ -223,7 +228,7 @@ Open questions (defaults if no answer):
 
 ## 14. Gear budget (decided)
 
-Phase 5 numbers. They are final for bracket 1 (soft tolerance 15%). All item stats are whole numbers. Percent stats (attack speed, critical chance, critical damage, life steal) are percent points.
+Phase 5 numbers. They are final for bracket 1 (soft tolerance 15%). All item stats are whole numbers. Percent stats (attack speed, movement speed, critical chance, critical damage, life steal) are percent points. Movement speed is only on boots and stays unscaled (`unscaledBaseStats`).
 
 **Unlock order (crafter level = item level in tier 1).** Boots 1, Gloves 2, Helm 4, Shield 5, Legs 6, Chest ("armour" slot) 8. Belt 6, Ring 7, Amulet 9. Set recipes exist for every armour piece whatever its level. Among weapons, only a base that opens at level 2 or higher has them. Belts and jewellery have none.
 
@@ -238,7 +243,7 @@ Phase 5 numbers. They are final for bracket 1 (soft tolerance 15%). All item sta
 | Legs (6) | 7 | 5 | 4 |
 | Chest (8) | 12 | 8 | 5 |
 
-Heavy is strictly above Medium, and Medium is at or above Light. No armour piece gives less than 2 Defence. Resistance and the attack speed of boots stay as before.
+Heavy is strictly above Medium, and Medium is at or above Light. No armour piece gives less than 2 Defence. Resistance of boots stays as before. Boots give +5% movement speed (percent points, no growth, no spread) in place of the old +3% attack speed.
 
 **Rule of thumb.** Each piece cuts 5-10% of the monster hit of its own item level for Heavy, and slightly less for Light. Cut by hero level with the full set (all pieces of the level worn):
 

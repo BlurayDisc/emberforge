@@ -1,6 +1,6 @@
 # Real-time battle (phase 2, stage A)
 
-Status: built as a new module, not wired into the game. `simulateRealtimeBattle(units, random)` has the same inputs as `simulateBattle`. The spec is section 12 of `combat-and-growth-mechanism.md`. Numbers are placeholders in `data/balance/battlefield.json` (loader: `src/content/balance/battlefield.ts`).
+Status: built in stage A and wired into the game in stage B (`src/game/encounterPlanner.ts` plans with `simulateRealtimeBattle`; the report is rebuilt from the seed and the party, so no save change was needed). `simulateRealtimeBattle(units, random)` has the same inputs as `simulateBattle`. The spec is section 12 of `combat-and-growth-mechanism.md`. Numbers are placeholders in `data/balance/battlefield.json` (loader: `src/content/balance/battlefield.ts`).
 
 ## Placeholder numbers
 
@@ -21,7 +21,7 @@ Status: built as a new module, not wired into the game. `simulateRealtimeBattle(
 | Body overlap tolerance | 0.05 | Steps that push bodies deeper than this are refused. |
 | Steering angles | 40, 80, 120 degrees | Tried in order when a blocker is in the way. |
 
-The Priest is treated as ranged support (range 12, speed x0.9). Range and speed live in `battlefield.json` by class id (`classProfiles`) and for monsters by id (`monsterProfiles`) then rank (`monsterRankProfiles`). `spellRangeFieldFractions` can give one spell its own range (empty now). The unit input may carry `movementSpeedBonus` (0 by default; stage B boots).
+The Priest is treated as ranged support (range 12, speed x0.9). Range and speed live in `battlefield.json` by class id (`classProfiles`) and for monsters by id (`monsterProfiles`) then rank (`monsterRankProfiles`). `spellRangeFieldFractions` can give one spell its own range (empty now). The unit input may carry `movementSpeedBonus` (0 by default; set from the boots, +5% each, by `heroToBattleUnit`).
 
 ## Algorithm
 
@@ -37,7 +37,7 @@ Blocking and steering: a step is refused when it brings the body inside another 
 
 Randomness: one stream `random.fork('realtimeCombat')`. Same seed and units give the same report.
 
-Code reuse: `rollDamage`, armour, shield, dodge, burn, life steal, thorns, resource pool and the spell effect code come from `systems/battle`. The orchestration of one basic attack (`realtime/basicStrike.ts`) repeats the 15 lines of `act()` in `simulateBattle.ts`, because that function is private and the file is frozen. `spellCasting.ts` got a backward compatible split: `tryCastSpell` now calls the new `pickReadySpell`, `beginSpellCast` and `resolveSpellCast`; an optional `focusTarget` aims single-target spells; two guards return no events when there is no opponent or no wounded ally (cannot happen in the old sim). Old behaviour is unchanged (smoke play passes).
+Code reuse: `rollDamage`, armour, shield, dodge, burn, life steal, thorns, resource pool and the spell effect code come from `systems/battle`. The orchestration of one basic attack (`realtime/basicStrike.ts`) repeats the 15 lines of `act()` in `simulateBattle.ts`, because that function is private and the file is frozen. `spellCasting.ts` got a backward compatible split (in stage B the heal and shield casting and the cast context moved to `supportSpellCasting.ts` and `spellCastContext.ts`): `tryCastSpell` now calls the new `pickReadySpell`, `beginSpellCast` and `resolveSpellCast`; an optional `focusTarget` aims single-target spells; two guards return no events when there is no opponent or no wounded ally (cannot happen in the old sim). Old behaviour is unchanged (smoke play passes).
 
 ## Report format (`src/model/realtimeBattle.ts`)
 

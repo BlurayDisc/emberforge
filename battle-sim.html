@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Emberforge battle sim</title>
+    <style>
+      html, body { margin: 0; background: #14111f; color: #e8e0d0; font-family: sans-serif; font-size: 14px; }
+      #sim { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; padding: 12px; box-sizing: border-box; }
+      #sim-stage-column { flex: 1 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+      #sim-side { flex: 0 1 380px; min-width: 260px; display: flex; flex-direction: column; gap: 6px; }
+      #stage-host { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 70vh; }
+      .sim-panel { background: #1d1830; padding: 8px 10px; box-sizing: border-box; }
+      .sim-heading { margin: 8px 0 4px; font-size: 13px; text-transform: uppercase; color: #c8a24a; }
+      h1 { margin: 0; font-size: 18px; color: #c8a24a; }
+      .sim-field { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0; }
+      .sim-check { justify-content: flex-start; }
+      .sim-input { min-width: 140px; min-height: 36px; padding: 4px 6px; background: #2c2547; color: inherit; border: 1px solid #4a3f75; box-sizing: border-box; }
+      .sim-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+      .sim-button { min-height: 40px; padding: 6px 12px; background: #2c2547; color: inherit; border: 1px solid #4a3f75; cursor: pointer; }
+      .sim-button.selected { background: #6a4aa8; }
+      #sim-clock { font-size: 14px; color: #c8a24a; min-height: 18px; }
+      .sim-live-row { display: grid; grid-template-columns: minmax(80px, 1fr) 2fr 90px; align-items: center; gap: 8px; margin: 3px 0; }
+      .sim-live-number { text-align: right; font-size: 12px; }
+      .sim-bar { height: 10px; background: #000; }
+      .sim-bar-fill { height: 100%; background: #4f9a3a; transition: none; }
+      .sim-live-row.enemy .sim-bar-fill { background: #c0392b; }
+      .sim-stat-block { margin-bottom: 6px; }
+      .sim-stat-title { font-weight: bold; color: #e8e0d0; }
+      .sim-stat { display: flex; justify-content: space-between; gap: 8px; }
+      .sim-stat-name { color: #a9a0c0; }
+      #sim-log { height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+      #sim-log > * { flex-shrink: 0; }
+      #sim-monte-result { min-height: 18px; color: #c8a24a; }
+      .sim-table { border-collapse: collapse; width: 100%; margin-top: 4px; }
+      .sim-table th, .sim-table td { text-align: left; padding: 2px 6px 2px 0; }
+      /* On a phone the stage comes first, then the run buttons, so Start is always near the picture. */
+      @media (max-width: 700px) {
+        #sim { flex-direction: column; align-items: stretch; padding: 8px; }
+        #sim-stage-column, #sim-side { display: contents; }
+        #sim-title { order: 0; } #stage-host { order: 1; } #sim-clock { order: 2; } #sim-run-controls { order: 3; } #sim-monte-result { order: 4; }
+        #sim-live-panel { order: 5; } #sim-summary-panel { order: 6; } #sim-setup { order: 7; } #sim-hero-stats { order: 8; } #sim-creep-stats { order: 9; } #sim-log-panel { order: 10; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sim">
+      <div id="sim-stage-column">
+        <h1 id="sim-title">Battle sim</h1>
+        <div id="stage-host" class="stage-canvas-host"></div>
+        <div id="sim-clock"></div>
+        <div class="sim-panel" id="sim-live-panel"><h3 class="sim-heading" id="sim-live-title"></h3><div id="sim-live"></div></div>
+        <div class="sim-panel" id="sim-summary-panel"><h3 class="sim-heading" id="sim-summary-title"></h3><div id="sim-summary"></div></div>
+        <div class="sim-panel" id="sim-log-panel"><h3 class="sim-heading" id="sim-log-title"></h3><div id="sim-log" class="log-lines"></div></div>
+      </div>
+      <div id="sim-side">
+        <div class="sim-panel" id="sim-setup"></div>
+        <div class="sim-panel" id="sim-run-controls"></div>
+        <div class="sim-panel" id="sim-monte-result"></div>
+        <div class="sim-panel" id="sim-hero-stats"></div>
+        <div class="sim-panel" id="sim-creep-stats"></div>
+      </div>
+    </div>
+    <script type="module" src="/tools/battle-sim/main.ts"></script>
+  </body>
+</html>

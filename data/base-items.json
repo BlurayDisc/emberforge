@@ -507,7 +507,7 @@
     "baseStats": {
       "defence": 4,
       "resistance": 1,
-      "attackSpeed": 3
+      "movementSpeed": 5
     },
     "mainStat": "defence",
     "craftLevelOffset": 1
@@ -526,7 +526,7 @@
     "baseStats": {
       "defence": 3,
       "resistance": 1,
-      "attackSpeed": 3
+      "movementSpeed": 5
     },
     "mainStat": "defence",
     "craftLevelOffset": 1
@@ -545,7 +545,7 @@
     "baseStats": {
       "defence": 2,
       "resistance": 2,
-      "attackSpeed": 3
+      "movementSpeed": 5
     },
     "mainStat": "defence",
     "craftLevelOffset": 1

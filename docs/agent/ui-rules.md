@@ -32,6 +32,9 @@ Read these before you touch any file in `src/ui/` or any CSS. Keep them true. Wh
 - A panel is at most 820 px wide. The world map panel is full screen.
 - Use the shared classes (`panel-body`, `list`, `list-row`, `tile-grid`, `tab-row`, `hero-choice-row`, `status-row`, `panel-footer`) before you write a new one.
 
+**Wide town view (setting, off by default)**
+- Settings has a "Wide view" switch (`kernel/wideTownView.ts`, saved in `emberforge.settings`). On, the town view shows at least two pages (360 logical px), so one swipe crosses the whole town. On a narrow screen the stage gets less tall. Off, the stage fills the height as before.
+
 **Where things live**
 - Gold and the local date and time are on the stage, in the top right corner. Pixi.js draws them over the town, the battle and the castle (`render/hud/stageHud.ts`, fed by `app/stageHudPresenter.ts`). Gold that comes in bumps the panel and floats a "+" beside it. A panel covers the stage, so a screen that deals with gold shows it again as an info line.
 - The Dungeons panel has no team strip. The hero health shows in the fight screen and the run report.

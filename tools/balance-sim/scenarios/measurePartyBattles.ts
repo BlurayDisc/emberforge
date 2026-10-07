@@ -1,7 +1,7 @@
 import type { DungeonDefinition } from '../../../src/content/dungeons';
 import { createRandom } from '../../../src/kernel/random';
 import type { ClassId } from '../../../src/model/hero';
-import { simulateBattle } from '../../../src/systems/battle';
+import { simulateRealtimeBattle } from '../../../src/systems/battle';
 import { createEncounter } from '../../../src/systems/dungeons';
 import { heroToBattleUnit } from '../../../src/systems/stats';
 import { createSimulatedHero, learnSpellsFor } from '../simulatedHero';
@@ -31,7 +31,7 @@ export function measureParty(members: readonly PartyMember[], dungeon: DungeonDe
       heroToBattleUnit(learnSpellsFor(equipBestGear(createSimulatedHero(member.classId, member.level, index), random.fork(`gear-${index}`), floorProfile, gearRule), true)),
     );
     const monsterUnits = createEncounter(dungeon, partyUnits.length, random.fork('monsters'));
-    const report = simulateBattle([...partyUnits, ...monsterUnits], random.fork('battle'));
+    const report = simulateRealtimeBattle([...partyUnits, ...monsterUnits], random.fork('battle'));
     const partyAfter = report.finalUnits.filter((unit) => unit.side === 'party');
     healthLost += 1 - partyAfter.reduce((sum, unit) => sum + unit.hp, 0) / partyAfter.reduce((sum, unit) => sum + unit.maxHp, 0);
     secondsOfAllFights += report.durationSeconds;

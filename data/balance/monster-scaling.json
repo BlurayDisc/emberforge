@@ -1,5 +1,7 @@
 {
   "defaultAttackSeconds": 1.65,
+  "minimumAttackSeconds": 1,
+  "maximumAttackSeconds": 2,
   "anchors": [
     {
       "level": 1,

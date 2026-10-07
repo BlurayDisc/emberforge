@@ -87,7 +87,7 @@ function checkBalanceFiles(report: (message: string) => void): void {
 }
 
 function checkMonsterScaling(monsters: readonly CombatMonster[], report: (message: string) => void): void {
-  const scaling = load<{ defaultAttackSeconds: number; anchors: Array<{ level: number; hp: number; damage: number; armour: number; resistance: number }> }>('balance/monster-scaling.json');
+  const scaling = load<{ defaultAttackSeconds: number; minimumAttackSeconds: number; maximumAttackSeconds: number; anchors: Array<{ level: number; hp: number; damage: number; armour: number; resistance: number }> }>('balance/monster-scaling.json');
   if (!(scaling.defaultAttackSeconds > 0)) report('balance/monster-scaling.json: defaultAttackSeconds must be above 0');
   if (scaling.anchors.length < 2) report('balance/monster-scaling.json: anchors needs at least 2 levels');
   scaling.anchors.forEach((anchor, index) => {
@@ -99,6 +99,8 @@ function checkMonsterScaling(monsters: readonly CombatMonster[], report: (messag
   for (const monster of monsters) {
     if (monster.statFactor !== undefined && !(monster.statFactor > 0)) report(`monsters.json: '${monster.id}' statFactor must be above 0`);
     if (monster.attackSeconds !== undefined && !(monster.attackSeconds > 0)) report(`monsters.json: '${monster.id}' attackSeconds must be above 0`);
+    const attackSeconds = monster.flatStats?.attackSeconds ?? monster.attackSeconds ?? scaling.defaultAttackSeconds;
+    if (attackSeconds < scaling.minimumAttackSeconds || attackSeconds > scaling.maximumAttackSeconds) report(`monsters.json: '${monster.id}' attack time ${attackSeconds} s is outside ${scaling.minimumAttackSeconds}-${scaling.maximumAttackSeconds} s`);
     if (!(monster.rank in factorByRank)) continue;
     if (monster.rank === 'boss') continue;
     if (monster.flatStats) report(`monsters.json: '${monster.id}' is a ${monster.rank}, so it follows the curve and must not set flatStats`);

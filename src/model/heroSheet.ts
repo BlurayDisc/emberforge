@@ -15,4 +15,5 @@ export interface HeroSheet {
   criticalChance: number;
   criticalDamage: number;
   lifeSteal: number;
+  movementSpeed: number;
 }

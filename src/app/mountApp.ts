@@ -2,7 +2,8 @@ import { BUILD_LABEL } from '../kernel/buildInfo';
 import { createBuildBadge } from '../ui/buildBadge';
 import { CASTLE_SCREEN_COUNT } from '../kernel/stageSize';
 import { playSound } from '../audio';
-import type { GameStore } from '../game';
+import { loadWideTownView, type GameStore } from '../game';
+import { setWideTownView } from '../kernel/wideTownView';
 import { createBattleView } from '../render/battleView';
 import { playAnimalVoice } from './animalVoice';
 import { createCastleView } from '../render/castleView';
@@ -29,6 +30,7 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   root.replaceChildren(stageArea, createBottomBar(store, panelHost));
 
   document.title = `Emberforge ${BUILD_LABEL}`;
+  setWideTownView(loadWideTownView());
   const stage = createPixelStage(canvasHost);
 
   const battleView = createBattleView(stage);

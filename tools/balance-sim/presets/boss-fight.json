@@ -27,7 +27,7 @@
   ],
   "battlesPerCase": 150,
   "seed": 2024,
-  "targetSeconds": 60,
+  "targetSeconds": 30,
   "averagedClassIds": [
     "warrior",
     "archer",

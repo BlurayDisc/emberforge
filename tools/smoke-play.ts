@@ -64,7 +64,8 @@ import { DUNGEONS } from '../src/content/dungeons';
 import { MONSTER_SPELLS } from '../src/content/monsterSpells';
 import { SPELLS, findSpell, spellsOfClass } from '../src/content/spells';
 import type { BattleSpell, SpellDefinition } from '../src/model/spell';
-import { simulateBattle } from '../src/systems/battle';
+import { simulateRealtimeBattle } from '../src/systems/battle';
+import { checkBootsMovementSpeed, checkMonsterAttackTimes, checkRealtimeBattleWiring } from './smoke-realtime-steps';
 import type { BattleEvent, BattleUnit } from '../src/model/battle';
 import { itemDisplayName } from '../src/ui/displayNames';
 import { createEncounter, createMonsterUnit } from '../src/systems/dungeons';
@@ -334,7 +335,7 @@ function playSession(seed: number): string {
   const goblinChief = createMonsterUnit('goblin-chief', 10, 'boss-spell-check');
   assert.deepEqual(goblinChief.spells.map((spell) => spell.id), ['goblin-chief.cowing-roar', 'goblin-chief.war-cry', 'goblin-chief.crushing-cleaver'], 'the boss has its three spells');
   const challenger = { ...createHero('warrior', 1, createRandom(3)), level: 10 };
-  const bossFight = simulateBattle([heroToBattleUnit(challenger), goblinChief], createRandom(3).fork('battle'));
+  const bossFight = simulateRealtimeBattle([heroToBattleUnit(challenger), goblinChief], createRandom(3).fork('battle'));
   assert.ok(bossFight.events.some((event) => event.spellId?.startsWith('goblin-chief.') && event.resourceSpent === undefined), 'the boss casts a spell in the fight, and the log shows no resource cost');
 }
 
@@ -344,7 +345,7 @@ function playSession(seed: number): string {
   const squishyUnit = { ...heroToBattleUnit({ ...createHero('mage', 2, createRandom(3)), level: 10 }), maxHp: 100_000, hp: 100_000 };
   assert.ok(tankUnit.defence > squishyUnit.defence, 'the warrior has more Defence than the mage');
   const boss = createMonsterUnit('goblin-chief', 10, 'boss-target-check');
-  const report = simulateBattle([tankUnit, squishyUnit, boss], createRandom(3).fork('battle'));
+  const report = simulateRealtimeBattle([tankUnit, squishyUnit, boss], createRandom(3).fork('battle'));
   const bossHits = report.events.filter((event) => event.actorId === boss.id && event.kind === 'attack');
   assert.ok(bossHits.length > 4, 'the boss attacks several times');
   assert.ok(bossHits.every((event) => event.targetId === tankUnit.id), 'the boss never attacks the hero with less Defence while the frontline stands');
@@ -358,7 +359,7 @@ function playSession(seed: number): string {
   const mageWithFrostShard = equipSpell(learnSpell(mageWithoutSpell, frostShard), frostShard, 0);
   const bossHitsOn = (hero: typeof mageWithoutSpell): number => {
     const boss = createMonsterUnit('goblin-chief', 10, 'boss-slow-check');
-    const report = simulateBattle([{ ...heroToBattleUnit(hero), maxHp: 100_000, hp: 100_000 }, boss], createRandom(4).fork('battle'));
+    const report = simulateRealtimeBattle([{ ...heroToBattleUnit(hero), maxHp: 100_000, hp: 100_000 }, boss], createRandom(4).fork('battle'));
     return report.events.filter((event) => event.actorId === boss.id && event.kind === 'attack').length / report.durationSeconds;
   };
   assert.ok(bossHitsOn(mageWithFrostShard) < bossHitsOn(mageWithoutSpell), 'a slowed boss hits fewer times each second');
@@ -383,7 +384,7 @@ function playSession(seed: number): string {
   const hobgoblinAverageHit = (hero: BattleUnitOfHero, monsterSpells: readonly BattleSpell[] = []): number => {
     // A monster that cannot die keeps the fight at the time limit, so the many hits average out the random damage.
     const monster = { ...createMonsterUnit('hobgoblin', 10, 'defence-check'), spells: monsterSpells, maxHp: 1_000_000_000, hp: 1_000_000_000 };
-    const report = simulateBattle([{ ...hero, maxHp: 1_000_000, hp: 1_000_000 }, monster], createRandom(11).fork('battle'));
+    const report = simulateRealtimeBattle([{ ...hero, maxHp: 1_000_000, hp: 1_000_000 }, monster], createRandom(11).fork('battle'));
     const hits = report.events.filter((event) => event.actorId === monster.id && event.kind === 'attack');
     return hits.reduce((total, event) => total + event.amount, 0) / hits.length;
   };
@@ -393,14 +394,14 @@ function playSession(seed: number): string {
 
   const shieldBashDamage = (defence: number): number => {
     const monster = createMonsterUnit('hobgoblin', 10, 'bash-check');
-    const report = simulateBattle([{ ...withSpell('warrior.shield-bash'), defence, maxHp: 1_000_000, hp: 1_000_000 }, monster], createRandom(11).fork('battle'));
+    const report = simulateRealtimeBattle([{ ...withSpell('warrior.shield-bash'), defence, maxHp: 1_000_000, hp: 1_000_000 }, monster], createRandom(11).fork('battle'));
     return report.events.find((event) => event.spellId === 'warrior.shield-bash')?.amount ?? 0;
   };
   assert.ok(shieldBashDamage(100) > shieldBashDamage(10) * 1.5, 'Shield Bash hits harder for a hero with more Defence');
 
   assert.ok(hobgoblinAverageHit(withSpell('warrior.guard-stance')) < hobgoblinAverageHit(bareWarrior), 'Fortify raises Defence, so the hero takes smaller hits');
 
-  const reflectReport = simulateBattle([{ ...withSpell('warrior.iron-wall'), maxHp: 1_000_000, hp: 1_000_000 }, createMonsterUnit('hobgoblin', 10, 'thorns-check')], createRandom(11).fork('battle'));
+  const reflectReport = simulateRealtimeBattle([{ ...withSpell('warrior.iron-wall'), maxHp: 1_000_000, hp: 1_000_000 }, createMonsterUnit('hobgoblin', 10, 'thorns-check')], createRandom(11).fork('battle'));
   const reflectEvents = reflectReport.events.filter((event) => event.isReflect);
   assert.ok(reflectEvents.length > 0 && reflectEvents.every((event) => event.actorId === bareWarrior.id && event.amount > 0), 'Iron Wall gives the caster Thorns, and the reflected damage comes from the caster');
 
@@ -415,7 +416,7 @@ function playSession(seed: number): string {
   const slamDamage = (resistance: number): number => {
     const unit = { ...heroToBattleUnit({ ...createHero('warrior', 1, createRandom(12)), level: 10 }), spells: [thunderSlam], maxHp: 1_000_000, hp: 1_000_000, maxResource: 1000, resource: 1000 };
     const monster = { ...createMonsterUnit('hobgoblin', 10, 'slam-check'), resistance };
-    return simulateBattle([unit, monster], createRandom(12).fork('battle')).events.find((event) => event.spellId === thunderSlam.id)?.amount ?? 0;
+    return simulateRealtimeBattle([unit, monster], createRandom(12).fork('battle')).events.find((event) => event.spellId === thunderSlam.id)?.amount ?? 0;
   };
   assert.ok(slamDamage(0) > slamDamage(200), 'the magic part of Thunder Slam is reduced by Resistance');
 }
@@ -441,7 +442,7 @@ function playSession(seed: number): string {
   assert.equal(bonusSheet.criticalDamage, Math.round(bonusUnit.criticalDamageMultiplier * 100));
 
   const healEventsOf = (unit: typeof bonusUnit): number => {
-    const fight = simulateBattle([{ ...unit, maxHp: 100_000, hp: 50_000, lifeSteal: unit.lifeSteal }, createMonsterUnit('goblin-chief', 10, 'life-steal-check')], createRandom(8).fork('battle'));
+    const fight = simulateRealtimeBattle([{ ...unit, maxHp: 100_000, hp: 50_000, lifeSteal: unit.lifeSteal }, createMonsterUnit('goblin-chief', 10, 'life-steal-check')], createRandom(8).fork('battle'));
     return fight.events.filter((event) => event.kind === 'heal' && event.actorId === unit.id && event.targetId === unit.id).length;
   };
   assert.equal(healEventsOf(plainUnit), 0, 'a hero without life steal never heals itself');
@@ -469,7 +470,7 @@ function playSession(seed: number): string {
   const averageHealAfterBossSpells = (bossSpells: readonly BattleSpell[]): number => {
     const boss = { ...createMonsterUnit('goblin-chief', 10, 'boss-wound-check'), spells: bossSpells };
     const woundedPriest = { ...heroToBattleUnit(priest), maxHp: 100_000, hp: 50_000 };
-    const heals = simulateBattle([woundedPriest, boss], createRandom(6).fork('battle')).events.filter((event) => event.kind === 'heal' && event.actorId === woundedPriest.id);
+    const heals = simulateRealtimeBattle([woundedPriest, boss], createRandom(6).fork('battle')).events.filter((event) => event.kind === 'heal' && event.actorId === woundedPriest.id);
     return heals.reduce((total, event) => total + event.amount, 0) / heals.length;
   };
   assert.ok(averageHealAfterBossSpells([cleaver]) < averageHealAfterBossSpells([]), 'a wounded hero is healed less');
@@ -521,13 +522,13 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const priest = ['priest.minor-heal', 'priest.divine-shield'].reduce((hero, spellId) => learnSpell(hero, findSpell(spellId) as SpellDefinition), priestBase);
   const ratCellar = requireById(DUNGEONS, 'rat-cellar');
   const monsters = createEncounter(ratCellar, 1, createRandom(8).fork('monsters'));
-  const report = simulateBattle([heroToBattleUnit(priest), ...monsters], createRandom(8).fork('battle'));
+  const report = simulateRealtimeBattle([heroToBattleUnit(priest), ...monsters], createRandom(8).fork('battle'));
   const firstHealIndex = report.events.findIndex((event) => event.spellId === 'priest.minor-heal');
   const firstHitOnHeroIndex = report.events.findIndex((event) => event.kind === 'attack' && event.targetId === priest.id);
   assert.ok(firstHealIndex < 0 || firstHealIndex > firstHitOnHeroIndex, 'a heal is cast only after the hero is wounded');
   assert.equal(report.events.filter((event) => event.spellId === 'priest.divine-shield' && event.timeSeconds < 8).length, 1, 'a guard does not stack while it lasts');
   const withoutMana = { ...heroToBattleUnit(priest), resource: 0, maxResource: 0 };
-  const dryReport = simulateBattle([withoutMana, ...monsters], createRandom(8).fork('battle'));
+  const dryReport = simulateRealtimeBattle([withoutMana, ...monsters], createRandom(8).fork('battle'));
   assert.ok(dryReport.events.every((event) => event.spellId === undefined), 'a hero with no resource casts nothing');
   for (const heroClass of CLASSES) {
     const classSpells = spellsOfClass(heroClass.id);
@@ -545,7 +546,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
     spells: spellIds.map((spellId) => requireById(SPELLS, spellId)),
   });
   const wolves = (count: number): BattleUnit[] => Array.from({ length: count }, (_, index) => ({ ...createMonsterUnit('wolf', 10, `wolf-${index}`), maxHp: 100_000, hp: 100_000, attack: 0.001 }));
-  const fight = (units: BattleUnit[], seed = 4) => simulateBattle(units, createRandom(seed).fork('battle'));
+  const fight = (units: BattleUnit[], seed = 4) => simulateRealtimeBattle(units, createRandom(seed).fork('battle'));
   const firstCast = (events: readonly BattleEvent[], spellId: string): BattleEvent[] => {
     const first = events.find((event) => event.spellId === spellId);
     return first ? events.filter((event) => event.spellId === spellId && event.timeSeconds === first.timeSeconds && event.kind === 'attack') : [];
@@ -603,13 +604,13 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   }
   const barbarian = heroToBattleUnit(createHero('barbarian', 1, createRandom(3)));
   const rageMonsters = createEncounter(requireById(DUNGEONS, 'rat-cellar'), 1, createRandom(8).fork('monsters'));
-  const rageReport = simulateBattle([barbarian, ...rageMonsters], createRandom(8).fork('battle'));
+  const rageReport = simulateRealtimeBattle([barbarian, ...rageMonsters], createRandom(8).fork('battle'));
   const firstBarbarianEvent = rageReport.events.find((event) => event.actorId === barbarian.id);
   assert.ok((firstBarbarianEvent?.actorResourceAfter ?? 0) > 0, 'a hit builds rage');
   const firstHitOnBarbarian = rageReport.events.find((event) => event.targetId === barbarian.id && event.kind === 'attack');
   assert.ok((firstHitOnBarbarian?.targetResourceAfter ?? 0) > 0, 'a hit taken builds rage');
   const spender = learnSpell(createHero('barbarian', 1, createRandom(3)), spellsOfClass('barbarian')[0] as SpellDefinition);
-  const spendReport = simulateBattle([heroToBattleUnit(spender), ...rageMonsters], createRandom(8).fork('battle'));
+  const spendReport = simulateRealtimeBattle([heroToBattleUnit(spender), ...rageMonsters], createRandom(8).fork('battle'));
   const firstCast = spendReport.events.find((event) => event.spellId !== undefined);
   assert.ok(firstCast === undefined || (firstCast.resourceSpent ?? 0) > 0, 'a cast reports what it cost');
 }
@@ -665,7 +666,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
       for (let seed = 1; seed <= 6; seed++) {
         const party = [heroToBattleUnit(caster), ...(dungeonId === 'goblin-chief-lair' ? [heroToBattleUnit({ ...createHero('priest', 5, createRandom(4)), id: 'partner' })] : [])];
         const monsters = createEncounter(requireById(DUNGEONS, dungeonId), party.length, createRandom(seed).fork('monsters'));
-        const report = simulateBattle([...party, ...monsters], createRandom(seed).fork('battle'));
+        const report = simulateRealtimeBattle([...party, ...monsters], createRandom(seed).fork('battle'));
         const unitsById = new Map([...party, ...monsters].map((unit) => [unit.id, unit]));
         let castsStarted = 0;
         report.events.forEach((event, index) => {
@@ -1241,14 +1242,14 @@ assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the mig
   const warriorUnit = heroToBattleUnit(warriorAtLevel(1));
   const armouredHero = { ...warriorUnit, defence: 100_000, maxHp: 1_000_000, hp: 1_000_000 };
   const weakMonster = { ...createMonsterUnit('cave-rat', 1, 'floor-check'), attack: 1 };
-  const floorFight = simulateBattle([armouredHero, weakMonster], createRandom(5).fork('battle'));
+  const floorFight = simulateRealtimeBattle([armouredHero, weakMonster], createRandom(5).fork('battle'));
   const hitsOnArmouredHero = floorFight.events.filter((event) => event.targetId === armouredHero.id && event.kind === 'attack' && !event.isCritical);
   assert.ok(hitsOnArmouredHero.length > 5 && hitsOnArmouredHero.every((event) => event.amount === 1), 'a hit that armour cancels still does 1 damage');
 
   const steadyUnit: BattleUnit = { ...warriorUnit, damageVarianceFraction: 0, critChance: 0.5, maxHp: 1_000_000, hp: 1_000_000, maxResource: 1000, resource: 1000 };
   const rapidSpell: BattleSpell = { id: 'test.rapid-strike', isUltimate: false, cooldownSeconds: 0.1, castSeconds: 0, resourceCost: 0, effect: { kind: 'damage', damageKind: 'physical', target: 'enemy', hits: 1, power: 1 } };
   const target = { ...createMonsterUnit('cave-rat', 1, 'crit-check'), defence: 0, attack: 0, maxHp: 1_000_000, hp: 1_000_000 };
-  const spellHits = simulateBattle([{ ...steadyUnit, spells: [rapidSpell] }, target], createRandom(7).fork('battle')).events.filter((event) => event.spellId === rapidSpell.id).slice(0, 60);
+  const spellHits = simulateRealtimeBattle([{ ...steadyUnit, spells: [rapidSpell] }, target], createRandom(7).fork('battle')).events.filter((event) => event.spellId === rapidSpell.id).slice(0, 60);
   const criticalSpellHit = spellHits.find((event) => event.isCritical);
   const plainSpellHit = spellHits.find((event) => !event.isCritical);
   assert.ok(criticalSpellHit && plainSpellHit, 'a spell hit can crit, and rolls on its own');
@@ -1259,9 +1260,9 @@ assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the mig
   assert.equal(sheetAttackSeconds, Math.round(baseAttackSeconds / (1 + 18 * 0.003) * 100) / 100, 'attack time is the base time divided by 1 + Agility x 0.3%');
   const agileSheet = computeHeroSheet({ ...warriorAtLevel(1), level: 10 });
   assert.ok(agileSheet.attackSeconds < sheetAttackSeconds, 'more Agility shortens the attack time');
-  const attacksWithin = (unit: BattleUnit): number => simulateBattle([{ ...unit, spells: [], maxHp: 1_000_000, hp: 1_000_000 }, { ...target, hp: 1_000_000 }], createRandom(9).fork('battle')).events.filter((event) => event.actorId === unit.id && event.timeSeconds <= 30).length;
+  const attacksWithin = (unit: BattleUnit): number => simulateRealtimeBattle([{ ...unit, spells: [], maxHp: 1_000_000, hp: 1_000_000 }, { ...target, hp: 1_000_000 }], createRandom(9).fork('battle')).events.filter((event) => event.actorId === unit.id && event.timeSeconds <= 30).length;
   assert.ok(attacksWithin({ ...steadyUnit, attackSpeedBonus: 0.5 }) > attacksWithin({ ...steadyUnit, attackSpeedBonus: 0 }), 'a faster unit attacks more often');
-  const crawlingFight = simulateBattle([{ ...steadyUnit, attackSpeedBonus: -5 }, { ...weakMonster, maxHp: 30, hp: 30 }], createRandom(9).fork('battle'));
+  const crawlingFight = simulateRealtimeBattle([{ ...steadyUnit, attackSpeedBonus: -5 }, { ...weakMonster, maxHp: 30, hp: 30 }], createRandom(9).fork('battle'));
   assert.equal(crawlingFight.winner, 'party', 'a pool below zero is held at the minimum factor, so the unit still attacks');
 }
 
@@ -1306,6 +1307,10 @@ assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the mig
   assert.equal(migratedTwentyFive?.crafters.enchanting?.level, 4, 'the Woodworking crafter level moves to Enchanting');
   assert.ok(!('woodworking' in (migratedTwentyFive?.crafters ?? {})), 'no Woodworking crafter stays');
 }
+
+checkRealtimeBattleWiring();
+checkBootsMovementSpeed();
+checkMonsterAttackTimes();
 
 const firstSummary = playSession(12345);
 const secondSummary = playSession(12345);

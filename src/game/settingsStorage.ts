@@ -8,6 +8,7 @@ interface StoredSettings {
   language?: string;
   audio?: Partial<AudioPreferences>;
   staysOnDungeonScreen?: boolean;
+  wideTownView?: boolean;
   seenChangelogVersion?: string;
   recipeFilterByProfessionId?: Record<string, Partial<RecipeFilterPreferences>>;
 }
@@ -101,6 +102,18 @@ export function saveRecipeFilterPreferences(professionId: string, recipeFilter: 
     const settings = readSettings();
     const recipeFilterByProfessionId = { ...settings.recipeFilterByProfessionId, [professionId]: recipeFilter };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, recipeFilterByProfessionId }));
+  } catch {
+    return;
+  }
+}
+
+export function loadWideTownView(): boolean {
+  return readSettings().wideTownView === true;
+}
+
+export function saveWideTownView(wideTownView: boolean): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...readSettings(), wideTownView }));
   } catch {
     return;
   }

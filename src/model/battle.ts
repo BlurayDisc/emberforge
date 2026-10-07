@@ -35,6 +35,8 @@ export interface BattleUnit {
   mainAttributeValue: number;
   // The fraction of damage dealt that the unit heals.
   lifeSteal: number;
+  // A share of the movement speed in a real-time battle (0.05 means +5%). From boots. A monster has none.
+  movementSpeedBonus?: number;
   behavior: UnitBehavior;
   targetPriority?: TargetPriority;
   // The share of the flat Defence of the target that this unit's physical hits ignore. A boss uses it so a wall of Defence does not make it harmless.

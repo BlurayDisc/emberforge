@@ -1,5 +1,6 @@
 import { Application, Container } from 'pixi.js';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_PAGE_WIDTH } from '../kernel/stageSize';
+import { isWideTownView, onWideTownViewChange } from '../kernel/wideTownView';
 import { PALETTE } from './palette';
 
 export { LOGICAL_HEIGHT, LOGICAL_WIDTH };
@@ -34,6 +35,7 @@ export interface PixelStage {
 const FRAME_OUTLINE_MARGIN_PIXELS = 8;
 // The view always shows a whole town page, because the town moves one page at a time. A very wide window stops growing at the maximum.
 const MINIMUM_FILL_VIEW_WIDTH = TOWN_PAGE_WIDTH;
+const MINIMUM_WIDE_VIEW_WIDTH = 2 * TOWN_PAGE_WIDTH;
 const MAXIMUM_FILL_VIEW_WIDTH = 640;
 
 interface ViewGeometry {
@@ -57,8 +59,9 @@ function fillGeometry(container: HTMLElement): ViewGeometry {
   const height = Math.max(1, container.clientHeight);
   let scale = height / LOGICAL_HEIGHT;
   let viewWidth = Math.round(width / scale);
-  if (viewWidth < MINIMUM_FILL_VIEW_WIDTH) {
-    viewWidth = MINIMUM_FILL_VIEW_WIDTH;
+  const minimumViewWidth = isWideTownView() ? MINIMUM_WIDE_VIEW_WIDTH : MINIMUM_FILL_VIEW_WIDTH;
+  if (viewWidth < minimumViewWidth) {
+    viewWidth = minimumViewWidth;
     scale = width / viewWidth;
   } else if (viewWidth > MAXIMUM_FILL_VIEW_WIDTH) {
     viewWidth = MAXIMUM_FILL_VIEW_WIDTH;
@@ -98,6 +101,7 @@ export function createPixelStage(container: HTMLElement): PixelStage {
     if (geometry.viewWidth !== previousViewWidth || isPixiReady) viewResizeListeners.forEach((listener) => listener());
   };
   applyLayout();
+  onWideTownViewChange(applyLayout);
   new ResizeObserver(applyLayout).observe(container);
 
   // Pixi starts asynchronously. The stage shows its background colour until it is ready.
