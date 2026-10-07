@@ -10,6 +10,13 @@ export const WARRIOR_SPRITE_SIZE = { width: DRAWING_WIDTH + 2 * OUTLINE_MARGIN, 
 
 
 
+function paintCape(painter: SpritePainter): void {
+  painter.rect(MATERIAL.redDark, 21, 14, 8, 20);
+  painter.rect(MATERIAL.red, 21, 14, 3, 20);
+  painter.rect(darken(MATERIAL.redDark, 0.7), 27, 16, 2, 18);
+  for (const notchX of [23, 26, 28]) painter.dot(darken(MATERIAL.redDark, 0.5), notchX, 33);
+}
+
 function paintLegs(painter: SpritePainter, colors: HeroColors): void {
   for (const left of [12, 18]) {
     painter.rect(colors.clothShade, left, 28, 5, 8);
@@ -96,7 +103,8 @@ function paintShield(painter: SpritePainter, colors: HeroColors): void {
     painter.span(colors.trim, SHIELD_CENTER_X - halfWidth, SHIELD_CENTER_X + halfWidth, row);
     if (halfWidth >= 2 && row > SHIELD_TOP && row < SHIELD_BOTTOM - 1) {
       painter.span(colors.clothShade, SHIELD_CENTER_X - halfWidth + 1, SHIELD_CENTER_X + halfWidth - 1, row);
-      painter.span(colors.cloth, SHIELD_CENTER_X - halfWidth + 1, SHIELD_CENTER_X + halfWidth - 3, row);
+      painter.span(colors.cloth, SHIELD_CENTER_X - halfWidth + 1, SHIELD_CENTER_X - halfWidth + 2, row);
+      painter.dot(colors.clothDeep, SHIELD_CENTER_X + halfWidth - 1, row);
     }
   }
   painter.rect(MATERIAL.red, SHIELD_CENTER_X - 1, SHIELD_TOP + 2, 3, 21);
@@ -113,6 +121,7 @@ function paintShield(painter: SpritePainter, colors: HeroColors): void {
 export function drawWarriorSprite(colors: HeroColors): HTMLCanvasElement {
   const art = createHeroCanvas(WARRIOR_SPRITE_SIZE.width, WARRIOR_SPRITE_SIZE.height);
   const painter = createSpritePainter(art, OUTLINE_MARGIN, OUTLINE_MARGIN);
+  paintCape(painter);
   paintLegs(painter, colors);
   paintTorso(painter, colors);
   paintSwordArm(painter, colors);

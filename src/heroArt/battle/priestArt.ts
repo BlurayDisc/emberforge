@@ -1,7 +1,8 @@
 import { addHeroOutline, createHeroCanvas } from '../heroCanvas';
+import type { HeroPose } from '../heroPose';
 import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
 import { paintPriestHead } from '../headgear/priestHead';
-import { paintPaladinBody, paintWarhammer } from '../paladinParts';
+import { TABARD_BLUE, TABARD_BLUE_DARK, paintPaladinBody, paintWarhammer } from '../paladinParts';
 import { paintWarriorPauldrons } from '../warriorParts';
 import { createSpritePainter, type SpritePainter } from '../spritePainter';
 
@@ -22,20 +23,34 @@ function paintPlateBody(painter: SpritePainter, colors: HeroColors): void {
 
 function paintHolyHammer(painter: SpritePainter, colors: HeroColors): void {
   paintWarhammer(painter, colors, { hastX: STAFF_X, headTop: 2, headHalfWidth: 4, headHeight: 6, hastBottom: 40 });
-  painter.line(colors.cloth, CENTER_X + 4, TORSO_TOP, STAFF_X - 1, TORSO_TOP + 8, 2);
-  painter.line(colors.clothShade, CENTER_X + 4, TORSO_TOP + 1, STAFF_X - 1, TORSO_TOP + 9);
+  painter.line(TABARD_BLUE_DARK, CENTER_X + 5, TORSO_TOP + 1, CENTER_X + 6, TORSO_TOP + 6, 3);
+  painter.line(TABARD_BLUE, CENTER_X + 5, TORSO_TOP + 1, CENTER_X + 5, TORSO_TOP + 6, 1);
+  painter.line(colors.cloth, CENTER_X + 6, TORSO_TOP + 6, STAFF_X - 1, TORSO_TOP + 8, 2);
+  painter.line(colors.clothShade, CENTER_X + 6, TORSO_TOP + 7, STAFF_X - 1, TORSO_TOP + 9);
   painter.rect(colors.trim, STAFF_X - 1, TORSO_TOP + 8, 4, 3);
 }
 
-function paintBlessingHand(painter: SpritePainter, colors: HeroColors): void {
-  painter.line(colors.cloth, CENTER_X - 4, TORSO_TOP, 7, TORSO_TOP - 3, 2);
-  painter.line(colors.clothShade, CENTER_X - 4, TORSO_TOP + 1, 7, TORSO_TOP - 2);
+function paintHolyLight(painter: SpritePainter, pose: HeroPose): void {
+  if (pose === 'released') return;
+  if (pose === 'reload') {
+    painter.dot(HOLY_LIGHT, 4, TORSO_TOP - 7);
+    return;
+  }
+  const growth = pose === 'charge' ? 1 : 0;
+  painter.rect(HOLY_LIGHT, 3 - growth, TORSO_TOP - 9 - growth, 3 + 2 * growth, 3 + 2 * growth);
+  painter.dot(MATERIAL.white, 4, TORSO_TOP - 8);
+  for (const [sparkX, sparkY] of [[2, 3], [7, 4], [1, 7], [8, 8]] as const) painter.dot(HOLY_LIGHT, sparkX, sparkY + 2);
+}
+
+function paintBlessingHand(painter: SpritePainter, colors: HeroColors, pose: HeroPose): void {
+  painter.line(TABARD_BLUE_DARK, CENTER_X - 6, TORSO_TOP + 1, 8, TORSO_TOP + 5, 3);
+  painter.line(TABARD_BLUE, CENTER_X - 6, TORSO_TOP + 1, 8, TORSO_TOP + 4, 1);
+  painter.line(colors.cloth, 8, TORSO_TOP + 4, 7, TORSO_TOP - 3, 2);
+  painter.line(colors.clothShade, 9, TORSO_TOP + 4, 8, TORSO_TOP - 2);
   painter.rect(colors.trim, 7, TORSO_TOP - 3, 1, 3);
   painter.rect(colors.skin, 4, TORSO_TOP - 5, 3, 3);
   painter.rect(colors.skinShade, 4, TORSO_TOP - 3, 3, 1);
-  painter.rect(HOLY_LIGHT, 3, TORSO_TOP - 9, 3, 3);
-  painter.dot(MATERIAL.white, 4, TORSO_TOP - 8);
-  for (const [sparkX, sparkY] of [[2, 3], [7, 4], [1, 7], [8, 8]] as const) painter.dot(HOLY_LIGHT, sparkX, sparkY + 2);
+  paintHolyLight(painter, pose);
 }
 
 function paintHairBehind(painter: SpritePainter, colors: HeroColors): void {
@@ -46,13 +61,13 @@ function paintHairBehind(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(colors.hairShade, 20, 11, 1, 12);
 }
 
-export function drawPriestSprite(colors: HeroColors): HTMLCanvasElement {
+export function drawPriestSprite(colors: HeroColors, pose: HeroPose = 'ready'): HTMLCanvasElement {
   const art = createHeroCanvas(PRIEST_SPRITE_SIZE.width, PRIEST_SPRITE_SIZE.height);
   const painter = createSpritePainter(art, OUTLINE_MARGIN, OUTLINE_MARGIN);
   paintHairBehind(painter, colors);
   paintPlateBody(painter, colors);
   paintPriestHead(painter, colors, CENTER_X, HEAD_TOP);
-  paintBlessingHand(painter, colors);
+  paintBlessingHand(painter, colors, pose);
   paintHolyHammer(painter, colors);
   paintWarriorPauldrons(painter, colors, CENTER_X + 5, CENTER_X - 13, 13);
   painter.rect(darken(colors.hair, 0.8), CENTER_X - 2, 13, 5, 1);

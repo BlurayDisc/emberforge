@@ -8,8 +8,9 @@ import { drawPriestSprite } from './battle/priestArt';
 import { drawThiefSprite } from './battle/thiefArt';
 import { drawWarriorSprite } from './battle/warriorArt';
 import { heroColorsOf, type HeroColors } from './heroPalette';
+import type { HeroPose } from './heroPose';
 
-const SPRITE_DRAWERS: Readonly<Record<ClassId, (colors: HeroColors) => HTMLCanvasElement>> = {
+const SPRITE_DRAWERS: Readonly<Record<ClassId, (colors: HeroColors, pose?: HeroPose) => HTMLCanvasElement>> = {
   warrior: drawWarriorSprite,
   archer: drawArcherSprite,
   mage: drawMageSprite,
@@ -19,6 +20,8 @@ const SPRITE_DRAWERS: Readonly<Record<ClassId, (colors: HeroColors) => HTMLCanva
   fighter: drawFighterSprite,
 };
 
-export function drawHeroSprite(classId: ClassId, heroName: string): HTMLCanvasElement {
-  return SPRITE_DRAWERS[classId](heroColorsOf(pickHeroAppearance(classId, heroName)));
+export const CLASSES_WITH_POSES: readonly ClassId[] = ['archer', 'mage', 'priest'];
+
+export function drawHeroSprite(classId: ClassId, heroName: string, pose: HeroPose = 'ready'): HTMLCanvasElement {
+  return SPRITE_DRAWERS[classId](heroColorsOf(pickHeroAppearance(classId, heroName)), pose);
 }

@@ -2,21 +2,43 @@ import { MATERIAL, darken, lighten, type HeroColors } from './heroPalette';
 import type { SpritePainter } from './spritePainter';
 
 const HOLY_LIGHT = '#fff3b0';
+const HOLY_GLOW = '#ffd96a';
 
-// A great warhammer: a square head that glows with holy light, on a long haft with a gold cap.
+// A great warhammer: a chamfered gold head with a glowing holy face and a finial, on a wrapped haft with a gold cap.
 export function paintWarhammer(painter: SpritePainter, colors: HeroColors, hammer: { hastX: number; headTop: number; headHalfWidth: number; headHeight: number; hastBottom: number }): void {
   const { hastX, headTop, headHalfWidth, headHeight, hastBottom } = hammer;
-  painter.rect(MATERIAL.wood, hastX, headTop + headHeight, 2, hastBottom - headTop - headHeight);
-  painter.rect(MATERIAL.woodDark, hastX + 1, headTop + headHeight, 1, hastBottom - headTop - headHeight);
+  const haftTop = headTop + headHeight;
+  const goldShade = darken(colors.trim, 0.7);
+  painter.rect(MATERIAL.wood, hastX, haftTop, 1, hastBottom - haftTop);
+  painter.rect(MATERIAL.woodDark, hastX + 1, haftTop, 1, hastBottom - haftTop);
   const left = hastX - headHalfWidth;
   const width = headHalfWidth * 2 + 2;
-  painter.rect(MATERIAL.goldDark, left, headTop, width, headHeight);
-  painter.rect(colors.trim, left, headTop, width, headHeight - 1);
-  painter.rect(HOLY_LIGHT, left + 2, headTop + 2, width - 4, headHeight - 4);
-  painter.rect(MATERIAL.white, left + 2, headTop + 2, Math.max(2, width - 6), 1);
-  painter.rect(darken(colors.trim, 0.7), left + width - 1, headTop, 1, headHeight);
-  painter.rect(colors.trim, hastX - 1, headTop + headHeight, 4, 1);
+  for (let row = 0; row < headHeight; row++) {
+    const inset = row === 0 || row === headHeight - 1 ? 1 : 0;
+    painter.span(row === headHeight - 1 ? goldShade : colors.trim, left + inset, left + width - 1 - inset, headTop + row);
+  }
+  painter.span(lighten(colors.trim, 1.6), left + 1, left + width - 2, headTop);
+  painter.rect(goldShade, left + width - 1, headTop + 1, 1, headHeight - 2);
+  painter.rect(MATERIAL.goldDark, left, headTop + 1, 1, headHeight - 2);
+  const faceWidth = width - 4;
+  const faceHeight = headHeight - 4;
+  painter.rect(HOLY_LIGHT, left + 2, headTop + 2, faceWidth, faceHeight);
+  painter.rect(MATERIAL.white, left + 2, headTop + 2, Math.max(2, faceWidth - 2), 1);
+  if (faceWidth >= 6 && faceHeight >= 5) {
+    painter.rect(colors.trim, hastX, headTop + 3, 2, faceHeight - 2);
+    painter.rect(colors.trim, left + 3, headTop + 2 + Math.floor(faceHeight / 2), faceWidth - 2, 1);
+  } else if (faceHeight >= 5) {
+    painter.rect(MATERIAL.white, hastX, headTop + 3, 2, faceHeight - 2);
+    painter.rect(HOLY_GLOW, left + 2, headTop + 2, 1, faceHeight);
+    painter.rect(HOLY_GLOW, left + faceWidth + 1, headTop + 2, 1, faceHeight);
+  }
+  painter.rect(colors.trim, hastX, headTop - 1, 2, 1);
+  painter.rect(colors.trim, hastX - 1, haftTop, 4, 1);
+  painter.rect(goldShade, hastX - 1, haftTop + 1, 4, 1);
+  painter.rect(MATERIAL.leatherLight, hastX, haftTop + 2, 1, 3);
+  painter.rect(MATERIAL.leather, hastX + 1, haftTop + 2, 1, 3);
   painter.rect(MATERIAL.goldDark, hastX - 1, hastBottom - 3, 4, 2);
+  painter.rect(colors.trim, hastX - 1, hastBottom - 3, 4, 1);
 }
 
 const WING_ROWS = ['W...', 'WW..', 'WWW.', '.WWW'];
@@ -51,6 +73,8 @@ export function paintPaladinBody(painter: SpritePainter, colors: HeroColors, sha
   for (let row = torsoTop; row <= hemY; row++) {
     const flare = Math.floor(((row - torsoTop) / (hemY - torsoTop)) * 3);
     painter.span(TABARD_BLUE_DARK, centerX - shoulderHalfWidth - 1 - flare, centerX + shoulderHalfWidth + 1 + flare, row);
+    for (let foldX = centerX - shoulderHalfWidth - 1 - flare + 2; foldX <= centerX + shoulderHalfWidth + 1 + flare; foldX += 4) painter.dot(darken(TABARD_BLUE_DARK, 0.75), foldX, row);
+    painter.dot(TABARD_BLUE, centerX - shoulderHalfWidth - 1 - flare, row);
   }
   for (const side of [-1, 1] as const) {
     const legLeft = side === -1 ? centerX - 5 : centerX + 1;

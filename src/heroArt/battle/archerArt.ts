@@ -1,7 +1,8 @@
 import { addHeroOutline, createHeroCanvas } from '../heroCanvas';
-import { paintArcherCloak, paintArcherHood } from '../headgear/archerCloak';
+import { paintArcherCloak, paintArcherHood, paintArcherMantle } from '../headgear/archerCloak';
 import { paintElfHead, paintElfPonytail } from '../headgear/archerHead';
-import { MATERIAL, darken, lighten, type HeroColors } from '../heroPalette';
+import type { HeroPose } from '../heroPose';
+import { MATERIAL, type HeroColors } from '../heroPalette';
 import { createSpritePainter, type SpritePainter } from '../spritePainter';
 
 const DRAWING_WIDTH = 30;
@@ -22,22 +23,23 @@ function paintHair(painter: SpritePainter, colors: HeroColors): void {
   paintElfPonytail(painter, colors, 10, 5, 22);
 }
 
+function paintBoot(painter: SpritePainter, colors: HeroColors, shinX: number, footX: number): void {
+  painter.line(MATERIAL.leather, shinX, 31, footX, 35, 3);
+  painter.line(MATERIAL.leatherLight, shinX, 31, footX, 35);
+  painter.rect(MATERIAL.leather, footX, 35, 6, 3);
+  painter.rect(MATERIAL.leatherLight, footX, 35, 5, 1);
+  painter.rect(MATERIAL.boot, footX, 37, 6, 1);
+  painter.rect(colors.cloth, shinX - 1, 30, 4, 1);
+  painter.rect(colors.trim, shinX - 1, 31, 4, 1);
+}
+
 function paintLegs(painter: SpritePainter, colors: HeroColors): void {
-  painter.rect(colors.skin, 11, 24, 3, 6);
-  painter.rect(colors.skinShade, 13, 24, 1, 6);
-  painter.line(colors.skin, 16, 24, 18, 30, 3);
-  painter.line(colors.skinShade, 18, 24, 20, 30);
-  painter.rect(colors.clothShade, 11, 29, 3, 7);
-  painter.rect(colors.cloth, 11, 29, 3, 1);
-  painter.rect(colors.trim, 11, 30, 3, 1);
-  painter.rect(darken(colors.clothShade, 0.7), 13, 31, 1, 5);
-  painter.line(colors.clothShade, 18, 30, 19, 35, 3);
-  painter.rect(colors.cloth, 17, 29, 3, 1);
-  painter.rect(colors.trim, 17, 30, 3, 1);
-  painter.rect(darken(colors.clothShade, 0.7), 8, 36, 6, 2);
-  painter.rect(darken(colors.clothShade, 0.7), 17, 36, 7, 2);
-  painter.rect(colors.cloth, 8, 36, 6, 1);
-  painter.rect(colors.cloth, 17, 36, 7, 1);
+  painter.line(colors.skinShade, 12, 24, 10, 31, 3);
+  painter.line(colors.skin, 11, 24, 9, 31, 2);
+  painter.line(colors.skinShade, 16, 24, 19, 31, 3);
+  painter.line(colors.skin, 15, 24, 18, 31, 2);
+  paintBoot(painter, colors, 8, 6);
+  paintBoot(painter, colors, 18, 19);
 }
 
 function paintOutfit(painter: SpritePainter, colors: HeroColors): void {
@@ -64,18 +66,26 @@ function paintOutfit(painter: SpritePainter, colors: HeroColors): void {
   painter.span(colors.clothShade, CENTER_X - 4, CENTER_X + 4, 22);
 }
 
-function paintBowAndArrow(painter: SpritePainter, colors: HeroColors): void {
+const RELOAD_ARROW_FROM_X = 17;
+
+// Ready: the string is drawn back with the arrow nocked. Released: the string springs straight and the arrow is gone.
+// Reload: the string is straight and a new arrow slides onto the bow.
+function paintBowAndArrow(painter: SpritePainter, colors: HeroColors, pose: HeroPose): void {
   const bowX = (row: number): number => BOW_GRIP_X - Math.round((Math.abs(row - ARROW_Y) / 10) ** 2 * 4);
   for (let row = BOW_TOP_Y; row <= BOW_BOTTOM_Y; row++) {
     painter.dot(colors.trim, bowX(row), row);
     painter.dot(colors.clothShade, bowX(row) + 1, row);
   }
   painter.rect(colors.cloth, BOW_GRIP_X - 1, ARROW_Y - 2, 3, 5);
-  painter.line(BOW_STRING, bowX(BOW_TOP_Y), BOW_TOP_Y, STRING_HAND_X, ARROW_Y);
-  painter.line(BOW_STRING, bowX(BOW_BOTTOM_Y), BOW_BOTTOM_Y, STRING_HAND_X, ARROW_Y);
-  painter.rect(ARROW_SHAFT, STRING_HAND_X, ARROW_Y, 15, 1);
-  painter.rect(colors.trim, STRING_HAND_X, ARROW_Y - 1, 2, 1);
-  painter.rect(colors.trim, STRING_HAND_X, ARROW_Y + 1, 2, 1);
+  const isDrawn = pose === 'ready' || pose === 'charge';
+  const stringHandX = isDrawn ? STRING_HAND_X : bowX(ARROW_Y);
+  painter.line(BOW_STRING, bowX(BOW_TOP_Y), BOW_TOP_Y, stringHandX, ARROW_Y);
+  painter.line(BOW_STRING, bowX(BOW_BOTTOM_Y), BOW_BOTTOM_Y, stringHandX, ARROW_Y);
+  if (pose === 'released') return;
+  const arrowFromX = isDrawn ? STRING_HAND_X : RELOAD_ARROW_FROM_X;
+  painter.rect(ARROW_SHAFT, arrowFromX, ARROW_Y, BOW_GRIP_X + 3 - arrowFromX, 1);
+  painter.rect(colors.trim, arrowFromX, ARROW_Y - 1, 2, 1);
+  painter.rect(colors.trim, arrowFromX, ARROW_Y + 1, 2, 1);
   painter.rect('#e8eef4', BOW_GRIP_X + 3, ARROW_Y, 3, 1);
   painter.dot('#e8eef4', BOW_GRIP_X + 3, ARROW_Y - 1);
 }
@@ -91,7 +101,7 @@ function paintArms(painter: SpritePainter, colors: HeroColors): void {
   painter.rect(colors.trim, 8, 13, 1, 2);
 }
 
-export function drawArcherSprite(colors: HeroColors): HTMLCanvasElement {
+export function drawArcherSprite(colors: HeroColors, pose: HeroPose = 'ready'): HTMLCanvasElement {
   const art = createHeroCanvas(ARCHER_SPRITE_SIZE.width, ARCHER_SPRITE_SIZE.height);
   const painter = createSpritePainter(art, OUTLINE_MARGIN, OUTLINE_MARGIN);
   paintArcherCloak(painter, colors, { centerX: CENTER_X, shoulderY: 12, hemY: 33, shoulderHalfWidth: 5, hemHalfWidth: 7, hemSway: 3 });
@@ -99,10 +109,10 @@ export function drawArcherSprite(colors: HeroColors): HTMLCanvasElement {
   paintHair(painter, colors);
   paintLegs(painter, colors);
   paintOutfit(painter, colors);
+  paintArcherMantle(painter, colors, CENTER_X + 1, 11, 5);
+  paintBowAndArrow(painter, colors, pose);
   paintElfHead(painter, colors, CENTER_X, 1);
   paintArms(painter, colors);
-  paintBowAndArrow(painter, colors);
-  painter.rect(lighten(colors.cloth), CENTER_X - 4, 12, 9, 1);
   addHeroOutline(art);
   return art.canvas;
 }
