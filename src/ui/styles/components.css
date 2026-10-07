@@ -709,12 +709,12 @@
 }
 
 .bar-strength .bar-fill { background: var(--crimson); }
-.bar-skill .bar-fill { background: var(--green); }
-.bar-magic .bar-fill { background: var(--blue); }
+.bar-agility .bar-fill { background: var(--green); }
+.bar-intelligence .bar-fill { background: var(--blue); }
 .bar-hp .bar-fill { background: var(--log-taken); }
 .bar-defence .bar-fill { background: var(--silver); }
 .bar-resistance .bar-fill { background: var(--upgrade-4); }
-.bar-speed .bar-fill { background: var(--gold); }
+.bar-attackSpeed .bar-fill { background: var(--gold); }
 
 .growth-gain {
   margin-left: 6px;

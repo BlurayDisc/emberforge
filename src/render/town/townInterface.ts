@@ -12,11 +12,10 @@ const ARROW_WIDTH = 12;
 const ARROW_HEIGHT = 20;
 const ARROW_STRIP_WIDTH = 26;
 const ARROW_EDGE_GAP = 3;
-const ARROW_SLIDE_FRACTION = 0.7;
 const ARROW_BOB_PER_SECOND = 2.5;
 const TITLE_FONT_SIZE = 10;
 const TITLE_MARGIN = 5;
-const MINIMUM_VIEW_WIDTH_FOR_TITLE = 250;
+const MINIMUM_VIEW_WIDTH_FOR_TITLE = 170;
 const HINT_FONT_SIZE = 8;
 const HINT_MARGIN_BOTTOM = 14;
 const HINT_SIDE_MARGIN = 14;
@@ -51,7 +50,7 @@ interface ArrowButton {
 }
 
 // The parts of the town screen that stay fixed on the glass while the town scrolls: the two arrows, the name of the area and the hint.
-export function createTownInterface(textFactory: UiTextFactory, scroll: TownScroll, input: TownInput, viewWidth: () => number, screenWidth: number): TownInterface {
+export function createTownInterface(textFactory: UiTextFactory, scroll: TownScroll, input: TownInput, viewWidth: () => number): TownInterface {
   const root = new Container();
   const titleSlot = new Container();
   const hintSlot = new Container();
@@ -65,7 +64,7 @@ export function createTownInterface(textFactory: UiTextFactory, scroll: TownScro
     sprite.alpha = 0.85;
     strip.addChild(sprite);
     strip.on('pointertap', () => {
-      if (!input.isDragging()) scroll.slideBy(direction * viewWidth() * ARROW_SLIDE_FRACTION);
+      if (!input.isDragging()) scroll.slideToPage(scroll.targetPage() + direction);
     });
     root.addChild(strip);
     return { strip, sprite, direction };
@@ -120,7 +119,7 @@ export function createTownInterface(textFactory: UiTextFactory, scroll: TownScro
     },
     layout,
     update: (elapsedSeconds) => {
-      const centerIndex = Math.max(0, Math.min(screenTitles.length - 1, Math.floor((scroll.scrollLeft() + viewWidth() / 2) / screenWidth)));
+      const centerIndex = Math.min(screenTitles.length - 1, scroll.nearestPage());
       if (centerIndex !== shownTitleIndex) drawTitle(centerIndex);
       const bob = Math.floor(elapsedSeconds * ARROW_BOB_PER_SECOND) % 2;
       for (const arrow of arrows) {

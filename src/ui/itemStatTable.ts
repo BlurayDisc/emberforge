@@ -6,7 +6,7 @@ import { element } from './dom';
 import { materialName } from './displayNames';
 import { t } from './i18n';
 
-const WEAPON_TABLE_STATS: readonly string[] = ['physicalDamage', 'magicalDamage', 'speed'];
+const WEAPON_TABLE_STATS: readonly string[] = ['physicalDamage', 'magicalDamage', 'attackSpeed'];
 const DEFENCE_TABLE_STATS: readonly string[] = ['hp', 'defence', 'resistance'];
 const WEAPON_GEAR_TYPES: readonly GearType[] = ['sword', 'axe', 'greataxe', 'mace', 'maul', 'dagger', 'knuckles', 'bow', 'staff', 'wand', 'quiver', 'tome'];
 
@@ -19,6 +19,7 @@ function isPercentStat(stat: string): boolean {
 }
 
 export function formatStatValue(stat: string, value: number): string {
+  if (stat === 'attackSeconds') return `${value} s`;
   return isPercentStat(stat) ? `${value}%` : String(value);
 }
 
@@ -54,12 +55,12 @@ function extraBaseStatLines(stats: Record<string, string>, gearType: GearType): 
 export function createSetBonusLine(materialId: string): HTMLElement[] {
   const bonus = requireById(MATERIALS, materialId).setBonus;
   if (!bonus) return [];
-  return [element('div', 'affix-line affix-material', t('item.setBonus', { material: materialName(materialId), value: bonus.value, stat: statName(bonus.stat) }))];
+  return [element('div', 'affix-line affix-material', t('item.setBonus', { material: materialName(materialId), value: formatStatValue(bonus.stat, bonus.value), stat: statName(bonus.stat) }))];
 }
 
 export function createItemStatTable(item: Item): HTMLElement {
   const baseValues: Record<string, string> = {};
-  for (const [stat, value] of Object.entries(item.baseStats as StatBonuses)) baseValues[stat] = String(value);
+  for (const [stat, value] of Object.entries(item.baseStats as StatBonuses)) baseValues[stat] = formatStatValue(stat, value);
   const affixLines = item.affixes.map((affix) =>
     element('div', `affix-line affix-${affix.kind}`, `${t(`affix.${affix.affixId}.short`)}: +${formatStatValue(affix.stat, affix.value)} ${statName(affix.stat)}`),
   );
@@ -73,6 +74,6 @@ function formatRange([low, high]: [number, number]): string {
 export function createRecipeStatTable(baseId: string, ranges: Record<string, [number, number]>): HTMLElement {
   const { gearType } = requireById(BASE_ITEMS, baseId);
   const rangeText: Record<string, string> = {};
-  for (const [stat, range] of Object.entries(ranges)) rangeText[stat] = formatRange(range);
+  for (const [stat, range] of Object.entries(ranges)) rangeText[stat] = formatRange(range) + (isPercentStat(stat) ? '%' : '');
   return createTableWithExtras(gearType, (stat) => rangeText[stat], extraBaseStatLines(rangeText, gearType));
 }

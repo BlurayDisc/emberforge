@@ -1,8 +1,13 @@
 import spellsData from '../../data/spells.json';
 import type { ClassId } from '../model/hero';
 import type { SpellDefinition } from '../model/spell';
+import { DEFAULT_CAST_SECONDS } from './balance/spells';
 
-export const SPELLS = (spellsData as unknown as readonly SpellDefinition[]).filter((spell) => spell.reservedFor === undefined);
+type SpellRecord = Omit<SpellDefinition, 'castSeconds'> & { castSeconds?: number };
+
+export const SPELLS: readonly SpellDefinition[] = (spellsData as unknown as readonly SpellRecord[])
+  .filter((spell) => spell.reservedFor === undefined)
+  .map((spell) => ({ ...spell, castSeconds: spell.castSeconds ?? DEFAULT_CAST_SECONDS }));
 
 export function findSpell(spellId: string): SpellDefinition | undefined {
   return SPELLS.find((spell) => spell.id === spellId);

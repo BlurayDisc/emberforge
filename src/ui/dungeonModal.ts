@@ -6,6 +6,7 @@ import type { GameStore } from '../game';
 import { dungeonBackdropCanvas, monsterSpriteCanvas } from './artProviders';
 import { createDungeonHeroPicker } from './dungeonHeroPicker';
 import { actionButton, element } from './dom';
+import { listOf, materialName } from './displayNames';
 import { t } from './i18n';
 import { openModal, type ModalHandle } from './modal';
 import { monsterRankTag, openMonsterDetail } from './monsterDetailModal';
@@ -24,6 +25,11 @@ export interface DungeonViewOptions {
 
 function monsterIdsOf(dungeon: DungeonDefinition): string[] {
   return [...dungeon.monsterIds, ...(dungeon.rareMonsterId ? [dungeon.rareMonsterId] : []), ...(dungeon.bossMonsterId ? [dungeon.bossMonsterId] : [])];
+}
+
+function dropNamesOf(monsters: readonly MonsterDefinition[]): string[] {
+  const materialIds = new Set(monsters.flatMap((monster) => monster.drops.map((drop) => drop.materialId)));
+  return [...materialIds].map((materialId) => materialName(materialId));
 }
 
 function createMonsterTile(monster: MonsterDefinition, dungeon: DungeonDefinition, options: DungeonViewOptions): HTMLElement {
@@ -63,6 +69,7 @@ export function openDungeonView(dungeonId: string, options: DungeonViewOptions):
         element('div', 'card-text small', t('dungeons.levelRange', { min: dungeon.minimumHeroLevel, max: dungeon.recommendedMaxLevel })),
         element('div', 'section-title', t('dungeons.creeps')),
         element('div', 'monster-tiles', ...monsters.map((monster) => createMonsterTile(monster, dungeon, options))),
+        element('div', 'card-text small dungeon-drops', t('dungeons.dropsOverview', { list: listOf(dropNamesOf(monsters)) })),
       ),
     ),
     ...(picker ? [picker.element] : []),

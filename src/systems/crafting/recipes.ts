@@ -64,7 +64,8 @@ function createRecipe(base: BaseItemDefinition, tier: number, setMaterial: Mater
 export function listRecipes(tier: number): Recipe[] {
   const setMaterials = MATERIALS.filter((material) => material.tier === tier && material.setBonus !== undefined);
   return BASE_ITEMS.flatMap((base) => {
-    const canMakeSetPieces = SET_RECIPE_SLOTS.includes(base.slot) && base.craftLevelOffset >= SET_RECIPE_FIRST_BASE_CRAFT_LEVEL_OFFSET;
+    // Armour of every weight has set recipes. A weapon or off-hand item has them only when it does not open at the first crafter level.
+    const canMakeSetPieces = SET_RECIPE_SLOTS.includes(base.slot) && (base.armourWeight !== null || base.craftLevelOffset >= SET_RECIPE_FIRST_BASE_CRAFT_LEVEL_OFFSET);
     const variants = [null, ...(canMakeSetPieces ? setMaterials : [])];
     return variants.flatMap((setMaterial) => {
       const recipe = createRecipe(base, tier, setMaterial);

@@ -1,6 +1,6 @@
 import { BASE_ITEMS, type BaseItemDefinition } from '../../content/baseItems';
+import { baseStatAtItemLevel } from '../../content/baseItemStats';
 import {
-  BASE_STAT_GROWTH_PER_ITEM_LEVEL,
   BASE_STAT_SPREAD_FRACTION,
   QUALITY_WEIGHTS,
   RARE_NAME_FIRST_PARTS,
@@ -38,17 +38,18 @@ function rollQuality(random: Random): CraftableQuality {
   return random.pickWeighted(qualities, (quality) => QUALITY_WEIGHTS[quality]);
 }
 
-// Each upgrade level counts as one more item level for base stats and value. The item level that limits who can equip it does not change.
-function rollBaseStats(base: BaseItemDefinition, effectiveItemLevel: number, random: Random): StatBonuses {
-  const levelFactor = 1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (effectiveItemLevel - 1);
+// Every upgrade step adds a flat +1 to the main stat of the base item. Neither the item level nor the other stats change.
+function rollBaseStats(base: BaseItemDefinition, itemLevel: number, upgradeLevel: number, random: Random): StatBonuses {
   const rolled: StatBonuses = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[keyof StatBonuses, number]>) {
+    const upgradeBonus = stat === base.mainStat ? upgradeLevel : 0;
     if (UNSCALED_BASE_STATS.includes(stat)) {
-      rolled[stat] = value;
+      rolled[stat] = value + upgradeBonus;
       continue;
     }
+    const { average, minimum } = baseStatAtItemLevel(base, stat, value, itemLevel);
     const spread = 1 + (random.nextFloat() * 2 - 1) * BASE_STAT_SPREAD_FRACTION;
-    rolled[stat] = Math.max(1, Math.round(value * levelFactor * spread));
+    rolled[stat] = Math.max(minimum, Math.round(average * spread)) + upgradeBonus;
   }
   return rolled;
 }
@@ -91,7 +92,7 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
     tier: request.tier,
     width: base.width,
     height: base.height,
-    baseStats: rollBaseStats(base, itemLevel + request.upgradeLevel, random),
+    baseStats: rollBaseStats(base, itemLevel, request.upgradeLevel, random),
     affixes,
     sellValueCopper: computeSellValue(request.craftingCostCopper, request.ingredientCount, quality, affixes.length, request.upgradeLevel),
   };
@@ -99,16 +100,14 @@ export function generateCraftedItem(request: CraftedItemRequest, random: Random)
 
 export function previewBaseStatRanges(baseId: string, itemLevel: number): Record<string, [number, number]> {
   const base = requireById(BASE_ITEMS, baseId);
-  const levelFactor = 1 + BASE_STAT_GROWTH_PER_ITEM_LEVEL * (itemLevel - 1);
   const ranges: Record<string, [number, number]> = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[string, number]>) {
     if (UNSCALED_BASE_STATS.includes(stat)) {
       ranges[stat] = [value, value];
       continue;
     }
-    const lowest = value * levelFactor * (1 - BASE_STAT_SPREAD_FRACTION);
-    const highest = value * levelFactor * (1 + BASE_STAT_SPREAD_FRACTION);
-    ranges[stat] = [Math.max(1, Math.round(lowest)), Math.max(1, Math.round(highest))];
+    const { average, minimum } = baseStatAtItemLevel(base, stat as keyof StatBonuses, value, itemLevel);
+    ranges[stat] = [Math.max(minimum, Math.round(average * (1 - BASE_STAT_SPREAD_FRACTION))), Math.max(minimum, Math.round(average * (1 + BASE_STAT_SPREAD_FRACTION)))];
   }
   return ranges;
 }

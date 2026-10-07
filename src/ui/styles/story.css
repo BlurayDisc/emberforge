@@ -65,3 +65,21 @@
 .language-choice-button {
   font-size: 20px;
 }
+
+/* The first screen while the game draws its art. The bar has a fixed width, so nothing moves while it fills. */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  min-height: 100dvh;
+  background: var(--wood-900);
+  color: var(--gold);
+}
+
+.loading-screen .bar {
+  width: min(280px, 70vw);
+  height: 12px;
+}

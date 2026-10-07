@@ -6,4 +6,5 @@ export const NORMAL_SPELL_SLOT_COUNT = data.normalSlotCount;
 export const SPELL_LEARN_COST_CURVE: readonly CurveAnchor[] = data.learnCostAnchors.map(({ level, copper }) => ({ x: level, y: copper }));
 export const ULTIMATE_LEARN_COST_FACTOR = data.ultimateCostFactor;
 export const ULTIMATE_OPENING_DELAY_SECONDS = data.ultimateOpeningDelaySeconds;
+export const DEFAULT_CAST_SECONDS = data.defaultCastSeconds;
 export const HEAL_SPELL_CAST_BELOW_HEALTH_FRACTION = data.healCastBelowHealthFraction;

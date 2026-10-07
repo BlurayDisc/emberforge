@@ -1,6 +1,8 @@
 import { Container } from 'pixi.js';
 import type { BuildingDefinition } from '../content/buildings';
-import { LOGICAL_WIDTH, TOWN_WIDTH } from '../kernel/stageSize';
+import { TOWN_SCREEN_COUNT, TOWN_WIDTH } from '../kernel/stageSize';
+import { createAnimalChatter } from './animalChatter';
+import { createAnimalPetting } from './animalPetting';
 import { createBystanders, type BystanderSpeech, type VisibleRange } from './bystanders';
 import type { PixelStage } from './pixelStage';
 import { createTownAnimals } from './townAnimals';
@@ -15,6 +17,7 @@ import { createTownSigns, type TownHooks } from './town/townSigns';
 import { createTownSpeechBubble } from './town/townSpeechBubble';
 import { createTownWorld } from './town/townWorld';
 import { createUiTextFactory } from './uiText';
+import { createRandom } from '../kernel/random';
 
 export type { TownHooks };
 
@@ -34,7 +37,8 @@ export interface TownView {
   setGuide(buildingId: string | null): void;
 }
 
-const START_CENTER_X = TOWN_WIDTH / 2;
+const START_PAGE = 1;
+const ANIMAL_HEART_DRAW_ORDER = 95000;
 
 export function createTownView(stage: PixelStage, buildings: readonly BuildingDefinition[], hooks: TownHooks): TownView {
   const { pixi } = stage;
@@ -43,7 +47,7 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
   pixi.views.addChild(root);
 
   const textFactory = createUiTextFactory(pixi.renderScale, pixi.onViewResize);
-  const scroll = createTownScroll(TOWN_WIDTH, pixi.viewWidth());
+  const scroll = createTownScroll(TOWN_WIDTH, TOWN_SCREEN_COUNT, pixi.viewWidth());
   const world = createTownWorld(buildings);
   root.addChild(world.container);
 
@@ -52,7 +56,7 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
   const speechBubble = createTownSpeechBubble(world.container, textFactory);
   const mill = buildings.find((building) => building.id === 'mill');
   const millStatus = mill ? createTownMillStatus(world.container, mill, textFactory, input, hooks.collectMill) : null;
-  const townInterface = createTownInterface(textFactory, scroll, input, pixi.viewWidth, LOGICAL_WIDTH);
+  const townInterface = createTownInterface(textFactory, scroll, input, pixi.viewWidth);
   root.addChild(townInterface.root);
 
   const visibleRange = (): VisibleRange => ({ from: scroll.scrollLeft(), to: scroll.scrollLeft() + pixi.viewWidth() });
@@ -61,7 +65,10 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
     else speechBubble.show(speech, hooks.pickSpeechText());
   };
   const bystanders = createBystanders(world.container, TOWN_ROADS, 5, showSpeech, visibleRange);
-  const animals = createTownAnimals(world.container, TOWN_ROADS, 5);
+  const canTouchAnimals = (): boolean => !input.isDragging() && !hooks.isInputBlocked();
+  const petting = createAnimalPetting(world.container, hooks.animalVoice, canTouchAnimals, ANIMAL_HEART_DRAW_ORDER);
+  const animals = createTownAnimals(world.container, TOWN_ROADS, 5, petting, visibleRange);
+  const animalChatter = createAnimalChatter(createRandom(5).fork('animal-chatter'), hooks.animalVoice, animals.visibleKinds, hooks.isInputBlocked);
   const ambience = createTownAmbience(world.container, buildings, world.buildingSprites);
   const guide = createTownGuide(world.container, buildings);
 
@@ -80,6 +87,8 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
     world.container.position.x = -scroll.scrollLeft();
     bystanders.update(elapsedSeconds);
     animals.update(elapsedSeconds);
+    petting.update(elapsedSeconds);
+    animalChatter.update(elapsedSeconds);
     ambience.update(elapsedSeconds, deltaSeconds);
     guide.update(elapsedSeconds);
     townInterface.update(elapsedSeconds);
@@ -96,7 +105,7 @@ export function createTownView(stage: PixelStage, buildings: readonly BuildingDe
       stage.setLayout('fill');
       scroll.setViewWidth(pixi.viewWidth());
       // The first time, the town opens with the castle gate in the middle.
-      if (!hasBeenShown) scroll.jumpTo(START_CENTER_X - pixi.viewWidth() / 2);
+      if (!hasBeenShown) scroll.jumpToPage(START_PAGE);
       hasBeenShown = true;
       townInterface.layout();
     },

@@ -1,4 +1,4 @@
-import { CRITICAL_CHANCE_PER_SKILL_POINT } from '../../content/balance/battle';
+import { MINIMUM_ATTACK_SPEED_FACTOR } from '../../content/balance/battle';
 import type { AttackKind, BattleSide, BattleUnit } from '../../model/battle';
 import type { SpellStatus } from '../../model/spell';
 
@@ -6,7 +6,6 @@ import type { SpellStatus } from '../../model/spell';
 export interface BurnSource {
   sourceId: string;
   sourceAttack: number;
-  sourceLevel: number;
   nextTickAtSeconds: number;
 }
 
@@ -48,24 +47,27 @@ export function statusStrength(combatant: Combatant, status: SpellStatus, timeSe
   return combatant.statuses.reduce((strongest, active) => (active.status === status && active.expiresAtSeconds > timeSeconds ? Math.max(strongest, active.strength) : strongest), 0);
 }
 
-// Weaken on the attacker and guard on the target both cut the damage of a hit. Sunder on the target raises it. Hex raises it for magic damage only.
+// Weaken on the attacker cuts the damage of a hit before the armour. Hex on the target raises it, for magic damage only.
 export function damageFactorBetween(attacker: Combatant, target: Combatant, timeSeconds: number, damageKind: AttackKind = attacker.unit.attackKind): number {
   const hexFactor = damageKind === 'magic' ? 1 + statusStrength(target, 'hex', timeSeconds) : 1;
-  return (1 - statusStrength(attacker, 'weaken', timeSeconds)) * (1 - statusStrength(target, 'guard', timeSeconds)) * (1 + statusStrength(target, 'sunder', timeSeconds)) * hexFactor;
+  return (1 - statusStrength(attacker, 'weaken', timeSeconds)) * hexFactor;
 }
 
-export function defenceFactorOf(combatant: Combatant, timeSeconds: number): number {
-  return 1 + statusStrength(combatant, 'fortify', timeSeconds);
+// Fortify and Guard raise the flat armour of the target and Sunder cuts it, all as shares of the armour value. Fortify only touches Defence (physical hits).
+export function armourFactorOf(target: Combatant, damageKind: AttackKind, timeSeconds: number): number {
+  const fortify = damageKind === 'physical' ? statusStrength(target, 'fortify', timeSeconds) : 0;
+  return Math.max(0, 1 + fortify + statusStrength(target, 'guard', timeSeconds) - statusStrength(target, 'sunder', timeSeconds));
 }
 
-// Empower adds a share of the main attribute of the unit. Skill also gives critical chance, so an Empowered Archer crits more.
-export function empowerBonusesOf(combatant: Combatant, timeSeconds: number): { attackBonus: number; critChanceBonus: number } {
-  const strength = statusStrength(combatant, 'empower', timeSeconds);
-  const { mainAttribute, mainAttributeValue, skill } = combatant.unit;
-  return {
-    attackBonus: strength * mainAttributeValue,
-    critChanceBonus: mainAttribute === 'skill' ? strength * skill * CRITICAL_CHANCE_PER_SKILL_POINT : 0,
-  };
+// Empower adds a share of the main attribute of the unit to its attack.
+export function empowerAttackBonusOf(combatant: Combatant, timeSeconds: number): number {
+  return statusStrength(combatant, 'empower', timeSeconds) * combatant.unit.mainAttributeValue;
+}
+
+// Haste and Slow join the Agility and gear bonus in one pool. The pool never drops below the minimum factor, so the attack time stays finite.
+export function attackSpeedFactorOf(combatant: Combatant, timeSeconds: number): number {
+  const pool = 1 + combatant.unit.attackSpeedBonus + statusStrength(combatant, 'haste', timeSeconds) - statusStrength(combatant, 'slow', timeSeconds);
+  return Math.max(MINIMUM_ATTACK_SPEED_FACTOR, pool);
 }
 
 // A new status of the same kind replaces the old one, so statuses never stack.

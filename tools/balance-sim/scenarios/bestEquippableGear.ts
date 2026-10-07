@@ -24,17 +24,23 @@ function recipeSlot(recipe: Recipe): ItemSlot {
 // For each slot the hero takes the recipe with the highest item level that its class can use and its level can equip.
 // The craft rolls quality and affixes as in the game. Set recipes are left out, so the result is the plain best gear.
 // A floor profile re-rolls the craft with a new fork until the item has the wanted quality, so the result stays deterministic.
-export function equipBestGear(hero: Hero, random: Random, floorProfile: GearFloorProfile | null = null): Hero {
+export interface GearRule {
+  slots: readonly ItemSlot[];
+  quality: 'common' | 'uncommon' | 'magic' | 'rare' | null;
+}
+
+export function equipBestGear(hero: Hero, random: Random, floorProfile: GearFloorProfile | null = null, gearRule: GearRule | null = null): Hero {
   const tier = Math.ceil(hero.level / LEVELS_PER_BRACKET);
   const plainRecipes = listRecipes(tier).filter((recipe) => recipe.setMaterialId === null && recipe.itemLevel <= hero.level);
-  return SLOT_ORDER.reduce((equippedHero, slot, index) => {
+  const slotOrder = gearRule === null ? SLOT_ORDER : SLOT_ORDER.filter((slot) => gearRule.slots.includes(slot));
+  return slotOrder.reduce((equippedHero, slot, index) => {
     const bestRecipe = plainRecipes
       .filter((recipe) => recipeSlot(recipe) === slot && classIdsThatCanUse(requireById(BASE_ITEMS, recipe.baseId)).includes(hero.classId))
       .reduce<Recipe | null>((best, recipe) => (best === null || recipe.itemLevel > best.itemLevel ? recipe : best), null);
     if (bestRecipe === null) return equippedHero;
     const craft = (attempt: number): Item =>
       generateCraftedItem(
-        { itemId: `best-${hero.id}-${index}`, baseId: bestRecipe.baseId, tier, setMaterialId: null, itemLevel: bestRecipe.itemLevel, upgradeLevel: 0, craftingCostCopper: 10, ingredientCount: 1 },
+        { itemId: `best-${hero.id}-${index}`, baseId: bestRecipe.baseId, tier, setMaterialId: null, itemLevel: bestRecipe.itemLevel, upgradeLevel: 0, craftingCostCopper: 10, ingredientCount: 1, ...(gearRule?.quality ? { quality: gearRule.quality } : {}) },
         random.fork(attempt === 0 ? `best-gear-${index}` : `best-gear-${index}-attempt-${attempt}`),
       );
     const item = floorProfile === null ? craft(0) : craftMatchingFloor(craft, index < floorProfile.prefixedItemsPerHero);

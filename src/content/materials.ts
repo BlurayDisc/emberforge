@@ -1,10 +1,10 @@
 import materialsData from '../../data/materials.json';
 import type { MaterialCategory } from '../model/material';
-import type { StatBlock } from '../model/statBlock';
+import type { AffixStat } from '../model/item';
 
 // A set material is dropped by one dungeon. Armour crafted with it always gets this flat bonus.
 export interface SetBonus {
-  stat: keyof StatBlock;
+  stat: AffixStat;
   value: number;
 }
 

@@ -1,7 +1,6 @@
 import { BURN_TICK_SECONDS } from '../../content/balance/battle';
 import type { BattleEvent } from '../../model/battle';
-import { statusStrength, type Combatant } from './combatant';
-import { mitigationShare } from './damage';
+import { armourFactorOf, statusStrength, type Combatant } from './combatant';
 
 export interface DamageTaken {
   hpLost: number;
@@ -51,7 +50,7 @@ export function dodgeEvent(attacker: Combatant, struck: Combatant, timeSeconds: 
   };
 }
 
-// Burn is magic damage from the attack of the caster, cut by the Resistance of the target. It has no variance and no critical hit, so it is easy to read.
+// Burn is magic damage from the attack of the caster, minus the Resistance of the target. It has no swing and no critical hit, so it is easy to read.
 export function burnTickEvents(combatants: readonly Combatant[], timeSeconds: number): BattleEvent[] {
   const events: BattleEvent[] = [];
   for (const burning of combatants) {
@@ -60,9 +59,9 @@ export function burnTickEvents(combatants: readonly Combatant[], timeSeconds: nu
     if (!burn?.burn || burn.burn.nextTickAtSeconds > timeSeconds) continue;
     if (burn.burn.nextTickAtSeconds <= burn.expiresAtSeconds) {
       const source = combatants.find((candidate) => candidate.unit.id === burn.burn?.sourceId);
-      const statusFactor = (1 - statusStrength(burning, 'guard', timeSeconds)) * (1 + statusStrength(burning, 'sunder', timeSeconds)) * (1 + statusStrength(burning, 'hex', timeSeconds));
-      const rawDamage = burn.burn.sourceAttack * burn.strength * (1 - mitigationShare(burning.unit.resistance, burn.burn.sourceLevel)) * statusFactor;
-      const taken = takeDamage(burning, Math.max(1, Math.round(rawDamage)), timeSeconds);
+      const hexFactor = 1 + statusStrength(burning, 'hex', timeSeconds);
+      const resistance = burning.unit.resistance * armourFactorOf(burning, 'magic', timeSeconds);
+      const taken = takeDamage(burning, Math.max(1, Math.round(burn.burn.sourceAttack * burn.strength * hexFactor - resistance)), timeSeconds);
       events.push({
         timeSeconds,
         kind: 'attack',

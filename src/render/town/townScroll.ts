@@ -1,74 +1,84 @@
 const SLIDE_EASING_PER_SECOND = 9;
-const FLING_FRICTION_PER_SECOND = 4.5;
-const FLING_STOP_SPEED = 10;
+const SWIPE_SPEED_FOR_NEXT_PAGE = 120;
 
 export interface TownScroll {
   // The world pixel at the left edge of the view. Always a whole number.
   scrollLeft(): number;
   setViewWidth(viewWidth: number): void;
-  jumpTo(scrollLeft: number): void;
-  // Slides to a place a distance away.
-  slideBy(distance: number): void;
-  // Moves at once, as a finger drag does. A slide or a fling in progress stops.
+  // The page the view shows or slides to. A drag in progress does not change it until the finger lets go.
+  targetPage(): number;
+  // The page whose centre is nearest to the centre of the view.
+  nearestPage(): number;
+  jumpToPage(page: number): void;
+  slideToPage(page: number): void;
+  // Follows the finger. Stops a slide in progress.
   dragBy(distance: number): void;
-  // The finger lets go at this speed. The view coasts and slows down.
-  fling(pixelsPerSecond: number): void;
+  // The finger lets go at this speed. The view slides to the next page on a fast swipe, or to the nearest page.
+  release(pixelsPerSecond: number): void;
   canMove(direction: -1 | 1): boolean;
   // Returns true when the view moved.
   advance(deltaSeconds: number): boolean;
 }
 
-export function createTownScroll(worldWidth: number, initialViewWidth: number): TownScroll {
+// The town has a fixed number of pages. Each page is centred in the view, so a wide view also shows a little of its neighbours.
+export function createTownScroll(worldWidth: number, pageCount: number, initialViewWidth: number): TownScroll {
+  const pageWidth = worldWidth / pageCount;
   let viewWidth = initialViewWidth;
   let position = 0;
-  let slideTarget: number | null = null;
-  let velocity = 0;
+  let page = 0;
+  let isDragging = false;
+  let isSliding = false;
   const maximum = (): number => Math.max(0, worldWidth - viewWidth);
   const clamp = (value: number): number => Math.max(0, Math.min(maximum(), value));
-  const stopMotion = (): void => {
-    slideTarget = null;
-    velocity = 0;
-  };
+  const clampPage = (value: number): number => Math.max(0, Math.min(pageCount - 1, value));
+  const scrollLeftOfPage = (target: number): number => clamp(target * pageWidth + pageWidth / 2 - viewWidth / 2);
+  const nearestPage = (): number => clampPage(Math.floor((position + viewWidth / 2) / pageWidth));
 
   return {
     scrollLeft: () => Math.round(position),
     setViewWidth: (newViewWidth) => {
       viewWidth = newViewWidth;
-      position = clamp(position);
-      if (slideTarget !== null) slideTarget = clamp(slideTarget);
+      if (isDragging) position = clamp(position);
+      else position = scrollLeftOfPage(page);
+      isSliding = false;
     },
-    jumpTo: (scrollLeft) => {
-      stopMotion();
-      position = clamp(scrollLeft);
+    targetPage: () => page,
+    nearestPage,
+    jumpToPage: (target) => {
+      page = clampPage(target);
+      isDragging = false;
+      isSliding = false;
+      position = scrollLeftOfPage(page);
     },
-    slideBy: (distance) => {
-      velocity = 0;
-      slideTarget = clamp((slideTarget ?? position) + distance);
+    slideToPage: (target) => {
+      page = clampPage(target);
+      isDragging = false;
+      isSliding = true;
     },
     dragBy: (distance) => {
-      stopMotion();
-      position = clamp(position + distance);
+      if (!isDragging) page = nearestPage();
+      isDragging = true;
+      isSliding = false;
+      position = Math.max(scrollLeftOfPage(0), Math.min(scrollLeftOfPage(pageCount - 1), position + distance));
     },
-    fling: (pixelsPerSecond) => {
-      slideTarget = null;
-      velocity = pixelsPerSecond;
+    release: (pixelsPerSecond) => {
+      if (!isDragging) return;
+      isDragging = false;
+      isSliding = true;
+      if (Math.abs(pixelsPerSecond) >= SWIPE_SPEED_FOR_NEXT_PAGE) page = clampPage(page + Math.sign(pixelsPerSecond));
+      else page = nearestPage();
     },
-    canMove: (direction) => (direction < 0 ? Math.round(position) > 0 : Math.round(position) < maximum()),
+    canMove: (direction) => maximum() > 0 && clampPage(page + direction) !== page,
     advance: (deltaSeconds) => {
+      if (!isSliding) return false;
       const before = Math.round(position);
-      if (velocity !== 0) {
-        position = clamp(position + velocity * deltaSeconds);
-        velocity *= Math.exp(-FLING_FRICTION_PER_SECOND * deltaSeconds);
-        if (Math.abs(velocity) < FLING_STOP_SPEED || position === 0 || position === maximum()) velocity = 0;
-      } else if (slideTarget !== null) {
-        const remaining = slideTarget - position;
-        const step = Math.max(1, Math.abs(remaining) * Math.min(1, deltaSeconds * SLIDE_EASING_PER_SECOND));
-        if (Math.abs(remaining) <= step) {
-          position = slideTarget;
-          slideTarget = null;
-        } else {
-          position += Math.sign(remaining) * step;
-        }
+      const remaining = scrollLeftOfPage(page) - position;
+      const step = Math.max(1, Math.abs(remaining) * Math.min(1, deltaSeconds * SLIDE_EASING_PER_SECOND));
+      if (Math.abs(remaining) <= step) {
+        position = scrollLeftOfPage(page);
+        isSliding = false;
+      } else {
+        position += Math.sign(remaining) * step;
       }
       return Math.round(position) !== before;
     },

@@ -1,4 +1,4 @@
-import { MAXIMUM_CRITICAL_CHANCE, MAXIMUM_DAMAGE_CUT, MITIGATION_BASE, MITIGATION_PER_ATTACKER_LEVEL } from '../../content/balance/battle';
+import { MAXIMUM_CRITICAL_CHANCE } from '../../content/balance/battle';
 import type { Random } from '../../kernel/random';
 import type { AttackKind, BattleUnit } from '../../model/battle';
 
@@ -11,31 +11,30 @@ export interface DamageModifiers {
   // The part of the attacker's attack that the hit uses. A basic attack uses all of it.
   power: number;
   damageKind: AttackKind;
-  // Statuses from both sides, already combined.
+  // Weaken and Hex, already combined. They change the damage before the armour is taken off.
   statusFactor: number;
-  // Fortify on the target. It multiplies the Defence that the target uses against this hit.
-  targetDefenceFactor: number;
-  // Damage added to the base of the hit before the target's armour reduces it (for example a share of the caster's Defence).
+  // Fortify, Guard and Sunder on the target. It multiplies the flat armour that the target uses against this hit.
+  targetArmourFactor: number;
+  // Damage added to the base of the hit before the swing and the critical multiplier (for example a share of the caster's Defence).
   bonusDamage: number;
-  // Empower on the attacker: attack added before the power is applied, and critical chance added to the chance of the attacker.
+  // Empower on the attacker: attack added before the power is applied.
   attackBonus: number;
-  critChanceBonus: number;
 }
 
-// The share of a hit that armour (or resistance) cuts. A higher level attacker cuts through armour more easily.
-// The cut never passes the maximum, so a hero is never close to immune, even with Fortify.
-export function mitigationShare(mitigationStat: number, attackerLevel: number): number {
-  return Math.min(MAXIMUM_DAMAGE_CUT, mitigationStat / (mitigationStat + MITIGATION_BASE + MITIGATION_PER_ATTACKER_LEVEL * attackerLevel));
+// The flat armour that a hit meets: Defence for a physical hit (minus the armour penetration of the attacker), Resistance for a magical hit.
+export function armourAgainst(attacker: BattleUnit, target: BattleUnit, damageKind: AttackKind, targetArmourFactor: number): number {
+  const penetration = damageKind === 'magic' ? 0 : attacker.armourPenetration ?? 0;
+  return (damageKind === 'magic' ? target.resistance : target.defence) * targetArmourFactor * (1 - penetration);
 }
 
+// hit = attack x swing x spell power x critical multiplier, minus the flat armour. A hit never does less than 1. The result is rounded once, at the end.
 export function rollDamage(attacker: BattleUnit, target: BattleUnit, random: Random, modifiers: Partial<DamageModifiers> = {}): DamageRoll {
-  const { power = 1, damageKind = attacker.attackKind, statusFactor = 1, targetDefenceFactor = 1, bonusDamage = 0, attackBonus = 0, critChanceBonus = 0 } = modifiers;
-  const mitigationStat = damageKind === 'magic' ? target.resistance : target.defence * targetDefenceFactor * (1 - (attacker.armourPenetration ?? 0));
-  const reduction = mitigationShare(mitigationStat, attacker.level);
-  // Each unit has its own swing: a steady class hits for 90-110% of its damage, a wild class for 80-120%.
-  const variance = 1 + (random.nextFloat() * 2 - 1) * attacker.damageVarianceFraction;
-  const isCritical = random.chance(Math.min(MAXIMUM_CRITICAL_CHANCE, attacker.critChance + critChanceBonus));
+  const { power = 1, damageKind = attacker.attackKind, statusFactor = 1, targetArmourFactor = 1, bonusDamage = 0, attackBonus = 0 } = modifiers;
+  // Each unit has its own swing: a steady class hits for 90-110% of its attack, a wild class for 80-120%.
+  const swing = 1 + (random.nextFloat() * 2 - 1) * attacker.damageVarianceFraction;
+  const isCritical = random.chance(Math.min(MAXIMUM_CRITICAL_CHANCE, attacker.critChance));
   const criticalMultiplier = isCritical ? attacker.criticalDamageMultiplier : 1;
-  const amount = Math.max(1, Math.round(((attacker.attack + attackBonus) * power + bonusDamage) * (1 - reduction) * variance * criticalMultiplier * statusFactor));
+  const hitBeforeArmour = ((attacker.attack + attackBonus) * power + bonusDamage) * swing * criticalMultiplier * statusFactor;
+  const amount = Math.max(1, Math.round(hitBeforeArmour - armourAgainst(attacker, target, damageKind, targetArmourFactor)));
   return { amount, isCritical };
 }

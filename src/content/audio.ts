@@ -38,6 +38,12 @@ export interface SpellSoundSet {
   debuff?: string;
 }
 
+// The sounds of one animal. An idle sound is one rare call. A petted sound is a whole happy reaction.
+export interface AnimalSoundSet {
+  idle: readonly string[];
+  petted: readonly string[];
+}
+
 export const MUSIC_TRACKS = musicData.tracks as unknown as Readonly<Record<string, MusicTrack>>;
 export const SOUND_EFFECTS = soundEffectsData.effects as unknown as Readonly<Record<string, readonly SoundLayer[]>>;
 export const CLASS_ATTACK_SOUNDS = soundEffectsData.classAttack as Readonly<Record<ClassId, string>>;
@@ -45,3 +51,4 @@ export const MONSTER_ATTACK_SOUNDS = soundEffectsData.monsterAttack as Readonly<
 export const MONSTER_HURT_SOUNDS = soundEffectsData.monsterHurt as Readonly<Record<string, string>>;
 export const ARMOUR_HIT_SOUNDS = soundEffectsData.armourHit as Readonly<Record<ArmourWeight, string>>;
 export const SPELL_SOUNDS = soundEffectsData.spellSounds as unknown as Readonly<Record<string, SpellSoundSet>>;
+export const ANIMAL_SOUNDS = soundEffectsData.animalSounds as Readonly<Record<string, AnimalSoundSet>>;

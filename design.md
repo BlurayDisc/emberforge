@@ -37,16 +37,35 @@ Why not libGDX or Godot: the game is menu-heavy (grids, tooltips), libGDX UI is 
 | Base | An item type, for example Sword. |
 | Affix | A prefix or suffix that adds a stat to an item. |
 | Quality | Common, Uncommon, Magic, Rare or Unique. Legendary is reserved between Rare and Unique, with no rules yet. |
-| Resource | The pool that pays for the spells of a class: Mana, Stamina, Hatred or Rage. |
+| Resource | The pool that pays for the spells of a class: Mana, Stamina, Hatred or Rage. The pool is fixed: no level and no attribute changes it. |
+| Attribute | Strength, Agility or Intelligence. Most hero stats follow them. Defence is the one exception. |
+| Defence / Resistance | Flat armour. Defence takes points off a physical hit, Resistance off a magical hit. |
+| Attack time | Seconds for one basic attack. |
+| Stat factor | The one number (`statFactor` in `monsters.json`) that lifts the HP, damage, armour and resistance of a normal or rare monster together. A boss has flat numbers instead (`flatStats`) that sit on one common factor of the curve. |
 | Spell | An active ability that a hero learns from a trainer and equips. An Ultimate is a strong spell with its own slot. |
 | Player move | Any command from the player. The game saves after each one. |
 
 ## 4. Heroes and classes
 
 - **Level cap 10** (`levelCap` in `data/balance/progression.json`): the first town is the whole game for now, and the cap grows when a new town opens. A hero at the cap gets no more experience, and its bar says MAX LEVEL. Spells above the cap stay in the data, but the Academy does not list them.
-- **Stats:** HP, Strength, Magic, Skill (crit), Speed, Defence, Resistance. Players read the three attributes as Strength (Str), Intelligence (Int = Magic) and Agility (Agi = Skill).
-- **Primary attribute** (like Warcraft or Dota): each class has one (`primaryAttribute` in `classes.json`). One point gives 1 attack damage. Warrior, Barbarian and Fighter use Strength. Archer and Thief use Agility. Mage and Priest use Intelligence. Skill gives critical chance for every class (0.25% per point, at most 50%), so Agility gear is the best gear for an Archer or a Thief.
-- **Damage of a hero:** physical = primary attribute (physical class) or Strength (magic class) + weapon physical damage. Magical = Magic + weapon magical damage. A hero attacks with the damage kind of its class.
+- **Attributes:** Strength (Str), Agility (Agi) and Intelligence (Int). There is no Skill stat. Each class has a start value and a gain per level for each attribute (`attributes` in `classes.json`). Attribute at level L = round(start + gain × (L - 1)). Every class has about the same attribute total (start total and gain total within 15% of the baseline classes). A class differs by how the points are split. The validator checks this.
+- **Primary attribute** (like Warcraft or Dota): each class has one (`primaryAttribute` in `classes.json`). One point gives 1 attack damage. Warrior, Barbarian and Fighter use Strength. Archer and Thief use Agility. Mage and Priest use Intelligence.
+- **Derived stats** (constants in `data/balance/hero-stats.json`, class base values in `classes.json`). Every derived stat is rounded to a whole number.
+
+| Stat | Formula |
+|---|---|
+| Physical damage | `baseDamage` + primary attribute (physical class) or Strength (magic class) + weapon |
+| Magical damage | `baseDamage` + Intelligence + weapon |
+| Max HP | `baseHp` + Strength × 14.6 + gear |
+| Defence | `baseDefence` + gear + abilities. No attribute and no level gives Defence. |
+| Resistance | `baseResistance` + Intelligence × 0.2 + gear |
+| Attack time | `baseAttackSeconds` ÷ (1 + attack speed bonus). The bonus is Agility × 0.003 + gear + Haste, and Slow is a negative number in the same pool. There is no minimum attack time, but `1 + bonus` never goes below 0.1 (`minimumAttackSpeedFactor` in `battle.json`). |
+| Critical chance | 4% for every hero (`baseCriticalChance`) + class trait + gear. The Thief has +2%. At most 50%. |
+| Critical damage | 200% (`criticalDamageMultiplier`) + gear |
+| Mana, Stamina, Hatred, Rage | A fixed pool (`maximum` in `data/balance/resources.json`) |
+
+- **Balance status:** a class has `balanceStatus` in `classes.json`: `baseline` (Warrior, Archer, Mage: the numbers of the rebalance spec) or `placeholder` (Priest, Thief, Barbarian, Fighter: derived from the baseline so the game runs, and waiting for their own balance pass).
+- **Damage of a hero:** a hero attacks with the damage kind of its class.
 - **Start and money:** the company starts empty. The player starts with 50 copper, for the first crafter fees. The **first hero is free** at the Tavern (any open class). More heroes cost gold: 3s (300 copper), 9s, 27s … (×3 each, `heroHireCostByCompanySize`). Monsters drop no money: the player earns money only by selling materials and items at the merchant. A solo hero who sells every material holds about 75 copper at level 3, 215 at level 6 and 420 at level 10, so the second hero is a goal for level 5 to 6.
 - **Money:** 100 copper = 1 silver, 100 silver = 1 gold. The game stores copper only.
 - **Statistics:** each hero records monsters defeated, damage dealt and taken, healing done, fight time, and battles won and lost. The Heroes screen shows them with damage per second and **Power** (the square root of damage output times durability).
@@ -74,31 +93,27 @@ Why not libGDX or Godot: the game is menu-heavy (grids, tooltips), libGDX UI is 
 
 ### Defence and class direction
 
-Defence and Resistance are main stats, not attributes. Each class has a growth for them in `classes.json` (`growthPerLevel`), and gear adds more. Strength, Agility and Intelligence give no Defence.
+Defence and Resistance are flat armour. They are main stats, not attributes: Strength, Agility and Intelligence give no Defence, and no level gives Defence. Resistance follows Intelligence (`resistancePerIntelligence`). Gear and abilities add more of both.
 
-The damage cut is `armour / (armour + 50 + 10 × attacker level)`, never above `maximumDamageCut` (85%, `data/balance/battle.json`), even with Fortify. Because the attacker level is in the rule, the armour needed for a given cut grows in a straight line with the level:
+**The flat rule.** Armour takes points off each hit. There is no percentage cut and no cap:
 
-| Level | 40% needs | 50% needs | 60% needs | 70% needs | 75% needs | 80% needs |
-|---|---|---|---|---|---|---|
-| 10 | 100 | 150 | 225 | 350 | 450 | 600 |
-| 30 | 233 | 350 | 525 | 817 | 1,050 | 1,400 |
-| 50 | 367 | 550 | 825 | 1,283 | 1,650 | 2,200 |
-| 70 | 500 | 750 | 1,125 | 1,750 | 2,250 | 3,000 |
-| 100 | 700 | 1,050 | 1,575 | 2,450 | 3,150 | 4,200 |
+`hit = attack × swing × spell power × critical multiplier - armour`
 
-Each class aims at a cut band for the whole game: **Low** 10-25%, **Mid** 25-45%, **High** 45-65%, **Wall** 65-85% (only the Warrior, against physical hits).
+If the result is 0 or less, the hit does 1 damage. The result is rounded once, at the end. A monster and a hero can never be hit for less than 1. Many small hits (Quick Shot, Combo Strike, Volley, the Thief) are weaker against armour. This is by design.
 
-| Class | Direction | Physical cut | Magic cut |
-|---|---|---|---|
-| Warrior | The physical wall. Wins by Defence: about 37% at level 10, 50% in the middle game, 70-80% from level 70, the 85% cap with Fortify at the end. | Wall | Mid |
-| Archer | Glass cannon. High attack and Agility, dodges instead of taking hits. | Low | Mid |
-| Mage | Magic damage and the Mana Shield. Fragile like the Archer. | Low | Mid |
-| Priest | Support and healing with mid magic attack. The tankiest light class. | Mid | High |
-| Thief | High attack rate, lower damage per hit, damage over time, dodges. | Low | Mid |
-| Barbarian | High damage, slow attack rate, self buffs. | Low | Low |
-| Fighter | Well balanced, but weak against magic. | Mid | Low |
+Each class aims at a direction:
 
-Only the Warrior is tuned to its direction so far (about 88 Defence and a 36.9% cut at level 10 with best gear). The other classes still need their Defence and Resistance tuned to the table, for example the Priest and the Fighter need more.
+| Class | Direction |
+|---|---|
+| Warrior | The physical wall. The highest base Defence and the heaviest armour. |
+| Archer | Glass cannon. High attack and Agility, low Defence. |
+| Mage | Magic damage and the Mana Shield. Fragile like the Archer. |
+| Priest | Support and healing with mid magic attack. More Resistance than the Mage (placeholder numbers). |
+| Thief | Fast base attack time, +2% critical chance, lower damage per hit (placeholder numbers). |
+| Barbarian | More damage than the Warrior, less Defence (placeholder numbers). |
+| Fighter | Between the Warrior and the Thief (placeholder numbers). |
+
+Only the Warrior, Archer and Mage have baseline numbers. The other four are placeholders.
 
 ### Look
 
@@ -117,7 +132,7 @@ A hero looks the same in the portrait, the full-body figure and the battle sprit
 |---|---|---|---|---|---|---|---|
 | Warrior | Power Strike 162-198% | Shield Bash 100-120% + 62-80% Defence | Guard Stance, self Fortify +35 / 50 / 65% Defence for 8 s | Cleave, all enemies 175-225% and Weaken 10-15% for 5-6 s | Mighty Blow 210-270% and Sunder 12-18% for 6 s | Iron Wall, all allies Fortify +25 / 35%, self Thorns 20 / 30% for 8 s | Heroic Strike 468% |
 | Archer | Aimed Shot 162-198% | Quick Shot, 2 hits of 99-119% | Fleet Foot, self Haste 20-36% | Evasive Shot 200-260% and Evade the next hit (2 hits at rank 3) for 6-10 s | Volley, 5 arrows of 45-55% spread over the enemies in turn, and Slow 10-15% | Hunter's Focus, self Empower +25 / 35% Agility for 10 s | Sniper Shot |
-| Mage | Fire Bolt 162-198% | Frost Shard 150-180% and Slow 20-30% | Mana Shield: costs 25% of the maximum mana, absorbs 1.0 / 1.4 / 1.8 damage per mana point, 10 s | Fireball 190-240% and Burn 20-30% of the attack each second for 4-5 s | Arcane Unravel 120-140% and Hex +15-25% magic damage taken for 8 s | Arcane Surge, self Empower +25 / 35% Intelligence for 10 s | Inferno |
+| Mage | Fire Bolt 162-198% | Frost Shard 150-180% and Slow 20-30% | Mana Shield: costs 25% of the maximum mana, absorbs 45 / 90 / 140 damage plus 6 / 9 / 12% of the maximum health, 10 s | Fireball 190-240% and Burn 20-30% of the attack each second for 4-5 s | Arcane Unravel 120-140% and Hex +15-25% magic damage taken for 8 s | Arcane Surge, self Empower +25 / 35% Intelligence for 10 s | Inferno |
 | Priest | Minor Heal 200-260% | Smite 167-200% | Divine Shield, self Guard 25-40% | Healing Wave, all allies 120-160% | Holy Fire 210-270% and Weaken 12-18% | Sanctuary, all allies Guard 20 / 28% | Divine Hymn |
 | Thief | Backstab 162-198% | Quick Stab, 2 hits of 99-119% | Dodge Roll, self Guard 25-40% | Smoke Bomb 175-225% and Weaken 10-15% | Eviscerate 210-270% and Sunder 12-18% | Adrenaline, self Haste 25 / 35% | Shadow Strike |
 | Barbarian | Savage Swing 162-198% | Blood Fury 170-210% and heals 40-60% of the damage | Rage, self Haste 20-36% | Ground Pound 175-225% and Weaken 10-15% | Rending Blow 210-270% and Sunder 12-18% | Thick Skin, self Guard 28 / 38% | Mountain Breaker |
@@ -134,27 +149,27 @@ Identity in one line each: the Warrior wins by Defence, Fortify and Thorns. The 
 
 ### Effects and statuses
 
-- **Damage:** one enemy (one hit or several) or all enemies. Power is a fraction of the hero's attack per hit. The damage kind is physical (cut by Defence) or magic (cut by Resistance). A damage spell can:
+- **Damage:** one enemy (one hit or several) or all enemies. Power is a fraction of the hero's attack per hit. The damage kind is physical (Defence takes points off each hit) or magic (Resistance does). A damage spell can:
   - inflict a status on the enemy it hits (`inflicts`);
-  - add a share of the caster's Defence to each hit (`defencePower`, Fortify counted);
-  - add a second magic part (`magicPower`, a fraction of the attack that Resistance reduces and Defence does not);
+  - add a share of the caster's Defence to each hit (`defencePower`, Fortify counted). This is a stopgap while spell numbers wait for the spell pass: with flat Defence it adds little;
+  - add a second magic part (`magicPower`, a fraction of the attack that Resistance takes points off and Defence does not). Each part rolls its own swing and critical hit;
   - give the caster a status (`alsoOnSelf`, for example Evasive Shot gives Evade);
   - shoot its hits at the living enemies in turn (target `spreadEnemies`, for example Volley).
 - **Drain:** damage to one enemy, and the caster heals a fraction of it.
 - **Heal:** the weakest ally, the caster, or all allies. Power is a fraction of the hero's attack.
 - **Status:** lasts a few seconds. One of each kind at a time (a new one replaces the old one). A status spell targets the caster, all allies, one enemy or all enemies, and can give the caster a second status (`alsoOnSelf`, for example Iron Wall).
-  - **Guard:** less damage taken.
-  - **Fortify:** more Defence, so it also raises the damage of spells that use Defence.
+  - **Guard:** more armour (a share of the flat armour value).
+  - **Fortify:** more Defence (a share of the flat Defence value), so it also raises the damage of spells that use Defence.
   - **Thorns:** the unit sends a share of each hit it takes back to the attacker, ignoring armour. A reflected hit (`isReflect`) never triggers Thorns again.
-  - **Sunder:** more damage taken.
-  - **Hex:** more magic damage taken. It raises damage taken instead of cutting Resistance, because monsters have little Resistance (9 at level 10), so a cut would add almost nothing.
-  - **Haste / Slow:** more / less Speed.
-  - **Weaken:** less damage dealt.
+  - **Sunder:** less armour (a share of the flat armour value).
+  - **Hex:** more magic damage taken. It raises the damage of the hit before Resistance takes its points off.
+  - **Haste / Slow:** Haste adds to the attack speed bonus and Slow is a negative number in the same pool (see the attack time rule in section 4).
+  - **Weaken:** less damage dealt (a share of the hit before the armour).
   - **Wound:** less healing received.
   - **Evade:** the unit dodges its next hit or hits. A dodged hit does 0 damage, shows "Dodge", and never triggers Thorns or life steal.
-  - **Burn:** magic damage each second, a share of the caster's attack that Resistance cuts. No variance, no critical hit. A tick is a plain damage event with no spell look.
-  - **Empower:** adds a share of the caster's main attribute: attack for every class, and critical chance when the attribute is Skill.
-- **Shield** (Mana Shield): costs a share of the maximum resource pool (`resourceFraction`, with `resourceCost` 0) and gives the caster a shield with its own counter. It absorbs `absorbPerResourcePoint` damage for each point it cost, takes every hit before the health, and ends after its duration. The AI does not cast a shield on top of a shield. The health bar shows it as a blue part after the health, and the log shows how much of a hit it took.
+  - **Burn:** magic damage each second: a share of the caster's attack minus the Resistance of the target. No swing, no critical hit. A tick is a plain damage event with no spell look.
+  - **Empower:** adds a share of the caster's main attribute to its attack.
+- **Shield** (Mana Shield): costs a share of the maximum resource pool (`resourceFraction`, with `resourceCost` 0) and gives the caster a shield with its own counter. It absorbs `absorbFlat` damage plus `absorbMaxHpFraction` of the maximum health of the caster (the resource pool does not grow, so the flat part is the early power spike and the health part scales late), takes every hit before the health, and ends after its duration. The AI does not cast a shield on top of a shield. The health bar shows it as a blue part after the health, and the log shows how much of a hit it took.
 
 ### AI
 
@@ -162,16 +177,18 @@ When a hero acts, it tries the Ultimate first, then slot 1 to 3. It casts the fi
 
 ### Resources
 
-Each class has one resource (`resourceId` in `classes.json`, numbers in `data/balance/resources.json`). Each spell has a resource cost and a cooldown in seconds. An Ultimate starts on a 15 second cooldown, so it comes in the middle of the fight.
+Each class has one resource (`resourceId` in `classes.json`, numbers in `data/balance/resources.json`). Each spell has a resource cost, a cooldown in seconds and a cast time (`castSeconds`, default 0.8 s from `defaultCastSeconds` in `data/balance/spells.json`, 0 is an instant cast). The battle does not use the cast time yet: it is data for the real-time battle phase. An Ultimate starts on a 15 second cooldown, so it comes in the middle of the fight.
 
 | Resource | Classes | Pool | Start | Regeneration and gain |
 |---|---|---|---|---|
-| Mana | Mage, Priest | 8 + 3.4 per level + 0.6 per Magic (about 19 at level 1, 64 at level 10) | Full | 1.8% of the maximum each second |
-| Stamina | Warrior, Archer | 8 + 3 per level + 0.5 per Strength (about 16 at level 1, 52 at level 10) | Full | 2.2% each second |
-| Hatred | Thief | 10 + 3 per level + 1 per Skill | Half | 2% each second, and 4% per hit dealt |
-| Rage | Barbarian, Fighter | 10 + 3 per level + 1 per Strength | Empty | None by itself. 8% per hit dealt and 8% per hit taken. |
+| Mana | Mage, Priest | Fixed 42 | Full | 1.8% of the maximum each second |
+| Stamina | Warrior, Archer | Fixed 38 | Full | 2.2% each second |
+| Hatred | Thief | Fixed 31 | Half | 2% each second, and 4% per hit dealt |
+| Rage | Barbarian, Fighter | Fixed 33 | Empty | None by itself. 8% per hit dealt and 8% per hit taken. |
 
-**The pool must limit the player.** In a normal fight the pool dips to about 55-65% at Lv 2-3 and to about 5-35% from Lv 6 on, so a Mage or Warrior can run dry before the fight ends. In the boss fight at Lv 10 it dips to about 5-25% and the hero runs short for a while. Check it with `npm run scenarios -- resource-use`. The Priest spells Minor Heal, Smite and Divine Shield cost 5, 6 and 8, because the Priest has the least Magic and casts the most.
+The pools are fixed: no level and no attribute gives more. Skills and items change them later. The numbers are placeholders from the old level 1 to 10 pools.
+
+**The pool must limit the player.** The old targets (a dip to about 55-65% at Lv 2-3 and to about 5-35% from Lv 6 on) came from growing pools and are not re-tuned for fixed pools yet. Check it with `npm run scenarios -- resource-use`. The Priest spells Minor Heal, Smite and Divine Shield cost 5, 6 and 8, because the Priest has the least Magic and casts the most.
 
 ### Looks, sounds and log
 
@@ -184,7 +201,11 @@ Each class has one resource (`resourceId` in `classes.json`, numbers in `data/ba
 An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level ≥ ilvl to equip it.
 
 - **Slots (11):** Main hand, Off hand, Helm, Armour, Gloves, Legs, Boots, Belt, Amulet, Ring ×2.
-- **Base stats** roll inside a range (±15%) and grow with ilvl. Weapons give Physical damage and Magical damage, and sometimes Attack speed. Attack speed is a flat number: it does not grow with ilvl and does not roll a range. Light weapons give +1, two-handed weapons (Greataxe, Maul) give -1. Armour gives Defence (Armour) and Resistance.
+- **Base stats** are whole numbers. They roll inside a range (±15%, rounded) and do not grow with the item level, except weapon damage. See `docs/balance/combat-and-growth-mechanism.md` section 14.
+  - **Weapon damage** = round(W x type multiplier) at the item level L, with W(L) = 7 + 1.6 x (L - 1). Multipliers: one-handed main hand 1.0, Staff 1.15, main-hand dagger and knuckles families 0.85, Greataxe and Maul 1.5, off-hand Quiver and Tome 0.25, off-hand Parrying Dagger and Cestus 0.4 (`weaponDamage` in `data/balance/items.json`). Examples: Sword (1) 7, Axe (3) 10, Longsword (5) 13, Battle Axe (7) 17, Broadsword (9) 20. A base item lists the damage at item level 1 (`baseStats`) and a flat gain for each further level (`growthPerItemLevel`). Light weapons give +3% attack speed, two-handed weapons -3% (percent points, no range).
+  - **Armour** gives Defence (no HP) and Resistance. Defence at the item level of the piece: Boots (1) 4 / 3 / 2, Gloves (2) 5 / 4 / 2, Helm (4) 5 / 4 / 3, Shield (5) 5, Legs (6) 7 / 5 / 4, Chest (8) 12 / 8 / 5 for Heavy / Medium / Light. No piece gives less than 2 Defence, and Heavy > Medium >= Light. Boots also give +3% attack speed. HP comes only from affixes and set bonuses.
+  - **Accessories (placeholders):** Belt (6) Defence 3 and HP 30, Ring (7) critical chance +2%, Amulet (9) attack speed +4%.
+  - **Agility** stays only on bows and daggers. Each base item has a `mainStat` that upgrades raise.
 - **Item card** (inventory, item popup and equip compare):
   - Under the name: "Requires level N" in bold gold (N is the item level), and who can use it ("Usable by: Mage, Priest", or "Usable by: all classes" for belts, rings and amulets).
   - One fixed stat table first. Weapons: Physical damage, Magical damage, Attack speed. Armour, shields, belts and jewellery: Health, Armour, Magic resist.
@@ -195,7 +216,7 @@ An item is: **Base + Item level (ilvl) + Quality + Affixes**. A hero needs level
   - Unique: fixed name and fixed affix set, with rolled values. Drops only.
   - Colours: green (Uncommon), blue (Magic), gold (Rare), orange (Unique).
 - **Name order:** each language has its own order (`format.itemName`). English: prefix, item, suffix ("Arcane Copper Sword of the Bear"). Chinese: suffix, prefix, item. The stat table lists an affix by its short name (`affix.<id>.short`), for example "Bear: +9 Health".
-- **Affixes** are random. They have a kind (prefix or suffix), a stat and a value range (`minimumValue`, `maximumValue`). The value grows with the item level (`affixGrowthPerItemLevel`) unless `scalesWithItemLevel` is false. There is no minimum item level and no affix tier yet. There are 4 prefixes and 15 suffixes, for example *Sharp* (+Attack), *Sturdy* (+Defence), *of the Bear* (+HP), *of Insight* (+Magic), *of Precision* (+Skill). Three suffixes give combat bonuses that are not class stats: *of the Leech* (life steal 2-5%), *of the Viper* (critical chance 1-3%) and *of Carnage* (critical damage 5-15%). Their values are percent points and do not grow with item level (`scalesWithItemLevel` is false in `affixes.json`). A crafted Magic or Rare item picks its suffixes at random, each suffix in the pool with the same chance.
+- **Affixes** are random. They have a kind (prefix or suffix), a stat and a value range (`minimumValue`, `maximumValue`). The value grows with the item level (`affixGrowthPerItemLevel`) unless `scalesWithItemLevel` is false. There is no minimum item level and no affix tier yet. There are 4 prefixes and 15 suffixes (HP affixes are 10 times the old numbers, for the new HP scale), for example *Sharp* (+Attack), *Sturdy* (+Defence), *of the Bear* (+HP), *of Insight* (+Intelligence), *of Precision* (+Agility), *of Haste* (+attack speed %). Three suffixes give combat bonuses that are not class stats: *of the Leech* (life steal 2-5%), *of the Viper* (critical chance 1-3%) and *of Carnage* (critical damage 5-15%). Their values (and the attack speed of *of Haste* and *of the Fox*) are percent points and do not grow with item level (`scalesWithItemLevel` is false in `affixes.json`). A crafted Magic or Rare item picks its suffixes at random, each suffix in the pool with the same chance.
 - **Unique items** drop from rare monsters (4%) and bosses (25%). The player cannot craft them.
 - **Item drops:** a monster can drop a ready item (`itemDrops` in `monsters.json`: base item, fixed quality, item level, chance). It is built like a crafted one, priced from the basic recipe, with affixes rolled from the fixed quality. It goes to the backpack, or waits at the dungeon when the backpack is full (see section 7). The report lists dropped items. Now: the Spider of Old Wood Hollow drops a Common Ring of item level 7 (5%), and the Goblin Chief drops an Uncommon Ring of item level 7 (35%).
 - **Backpack size (width × height):**
@@ -231,14 +252,14 @@ Recipe = Base × Tier. The tier sets the item name, for example *Copper Sword*, 
 | Weaponsmithing | Sword, Axe, Dagger, Parrying Dagger, Mace, Greataxe, Maul, Knuckles, Cestus | Ore |
 | Armoursmithing | Heavy armour, Shield | Ore |
 | Fletching | Bow, Quiver | Wood |
-| Woodworking | Staff, Wand | Wood |
+| Enchanting | Staff, Wand, Tome (all magic items) | Wood (Tome: Cloth) |
 | Leatherworking | Medium armour, Belt | Hide |
-| Tailoring | Light armour, Tome | Cloth |
+| Tailoring | Light armour | Cloth |
 | Jewelcrafting | Ring, Amulet | Gem |
-| Enchanting | Changes an existing item | Essence (same tier as the item) |
+| Item enchanting (later, not built) | Changes an existing item | Essence (same tier as the item) |
 
 - **Ingredient count** is fixed per base item (`mainIngredientQuantity` in `base-items.json`), of the main material only. Warrior weapons 2 (Broadsword 3), Heavy armour 2-3 (Shield 3), Archer bows 3-4 (Quiver 1), Barbarian two-hand weapons 3-4, Staff 3, Mace 2-3, small magic and light weapons 1-2, Medium and Light armour 1-2, Jewellery and Belt 1. No main count is above 4. A weapon line starts at 3 and steps up once to 4 for its two later recipes. A set recipe adds 1 set material (2 for items of 6 cells or more).
-- **Item level** is fixed for each recipe: tier start - 1 + the base offset (a set recipe uses its higher level), never above the last level of the tier. The Workshop shows it before the craft. The crafter level does not change it. Quality, affixes, the ±15% spread and the upgrade level stay random. A level 1 Mage can equip the Wand (1) and the light Helm (1), the Staff from level 7, the Tome from level 8.
+- **Item level** is fixed for each recipe: tier start - 1 + the base offset (a set recipe uses its higher level), never above the last level of the tier. The Workshop shows it before the craft. The crafter level does not change it. Quality, affixes, the ±15% spread and the upgrade level stay random. A level 1 Mage can equip the Wand (1) and the light Boots (1), the Staff from level 7, the Tome from level 5.
 - **Recipe level:** a recipe needs crafter level (tier - 1) × 10 + the base item's offset. Locked recipes show the needed level. A recipe row shows its recipe level in the title ("Copper Gloves (Lv 3)") and the item level on a second line ("Item level 3").
 - **Quality odds** (Common / Uncommon / Magic / Rare): 55 / 20 / 15 / 10. A craft never uses a Catalyst.
 - **Crafting reveal:** the item is rolled when the craft starts, but the player sees only its base name while the crafter works. The full name with affixes shows when the craft is done.
@@ -247,7 +268,7 @@ Recipe = Base × Tier. The tier sets the item name, for example *Copper Sword*, 
 
 A crafted item can come out with an upgrade level, shown at the end of the name ("Iron Sword +3"). The "+N" has its own colour: green +1, cyan +2, blue +3, purple +4, pink +5, orange +6, red +7 (+5 and higher glow), and the rest of the name keeps the quality colour. A window title or tooltip shows "+N" as plain text.
 
-- Each level counts as one more item level for base stats, and much less for sell value. It does not change the item level that limits who can equip the item.
+- Each level adds a flat +1 to the main stat of the item (Defence for armour, shield and belt, damage for weapons and off-hand damage items, critical chance for the ring, attack speed for the amulet), and 3% to the sell value. It does not change the item level or the other stats. The recipe screen says that each +1 adds 1 to the main stat.
 - Most crafts have no upgrade. The game rolls step by step and stops at the first failed step, so +N needs N successes in a row.
 - The chance to reach at least +N runs in a straight line from a value at the recipe level to a value for a crafter 9 or more levels above the recipe (the most a level 10 crafter can be above a level 1 recipe). For +1: 5% at the recipe level, 23% at 9 levels above. For +4: 0.005% and 5%. More levels above give nothing more. The values for +1 to +7 are in `data/balance/crafting.json` and must fall with each level (the validator checks it). The recipe screen shows the chance of +1 or better.
 - Unique and looted items have no upgrade level.
@@ -259,20 +280,20 @@ A crafted item can come out with an upgrade level, shown at the end of the name 
 - **Recipe rule:** a recipe must not need a material that first drops in a dungeon above the recipe's craft level (the validator checks it). So the level 1 recipes use only the four basic materials, and the Ring (Quartz) is at offset 7 and the Amulet at offset 9.
 - **Level plan:** every class can craft a weapon and an armour piece at crafter level 1, and **every crafter level from 1 to 9 opens something new for every class** (the validator checks both).
   - Weapons open on odd levels (1, 3, 5, 7, 9).
-  - Armour opens on even levels: Helm 1, Gloves 2, Boots 4, Legs 6, body Armour 8. The body Armour is the last of the set pieces.
+  - Armour opens in this order: Boots 1, Gloves 2, Helm 4, Legs 6, body Armour 8 (the Shield opens at 5). The body Armour is the last of the set pieces.
   - Off-hand items open early, so the slot is not empty: Quiver 4, Parrying Dagger 4, Cestus 4, Shield 5, Tome 5.
   - Belt 6, Ring 7, Amulet 9. Level 10 opens nothing new, because every set recipe opens with its base item. A level 10 crafter can make every base of the tier.
-- **Weapon steps:** every class gets a stronger weapon every 2 crafter levels inside a bracket, the last at offset 7 or higher. **Each new weapon has more damage than every weapon before it** (physical for a physical class, magical for a magic class). A stronger weapon is a new base with the same gear type and size, so the same classes can use it. The step is about +1 base damage. The validator checks both rules.
+- **Weapon steps:** every class gets a stronger weapon every 2 crafter levels inside a bracket, the last at offset 7 or higher. **Each new weapon has more damage than every weapon before it** (physical for a physical class, magical for a magic class). A stronger weapon is a new base with the same gear type and size, so the same classes can use it. The step follows the weapon damage rule in section 5. The validator checks both rules.
 
-| Class | Main hand weapons (offset: base damage) |
+| Class | Main hand weapons (offset: damage at that item level) |
 |---|---|
-| Warrior | Sword (1: 2), Axe (3: 3), Longsword (5: 4), Battle Axe (7: 5), Broadsword (9: 6) |
-| Archer | Bow (1: 3), Longbow (3: 4), Composite Bow (5: 5), Warbow (7: 6) |
-| Mage | Wand (1: 2), Runed Wand (3: 3), Scepter (5: 4), Staff (7: 5), Arcane Staff (9: 6) |
-| Priest | Wand (1: 2), Runed Wand (3: 3), Mace (3: 3), Scepter (5: 4), Flanged Mace (7: 5) |
-| Thief | Dagger (1: 1), Stiletto (3: 2), Dirk (5: 3), Kris (7: 4) |
-| Barbarian | Maul (1: 7), Sledgehammer (3: 8), Bearded Axe (5: 9), Greataxe (7: 10) |
-| Fighter | Knuckles (1: 1), Brass Knuckles (3: 2), Spiked Knuckles (5: 3), Steel Claws (7: 4) |
+| Warrior | Sword (1: 7), Axe (3: 10), Longsword (5: 13), Battle Axe (7: 17), Broadsword (9: 20) |
+| Archer | Bow (1: 7), Longbow (3: 10), Composite Bow (5: 13), Warbow (7: 17) |
+| Mage | Wand (1: 7), Runed Wand (3: 10), Scepter (5: 13), Staff (7: 19), Arcane Staff (9: 23) |
+| Priest | Wand (1: 7), Runed Wand (3: 10), Mace (3: 10), Scepter (5: 13), Flanged Mace (7: 17) |
+| Thief | Dagger (1: 6), Stiletto (3: 9), Dirk (5: 11), Kris (7: 14) |
+| Barbarian | Maul (1: 11), Sledgehammer (3: 16), Bearded Axe (5: 20), Greataxe (7: 25) |
+| Fighter | Knuckles (1: 6), Brass Knuckles (3: 9), Spiked Knuckles (5: 11), Steel Claws (7: 14) |
 
 The Mace and Flanged Mace are Priest weapons: they give magical damage and resistance. The Warrior shares no weapon type with another class.
 
@@ -282,14 +303,14 @@ Each set material makes a set of gear: every main hand weapon, every off-hand it
 
 - **Every piece made from a set material gets the same fixed flat bonus.** Quality, the usual random Affixes and the upgrade level roll on top, exactly like a basic craft. The bonus comes from the material, so it is not stored in the item.
 - **Every set recipe of a base item opens at the same crafter level as the basic recipe of that base**, even when the player does not own the set material yet. So when the body Armour opens at level 8, the basic recipe and all 5 set recipes open at level 8, and the player farms dungeons for the set materials.
-- **A base item that opens at crafter level 1 has no set recipes** (`setRecipeFirstBaseCraftLevelOffset` in `items.json` is 2), so the level 1 weapons and the Helms are basic only.
+- **A weapon or off-hand item that opens at crafter level 1 has no set recipes** (`setRecipeFirstBaseCraftLevelOffset` in `items.json` is 2), so the level 1 weapons are basic only. This rule is for weapons only: every armour piece of every weight has set recipes, whatever its level (Boots at level 1 too).
 - **Sort order** inside one recipe level: the variants of one base item stay together. Ascending is the basic recipe, then the set recipes by dungeon level. Descending is the exact reverse.
 - **Validator:** a set material drops in exactly one dungeon, `setCraftLevelOffset` equals the level of that dungeon, and each dungeon after the first dungeons of a bracket drops exactly one set material.
 
 | Set material | Dungeon | Bonus on each piece | Sort position (1 = basic) |
 |---|---|---|---|
-| Sharp Fang | Wolf Trail | +2 Agility (skill) | 2 |
-| Toadskin | Sunken Mill | +8 Health | 3 |
+| Sharp Fang | Wolf Trail | +2 Agility | 2 |
+| Toadskin | Sunken Mill | +80 Health | 3 |
 | Bone Shard | Goblin Camp | +2 Armour (defence) | 4 |
 | Spider Silk | Old Wood Hollow | +2 Attack speed | 5 |
 | Coarse Sinew | Goblin Chief's Lair | +2 Strength | 6 |
@@ -299,9 +320,10 @@ Each set material makes a set of gear: every main hand weapon, every off-hand it
 - **Crafter levels:** each profession is a crafter with level 1-100 and XP. XP to the next level: levels 1 to 8 cost 43, 47, 98, 116, 153, 215, 400 and 410 XP (`experienceToNextByLevel`), then 58 × L^1.3. The table follows the best weapon of a Warrior (Sword, Axe, Longsword and Battle Axe use 2 main material, the Broadsword 3): one craft from level 1 lands on 2.3, from level 2 on 3.0, from level 3 on 3.9 (a 2nd craft on 4.7), from level 4 on 4.7 (a 2nd on 5.3). Levels 5 and 6 take 2 crafts, levels 7 and 8 take 3, and level 9 takes 4. A crafter below level 2 gains at most 2 levels from one craft (`maximumLevelsPerCraft`, `levelsPerCraftCapBelowLevel`), so a big first craft does not jump to level 4 or 5. The extra XP stays banked for the next craft. A craft gives (20 + 8 × recipe level) XP for each unit of its main material, minus 8% for each level the crafter is above the recipe (down to 10%) (`experiencePerMaterialBase`, `experiencePerMaterialPerRequiredLevel` in `crafting.json`). So crafter XP follows the basic material that dungeons drop, and a recipe with twice the material pays twice the XP. A Mage needs more crafts for a level than a Warrior, because its early weapons use 1 material (Wand, Runed Wand) and the first 2-material weapon, the Scepter, opens at level 5.
 - **Crafter pace target:** the player keeps the crafter level with the hero. Whenever the crafter is below the hero level, the player runs a round: 2 fights in the level 1 dungeon that drops the main material of the best recipe, then crafts everything it can afford (`basicFightsPerRound`). The two level 1 dungeons are the only dungeon source of basic material. The share of all fights spent in them should stay between 30% and 50% (`basicFightShareRange`). Check it with `npm run scenarios -- crafter-curve`. The current curve does not meet this: the share is about 60% to 77% at hero level 10 (the Warrior 65%). Lower crafter XP costs, or raise the level 1 double-drop chance (`maxQuantityChance`, now 10%; 60% gives about 50%).
 - **Timed jobs:** selling and crafting take real time, also while the page is closed. A crafter makes one item at a time, (5 s + 1.5 s per required level) × (1 + 0.3 for each main material above 2, minus 0.3 for each below 2) (`craftSecondsFactorPerMaterial`). So a 1 material recipe takes 70% of the time of a 2 material recipe of the same level, and 3 materials take 130%. This applies to every recipe. Jobs show a progress bar. After the player starts a craft, the Workshop goes back to the crafter list.
-- **Workshop screen:** two sections on one screen with no scroll, Weapons (Weaponsmithing, Fletching, Woodworking) and Armour (Armoursmithing, Leatherworking, Tailoring) (`data/workshop-sections.json`). Jewelcrafting is in no section, so the Workshop hides it until a later stage unlocks it. The validator checks that each profession is known and in one section only.
+- **Workshop screen:** two sections on one screen with no scroll, Weapons (Weaponsmithing, Fletching, Enchanting) and Armour (Armoursmithing, Leatherworking, Tailoring) (`data/workshop-sections.json`). Jewelcrafting is in no section, so the Workshop hides it until a later stage unlocks it. The validator checks that each profession is known and in one section only.
   - Each crafter is a raised tile (light top and left edge, dark bottom and right edge, hard shadow, so it reads as a button) with a portrait, level and job. On a wide screen the tiles share the height in two rows of three, with the picture on the left. On a phone (640 px or less) the section titles go away and the six tiles share the screen in two columns, with a same-size picture in each.
   - A click on a crafter shows only the recipes it can make now (higher recipes stay hidden, with a note for the next level). A click on a recipe shows a big portrait, the stat ranges, the fixed item level and the classes that can use the item, so the player does not craft gear that no hero can wear.
+- **Workshop recipe list:** a crafter shows only recipes the crafter level has opened, and only recipes that at least one unlocked class can use (see Hiring lock). The Class and Slot filters list only the classes and slots of those recipes. A recipe for a locked class appears when the player clears the dungeon that unlocks the class.
 - **Collecting a craft:** a finished craft waits at the crafter and does not go to the backpack by itself. The crafter tile gets a gold frame and a big Collect button, and a click collects. The crafter gets its XP only at that click. A summary window opens: the crafter portrait, the same experience bar as the fight result (level, gain, level-up line), and below it the new item with its stats. If the backpack has no room, the click is refused and the item keeps waiting.
 - **Enchanting** is not built yet. Planned actions: Reroll the values of one affix, Add an affix (up to the quality limit), Reforge all affixes (needs a Catalyst).
 
@@ -349,19 +371,21 @@ The Bank is in Lord's Square. Prices are in `data/balance/backpack.json` and `ec
 - **Features,** once each (`bankUnlockCostsCopper`). Until the player buys one, the game hides it and says so. The bought ids are saved in `bankUnlockIds`.
   - **Backpack sorting** (150): a Sort button in the backpack. Items go first by slot, quality and level, then materials by id, packed from the top left. If it cannot fit, nothing changes.
   - **Drop rates** (300): the loot table and chances in the dungeon screen.
-  - **Monster statistics** (500): health, attack, armour, magic resist and speed of each monster at the dungeon level.
+  - **Monster statistics** (500): health, attack, armour, magic resist and attack time of each monster at the dungeon level.
   - **Quick dispatch** (250): the Dungeons panel gets the "Stay on this screen after sending a hero" checkbox (see section 11b).
-  - **Main stat growth** and **Attribute growth** (200 each): show the growth per level of each class. The Tavern always shows one bar per stat, in two groups: the attributes (Strength, Agility, Intelligence) and the main stats (Health, Armour, Magic resist, Attack speed). The numbers of a group show only after its purchase. Attribute growth also adds the gain (like "19 +1.9/lvl") to the attribute rows of the hero details screen.
+  - **Main stat growth** and **Attribute growth** (200 each): show the growth per level of each class. The Tavern always shows one bar per stat, in two groups: the attributes (Strength, Agility, Intelligence) and the main stats (Health, Magic resist, Attack speed; Defence has no growth). The numbers of a group show only after its purchase. Attribute growth also adds the gain (like "19 +1.9/lvl") to the attribute rows of the hero details screen.
 
 ## 8. Battle
 
 ### Rules
 
-- **Auto-battle by speed.** Each unit has a charge meter that fills at its Speed. The unit acts at 100. One action at Speed 100 takes 1 second.
+- **Auto-battle by attack time.** Each unit has a charge meter that fills 100 ÷ attack time each second. The unit acts at 100, so one action takes one attack time. Spells use cooldowns only: attack speed does not change a cooldown. (Cast time, movement, range and real-time play come in a later phase. Today `castSeconds` is only data.)
+- **Attack time** = base attack seconds ÷ (1 + attack speed bonus). The bonus is Agility × 0.003 + gear + Haste, and Slow is a negative number in the same pool. There is no minimum attack time, but `1 + bonus` never goes below `minimumAttackSpeedFactor` (0.1). Example: 1.65 ÷ (1 + 0.25) = 1.32 s. A monster has a `baseAttackTime` (`attackSeconds`, default 1.65 s) and no Agility.
 - **Action:** a spell (see section 4b), or a basic attack. The Priest first heals an ally below 50% HP with its basic action (never itself), so a lone Priest fights like any other hero.
-- **Damage** = Attack × power × swing × (1 − reduction). Reduction = armour ÷ (armour + 50 + 10 × attacker level), where armour is Defence (physical hit) or Resistance (magic hit) (`mitigationBase`, `mitigationPerAttackerLevel` in `battle.json`).
-- **Swing:** each hit is multiplied by a random number around 1. The size belongs to the class (`damageVarianceFraction` in `classes.json`): Warrior 90-110%, Fighter 88-112%, Priest 85-115%, Thief 82-118%, Archer and Mage 80-120%, Barbarian 75-125%. Monsters swing 90-110%. Burn has no swing.
-- **Critical hit:** ×1.5 plus the critical damage of the gear. Critical chance from gear adds to the Skill chance, and the total stays at most 50%.
+- **Damage (the flat rule).** `hit = attack × swing × spell power × critical multiplier - armour`. Armour is Defence for a physical hit and Resistance for a magical hit. If the result is 0 or less the hit does 1 damage. The result is rounded once, at the end. There is no percentage cut and no cap.
+  - Fortify, Guard and Sunder are shares of the flat armour value. Weaken and Hex are shares of the damage, applied before the armour. Armour penetration (`armourPenetration`) is a share of the flat Defence. Burn is the caster's attack × strength minus the Resistance, with no swing and no crit.
+- **Swing:** the attack of each hit is multiplied by a random number around 1. The size belongs to the class (`damageVarianceFraction` in `classes.json`): Warrior 90-110%, Fighter 88-112%, Priest 85-115%, Thief 82-118%, Archer and Mage 80-120%, Barbarian 75-125%. Monsters swing 90-110%. Burn has no swing.
+- **Critical hit:** base chance 4% for every hero (the Thief 6%), damage 200% (`data/balance/battle.json`). Gear adds chance and damage. The chance stays at most 50%. A spell can crit, and each hit rolls on its own (a 5-arrow Volley rolls 5 times). Burn ticks and heals never crit. Monsters use the same base chance.
 - **Life steal:** a unit heals this part of the damage it deals, with basic attacks and damage spells, up to its maximum health. The heal shows as a heal event on the unit itself. Monsters have none.
 - **No misses.**
 - **Deterministic:** a battle is simulated first from a seed, then played back at 1×, 2× or 4× speed. The seed and the party are stored when the battle starts, so after a reload the same battle replays from its start.
@@ -371,27 +395,50 @@ The Bank is in Lord's Square. Prices are in `data/balance/backpack.json` and `ec
 ### Monsters
 
 - **Encounter size:** 1-3 monsters, never more than the party size. A solo hero meets 1 monster.
-- **Rare monster:** 2% of encounters. About 2.5 × HP. Drops ×3, one Catalyst, 4% Unique. Pays ×3 XP.
-- **Stats come from a reference curve** (`data/balance/monster-scaling.json`: HP and attack, each with an `exponent`, fitted to levels 1-10 only; fit them again when the second town is built). The reference hero is a single hero at level L with Magic-quality gear of ilvl L. Monster HP makes that hero need the target duration. Monster damage makes it lose about 35% of its HP.
-- **Per-monster tuning:** Legs open at hero level 7, so they add armour, resistance and health only from level 7. To keep the same HP loss, the monsters met from level 7 (Goblin, Bark Spider, Hobgoblin, Goblin Captain, Hollow Broodmother) have a higher `attackFactor`. The Goblin Camp and Old Wood Hollow monsters also have more HP and Defence to keep those dungeons hard. Re-check with `npm run scenarios -- mob-kill-time` and `boss-fight` after any change to legs or other armour.
-- **Armour penetration (mechanism only):** a monster can have `armourPenetration` in `monsters.json` (above 0, below 1). Its physical hits ignore that share of the hero's Defence. Resistance is not cut. No monster uses it yet. It is kept for later tiers.
+- **Rare monster:** 2% of encounters. All stats lifted by one stat factor (1.25, the user may change it). Drops ×3, one Catalyst, 4% Unique. Pays ×3 XP.
+- **Flat stats only.** A monster has HP, damage, armour, Resistance and attack time, and no attributes. It follows one level curve (`data/balance/monster-scaling.json`: anchors per level, joined by straight lines, and above the last anchor the last segment goes on). A normal or rare monster has one `statFactor` in `monsters.json` (default 1) that lifts HP, damage, armour and resistance together. A boss has explicit `flatStats` (HP, damage, armour, Resistance, attack seconds). The validator keeps the four stats of the boss on one common factor of the curve at its dungeon level, within 15%. Never lift one stat alone: a stronger unit gets every stat lifted by the same factor.
+
+| Level | HP | Damage | Armour | Resistance | HP / damage |
+|---|---|---|---|---|---|
+| 1 | 413 | 35 | 0 | 0 | 11.8 |
+| 2 | 500 | 48 | 1 | 0 | 10.4 |
+| 3 | 580 | 51 | 2 | 0.5 | 11.4 |
+| 4 | 655 | 58 | 3 | 1 | 11.3 |
+| 5 | 730 | 66 | 4.5 | 1.5 | 11.1 |
+| 6 | 810 | 74 | 6 | 2 | 10.9 |
+| 7 | 890 | 82 | 8 | 3 | 10.9 |
+| 8 | 960 | 90 | 10 | 4 | 10.7 |
+| 9 | 1020 | 95 | 12 | 5 | 10.7 |
+| 10 | 1075 | 99 | 13 | 5.5 | 10.9 |
+
+Armour and Resistance are rounded to whole numbers when a monster is built. Armour grows from 0 at level 1 to 13 at level 10 (about 16% of a hero hit at level 10). Resistance is set at about 40% of armour: all monsters hit physically, but a magic hero (basic attack and spells) hits Resistance, and the Mage is already the weakest class in the first fight. At this value armour lengthens the kill time of the Mage by 4-7% and of the physical classes by 8-15%.
+
+- **Targets (soft, tolerance 15%, set from the first-fight sim, `npm run scenarios -- first-fight`):** a hero of level L meets a normal monster of level L for the first time. Level 1 (main hand weapon only) loses about 50% HP on average over Warrior, Archer and Mage (40-60%). Levels 2-10 (Common gear of the best item level in every slot) lose about 60-70% on average. Monster HP / damage stays near 10-12. Normal monster HP at level 10 is at least about 900 (more is allowed). Crafted Magic gear must be clearly better than the first-meeting gear. Armour may reach about 10-15 at level 9. Fight length is not a target (about 12-19 s for the baseline classes).
+- **Result (average HP lost of Warrior / Archer / Mage, first meeting; crafted Magic gear in brackets):** level 1: 52 (41), level 2: 60 (47), 3: 64 (51), 4: 59 (42), 5: 65 (44), 6: 61 (35), 7: 67 (33), 8: 63 (27), 9: 62 (26), 10: 68 (29). The dips at levels 4, 6 and 8 are the steps where the helm, the legs and the chest unlock: the anchors stay smooth and the gear makes the steps. The crafted gear gives 13 to 37 points of HP lost back, and the gap grows with the level.
+- **Known limits:** (1) The class spread is large at levels 7-10 and comes from hero numbers: Warrior 44-56%, Archer 61-68%, Mage 78-92%, Priest (placeholder) 95-99% (level 8-10). At level 8 the Mage loses 85% against 43% for the Warrior. About two thirds of that comes from Defence (19 against 44) and one third from HP (676 against 868). The Mage also wastes a slot on Mana Shield, which absorbs only about 10-15 damage per fight (its absorb is 25% of a 42-point pool). A Mage without Mana Shield loses 76% instead of 85%. (2) Multi-hit spells lose more to armour: at level 10 a basic attack loses 16% of a hit to armour 13, Quick Shot and Quick Stab (2 hits, power 0.99) lose the same 16% per hit, Combo Strike (3 hits, power 0.7) loses 25% per hit. Volley (level 12, 5 arrows at power 0.45) will lose about 40% per arrow. This is by design (section 4), and the Fighter pays most (it loses 81% at level 10 against 47% for the Warrior). (3) Fight length of a normal fight is 12-18 s, against the old duration targets of 19-25 s at levels 7-10 (`mob-kill-time`). The old targets are not met and not chased.
+
+- **Linked growth rule:** for the same share of HP lost in a fight, monster damage growth = hero HP growth ÷ fight duration growth. Check this before you set a duration target.
+- **All normal monsters use `statFactor` 1 for now.** The old per-monster factors (for example the stronger Goblin and Hobgoblin) are gone. Rare monsters keep `statFactor` 1.25.
+- **Armour penetration (mechanism only):** a monster can have `armourPenetration` in `monsters.json` (above 0, below 1). Its physical hits ignore that share of the flat Defence of the hero. Resistance is not cut. No monster uses it yet. It is kept for later tiers.
 
 ### Boss
 
 - One boss per town. The Goblin Chief's Lair opens after the Goblin Camp is cleared, and a hero of level 8 can enter. The recommended level is 10-11, so an early party can try, at a risk.
 - **Party and adds:** the boss needs 2 heroes. The fight has 0 or 1 adds (a normal monster of its dungeon), because adds never exceed the party size minus 1.
 - **Rewards:** drops ×5, two Catalysts, 25% Unique, ×5 XP.
-- **Stats:** a boss has no level curve and no factor. Its real stats are in `monsters.json` (`fixedStats`). The Goblin Chief has 8,000 HP, 7.7 attack, 18 Defence, 12 Resistance and 52 Speed. Its attack is above any normal or rare monster, and the slow Speed keeps its damage per second about even.
+- **Stats (flat numbers in `flatStats`):** the Goblin Chief has HP 4,200, damage 290, armour 44, Resistance 19 and an attack every 7 s. Against the level 10 curve (1,075 / 99 / 13 / 5.5) that is x3.9 HP, x2.9 damage, x3.4 armour and x3.5 Resistance, around a common factor of x3.4 (the validator allows 15% either way, so HP is at the top and damage at the bottom of the band). The slow attack time is the one free number: it keeps the fight long without a stat lift on one side. The dungeon level does not change a boss. The fixed 8,000 HP boss is gone. Its spells use a share of its attack, so they follow the attack (Crushing Cleaver is 1.5x, about 435 damage).
 - **Targeting:** a monster can have `targetPriority`. `highestDefence` (the Goblin Chief) makes it attack the hero with the most Defence first, then the next, with basic attacks and single-target spells (ties go to the hero with less health). The frontline (Warrior, Barbarian, Fighter) takes the hits, and the other classes are safe until it falls. Other monsters pick a random hero for basic attacks. A Warrior with a Priest is the safest pair, because the Priest is never hit.
 - **Spells:** a boss casts spells (`spellIds` in `monsters.json`, data in `data/monster-spells.json`, ids start with the monster id). A monster spell costs no resource and waits only for its cooldown. The Goblin Chief has:
   - Cowing Roar: weakens the hero 20% for 8 s, every 20 s.
-  - War Cry: +25% Speed for 8 s, every 24 s.
-  - Crushing Cleaver: a hit of 2× attack that also wounds (healing received -85% for 9 s), every 9 s. The wound is the answer to heal spells, so the Priest and the Fighter cannot out-heal the boss.
+  - War Cry: +25% attack speed for 8 s, every 24 s.
+  - Crushing Cleaver: a hit of 1.5× attack that also wounds (healing received -85% for 9 s), every 9 s. The wound is the answer to heal spells, so the Priest and the Fighter cannot out-heal the boss.
   - The dungeon screen shows the three spells with their numbers.
-- **Tuning target:** the boss is tuned for the weakest sensible party: a level 10 hero and a level 7 partner, each with Common gear and one prefixed item (the gear floor). That party wins about 60% on average (a Priest partner about 80%). With normal crafted gear about 85-90%. Two level 10 heroes still win almost always: a full pair is the goal of the town. The fight lasts about 80-115 s (target 125 s).
-- **Weapon-only rule:** a weapon alone must not beat a boss. A hero with only its best weapon must lose (win rate under 30%), and the boss still needs a hero with all 11 slots filled. Known gap: because the boss hits the highest Defence hero first, a Warrior with a Priest and only best weapons wins 100% (Archer with Mage, and Thief with Priest, win 0%). Fixing it would make every other pair almost never win, so the gap stays for now.
+- **Tuning target (soft, `npm run scenarios -- boss-fight`):** the boss is tuned for the weakest sensible party: a level 10 hero and a level 7 partner, each with Common gear and one prefixed item (the gear floor). That party wins about 60% on average over Warrior, Archer and Mage as the strong hero (result 59%). With normal crafted gear about 85% (result 83%). One hero without gear never wins (0%). Two level 10 heroes still win almost always: a full pair is the goal of the town. The fight lasts about 60 s (target 60 s, the old target of 125 s is dropped: a longer fight needs a lifted armour and HP, and the heroes cannot get through armour above about 45).
+- **Weapon-only rule:** a weapon alone must not beat a boss. A hero with only its best weapon must lose (win rate under 30%, result 21% over the baseline classes), and the boss still needs a hero with all 11 slots filled.
 
 ### Duration targets (1× speed)
+
+These targets are from the old model. The flat model has not been tuned to them yet (see section 11 of `docs/balance/combat-and-growth-mechanism.md` for the new draft targets).
 
 - **Normal encounter** (reference hero with crafted gear): 7 s at Lv 1, rising by 2 s per level to 25 s at Lv 10 (7, 11, 15, 19, 23 s at Lv 1, 3, 5, 7, 9), then by 0.4 s per level (about 61 s at Lv 100).
 - **Boss:** about 5 × the normal duration of its level (about 2 min at Lv 10).
@@ -406,6 +453,8 @@ The Bank is in Lord's Square. Prices are in `data/balance/backpack.json` and `ec
 - The first town takes a hero from level 1 to the cap of 10. The XP table above level 10 and the late-game pace come with the next town.
 
 ### Balance targets
+
+These targets are from the old model. The flat model has not been tuned to them yet. `npm run scenarios` reports the numbers against them.
 
 | Case | Win rate | Party HP lost | Duration |
 |---|---|---|---|
@@ -500,7 +549,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
   - **Lord's Square (middle):** Lord's Keep (decoration), Workshop, Bank, Academy, a chapel, a keep square with a well, the Castle gate, cottages and town houses.
   - **East Gate (east):** Barracks, Stables, a watchtower, the Dungeons gate, cottages and town houses.
 - **Buildings:** the Tavern, Workshop, Bank, Mill, Merchant, Academy, Barracks (opens the Heroes screen), Stables (opens the World map) and Dungeons gate open a panel. The Chapel has a name sign only. Houses, stalls and the tower have no function. All buildings are in `data/buildings.json` (`label` is null for a building without a sign).
-- **Life:** a main street and a south street cross all three screens, and short lanes join each door to a street. Villagers and guards walk on the roads together with animals (cats, dogs and hens). A cat is slow and sits often, a dog trots, a hen pecks. Animals never talk. Now and then a villager on the visible screen stops and says a full sentence in a speech bubble about the player, the heroes or the town. Heroes do not stand in town.
+- **Life:** a main street and a south street cross all three screens, and short lanes join each door to a street. Villagers and guards walk on the roads together with animals (cats, dogs and hens). A cat is slow and sits often, a dog trots, a hen pecks. Animals never use words, but the player can touch one (town and castle). A touched animal is happy for 5 seconds: it stands still, hops, hearts rise, and it calls (a cat purrs and mews, a dog yips, a hen cheeps). When the touch stops it calls once more, as if it wants another. Rarely (every 25 to 60 seconds) one visible animal calls by itself. Now and then a villager on the visible screen stops and says a full sentence in a speech bubble. Most sentences (about 70%) come from the facts of the save: gold, heroes, levels, classes, worn and carried items, crafting, the mill, runs, cleared dungeons and the time of day. The rest are stories about the town. A sentence does not repeat until six others were said. Heroes do not stand in town.
 - **Stage corners:** the stage shows the player's gold in its top left corner and the local date and time in its top right corner. The version label sits in a corner too.
 - **Castle:** the Castle in Castle Square opens when the player clicks it. Inside are two screens that slide like the town: the **Throne Hall** (screen 4) and the **Ramparts** (screen 5). The arrows (or left and right keys) move between them. The Leave button (or Escape) goes back to the town. The castle is a place to visit, not a game rule, so nothing in it is saved.
   - People and places are in `data/castle.json` (screen, position, size, number of tales). A click opens a story popup with a portrait and the tales (`castle.<id>.name`, `.title`, `.tale.<n>` in `data/i18n/`). A gold mark floats over a spot the player has not heard yet in this session.
@@ -515,7 +564,7 @@ Saves are never dropped on an update. Each change of the saved data adds a migra
 - **Close anywhere:** the player can click the empty space around a panel or modal to close it, not only the x button. Escape closes too.
 - **Hero bars:** hero lists show a live health bar and an experience bar.
 - **Heroes screen:**
-  - Stats tab: the full-body portrait, the main stats (Health, the class resource, Physical damage, Magical damage, Armour, Magic resist, Attack speed), the attributes as bars (Str red, Agi green, Int blue), and Power.
+  - Stats tab: the full-body portrait, the main stats (Health, the class resource, Physical damage, Magical damage, Armour, Magic resist, Attack time, Critical chance, Critical damage, Life steal), the attributes as bars (Str red, Agi green, Int blue), and Power.
   - Equipment tab: a paper doll with slots around the full-body portrait. A click on a slot gives Equip new item (side by side compare), View item (big portrait and stats) or Unequip.
   - Spells tab: 3 spell slots and 1 ultimate slot. A tap on a slot picks a learned spell.
   - Battle record tab: kills, damage, healing and battles won and lost.

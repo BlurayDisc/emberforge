@@ -1,7 +1,6 @@
 import { CLASSES } from '../../../content/classes';
 import { BASE_ITEMS } from '../../../content/baseItems';
 import { MATERIALS } from '../../../content/materials';
-import { WORKSHOP_SECTIONS } from '../../../content/workshopSections';
 import { loadRecipeFilterPreferences, saveRecipeFilterPreferences, type WorkshopRecipeView } from '../../../game';
 import type { ClassId } from '../../../model/hero';
 import type { ItemSlot } from '../../../model/item';
@@ -13,24 +12,14 @@ import { t } from '../../i18n';
 
 const ALL = 'all';
 
-const KNOWN_CLASS_IDS: readonly string[] = CLASSES.map((definition) => definition.id);
-const SHOWN_PROFESSION_IDS = WORKSHOP_SECTIONS.flatMap((section) => section.professionIds);
-// Every crafter offers the same slot list, so one choice means the same thing at every crafter. A crafter with no such recipe shows the empty message.
-const SELECTABLE_SLOTS: readonly ItemSlot[] = [...new Set(BASE_ITEMS.filter((base) => SHOWN_PROFESSION_IDS.includes(base.profession)).map((base) => base.slot))];
-const KNOWN_SLOTS: readonly string[] = SELECTABLE_SLOTS;
-
-// Each crafter keeps its own filter, saved in the browser. A saved value that no longer exists in the game data falls back to "all".
+// Each crafter keeps its own filter, saved in the browser.
 const preferencesByProfessionId = new Map<string, RecipeFilterPreferences>();
 
 function preferencesOf(professionId: string): RecipeFilterPreferences {
   let preferences = preferencesByProfessionId.get(professionId);
   if (!preferences) {
     const saved = loadRecipeFilterPreferences(professionId);
-    preferences = {
-      classId: KNOWN_CLASS_IDS.includes(saved.classId) ? saved.classId : ALL,
-      slot: KNOWN_SLOTS.includes(saved.slot) ? saved.slot : ALL,
-      sortDirection: saved.sortDirection,
-    };
+    preferences = { classId: saved.classId, slot: saved.slot, sortDirection: saved.sortDirection };
     preferencesByProfessionId.set(professionId, preferences);
   }
   return preferences;
@@ -49,8 +38,25 @@ function baseItemOrder(recipe: WorkshopRecipeView): number {
   return BASE_ITEMS.findIndex((base) => base.id === recipe.baseId);
 }
 
+function classIdsOffered(recipes: readonly WorkshopRecipeView[]): ClassId[] {
+  const offered = new Set(recipes.flatMap((recipe) => recipe.usableByClassIds));
+  return CLASSES.map((definition) => definition.id).filter((classId) => offered.has(classId));
+}
+
+function slotsOffered(recipes: readonly WorkshopRecipeView[]): ItemSlot[] {
+  return [...new Set(recipes.map((recipe) => recipe.slot))];
+}
+
+// The filter offers only what this crafter can make. A saved choice that this crafter does not offer counts as "all", and stays saved.
+function chosenOrAll(chosen: string, offered: readonly string[]): string {
+  return offered.includes(chosen) ? chosen : ALL;
+}
+
 export function applyRecipeFilter(professionId: string, recipes: readonly WorkshopRecipeView[]): WorkshopRecipeView[] {
-  const { classId, slot, sortDirection } = preferencesOf(professionId);
+  const preferences = preferencesOf(professionId);
+  const classId = chosenOrAll(preferences.classId, classIdsOffered(recipes));
+  const slot = chosenOrAll(preferences.slot, slotsOffered(recipes));
+  const { sortDirection } = preferences;
   const direction = sortDirection === 'up' ? 1 : -1;
   return recipes
     .filter((recipe) => classId === ALL || recipe.usableByClassIds.includes(classId as ClassId))
@@ -66,10 +72,12 @@ function slotLabel(slot: ItemSlot): string {
   return t(slot === 'ring' ? 'slot.ringOne' : `slot.${slot}`);
 }
 
-export function createRecipeFilterBar(professionId: string, requestRender: () => void): HTMLElement {
+export function createRecipeFilterBar(professionId: string, recipes: readonly WorkshopRecipeView[], requestRender: () => void): HTMLElement {
   const preferences = preferencesOf(professionId);
-  const classOptions = [{ value: ALL, text: t('workshop.filterAllClasses') }, ...CLASSES.map((definition) => ({ value: definition.id, text: className(definition.id) }))];
-  const slotOptions = [{ value: ALL, text: t('workshop.filterAllSlots') }, ...SELECTABLE_SLOTS.map((slot) => ({ value: slot, text: slotLabel(slot) }))];
+  const offeredClassIds = classIdsOffered(recipes);
+  const offeredSlots = slotsOffered(recipes);
+  const classOptions = [{ value: ALL, text: t('workshop.filterAllClasses') }, ...offeredClassIds.map((classId) => ({ value: classId, text: className(classId) }))];
+  const slotOptions = [{ value: ALL, text: t('workshop.filterAllSlots') }, ...offeredSlots.map((slot) => ({ value: slot, text: slotLabel(slot) }))];
   const sortOptions = [
     { value: 'up', text: t('workshop.sortLevelUp') },
     { value: 'down', text: t('workshop.sortLevelDown') },
@@ -82,8 +90,8 @@ export function createRecipeFilterBar(professionId: string, requestRender: () =>
   return element(
     'div',
     'filter-bar',
-    createThemedDropdown(t('workshop.filterClass'), classOptions, preferences.classId, (value) => choose({ classId: value })),
-    createThemedDropdown(t('workshop.filterSlot'), slotOptions, preferences.slot, (value) => choose({ slot: value })),
+    createThemedDropdown(t('workshop.filterClass'), classOptions, chosenOrAll(preferences.classId, offeredClassIds), (value) => choose({ classId: value })),
+    createThemedDropdown(t('workshop.filterSlot'), slotOptions, chosenOrAll(preferences.slot, offeredSlots), (value) => choose({ slot: value })),
     createThemedDropdown(t('workshop.sortLevelUp'), sortOptions, preferences.sortDirection, (value) => choose({ sortDirection: value as RecipeSortDirection })),
   );
 }

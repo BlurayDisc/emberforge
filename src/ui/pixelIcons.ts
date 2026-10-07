@@ -192,3 +192,7 @@ export function createPixelIcon(name: IconName, scale = 2): HTMLImageElement {
   icon.height = art.rows.length * scale;
   return icon;
 }
+
+export function warmPixelIcons(): void {
+  for (const name of Object.keys(ICONS) as IconName[]) createPixelIcon(name);
+}

@@ -6,6 +6,7 @@ import { t } from '../ui/i18n';
 import type { PanelHost } from '../ui/panelHost';
 import { openPrologue } from '../ui/prologue';
 import { focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
+import { hasOpenModal } from '../ui/modal';
 import { openRunReport } from '../ui/runReportModal';
 
 // A small notice for each hero that gained a level, also when the report opens at once or waits in the background.
@@ -18,7 +19,7 @@ function announceLevelUps(store: GameStore, report: RunReport, notify: (message:
   }
 }
 
-// A run ends while the player watches the battle screen (the stage, with no panel open): the report opens at once.
+// A run ends while the player watches the battle screen (the stage, with no panel and no window open): the report opens at once.
 // Everywhere else the report waits, so nothing pops up over what the player is doing. The Dungeons button counts it,
 // and the dungeon row shows "Results ready" until the player opens it.
 function startReportFlow(store: GameStore, notify: (message: string) => void, isBattleScreenShown: () => boolean): void {
@@ -39,7 +40,7 @@ function startReportFlow(store: GameStore, notify: (message: string) => void, is
       announceLevelUps(store, report, notify);
       if (report.runNumber === watchedRunNumber) {
         watchedRunNumber = null;
-        if (isBattleScreenShown()) openRunReport(store, report, notify);
+        if (isBattleScreenShown() && !hasOpenModal()) openRunReport(store, report, notify);
       }
     }
   });

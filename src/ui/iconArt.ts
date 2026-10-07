@@ -1,3 +1,4 @@
+import { MATERIALS } from '../content/materials';
 import type { MaterialCategory } from '../model/material';
 import { ITEM_SHAPE_ROWS } from './itemShapes';
 import { drawAscii, drawingToImage } from './pixelDraw';
@@ -78,6 +79,16 @@ function cachedImage(key: string, scale: number, rows: Rows, legend: Readonly<Re
     imageCache.set(key, canvas);
   }
   return drawingToImage({ canvas, fill: () => undefined }, scale);
+}
+
+// Travel to a new town frees the icons of lower tiers. A backpack item of a lower tier draws its icon again when the player looks at it.
+export function releaseIconsBelowTier(tier: number): void {
+  const lowerTierMaterialIds = new Set(MATERIALS.filter((material) => material.tier < tier).map((material) => material.id));
+  for (const key of [...imageCache.keys()]) {
+    const [kind, ...parts] = key.split(':');
+    const materialId = parts[parts.length - 1] ?? '';
+    if ((kind === 'item' || kind === 'material') && lowerTierMaterialIds.has(materialId)) imageCache.delete(key);
+  }
 }
 
 export function createItemIcon(baseId: string, materialId: string, mainCategory: string, scale = 3): HTMLImageElement {

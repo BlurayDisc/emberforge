@@ -7,7 +7,7 @@ import {
 } from '../../content/balance/battle';
 import type { Random } from '../../kernel/random';
 import type { BattleEvent, BattleReport, BattleUnit } from '../../model/battle';
-import { combatantOf, damageFactorBetween, defenceFactorOf, empowerBonusesOf, livingUnitsOf, statusStrength, type Combatant } from './combatant';
+import { armourFactorOf, attackSpeedFactorOf, combatantOf, damageFactorBetween, empowerAttackBonusOf, livingUnitsOf, statusStrength, type Combatant } from './combatant';
 import { rollDamage } from './damage';
 import { burnTickEvents, dodgeEvent, dodgesHit, shieldFieldsOf, takeDamage } from './damageTaken';
 import { applyLifeSteal } from './lifeSteal';
@@ -64,8 +64,8 @@ function act(actingCombatant: Combatant, combatants: readonly Combatant[], timeS
   if (dodgesHit(targetCombatant, timeSeconds)) return [dodgeEvent(actingCombatant, targetCombatant, timeSeconds)];
   const damage = rollDamage(actor, target, random, {
     statusFactor: damageFactorBetween(actingCombatant, targetCombatant, timeSeconds),
-    targetDefenceFactor: defenceFactorOf(targetCombatant, timeSeconds),
-    ...empowerBonusesOf(actingCombatant, timeSeconds),
+    targetArmourFactor: armourFactorOf(targetCombatant, actor.attackKind, timeSeconds),
+    attackBonus: empowerAttackBonusOf(actingCombatant, timeSeconds),
   });
   const taken = takeDamage(targetCombatant, damage.amount, timeSeconds);
   gainResourceFromHit(actor, target);
@@ -103,7 +103,8 @@ export function simulateBattle(units: readonly BattleUnit[], random: Random): Ba
 
     for (const combatant of combatants) {
       if (combatant.unit.hp <= 0) continue;
-      combatant.charge += combatant.unit.speed * (1 + statusStrength(combatant, 'haste', timeSeconds) - statusStrength(combatant, 'slow', timeSeconds)) * SECONDS_PER_TICK;
+      // The meter fills 100 / attackTime a second, where attackTime = base attack seconds / attack speed factor.
+      combatant.charge += (ACTION_THRESHOLD / combatant.unit.baseAttackSeconds) * attackSpeedFactorOf(combatant, timeSeconds) * SECONDS_PER_TICK;
       regenerateResource(combatant.unit, SECONDS_PER_TICK);
     }
     const readyCombatants = combatants

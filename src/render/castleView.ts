@@ -1,6 +1,9 @@
 import { Container, Sprite, type Texture } from 'pixi.js';
 import { CASTLE_SPOTS, castleWorldX as spotWorldX, type CastleSpot } from '../content/castle';
 import { CASTLE_SCREEN_COUNT, CASTLE_WIDTH, LOGICAL_WIDTH } from '../kernel/stageSize';
+import { createAnimalChatter } from './animalChatter';
+import { createAnimalPetting, type AnimalVoice } from './animalPetting';
+import { createRandom } from '../kernel/random';
 import { createCastlePets } from './castlePets';
 import { drawShadowOval } from './castleAmbientArt';
 import { FIGURE_DRAWERS } from './castleFigureArt';
@@ -18,6 +21,7 @@ export type CastleView = SlidingView;
 const FIRST_SCREEN = 0;
 const IDLE_BOB_SECONDS = 1.4;
 const SHADOW_WIDTH = 22;
+const ANIMAL_HEART_DEPTH = 100;
 
 function createBackdrop(canvas: HTMLCanvasElement, screenIndex: number, depth: number): Sprite {
   const backdrop = new Sprite(createPixiTexture(canvas));
@@ -61,7 +65,7 @@ function addFigure(root: Container, spot: CastleSpot, figureTextures: Map<string
   return { sprite, restingY: feetY, phase: (spot.x * 0.37) % IDLE_BOB_SECONDS };
 }
 
-export function createCastleView(stage: PixelStage): CastleView {
+export function createCastleView(stage: PixelStage, animalVoice: AnimalVoice): CastleView {
   // The root holds the whole castle world. It moves left to scroll, and its children sort by zIndex.
   const root = new Container();
   root.visible = false;
@@ -86,9 +90,11 @@ export function createCastleView(stage: PixelStage): CastleView {
   const shadowTexture = createPixiTexture(drawShadowOval(SHADOW_WIDTH));
   const figures = CASTLE_SPOTS.filter((spot) => spot.kind === 'person').map((spot) => addFigure(root, spot, figureTextures, shadowTexture));
   const scenery = createCastleScenery(root);
-  const pets = createCastlePets(root);
+  const petting = createAnimalPetting(root, animalVoice, () => root.visible, ANIMAL_HEART_DEPTH);
+  const pets = createCastlePets(root, petting);
 
   const scroller = createScreenScroller(LOGICAL_WIDTH, CASTLE_SCREEN_COUNT, FIRST_SCREEN);
+  const animalChatter = createAnimalChatter(createRandom(7).fork('animal-chatter'), animalVoice, () => pets.kindsOnScreen(scroller.currentScreen()), () => false);
   scroller.onScroll((scrollLeft) => {
     root.x = -Math.round(scrollLeft);
   });
@@ -101,6 +107,8 @@ export function createCastleView(stage: PixelStage): CastleView {
     scroller.advance(deltaSeconds);
     scenery.update(elapsedSeconds);
     pets.update(elapsedSeconds);
+    petting.update(elapsedSeconds);
+    animalChatter.update(elapsedSeconds);
     // A figure breathes: one whole pixel up for half of each cycle.
     for (const figure of figures) figure.sprite.position.y = figure.restingY - (((elapsedSeconds + figure.phase) % IDLE_BOB_SECONDS) < IDLE_BOB_SECONDS / 2 ? 0 : 1);
   });

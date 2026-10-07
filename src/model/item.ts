@@ -37,13 +37,15 @@ export type ArmourWeight = 'heavy' | 'medium' | 'light';
 export const ITEM_QUALITY_ORDER = ['common', 'uncommon', 'magic', 'rare', 'legendary', 'unique'] as const;
 export type ItemQuality = Exclude<(typeof ITEM_QUALITY_ORDER)[number], 'legendary'>;
 export type AffixKind = 'prefix' | 'suffix';
-// Percent points, not class stats. A hero only gets them from gear.
-export const COMBAT_BONUS_STATS = ['criticalChance', 'criticalDamage', 'lifeSteal'] as const;
+// Percent points, not class stats. A hero only gets them from gear. Attack speed is a share of the attack speed pool (3 means +3%).
+export const COMBAT_BONUS_STATS = ['criticalChance', 'criticalDamage', 'lifeSteal', 'attackSpeed'] as const;
 export type CombatBonusStat = (typeof COMBAT_BONUS_STATS)[number];
 export type AffixStat = keyof StatBlock | CombatBonusStat;
 export interface StatBonuses extends Partial<StatBlock> {
   physicalDamage?: number;
   magicalDamage?: number;
+  attackSpeed?: number;
+  criticalChance?: number;
 }
 
 export interface ItemAffix {

@@ -5,7 +5,6 @@ export const CATALYST_MATERIAL_ID = data.catalystMaterialId;
 
 export const LEVELS_PER_BRACKET = data.levelsPerBracket;
 
-export const BASE_STAT_GROWTH_PER_ITEM_LEVEL = data.baseStatGrowthPerItemLevel;
 export const BASE_STAT_SPREAD_FRACTION = data.baseStatSpreadFraction;
 export const UNSCALED_BASE_STATS: readonly string[] = data.unscaledBaseStats;
 export const AFFIX_GROWTH_PER_ITEM_LEVEL = data.affixGrowthPerItemLevel;

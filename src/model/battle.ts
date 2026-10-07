@@ -24,20 +24,20 @@ export interface BattleUnit {
   attackKind: AttackKind;
   defence: number;
   resistance: number;
-  speed: number;
+  // Seconds for one basic attack before any bonus, and the bonus from Agility and gear (0.25 means +25%). Haste and Slow join the same pool in battle.
+  baseAttackSeconds: number;
+  attackSpeedBonus: number;
   critChance: number;
   // How far one hit can swing from its base damage, as a fraction: 0.1 means 90-110%.
   damageVarianceFraction: number;
   criticalDamageMultiplier: number;
-  // The main attribute of the unit and its value. Empower raises the attack from it, and raises the critical chance when it is Skill. A monster has none (value 0).
-  mainAttribute: 'strength' | 'magic' | 'skill';
+  // The main attribute value of the unit. Empower raises the attack from it. A monster has none (value 0).
   mainAttributeValue: number;
-  skill: number;
   // The fraction of damage dealt that the unit heals.
   lifeSteal: number;
   behavior: UnitBehavior;
   targetPriority?: TargetPriority;
-  // The share of the target's Defence that this unit's physical hits ignore. A boss uses it so a wall of Defence does not make it harmless.
+  // The share of the flat Defence of the target that this unit's physical hits ignore. A boss uses it so a wall of Defence does not make it harmless.
   armourPenetration?: number;
   resourceId: ResourceId;
   maxResource: number;

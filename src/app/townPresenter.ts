@@ -2,6 +2,7 @@ import { BUILDINGS } from '../content/buildings';
 import { collectMillMaterialsCommand, describeMill, type GameStore } from '../game';
 import { TOWN_SCREEN_COUNT } from '../kernel/stageSize';
 import type { PixelStage } from '../render/pixelStage';
+import { playAnimalVoice } from './animalVoice';
 import { createTownView, type TownView } from '../render/townView';
 import { setInCastle } from '../ui/castleVisit';
 import { describeRejection, onLanguageChange, t } from '../ui/i18n';
@@ -24,6 +25,7 @@ export function createTownPresenter(store: GameStore, stage: PixelStage, panelHo
       const result = store.execute(collectMillMaterialsCommand());
       if (!result.accepted) panelHost.notify(describeRejection(result.rejection));
     },
+    animalVoice: playAnimalVoice,
     pickSpeechText: () => pickTownTalk(store.getState()),
     isInputBlocked: isMenuOpen,
   });

@@ -20,8 +20,8 @@ const SECONDS_BETWEEN_SPELLS_IN_PLAY_ALL = 4000;
 function createDemoUnit(id: string, side: BattleUnit['side'], definitionId: string, name: string, spriteKey: string): BattleUnit {
   return {
     id, definitionId, name, side, rank: side === 'party' ? 'hero' : 'normal', spriteKey, level: 10,
-    maxHp: 100, hp: 100, attack: 1, attackKind: 'physical', defence: 0, resistance: 0, speed: 100, critChance: 0, damageVarianceFraction: 0,
-    criticalDamageMultiplier: 1.5, mainAttribute: 'strength', mainAttributeValue: 0, skill: 0, lifeSteal: 0, behavior: 'fighter', resourceId: 'rage', maxResource: 0, resource: 0, spells: [],
+    maxHp: 100, hp: 100, attack: 1, attackKind: 'physical', defence: 0, resistance: 0, baseAttackSeconds: 1.65, attackSpeedBonus: 0, critChance: 0, damageVarianceFraction: 0,
+    criticalDamageMultiplier: 1.5, mainAttributeValue: 0, lifeSteal: 0, behavior: 'fighter', resourceId: 'rage', maxResource: 0, resource: 0, spells: [],
   };
 }
 

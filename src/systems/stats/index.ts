@@ -1,2 +1,3 @@
 export { levelUpGains, type LevelUpGains } from './levelUpGains';
-export { computeHeroPower, computeHeroSheet, computeHeroStats, heroToBattleUnit } from './heroStats';
+export { computeHeroPower } from './heroPower';
+export { computeHeroSheet, computeHeroStats, heroToBattleUnit } from './heroStats';

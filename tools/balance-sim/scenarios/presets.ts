@@ -1,10 +1,12 @@
 import type { ClassId } from '../../../src/model/hero';
+import type { ItemSlot } from '../../../src/model/item';
 import type { UnitRank } from '../../../src/model/battle';
 import type { GearFloorProfile } from './bestEquippableGear';
 import crafterCurveData from '../presets/crafter-curve.json';
 import bossFightData from '../presets/boss-fight.json';
 import economyData from '../presets/economy.json';
 import experienceCurveData from '../presets/experience-curve.json';
+import firstFightData from '../presets/first-fight.json';
 import mobKillTimeData from '../presets/mob-kill-time.json';
 import resourceUseData from '../presets/resource-use.json';
 
@@ -49,6 +51,19 @@ export interface MobKillTimePreset {
   targetSecondsByLevel: Record<string, number>;
 }
 
+export interface FirstFightPreset {
+  description: string;
+  firstLevel: number;
+  lastLevel: number;
+  classIds: ClassId[];
+  averagedClassIds: ClassId[];
+  battlesPerCase: number;
+  seed: number;
+  // Up to this hero level only the main hand weapon is worn. Above it, every slot is worn.
+  gearStates: { name: string; description: string; weaponOnlyUpToLevel: number; quality: 'common' | 'uncommon' | 'magic' | 'rare' }[];
+  targetHealthLostPercent: Record<string, number[]>;
+}
+
 export interface BossFightPreset {
   description: string;
   dungeonId: string;
@@ -58,10 +73,22 @@ export interface BossFightPreset {
   partnerClassIds: ClassId[];
   battlesPerCase: number;
   seed: number;
+  averagedClassIds: ClassId[];
   targetSeconds: number;
-  targetWinRatePercent: number;
+  gearStates: BossGearState[];
+}
+
+export interface BossGearState {
+  name: string;
+  description: string;
+  // 1 is the strong hero alone. 2 adds the partner.
+  partySize: 1 | 2;
   // When set, each hero wears Common gear plus this many prefixed items. When null, the gear is crafted at the normal quality odds.
   gearFloor: GearFloorProfile | null;
+  // When set, each hero wears only these slots at this quality (an empty list is no gear).
+  slots: ItemSlot[] | null;
+  quality: 'common' | 'uncommon' | 'magic' | 'rare' | null;
+  targetWinRatePercent: [number, number];
 }
 
 export interface ResourceUsePreset {
@@ -94,5 +121,6 @@ export const ECONOMY_PRESET = economyData as EconomyPreset;
 export const CRAFTER_CURVE_PRESET = crafterCurveData as CrafterCurvePreset;
 export const EXPERIENCE_CURVE_PRESET = experienceCurveData as ExperienceCurvePreset;
 export const MOB_KILL_TIME_PRESET = mobKillTimeData as MobKillTimePreset;
+export const FIRST_FIGHT_PRESET = firstFightData as FirstFightPreset;
 export const BOSS_FIGHT_PRESET = bossFightData as BossFightPreset;
 export const RESOURCE_USE_PRESET = resourceUseData as ResourceUsePreset;

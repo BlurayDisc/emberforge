@@ -6,6 +6,7 @@ import type { GameState } from '../../model/gameState';
 import type { ClassId } from '../../model/hero';
 import type { Item, ItemSlot } from '../../model/item';
 import { craftSeconds, craftingExperienceToNextLevel, listRecipes, upgradeStepChance } from '../../systems/crafting';
+import { isClassUnlocked } from '../classUnlocks';
 import { classIdsThatCanUse, findEquipProblem, type EquipProblem } from '../../systems/equipment';
 import { countMaterial } from '../../systems/inventory';
 import { previewBaseStatRanges } from '../../systems/items';
@@ -59,18 +60,21 @@ export function listCrafters(state: GameState): CrafterView[] {
   });
 }
 
+// A recipe that only locked classes can use stays hidden, and the lists of classes only name hired or hireable classes. This keeps the early game short.
 export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
   const tiers = Array.from({ length: highestUnlockedTier(state) }, (_, index) => index + 1);
   return tiers.flatMap((tier) =>
-    listRecipes(tier).map((recipe) => {
+    listRecipes(tier).flatMap((recipe) => {
       const base = requireById(BASE_ITEMS, recipe.baseId);
+      const usableByClassIds = classIdsThatCanUse(base).filter((classId) => isClassUnlocked(state, classId));
+      if (usableByClassIds.length === 0) return [];
       const ingredients = recipe.ingredients.map((ingredient) => ({
         materialId: requireById(MATERIALS, ingredient.materialId).id,
         needed: ingredient.quantity,
         owned: countMaterial(state.backpack, ingredient.materialId),
       }));
       const crafterLevel = state.crafters[recipe.profession]?.level ?? 1;
-      return {
+      return [{
         baseId: recipe.baseId,
         tier,
         resultMaterialId: recipe.setMaterialId ?? recipe.ingredients[0]?.materialId ?? '',
@@ -82,14 +86,14 @@ export function listWorkshopRecipes(state: GameState): WorkshopRecipeView[] {
         requiredCraftLevel: recipe.requiredCraftLevel,
         feeCopper: recipe.feeCopper,
         canAffordFee: state.copper >= recipe.feeCopper,
-        usableByClassIds: classIdsThatCanUse(base),
+        usableByClassIds,
         isUnlocked: crafterLevel >= recipe.requiredCraftLevel,
         craftSeconds: craftSeconds(recipe),
         isCrafterBusy: state.jobs.some((job) => job.kind === 'craft' && job.professionId === recipe.profession),
         upgradeChance: upgradeStepChance(1, crafterLevel - recipe.requiredCraftLevel),
         itemLevel: recipe.itemLevel,
         statRanges: previewBaseStatRanges(recipe.baseId, recipe.itemLevel),
-      };
+      }];
     }),
   );
 }

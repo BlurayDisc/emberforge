@@ -1,4 +1,4 @@
-// The numbers a player reads on the hero screen. Strength, skill and magic are the attributes (Str, Agi, Int).
+// The numbers a player reads on the hero screen. Strength, agility and intelligence are the attributes (Str, Agi, Int).
 export interface HeroSheet {
   health: number;
   resource: number;
@@ -6,10 +6,11 @@ export interface HeroSheet {
   magicalDamage: number;
   armour: number;
   resistance: number;
-  speed: number;
+  // Seconds for one basic attack.
+  attackSeconds: number;
   strength: number;
-  skill: number;
-  magic: number;
+  agility: number;
+  intelligence: number;
   // Percent points.
   criticalChance: number;
   criticalDamage: number;

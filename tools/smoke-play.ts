@@ -49,6 +49,7 @@ import { rollMonsterLoot } from '../src/systems/loot';
 import { QUALITY_WEIGHTS, SELL_ADDED_VALUE_COPPER_PER_INGREDIENT, SELL_QUALITY_FACTOR } from '../src/content/balance/items';
 import { requireById } from '../src/content/lookup';
 import { MATERIALS } from '../src/content/materials';
+import { MONSTERS } from '../src/content/monsters';
 import { applyCraftingExperience, craftingExperienceForCraft, findRecipe, listRecipes, rollUpgradeLevel, upgradeReachChance, upgradeStepChance } from '../src/systems/crafting';
 import { addMaterials, backpackExpansionCostCopper, backpackRowCount, findItem, usedCellCount } from '../src/systems/inventory';
 import { healthFractionAt, heroAfterFight, isDowned } from '../src/systems/recovery';
@@ -345,7 +346,7 @@ function playSession(seed: number): string {
   const boss = createMonsterUnit('goblin-chief', 10, 'boss-target-check');
   const report = simulateBattle([tankUnit, squishyUnit, boss], createRandom(3).fork('battle'));
   const bossHits = report.events.filter((event) => event.actorId === boss.id && event.kind === 'attack');
-  assert.ok(bossHits.length > 10, 'the boss attacks several times');
+  assert.ok(bossHits.length > 4, 'the boss attacks several times');
   assert.ok(bossHits.every((event) => event.targetId === tankUnit.id), 'the boss never attacks the hero with less Defence while the frontline stands');
 }
 
@@ -403,14 +404,14 @@ function playSession(seed: number): string {
   const reflectEvents = reflectReport.events.filter((event) => event.isReflect);
   assert.ok(reflectEvents.length > 0 && reflectEvents.every((event) => event.actorId === bareWarrior.id && event.amount > 0), 'Iron Wall gives the caster Thorns, and the reflected damage comes from the caster');
 
-  const sunderingMonsterSpell: BattleSpell = { id: 'test.sunder', isUltimate: false, cooldownSeconds: 1000, resourceCost: 0, effect: { kind: 'status', status: 'sunder', target: 'enemy', strength: 0.5, durationSeconds: 1000 } };
+  const sunderingMonsterSpell: BattleSpell = { id: 'test.sunder', isUltimate: false, cooldownSeconds: 1000, castSeconds: 0.8, resourceCost: 0, effect: { kind: 'status', status: 'sunder', target: 'enemy', strength: 0.5, durationSeconds: 1000 } };
   assert.ok(hobgoblinAverageHit(bareWarrior, [sunderingMonsterSpell]) > hobgoblinAverageHit(bareWarrior) * 1.3, 'Sunder raises the damage a unit takes');
 }
 
 // A damage spell with magicPower adds a magic part to each hit, so a monster with high Resistance takes less from it than a monster with low Resistance.
 {
   assert.equal(findSpell('warrior.thunder-slam'), undefined, 'Thunder Slam is reserved for a specialisation, so the game does not load it');
-  const thunderSlam: BattleSpell = { id: 'test.hybrid-slam', isUltimate: false, cooldownSeconds: 11, resourceCost: 0, effect: { kind: 'damage', damageKind: 'physical', target: 'allEnemies', hits: 1, power: 1.4, magicPower: 0.9 } };
+  const thunderSlam: BattleSpell = { id: 'test.hybrid-slam', isUltimate: false, cooldownSeconds: 11, castSeconds: 0.8, resourceCost: 0, effect: { kind: 'damage', damageKind: 'physical', target: 'allEnemies', hits: 1, power: 1.4, magicPower: 0.9 } };
   const slamDamage = (resistance: number): number => {
     const unit = { ...heroToBattleUnit({ ...createHero('warrior', 1, createRandom(12)), level: 10 }), spells: [thunderSlam], maxHp: 1_000_000, hp: 1_000_000, maxResource: 1000, resource: 1000 };
     const monster = { ...createMonsterUnit('hobgoblin', 10, 'slam-check'), resistance };
@@ -433,7 +434,7 @@ function playSession(seed: number): string {
   const bonusUnit = heroToBattleUnit(bonusHero);
   assert.equal(plainUnit.lifeSteal, 0, 'gear without life steal gives none');
   assert.ok(Math.abs(bonusUnit.lifeSteal - 0.05) < 1e-9, 'life steal comes from the suffix');
-  assert.ok(Math.abs(bonusUnit.critChance - plainUnit.critChance - 0.03) < 1e-9, 'critical chance adds to the Skill chance');
+  assert.ok(Math.abs(bonusUnit.critChance - plainUnit.critChance - 0.03) < 1e-9, 'critical chance from gear adds to the base chance');
   assert.ok(Math.abs(bonusUnit.criticalDamageMultiplier - plainUnit.criticalDamageMultiplier - 0.15) < 1e-9, 'critical damage adds to the multiplier');
   const bonusSheet = computeHeroSheet(bonusHero);
   assert.equal(bonusSheet.lifeSteal, 5);
@@ -446,13 +447,13 @@ function playSession(seed: number): string {
   assert.equal(healEventsOf(plainUnit), 0, 'a hero without life steal never heals itself');
   assert.ok(healEventsOf({ ...bonusUnit, lifeSteal: 0.5 }) > 0, 'a hero with life steal heals when it hits');
 
-  const rolledValues: Record<string, number[]> = { lifeSteal: [], criticalChance: [], criticalDamage: [] };
+  const rolledValues: Record<string, number[]> = {};
   for (let seed = 1; seed <= 600; seed++) {
     const crafted = generateCraftedItem({ itemId: `roll-${seed}`, baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 40, upgradeLevel: 0, craftingCostCopper: 10, ingredientCount: 1 }, createRandom(seed));
-    for (const affix of crafted.affixes) rolledValues[affix.stat]?.push(affix.value);
+    for (const affix of crafted.affixes) (rolledValues[affix.affixId] ??= []).push(affix.value);
   }
   for (const affix of AFFIXES.filter((definition) => definition.scalesWithItemLevel === false)) {
-    const values = rolledValues[affix.stat] ?? [];
+    const values = rolledValues[affix.id] ?? [];
     assert.ok(values.length > 0, `${affix.id} is crafted by chance`);
     assert.ok(values.every((value) => value >= affix.minimumValue && value <= affix.maximumValue), `${affix.id} does not grow with the item level`);
   }
@@ -467,7 +468,7 @@ function playSession(seed: number): string {
   const priest = equipSpell(learnSpell({ ...createHero('priest', 1, createRandom(6)), level: 10 }, minorHeal), minorHeal, 0);
   const averageHealAfterBossSpells = (bossSpells: readonly BattleSpell[]): number => {
     const boss = { ...createMonsterUnit('goblin-chief', 10, 'boss-wound-check'), spells: bossSpells };
-    const woundedPriest = { ...heroToBattleUnit(priest), maxHp: 100_000, hp: 100 };
+    const woundedPriest = { ...heroToBattleUnit(priest), maxHp: 100_000, hp: 50_000 };
     const heals = simulateBattle([woundedPriest, boss], createRandom(6).fork('battle')).events.filter((event) => event.kind === 'heal' && event.actorId === woundedPriest.id);
     return heals.reduce((total, event) => total + event.amount, 0) / heals.length;
   };
@@ -584,7 +585,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const focusedArcher = casterWith('archer', ['archer.hunters-focus']);
   assert.ok(averageHit(fight([focusedArcher, ...wolves(1)]).events.filter((event) => event.timeSeconds < 9), focusedArcher.id) > averageHit(fight([plainArcher, ...wolves(1)]).events.filter((event) => event.timeSeconds < 9), plainArcher.id), 'Empower raises the attack of an Archer');
   const boltsWithin = (spellIds: string[]): number => {
-    const caster = casterWith('mage', spellIds);
+    const caster = { ...casterWith('mage', spellIds), damageVarianceFraction: 0, critChance: 0 };
     const hits = fight([caster, ...wolves(1)]).events.filter((event) => event.actorId === caster.id && event.spellId === 'mage.fire-bolt' && !event.isCritical && event.timeSeconds < 9);
     return hits.reduce((total, event) => total + event.amount, 0) / hits.length;
   };
@@ -622,7 +623,9 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const setRecipes = listRecipes(1).filter((recipe) => recipe.setMaterialId !== null);
   assert.ok(setRecipes.every((recipe) => recipe.requiredCraftLevel === findRecipe(recipe.baseId, 1)?.requiredCraftLevel), 'every set recipe opens at the level of its basic recipe, even before the player owns the set material');
   assert.ok(setRecipes.every((recipe) => recipe.itemLevel === findRecipe(recipe.baseId, 1)?.itemLevel), 'every set recipe has the item level of its basic recipe');
-  assert.equal(findRecipe('helm-heavy', 1, 'sharp-fang'), undefined, 'a base item of craft level 1 has no set recipe');
+  assert.ok(findRecipe('helm-heavy', 1, 'sharp-fang') && findRecipe('boots-heavy', 1, 'sharp-fang'), 'every armour piece has set recipes, whatever its craft level');
+  assert.equal(findRecipe('belt', 1, 'sharp-fang'), undefined, 'a belt has no set recipe');
+  assert.equal(findRecipe('ring', 1, 'sharp-fang'), undefined, 'a ring has no set recipe');
   assert.equal(findRecipe('sword', 1, 'toadskin'), undefined, 'a weapon of craft level 1 has no set recipe');
   const bodyArmourVariants = listRecipes(1).filter((recipe) => recipe.baseId === 'armour-heavy');
   assert.equal(bodyArmourVariants.length, 1 + MATERIALS.filter((material) => material.tier === 1 && material.setBonus !== undefined).length, 'body armour has a basic recipe and one set recipe for each set material');
@@ -645,9 +648,9 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   assert.ok(averageSaleOfQuality('rare') < averageSaleOfQuality('common') * 3.5, 'a rare set item sells for more than a common one, but not for several times more');
   const makeHelm = (setMaterialId: string | null): Item => generateCraftedItem({ itemId: 'helm', baseId: 'helm-heavy', tier: 1, setMaterialId, itemLevel: 1, upgradeLevel: 0, craftingCostCopper: 1, ingredientCount: 1 }, createRandom(4));
   const warrior = createHero('warrior', 1, createRandom(3));
-  const skillWith = (helm: Item): number => computeHeroSheet({ ...warrior, equipment: { helm } }).skill;
+  const agilityWith = (helm: Item): number => computeHeroSheet({ ...warrior, equipment: { helm } }).agility;
   assert.equal(makeHelm('sharp-fang').materialId, 'sharp-fang', 'a set piece keeps its set material');
-  assert.equal(skillWith(makeHelm('sharp-fang')) - skillWith(makeHelm(null)), requireById(MATERIALS, 'sharp-fang').setBonus!.value, 'a set material gives its fixed bonus');
+  assert.equal(agilityWith(makeHelm('sharp-fang')) - agilityWith(makeHelm(null)), requireById(MATERIALS, 'sharp-fang').setBonus!.value, 'a set material gives its fixed bonus');
 }
 
 // Every spell up to level 10 shows a look and plays sounds in a real fight. The planner sees each cast once, in order.
@@ -720,18 +723,19 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
 {
   const professionOf = (baseId: string) => BASE_ITEMS.find((base) => base.id === baseId)?.profession;
   for (const baseId of ['helm-medium', 'gloves-medium', 'boots-medium', 'legs-medium', 'armour-medium', 'belt']) assert.equal(professionOf(baseId), 'leatherworking', `${baseId} is made by the Leatherworker`);
-  for (const baseId of ['helm-light', 'armour-light', 'tome']) assert.equal(professionOf(baseId), 'tailoring', `${baseId} is made by the Tailor`);
+  for (const baseId of ['helm-light', 'armour-light']) assert.equal(professionOf(baseId), 'tailoring', `${baseId} is made by the Tailor`);
+  for (const baseId of ['wand', 'runed-wand', 'scepter', 'staff', 'arcane-staff', 'tome']) assert.equal(professionOf(baseId), 'enchanting', `${baseId} is made by the Enchanter`);
   assert.ok(createNewGameState(1).crafters.leatherworking, 'a new game has a Leatherworking crafter');
 }
 
 // Legs: every armour weight has a legs recipe, a hero of a fitting class wears it, and no two pieces of one set share a crafter level.
 {
   for (const weight of ['heavy', 'medium', 'light']) {
-    const pieceLevels = ['helm', 'gloves', 'boots', 'legs', 'armour'].map((slot) => `${slot}-${weight}`);
+    const pieceLevels = ['boots', 'gloves', 'helm', 'legs', 'armour'].map((slot) => `${slot}-${weight}`);
     for (const setMaterialId of [null, ...MATERIALS.filter((material) => material.tier === 1 && material.setBonus !== undefined).map((material) => material.id)]) {
       const levels = pieceLevels.flatMap((baseId) => findRecipe(baseId, 1, setMaterialId)?.requiredCraftLevel ?? []);
       if (setMaterialId === null) assert.equal(new Set(levels).size, levels.length, `the ${weight} plain pieces open at different crafter levels`);
-      assert.ok(levels.every((level, index) => index === 0 || (level as number) >= (levels[index - 1] as number)), 'a set opens in the order helm, gloves, boots, legs, armour');
+      assert.ok(levels.every((level, index) => index === 0 || (level as number) >= (levels[index - 1] as number)), 'a set opens in the order boots, gloves, helm, legs, armour');
       assert.ok(levels.every((level) => (level as number) <= 10), `a level 10 crafter can make every ${weight} piece made from ${setMaterialId ?? 'the main material'}`);
     }
   }
@@ -781,8 +785,8 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const versionTwentyThreeSave = JSON.stringify({ saveVersion: 23, company: [{ id: 'hero-1', classId: 'warrior', level: 3, experience: 12, equipment: {} }], backpack: [], jobs: [], reports: [{ runNumber: 1, dungeonId: 'rat-cellar', firstClear: false, result: { won: true, heroes: [heroResult] } }] });
   assert.ok(parseGameState(versionTwentyThreeSave)?.reports[0]?.result.heroes[0]?.levelBefore === 3, 'a version 23 report has no level-up growth');
   const gains = levelUpGains('warrior', 2, 3);
-  assert.ok(gains.stats.hp > 0 && gains.stats.strength >= 0 && gains.resource > 0, 'a level-up gives health and a bigger resource pool');
-  assert.deepEqual(levelUpGains('warrior', 3, 3).stats, { hp: 0, strength: 0, magic: 0, skill: 0, speed: 0, defence: 0, resistance: 0 }, 'no level-up gives no growth');
+  assert.ok(gains.stats.hp > 0 && gains.stats.strength >= 0, 'a level-up gives health');
+  assert.deepEqual(levelUpGains('warrior', 3, 3).stats, { hp: 0, strength: 0, agility: 0, intelligence: 0, defence: 0, resistance: 0 }, 'no level-up gives no growth');
 }
 
 // A level 1 monster always drops each of its basic materials, 1 most of the time and 2 less often. It never drops none.
@@ -1104,7 +1108,7 @@ for (let level = 1; level <= 7; level++) {
   for (const heroClass of CLASSES) {
     const levelOneBases = BASE_ITEMS.filter((base) => classIdsThatCanUse(base).includes(heroClass.id) && findRecipe(base.id, 1)?.itemLevel === 1);
     assert.ok(levelOneBases.some((base) => base.slot === 'mainHand'), `${heroClass.id} has a level 1 weapon`);
-    assert.ok(levelOneBases.some((base) => base.slot === 'armour' || base.slot === 'helm'), `${heroClass.id} has level 1 armour`);
+    assert.ok(levelOneBases.some((base) => base.slot === 'armour' || base.slot === 'boots'), `${heroClass.id} has level 1 armour`);
   }
 }
 
@@ -1213,6 +1217,95 @@ const versionNineSave = JSON.stringify({ saveVersion: 9, company: [], backpack: 
 const migratedNine = parseGameState(versionNineSave);
 assert.ok(migratedNine && migratedNine.saveVersion === CURRENT_SAVE_VERSION, 'a version 9 save migrates');
 assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the migration removes money from old reports');
+
+// The flat combat model: a hit minus armour never does less than 1, a spell hit can crit, attack time follows Agility, and the pools are fixed.
+{
+  const warriorAtLevel = (level: number): Hero => ({ ...createHero('warrior', 1, createRandom(3)), level });
+  assert.equal(computeHeroSheet(warriorAtLevel(1)).health, 593, 'a level 1 Warrior has the baseline HP (213 + 26 Strength x 14.6)');
+  assert.equal(computeHeroSheet(warriorAtLevel(5)).health, 739, 'a level 5 Warrior has the baseline HP');
+  assert.equal(computeHeroSheet(warriorAtLevel(10)).armour, 5, 'no level gives Defence');
+  assert.ok(!('skill' in computeHeroSheet(warriorAtLevel(1))), 'the Skill stat is gone');
+  assert.equal(heroToBattleUnit(warriorAtLevel(1)).maxResource, heroToBattleUnit(warriorAtLevel(10)).maxResource, 'a resource pool does not grow with the level');
+  assert.ok(SPELLS.every((spell) => spell.castSeconds >= 0), 'every spell has a cast time (0 is instant)');
+
+  const monsterAt = (monsterId: string, level: number): BattleUnit => createMonsterUnit(monsterId, level, 'curve-check');
+  assert.deepEqual([monsterAt('cave-rat', 1).maxHp, monsterAt('cave-rat', 1).attack, monsterAt('cave-rat', 10).maxHp, monsterAt('cave-rat', 10).attack], [413, 35, 1075, 99], 'a normal monster follows the level anchors');
+  assert.equal(monsterAt('cave-rat', 15).maxHp, 1350, 'the last segment of the monster curve goes on above the last anchor');
+  assert.equal(monsterAt('alpha-wolf', 5).maxHp, Math.round(730 * (requireById(MONSTERS, 'alpha-wolf').statFactor ?? 1)), 'a rare monster lifts its stats by its stat factor');
+  const bossFlatStats = requireById(MONSTERS, 'goblin-chief').flatStats;
+  assert.ok(bossFlatStats && requireById(MONSTERS, 'goblin-chief').statFactor === undefined, 'the boss has flat stats and no stat factor');
+  const bossUnit = monsterAt('goblin-chief', 10);
+  assert.deepEqual([bossUnit.maxHp, bossUnit.attack, bossUnit.defence, bossUnit.resistance, bossUnit.baseAttackSeconds], [bossFlatStats?.hp, bossFlatStats?.damage, bossFlatStats?.armour, bossFlatStats?.resistance, bossFlatStats?.attackSeconds], 'the boss unit takes its flat numbers');
+  assert.equal(monsterAt('goblin-chief', 3).maxHp, bossUnit.maxHp, 'the level of the dungeon does not change the flat boss numbers');
+
+  const warriorUnit = heroToBattleUnit(warriorAtLevel(1));
+  const armouredHero = { ...warriorUnit, defence: 100_000, maxHp: 1_000_000, hp: 1_000_000 };
+  const weakMonster = { ...createMonsterUnit('cave-rat', 1, 'floor-check'), attack: 1 };
+  const floorFight = simulateBattle([armouredHero, weakMonster], createRandom(5).fork('battle'));
+  const hitsOnArmouredHero = floorFight.events.filter((event) => event.targetId === armouredHero.id && event.kind === 'attack' && !event.isCritical);
+  assert.ok(hitsOnArmouredHero.length > 5 && hitsOnArmouredHero.every((event) => event.amount === 1), 'a hit that armour cancels still does 1 damage');
+
+  const steadyUnit: BattleUnit = { ...warriorUnit, damageVarianceFraction: 0, critChance: 0.5, maxHp: 1_000_000, hp: 1_000_000, maxResource: 1000, resource: 1000 };
+  const rapidSpell: BattleSpell = { id: 'test.rapid-strike', isUltimate: false, cooldownSeconds: 0.1, castSeconds: 0, resourceCost: 0, effect: { kind: 'damage', damageKind: 'physical', target: 'enemy', hits: 1, power: 1 } };
+  const target = { ...createMonsterUnit('cave-rat', 1, 'crit-check'), defence: 0, attack: 0, maxHp: 1_000_000, hp: 1_000_000 };
+  const spellHits = simulateBattle([{ ...steadyUnit, spells: [rapidSpell] }, target], createRandom(7).fork('battle')).events.filter((event) => event.spellId === rapidSpell.id).slice(0, 60);
+  const criticalSpellHit = spellHits.find((event) => event.isCritical);
+  const plainSpellHit = spellHits.find((event) => !event.isCritical);
+  assert.ok(criticalSpellHit && plainSpellHit, 'a spell hit can crit, and rolls on its own');
+  assert.equal(criticalSpellHit.amount, plainSpellHit.amount * 2, 'a critical hit does 200% of the damage');
+
+  const baseAttackSeconds = warriorUnit.baseAttackSeconds;
+  const sheetAttackSeconds = computeHeroSheet(warriorAtLevel(1)).attackSeconds;
+  assert.equal(sheetAttackSeconds, Math.round(baseAttackSeconds / (1 + 18 * 0.003) * 100) / 100, 'attack time is the base time divided by 1 + Agility x 0.3%');
+  const agileSheet = computeHeroSheet({ ...warriorAtLevel(1), level: 10 });
+  assert.ok(agileSheet.attackSeconds < sheetAttackSeconds, 'more Agility shortens the attack time');
+  const attacksWithin = (unit: BattleUnit): number => simulateBattle([{ ...unit, spells: [], maxHp: 1_000_000, hp: 1_000_000 }, { ...target, hp: 1_000_000 }], createRandom(9).fork('battle')).events.filter((event) => event.actorId === unit.id && event.timeSeconds <= 30).length;
+  assert.ok(attacksWithin({ ...steadyUnit, attackSpeedBonus: 0.5 }) > attacksWithin({ ...steadyUnit, attackSpeedBonus: 0 }), 'a faster unit attacks more often');
+  const crawlingFight = simulateBattle([{ ...steadyUnit, attackSpeedBonus: -5 }, { ...weakMonster, maxHp: 30, hp: 30 }], createRandom(9).fork('battle'));
+  assert.equal(crawlingFight.winner, 'party', 'a pool below zero is held at the minimum factor, so the unit still attacks');
+}
+
+// A version 24 save has Skill, Magic and Speed on items and old-scale numbers. The migration renames the stats and recomputes flat values.
+{
+  const oldItem = { ...generateSwordForMigration(), baseStats: { physicalDamage: 2, skill: 1, speed: 1 }, affixes: [
+    { affixId: 'of-precision', kind: 'suffix', displayName: 'of Precision', stat: 'skill', value: 2 },
+    { affixId: 'of-the-bear', kind: 'suffix', displayName: 'of the Bear', stat: 'hp', value: 6 },
+    { affixId: 'of-haste', kind: 'suffix', displayName: 'of Haste', stat: 'speed', value: 2 },
+    { affixId: 'arcane', kind: 'prefix', displayName: 'Arcane', stat: 'magic', value: 3 },
+  ] };
+  const versionTwentyFourSave = JSON.stringify({ ...createStore(1).getState(), saveVersion: 24, backpack: [{ column: 0, row: 0, content: { kind: 'item', item: oldItem } }] });
+  const migratedTwentyFour = parseGameState(versionTwentyFourSave);
+  const migratedContent = migratedTwentyFour?.backpack[0]?.content;
+  assert.ok(migratedTwentyFour && migratedTwentyFour.saveVersion === CURRENT_SAVE_VERSION && migratedContent?.kind === 'item', 'a version 24 save migrates');
+  const migratedItem = migratedContent.item;
+  assert.deepEqual(migratedItem.affixes.map((affix) => [affix.stat, affix.value]), [['agility', 2], ['hp', 60], ['attackSpeed', 2], ['intelligence', 3]], 'affixes get the new stat names and the new HP scale');
+  assert.ok(!('skill' in migratedItem.baseStats) && !('speed' in migratedItem.baseStats) && (migratedItem.baseStats.physicalDamage ?? 0) >= 7, 'base stats get the new names and the flat damage scale');
+}
+
+// A version 25 save has items with the old item level plus upgrade level stats, and the crafter of the old Woodworking profession.
+{
+  const oldUpgradedSword = { ...generateSwordForMigration(), itemLevel: 3, upgradeLevel: 2, baseStats: { physicalDamage: 14.5, agility: 1 } };
+  const oldRing = { ...generateSwordForMigration(), id: 'old-ring', baseId: 'ring', slot: 'ring', gearType: 'accessory', itemLevel: 7, upgradeLevel: 0, baseStats: { agility: 2, hp: 20 } };
+  const state = createStore(1).getState();
+  const versionTwentyFiveSave = JSON.stringify({
+    ...state,
+    saveVersion: 25,
+    crafters: { ...state.crafters, woodworking: { level: 4, experience: 10 } },
+    backpack: [{ column: 0, row: 0, content: { kind: 'item', item: oldUpgradedSword } }, { column: 1, row: 0, content: { kind: 'item', item: oldRing } }],
+  });
+  const migratedTwentyFive = parseGameState(versionTwentyFiveSave);
+  assert.ok(migratedTwentyFive && migratedTwentyFive.saveVersion === CURRENT_SAVE_VERSION, 'a version 25 save migrates');
+  const [swordEntry, ringEntry] = migratedTwentyFive?.backpack.map((entry) => entry.content) ?? [];
+  assert.ok(swordEntry?.kind === 'item' && ringEntry?.kind === 'item', 'the items stay in the backpack');
+  if (swordEntry?.kind === 'item' && ringEntry?.kind === 'item') {
+    const sword = BASE_ITEMS.find((base) => base.id === 'sword')!;
+    assert.equal(swordEntry.item.baseStats.physicalDamage, Math.round((sword.baseStats.physicalDamage ?? 0) + (sword.growthPerItemLevel?.physicalDamage ?? 0) * 2) + 2, 'an upgrade level adds a flat +1 to the main stat, and the base comes from the current base item');
+    assert.ok(!('agility' in swordEntry.item.baseStats), 'the sword no longer gives Agility');
+    assert.deepEqual(ringEntry.item.baseStats, { criticalChance: 2 }, 'a ring gets its new base stats');
+  }
+  assert.equal(migratedTwentyFive?.crafters.enchanting?.level, 4, 'the Woodworking crafter level moves to Enchanting');
+  assert.ok(!('woodworking' in (migratedTwentyFive?.crafters ?? {})), 'no Woodworking crafter stays');
+}
 
 const firstSummary = playSession(12345);
 const secondSummary = playSession(12345);

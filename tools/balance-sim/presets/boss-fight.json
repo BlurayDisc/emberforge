@@ -1,5 +1,5 @@
 {
-  "description": "One strong hero and one weaker partner against the boss of the first town. Both heroes use their best spells. With gearFloor, each hero wears Common gear in every slot plus prefixedItemsPerHero items with a prefix (the weakest gear a player can have at that level). Unique items and good rolls make the real fight easier.",
+  "description": "One strong hero and one weaker partner against the boss of the first town. Both heroes use their best spells. Each gear state is one run. The gear floor is Common gear in every slot plus prefixedItemsPerHero items with a prefix (the weakest gear a player can have at that level). Unique items and good rolls make the real fight easier.",
   "dungeonId": "goblin-chief-lair",
   "heroLevels": [
     10
@@ -27,9 +27,64 @@
   ],
   "battlesPerCase": 150,
   "seed": 2024,
-  "targetSeconds": 125,
-  "targetWinRatePercent": 60,
-  "gearFloor": {
-    "prefixedItemsPerHero": 1
-  }
+  "targetSeconds": 60,
+  "averagedClassIds": [
+    "warrior",
+    "archer",
+    "mage"
+  ],
+  "gearStates": [
+    {
+      "name": "gear floor",
+      "description": "Common gear in every slot and one prefixed item per hero.",
+      "partySize": 2,
+      "gearFloor": {
+        "prefixedItemsPerHero": 1
+      },
+      "slots": null,
+      "quality": null,
+      "targetWinRatePercent": [
+        45,
+        75
+      ]
+    },
+    {
+      "name": "normal crafted gear",
+      "description": "Best gear in every slot at the normal quality odds.",
+      "partySize": 2,
+      "gearFloor": null,
+      "slots": null,
+      "quality": null,
+      "targetWinRatePercent": [
+        70,
+        100
+      ]
+    },
+    {
+      "name": "weapon only",
+      "description": "Each hero wears only its best Common main hand weapon.",
+      "partySize": 2,
+      "gearFloor": null,
+      "slots": [
+        "mainHand"
+      ],
+      "quality": "common",
+      "targetWinRatePercent": [
+        0,
+        30
+      ]
+    },
+    {
+      "name": "one hero, no gear",
+      "description": "The strong hero alone, without gear.",
+      "partySize": 1,
+      "gearFloor": null,
+      "slots": [],
+      "quality": "common",
+      "targetWinRatePercent": [
+        0,
+        0
+      ]
+    }
+  ]
 }

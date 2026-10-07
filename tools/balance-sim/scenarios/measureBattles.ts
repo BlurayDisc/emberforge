@@ -5,7 +5,7 @@ import { simulateBattle } from '../../../src/systems/battle';
 import { createEncounter } from '../../../src/systems/dungeons';
 import { heroToBattleUnit } from '../../../src/systems/stats';
 import { createSimulatedHero, learnSpellsFor } from '../simulatedHero';
-import { equipBestGear } from './bestEquippableGear';
+import { equipBestGear, type GearRule } from './bestEquippableGear';
 
 export interface BattleMeasurement {
   winRatePercent: number;
@@ -20,7 +20,7 @@ export interface BattleMeasurement {
 
 // One hero with the best gear it can equip and its best spells fights the dungeon again and again.
 // Every battle forks its own random streams from the seed, so the same preset gives the same numbers.
-export function measureSoloHero(classId: ClassId, heroLevel: number, dungeon: DungeonDefinition, battles: number, seed: number): BattleMeasurement {
+export function measureSoloHero(classId: ClassId, heroLevel: number, dungeon: DungeonDefinition, battles: number, seed: number, gearRule: GearRule | null = null): BattleMeasurement {
   const seedRandom = createRandom(seed);
   let wins = 0;
   let secondsOfWins = 0;
@@ -31,7 +31,7 @@ export function measureSoloHero(classId: ClassId, heroLevel: number, dungeon: Du
   let spellsCast = 0;
   for (let battle = 0; battle < battles; battle++) {
     const random = seedRandom.fork(`battle-${battle}`);
-    const hero = learnSpellsFor(equipBestGear(createSimulatedHero(classId, heroLevel, 0), random.fork('gear')), true);
+    const hero = learnSpellsFor(equipBestGear(createSimulatedHero(classId, heroLevel, 0), random.fork('gear'), null, gearRule), true);
     const heroUnit = heroToBattleUnit(hero);
     const monsterUnits = createEncounter(dungeon, 1, random.fork('monsters'));
     const report = simulateBattle([heroUnit, ...monsterUnits], random.fork('battle'));

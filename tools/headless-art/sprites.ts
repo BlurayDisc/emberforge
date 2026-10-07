@@ -4,6 +4,7 @@ import { heroNamesForClass } from '../../src/content/heroNames';
 import { drawBattleBackdrop } from '../../src/render/battleBackdrops';
 import { CREATURE_DRAWERS } from '../../src/render/creatureArt';
 import { buildFullBodyPortrait } from '../../src/ui/fullBody/fullBodyPortraitArt';
+import { buildCrafterPortrait } from '../../src/ui/crafterPortraitArt';
 import { drawHeroBust } from '../../src/heroArt/bustIcon';
 import { drawHeroSprite } from '../../src/heroArt/battleSprite';
 import type { SheetEntry, SheetOptions } from './contactSheet';
@@ -44,6 +45,14 @@ const SPRITE_GROUPS: Readonly<Record<string, SpriteGroup>> = {
           .slice(0, 2)
           .map((name) => ({ label: `${definition.id} ${name}`, canvas: headlessCanvasOf(drawHeroBust(definition.id, name)) })),
       ),
+  },
+  crafters: {
+    options: { scale: 8, columns: 4 },
+    entries: () =>
+      (['weaponsmithing', 'fletching', 'enchanting', 'armoursmithing', 'leatherworking', 'tailoring', 'jewelcrafting'] as const).map((professionId) => ({
+        label: professionId,
+        canvas: headlessCanvasOf(buildCrafterPortrait(professionId)),
+      })),
   },
   creatures: {
     options: { scale: 4, columns: 8 },

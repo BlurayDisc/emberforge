@@ -22,13 +22,13 @@ export function drawGroundTexture(art: PixelCanvas, random: Random): void {
 }
 
 function drawGrassTufts(art: PixelCanvas, random: Random): void {
-  for (let tuft = 0; tuft < 780; tuft++) {
+  for (let tuft = 0; tuft < 290; tuft++) {
     const x = random.nextInt(2, TOWN_WIDTH - 4);
     const y = random.nextInt(2, LOGICAL_HEIGHT - 3);
     art.fill('grassLight', x, y, 1, 2);
     art.fill('grassLight', x + 2, y + 1, 1, 1);
   }
-  for (let patch = 0; patch < 120; patch++) {
+  for (let patch = 0; patch < 45; patch++) {
     art.fill('mossDark', random.nextInt(0, TOWN_WIDTH - 12), random.nextInt(0, LOGICAL_HEIGHT - 4), random.nextInt(5, 11), 2);
   }
 }
@@ -104,10 +104,10 @@ export function drawTownDecorations(art: PixelCanvas, coverage: Uint8Array, rand
   };
   drawPond(art, POND_CENTER, random);
   placed.push(POND_CENTER);
-  for (let index = 0; index < 27; index++) place(DECORATION_MARGIN, 18, (point) => drawFlowerCluster(art, point, random));
-  for (let index = 0; index < 20; index++) place(DECORATION_MARGIN, 20, (point) => drawBush(art, point));
-  for (let index = 0; index < 15; index++) place(DECORATION_MARGIN, 18, (point) => drawRock(art, point));
-  for (let index = 0; index < 6; index++) place(DECORATION_MARGIN + 4, 30, (point) => drawHayBale(art, point));
+  for (let index = 0; index < 10; index++) place(DECORATION_MARGIN, 18, (point) => drawFlowerCluster(art, point, random));
+  for (let index = 0; index < 8; index++) place(DECORATION_MARGIN, 20, (point) => drawBush(art, point));
+  for (let index = 0; index < 6; index++) place(DECORATION_MARGIN, 18, (point) => drawRock(art, point));
+  for (let index = 0; index < 2; index++) place(DECORATION_MARGIN + 4, 30, (point) => drawHayBale(art, point));
   for (let x = 60; x < TOWN_WIDTH; x += LAMP_SPACING) {
     if (isOpenGround(x, LAMP_BASE_Y, coverage, 3)) drawLampPost(art, { x, y: LAMP_BASE_Y });
   }

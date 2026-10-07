@@ -158,7 +158,7 @@ Follow section 9 rules exactly:
 - Two dungeons open at the start of the bracket, so the player has a choice and the first-dungeon materials are easy to get.
 - 1-3 monster families for each dungeon, 1 rare monster for each normal dungeon. Every dungeon has its own monsters. A monster id and a sprite key appear in one dungeon only.
 - Draw each new creature in `render/creatureArt.ts` with a new sprite key. Cache the texture. Use only colours from `render/palette.ts` (add a colour there first if needed). Follow `docs/agent/pixel-art.md`.
-- Monster stats come from `data/balance/monster-scaling.json`. Do not copy the earlier bracket stats. Scale them so the targets in design.md section 8 hold.
+- Monster stats come from the per-level anchors in `data/balance/monster-scaling.json` (flat HP, damage, armour, resistance). A monster lifts all four together with one `statFactor`. Do not copy the earlier bracket stats. Add anchors for the new levels so the targets in design.md section 8 hold.
 - The boss fight has the same design as the earlier bosses: a boss plus add monsters, about 5 times the length of a normal fight. Give BOSS a spell from `monster-spells.json`.
 - Each dungeon has `minimumHeroLevel` = monster level and `recommendedMaxLevel`.
 - Add the sounds for new monsters and armour types in `data/audio/sound-effects.json`. Follow `docs/agent/audio.md` (the audio engine is Tone.js).

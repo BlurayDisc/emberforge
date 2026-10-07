@@ -34,14 +34,14 @@ Every number in this file comes from one of these curves. A curve has one rule f
 |---|---|---|---|---|---|
 | XP to next level | | | | | `experienceToNextLevelByLevel` |
 | XP per normal kill | | | | | `normalKillExperienceByHeroLevelThenMonsterLevel` |
-| Monster HP | | | | | `monster-scaling.json` |
-| Monster attack | | | | | `monster-scaling.json` |
+| Monster HP (anchor levels) | | | | | `monster-scaling.json` |
+| Monster damage (anchor levels) | | | | | `monster-scaling.json` |
 | Normal fight duration (s) | | | | | design.md section 8 |
 | Boss fight duration (s) | | | | | design.md section 8 |
 | Base weapon damage | | | | | `base-items.json` |
 | Base armour value (by weight) | | | | | `base-items.json` |
 | Affix value scale | | | | | `affixGrowthPerItemLevel` |
-| Armour needed for a cut | `armour / (armour + 50 + 10 x level)` | | | | `battle.json` |
+| Flat armour (Defence and Resistance) of the reference hero | `hit - armour`, a hit never does less than 1 | | | | `classes.json`, gear |
 | Crafter XP per unit | | | | | `crafting.json` |
 | Crafter fee | | | | | `crafting.json` |
 | Sell value | | | | | `items.json` |
@@ -58,7 +58,7 @@ The first level of this bracket must not feel like a cliff or a reset. Compare l
 | Kills to level (best dungeon) | | | |
 | Normal fight duration (s) | | | |
 | Monster HP | | | |
-| Hero damage cut (best gear, same level) | | | |
+| Hero Defence and Resistance (best gear, same level) | | | |
 | Copper income for each fight | | | |
 | Crafts to next crafter level | | | |
 
@@ -78,7 +78,7 @@ One row for each level. Kills and crafts are the numbers a player needs to reach
 |---|---|---|---|---|---|---|
 | | | | | | | |
 
-| Monster (id) | Dungeon | Rank | Level | HP | Attack | Defence | Resistance | Speed | Role or trick |
+| Monster (id) | Dungeon | Rank | Level | HP | Damage | Armour | Resistance | Attack seconds | Role or trick |
 |---|---|---|---|---|---|---|---|---|---|
 | | | | | | | | | | |
 
@@ -102,7 +102,7 @@ One row for each set material. This replaces a table of every set item. A set re
 
 | Item | Target |
 |---|---|
-| Boss, HP, attack, Defence, Resistance, Speed | |
+| Boss, stat factor, HP, damage, armour, Resistance, attack seconds | |
 | Adds | |
 | Spells (name, effect, cooldown) | |
 | Target priority | |
@@ -116,7 +116,7 @@ One row for each set material. This replaces a table of every set item. A set re
 
 ## A9. Class direction at level `LAST`
 
-| Class | Physical cut band | Magic cut band | Armour needed at `LAST` |
+| Class | Direction | Defence at `LAST` | Resistance at `LAST` |
 |---|---|---|---|
 | Warrior | | | |
 | Archer | | | |
@@ -184,9 +184,9 @@ Win rate, fight time and HP lost for each hero class with each partner class.
 
 Lowest point and average of each resource pool, normal fight and boss fight.
 
-## B6. Hero stat curve and damage cut
+## B6. Hero stat curve
 
-HP, attack, Defence, Resistance and the cut for each class at each level, with best gear. Pass or fail against A9.
+HP, damage, Defence, Resistance and attack time for each class at each level, with best gear. Pass or fail against A9.
 
 ## B7. XP and kills to level
 

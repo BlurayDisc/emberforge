@@ -13,6 +13,8 @@ import { migrateSalesInPlace } from './migrateSalesInPlace';
 import { migrateHealthBefore } from './migrateHealthBefore';
 import { migrateUpgradeLevels } from './migrateUpgradeLevels';
 import { migrateUnstackedMaterials } from './migrateUnstackedMaterials';
+import { migrateAttributesAndFlatStats } from './migrateAttributesAndFlatStats';
+import { migrateGearBudget } from './migrateGearBudget';
 import { migrateWeaponDamageAndSmiths } from './migrateWeaponDamageAndSmiths';
 
 // A save is never dropped because the game changed. Each migration upgrades a save by one version.
@@ -116,5 +118,15 @@ export const SAVE_MIGRATIONS: readonly SaveMigration[] = [
     // Version 24: a hero result holds the level before the fight.
     fromVersion: 23,
     migrate: migrateLevelBefore,
+  },
+  {
+    // Version 25: Skill is replaced by Agility, and damage, armour and HP are flat numbers.
+    fromVersion: 24,
+    migrate: migrateAttributesAndFlatStats,
+  },
+  {
+    // Version 26: gear budget. Whole number item stats from the current base items, and a flat +1 main stat for each upgrade level.
+    fromVersion: 25,
+    migrate: migrateGearBudget,
   },
 ];

@@ -29,10 +29,22 @@ export function drawAscii(rows: readonly string[], legend: Readonly<Record<strin
   return drawing;
 }
 
+// Encoding a canvas to a PNG data URL is slow (over 600 ms for the first ones in a cold browser). Each canvas is encoded once, so a cached canvas costs nothing on later screens.
+const dataUrlByCanvas = new WeakMap<HTMLCanvasElement, string>();
+
+function dataUrlOf(canvas: HTMLCanvasElement): string {
+  let dataUrl = dataUrlByCanvas.get(canvas);
+  if (dataUrl === undefined) {
+    dataUrl = canvas.toDataURL();
+    dataUrlByCanvas.set(canvas, dataUrl);
+  }
+  return dataUrl;
+}
+
 export function drawingToImage(drawing: PixelDrawing, scale: number, className = 'pixel-icon'): HTMLImageElement {
   const image = document.createElement('img');
   image.className = className;
-  image.src = drawing.canvas.toDataURL();
+  image.src = dataUrlOf(drawing.canvas);
   image.alt = '';
   image.width = drawing.canvas.width * scale;
   image.height = drawing.canvas.height * scale;

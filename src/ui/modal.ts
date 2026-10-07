@@ -23,6 +23,8 @@ const NEAR_POINTER_MARGIN_PIXELS = 8;
 export function openModal(title: string, content: HTMLElement, onClose?: () => void, nearPoint?: ScreenPoint): ModalHandle {
   const backdrop = element('div', `modal-backdrop${nearPoint ? ' modal-backdrop-near' : ''}`);
   const close = (): void => {
+    // A panel change can close the window before its own button does. The close action must run once.
+    if (!closeFunctionOfBackdrop.has(backdrop)) return;
     closeFunctionOfBackdrop.delete(backdrop);
     backdrop.remove();
     onClose?.();
@@ -48,6 +50,10 @@ function placeNearPoint(modal: HTMLElement, point: ScreenPoint): void {
   const top = Math.min(Math.max(point.y - hostBox.top, NEAR_POINTER_MARGIN_PIXELS), largestTop);
   modal.style.left = `${Math.round(left)}px`;
   modal.style.top = `${Math.round(top)}px`;
+}
+
+export function hasOpenModal(): boolean {
+  return modalHost.childElementCount > 0;
 }
 
 export function closeAllModals(): void {

@@ -9,7 +9,9 @@ const FONT_SIZE = 9;
 const PADDING_X = 4;
 const PADDING_Y = 2;
 const GAP = 2;
-const DRAW_ORDER = 100000;
+// Above every building sign (100000 + y), so a sign of a nearby building never hides the timer.
+const DRAW_ORDER = 110000;
+const DISTANCE_ABOVE_MILL_BASE = 34;
 
 export interface MillStatusText {
   timer: string;
@@ -21,10 +23,10 @@ export interface TownMillStatus {
   set(status: MillStatusText): void;
 }
 
-// Sits under the Mill. The timer stays where it is. The Collect button shows under it when materials wait.
+// Sits on the Mill body, clear of the signs of the buildings below it. The timer stays where it is. The Collect button shows under it when materials wait.
 export function createTownMillStatus(world: Container, mill: BuildingDefinition, textFactory: UiTextFactory, input: TownInput, onCollect: () => void): TownMillStatus {
   const root = new Container();
-  root.zIndex = DRAW_ORDER + mill.y;
+  root.zIndex = DRAW_ORDER;
   world.addChild(root);
   let latest: MillStatusText = { timer: '', collectLabel: null };
 
@@ -37,7 +39,7 @@ export function createTownMillStatus(world: Container, mill: BuildingDefinition,
     const timerBox = new Container();
     timerBox.addChild(createPixelPanel(timerWidth, timerHeight, WOOD_PANEL), timer);
     timer.position.set(PADDING_X, PADDING_Y);
-    timerBox.position.set(Math.round(mill.x - timerWidth / 2), mill.y + 3);
+    timerBox.position.set(Math.round(mill.x - timerWidth / 2), mill.y - DISTANCE_ABOVE_MILL_BASE);
     root.addChild(timerBox);
     if (latest.collectLabel === null) return;
     const label = textFactory.create(latest.collectLabel, { font: 'title', size: FONT_SIZE, color: PALETTE.uiInk });
@@ -46,7 +48,7 @@ export function createTownMillStatus(world: Container, mill: BuildingDefinition,
     const button = new Container();
     button.addChild(createPixelPanel(buttonWidth, buttonHeight, GOLD_PANEL), label);
     label.position.set(PADDING_X, PADDING_Y);
-    button.position.set(Math.round(mill.x - buttonWidth / 2), mill.y + 3 + timerHeight + GAP);
+    button.position.set(Math.round(mill.x - buttonWidth / 2), mill.y - DISTANCE_ABOVE_MILL_BASE + timerHeight + GAP);
     button.eventMode = 'static';
     button.cursor = 'pointer';
     button.on('pointertap', () => {

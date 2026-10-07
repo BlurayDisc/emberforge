@@ -1,0 +1,14 @@
+{
+  "description": "The first fight of a hero against a normal monster of its own level. The hero uses its best spells.",
+  "firstLevel": 1,
+  "lastLevel": 10,
+  "classIds": ["warrior", "archer", "mage", "priest", "thief", "barbarian", "fighter"],
+  "averagedClassIds": ["warrior", "archer", "mage"],
+  "battlesPerCase": 600,
+  "seed": 99,
+  "gearStates": [
+    { "name": "first meeting", "description": "Level 1: the main hand weapon only. Higher levels: Common gear of the best item level in every slot.", "weaponOnlyUpToLevel": 1, "quality": "common" },
+    { "name": "crafted magic", "description": "Magic gear of the best item level in every slot.", "weaponOnlyUpToLevel": 0, "quality": "magic" }
+  ],
+  "targetHealthLostPercent": { "1": [40, 60], "2-10": [60, 70] }
+}

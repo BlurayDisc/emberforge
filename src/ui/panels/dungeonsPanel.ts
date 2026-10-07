@@ -25,6 +25,16 @@ function monsterNamesOf(dungeon: DungeonDefinition): string {
 // Saved apart from the game save, like the other settings. A new game keeps it, so it only counts while the Bank upgrade is owned.
 let staysOnDungeonScreen = loadStaysOnDungeonScreen();
 
+function staysOnDungeonScreenAfterStart(context: PanelContext): boolean {
+  return staysOnDungeonScreen && hasBankUnlock(context.store.getState(), 'quickDispatch');
+}
+
+function watchNewRun(context: PanelContext, runNumber: number): void {
+  if (staysOnDungeonScreenAfterStart(context)) return;
+  focusRun(runNumber);
+  context.closePanel();
+}
+
 function start(context: PanelContext, dungeonId: string, heroIds: string[], chooser: ModalHandle | null): void {
   const result = context.store.execute(startDungeonRunCommand(dungeonId, heroIds, Date.now()));
   if (!result.accepted) {
@@ -32,10 +42,8 @@ function start(context: PanelContext, dungeonId: string, heroIds: string[], choo
     return;
   }
   chooser?.close();
-  if (staysOnDungeonScreen && hasBankUnlock(context.store.getState(), 'quickDispatch')) return;
   const startedRun = runInDungeon(context.store.getState(), dungeonId);
-  if (startedRun) focusRun(startedRun.runNumber);
-  context.closePanel();
+  if (startedRun) watchNewRun(context, startedRun.runNumber);
 }
 
 // The Fight button and the row open the same dungeon screen. A free dungeon also holds the hero choice there.
@@ -81,13 +89,10 @@ function renderLockedDungeon(context: PanelContext, dungeon: DungeonDefinition):
 
 // A finished fight waits for the player. The stats open first, and only then the dungeon can start again.
 function renderFinishedDungeon(context: PanelContext, dungeon: DungeonDefinition, report: RunReport): HTMLElement {
-  const open = (): void => openRunReport(context.store, report, context.notify);
+  const open = (): void => openRunReport(context.store, report, context.notify, (newRunNumber) => watchNewRun(context, newRunNumber));
   const repeat = (): void => {
     const newRunNumber = repeatRun(context.store, report, context.notify);
-    if (newRunNumber === null) return;
-    if (staysOnDungeonScreen && hasBankUnlock(context.store.getState(), 'quickDispatch')) return;
-    focusRun(newRunNumber);
-    context.closePanel();
+    if (newRunNumber !== null) watchNewRun(context, newRunNumber);
   };
   const row = createListRow({
     art: element('div', 'fight-art', createDungeonIcon(dungeon.id, 3), element('span', 'fight-badge', createFightIcon(2))),

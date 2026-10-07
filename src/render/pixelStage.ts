@@ -1,5 +1,5 @@
 import { Application, Container } from 'pixi.js';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../kernel/stageSize';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_PAGE_WIDTH } from '../kernel/stageSize';
 import { PALETTE } from './palette';
 
 export { LOGICAL_HEIGHT, LOGICAL_WIDTH };
@@ -32,8 +32,8 @@ export interface PixelStage {
 
 // The frame outline is a box-shadow outside the frame. This margin keeps it from being cut by the container.
 const FRAME_OUTLINE_MARGIN_PIXELS = 8;
-// A very tall phone shows at least this much of the town. A very wide window stops growing at the maximum.
-const MINIMUM_FILL_VIEW_WIDTH = 170;
+// The view always shows a whole town page, because the town moves one page at a time. A very wide window stops growing at the maximum.
+const MINIMUM_FILL_VIEW_WIDTH = TOWN_PAGE_WIDTH;
 const MAXIMUM_FILL_VIEW_WIDTH = 640;
 
 interface ViewGeometry {

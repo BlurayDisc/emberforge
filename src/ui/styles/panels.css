@@ -1553,6 +1553,33 @@
   color: var(--gold);
 }
 
+/* The Collect button sits in the middle of the ready tile and stays inside it, so a larger font size cannot push it out of view. The tile keeps its size because the hidden content still takes its room. */
+.crafter-tile.ready {
+  position: relative;
+}
+
+.crafter-tile.ready .row-art,
+.crafter-tile.ready .card-title,
+.crafter-tile.ready .row-body > .bar,
+.crafter-tile.ready .crafter-status > .crafter-job > .ready-text,
+.crafter-tile.ready .row-body > .card-text {
+  visibility: hidden;
+}
+
+.crafter-tile.ready .collect-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 24px);
+  max-width: 180px;
+  height: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 4px 8px;
+  overflow-wrap: anywhere;
+}
+
 .collect-button {
   width: 100%;
   padding: 10px 12px;

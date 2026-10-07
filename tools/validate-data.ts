@@ -8,9 +8,11 @@ import { ITEM_SHAPE_ROWS } from '../src/ui/itemShapes';
 import { SPELL_ICON_MOTIFS } from '../src/content/spellVisuals';
 import { SPELL_ICON_GLYPHS } from '../src/ui/spellIconGlyphs';
 import { BUFF_ART_IDS, CAST_ART_IDS, DEBUFF_ART_IDS, IMPACT_ART_IDS, PROJECTILE_ART_IDS } from '../src/content/spellVisuals';
+import { checkGearBudget, damageAtItemLevel } from './validate-gear-budget';
 import { PROFESSION_IDS } from '../src/content/baseItems';
 import { WORKSHOP_SECTIONS } from '../src/content/workshopSections';
 import { SPELL_THEMES } from '../src/render/spellEffects/spellThemes';
+import { checkCombatModel } from './validate-combat-model';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDirectory = join(projectRoot, 'data');
@@ -39,10 +41,8 @@ interface Drop {
 interface Monster extends Identified {
   name: string;
   spellIds?: string[];
-  hpFactor?: number;
-  attackFactor?: number;
-  defenceFactor?: number;
-  fixedStats?: { hp: number; attack: number; defence: number; resistance: number };
+  statFactor?: number;
+  attackSeconds?: number;
   armourPenetration?: number;
   rank: string;
   spriteKey: string;
@@ -76,6 +76,8 @@ interface BaseItem extends Identified {
   slot: string;
   craftLevelOffset: number;
   baseStats: Record<string, number>;
+  mainStat: string;
+  growthPerItemLevel?: Record<string, number>;
   mainCategory: string;
   mainIngredientQuantity: number;
   gearType: string;
@@ -97,6 +99,14 @@ interface HeroClass extends Identified {
   attackKind: string;
   primaryAttribute: string;
   damageVarianceFraction: number;
+  balanceStatus: string;
+  attributes: Record<string, { start: number; gainPerLevel: number }>;
+  baseHp: number;
+  baseDamage: number;
+  baseDefence: number;
+  baseResistance: number;
+  baseAttackSeconds: number;
+  criticalChanceBonus: number;
 }
 interface Advancement extends Identified {
   baseClassId: string;
@@ -110,8 +120,8 @@ interface Affix extends Identified {
   stat: string;
 }
 
-const STAT_NAMES = ['hp', 'strength', 'magic', 'skill', 'speed', 'defence', 'resistance'];
-const AFFIX_STAT_NAMES = [...STAT_NAMES, 'lifeSteal', 'criticalChance', 'criticalDamage'];
+const STAT_NAMES = ['hp', 'strength', 'agility', 'intelligence', 'defence', 'resistance'];
+const AFFIX_STAT_NAMES = [...STAT_NAMES, 'lifeSteal', 'criticalChance', 'criticalDamage', 'attackSpeed'];
 const MONSTER_RANKS = ['normal', 'rare', 'boss'];
 
 function load<Content>(file: string): Content {
@@ -140,7 +150,8 @@ interface SpellEffectData {
   alsoOnSelf?: { status: string; strength: number; durationSeconds: number; charges?: number };
   charges?: number;
   resourceFraction?: number;
-  absorbPerResourcePoint?: number;
+  absorbFlat?: number;
+  absorbMaxHpFraction?: number;
   defencePower?: number;
   magicPower?: number;
   status?: string;
@@ -238,15 +249,6 @@ if (!catalyst || catalyst.category !== 'catalyst') report('balance/items.json: c
 for (const monster of monsters) {
   if (!MONSTER_RANKS.includes(monster.rank)) report(`monsters.json: '${monster.id}' has an unknown rank '${monster.rank}'`);
   if (!CREATURE_DRAWERS[monster.spriteKey]) report(`monsters.json: '${monster.id}' uses unknown sprite '${monster.spriteKey}'`);
-  const hasFactors = monster.hpFactor !== undefined || monster.attackFactor !== undefined || monster.defenceFactor !== undefined;
-  if (monster.rank === 'boss') {
-    if (hasFactors) report(`monsters.json: boss '${monster.id}' must use fixedStats, not factors`);
-    const stats = monster.fixedStats;
-    if (!stats || !(stats.hp > 0 && stats.attack > 0 && stats.defence >= 0 && stats.resistance >= 0)) report(`monsters.json: boss '${monster.id}' needs fixedStats with hp, attack, defence and resistance`);
-  } else {
-    if (monster.fixedStats) report(`monsters.json: '${monster.id}' is not a boss, so it must use the level curve and factors, not fixedStats`);
-    if (!(monster.hpFactor !== undefined && monster.hpFactor > 0 && monster.attackFactor !== undefined && monster.attackFactor > 0 && monster.defenceFactor !== undefined && monster.defenceFactor > 0)) report(`monsters.json: '${monster.id}' needs hpFactor, attackFactor and defenceFactor above 0`);
-  }
   for (const drop of monster.drops) {
     if (!materialsById.has(drop.materialId)) report(`monsters.json: '${monster.id}' drops unknown material '${drop.materialId}'`);
     if (drop.chance <= 0 || drop.chance > 1) report(`monsters.json: '${monster.id}' drop '${drop.materialId}' needs a chance between 0 and 1`);
@@ -380,7 +382,7 @@ upgradeBalance.upgradeChanceFarAboveRecipe.forEach((chance, index) => {
 const setMaterials = materials.filter((material) => material.setBonus !== undefined);
 for (const material of setMaterials) {
   const { setBonus, setCraftLevelOffset } = material;
-  if (!setBonus || !STAT_NAMES.includes(setBonus.stat) || !(setBonus.value > 0)) report(`materials.json: set material '${material.id}' needs a bonus on a known stat above 0`);
+  if (!setBonus || !AFFIX_STAT_NAMES.includes(setBonus.stat) || !(setBonus.value > 0)) report(`materials.json: set material '${material.id}' needs a bonus on a known stat above 0`);
   if (!material.craftedItemPrefix) report(`materials.json: set material '${material.id}' needs a craftedItemPrefix`);
   const sources = dungeonsDroppingMaterial(material.id);
   if (sources.length !== 1) report(`materials.json: set material '${material.id}' must drop in exactly one dungeon (found ${sources.length})`);
@@ -421,7 +423,7 @@ for (const base of baseItems) {
 
 // Armour set pieces open on different crafter levels, and the body armour is the last piece.
 // Each profession keeps a level for each slot, so a crafter gets a new armour base on the levels of its own pieces.
-const ARMOUR_SET_PIECE_SLOTS = ['helm', 'gloves', 'boots', 'legs', 'armour'];
+const ARMOUR_SET_PIECE_SLOTS = ['boots', 'gloves', 'helm', 'legs', 'armour'];
 for (const professionId of ARMOUR_PROFESSIONS) {
   for (const weight of ['heavy', 'medium', 'light']) {
     const pieces = baseItems.filter((base) => base.profession === professionId && base.armourWeight === weight && ARMOUR_SET_PIECE_SLOTS.includes(base.slot));
@@ -450,10 +452,7 @@ for (const heroClass of classes) {
 }
 const gearTypes = new Set(baseItems.map((base) => base.gearType));
 for (const heroClass of classes) {
-  if (!['strength', 'skill', 'magic'].includes(heroClass.primaryAttribute)) report(`classes.json: '${heroClass.id}' has an unknown primaryAttribute '${heroClass.primaryAttribute}'`);
   if (!(heroClass.damageVarianceFraction >= 0 && heroClass.damageVarianceFraction < 0.5)) report(`classes.json: '${heroClass.id}' damageVarianceFraction must be from 0 to below 0.5`);
-  if (heroClass.attackKind === 'magic' && heroClass.primaryAttribute !== 'magic') report(`classes.json: '${heroClass.id}' attacks with magic, so its primaryAttribute must be magic`);
-  if (heroClass.attackKind === 'physical' && heroClass.primaryAttribute === 'magic') report(`classes.json: '${heroClass.id}' attacks with physical damage, so its primaryAttribute must be strength or skill`);
   if (!(heroClass.recoveryRate > 0)) report(`classes.json: '${heroClass.id}' needs a recoveryRate above 0`);
   const startingRecipes = baseItems.filter((base) => base.craftLevelOffset === 1);
   if (!startingRecipes.some((base) => heroClass.weaponTypes.includes(base.gearType))) report(`base-items.json: class '${heroClass.id}' has no weapon it can craft at crafter level 1`);
@@ -465,7 +464,7 @@ for (const heroClass of classes) {
   const damageStat = heroClass.attackKind === 'magic' ? 'magicalDamage' : 'physicalDamage';
   const bestDamageByOffset = new Map<number, number>();
   for (const weapon of baseItems.filter((base) => base.slot === 'mainHand' && heroClass.weaponTypes.includes(base.gearType))) {
-    bestDamageByOffset.set(weapon.craftLevelOffset, Math.max(bestDamageByOffset.get(weapon.craftLevelOffset) ?? 0, weapon.baseStats[damageStat] ?? 0));
+    bestDamageByOffset.set(weapon.craftLevelOffset, Math.max(bestDamageByOffset.get(weapon.craftLevelOffset) ?? 0, damageAtItemLevel(weapon, damageStat, weapon.craftLevelOffset)));
   }
   let bestDamageSoFar = 0;
   for (const [offset, damage] of [...bestDamageByOffset].sort((first, second) => first[0] - second[0])) {
@@ -526,7 +525,7 @@ const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tave
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
   quality: ['common', 'uncommon', 'magic', 'rare', 'unique'],
   resource: ['mana', 'stamina', 'hatred', 'rage'],
-  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'speed', 'strength', 'skill', 'magic'],
+  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'attackSeconds', 'attackSpeed', 'strength', 'agility', 'intelligence'],
   slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
   category: ['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'skin', 'silk', 'essence', 'catalyst'],
   armourweight: ['heavy', 'medium', 'light'],
@@ -583,9 +582,14 @@ function listSourceFiles(directory: string): string[] {
 }
 
 function checkAudio(): void {
-  const effects = load<{ effects: Record<string, unknown>; classAttack: Record<string, string>; monsterAttack: Record<string, string>; monsterHurt: Record<string, string>; armourHit: Record<string, string> }>('audio/sound-effects.json');
+  const effects = load<{ effects: Record<string, unknown>; classAttack: Record<string, string>; monsterAttack: Record<string, string>; monsterHurt: Record<string, string>; armourHit: Record<string, string>; animalSounds: Record<string, { idle: string[]; petted: string[] }> }>('audio/sound-effects.json');
   const music = load<{ tracks: Record<string, { voices: Array<{ notes: string }> }> }>('audio/music.json');
   const mappedEffectIds = [...Object.values(effects.classAttack), ...Object.values(effects.monsterAttack), ...Object.values(effects.monsterHurt), ...Object.values(effects.armourHit)];
+  for (const [animalKind, sounds] of Object.entries(effects.animalSounds)) {
+    if (sounds.idle.length === 0 || sounds.petted.length === 0) report(`audio/sound-effects.json: animal '${animalKind}' needs an idle and a petted sound`);
+    mappedEffectIds.push(...sounds.idle, ...sounds.petted);
+  }
+  for (const animalKind of ['cat', 'dog', 'hen']) if (!(animalKind in effects.animalSounds)) report(`audio/sound-effects.json: animal '${animalKind}' has no sounds`);
   for (const effectId of mappedEffectIds) if (!(effectId in effects.effects)) report(`audio/sound-effects.json: unknown effect '${effectId}'`);
   for (const heroClass of classes) if (!(heroClass.id in effects.classAttack)) report(`audio/sound-effects.json: class '${heroClass.id}' has no attack sound`);
   for (const monster of monsters) {
@@ -623,12 +627,11 @@ for (const town of townsFile.towns) {
   if (townDungeons.length > 0 && townDungeons.filter((dungeon) => dungeon.unlockAfter === null).length !== 1) report(`dungeons.json: town '${town.id}' must have exactly one dungeon that is open from the start`);
 }
 
-const resourceRules = load<Record<string, { attribute: string; startFraction: number; regenFractionPerSecond: number; gainFractionPerHitDealt: number; gainFractionPerHitTaken: number }>>('balance/resources.json');
+const resourceRules = load<Record<string, { startFraction: number; regenFractionPerSecond: number; gainFractionPerHitDealt: number; gainFractionPerHitTaken: number }>>('balance/resources.json');
 
 function checkResources(): void {
   for (const heroClass of classes) if (!(heroClass.resourceId in resourceRules)) report(`classes.json: '${heroClass.id}' uses unknown resource '${heroClass.resourceId}'`);
   for (const [resourceId, rules] of Object.entries(resourceRules)) {
-    if (!STAT_NAMES.includes(rules.attribute)) report(`balance/resources.json: '${resourceId}' uses unknown attribute '${rules.attribute}'`);
     if (rules.startFraction < 0 || rules.startFraction > 1) report(`balance/resources.json: '${resourceId}' start fraction must be between 0 and 1`);
     const canFill = rules.regenFractionPerSecond > 0 || rules.gainFractionPerHitDealt > 0 || rules.gainFractionPerHitTaken > 0;
     if (rules.startFraction === 0 && !canFill) report(`balance/resources.json: '${resourceId}' starts empty and never fills`);
@@ -660,7 +663,7 @@ function checkSpellEffect(file: string, spell: Omit<SpellData, 'classId' | 'unlo
   if (effect.kind === 'shield') {
     if (effect.target !== 'self') report(`${file}: '${spell.id}' a shield can only protect the caster`);
     if (!((effect.resourceFraction ?? 0) > 0 && (effect.resourceFraction ?? 0) <= 1)) report(`${file}: '${spell.id}' shield needs a resource fraction above 0 and at most 1`);
-    if (!((effect.absorbPerResourcePoint ?? 0) > 0 && (effect.durationSeconds ?? 0) > 0)) report(`${file}: '${spell.id}' shield needs a positive absorb value and duration`);
+    if (!((effect.absorbFlat ?? 0) > 0 && (effect.absorbMaxHpFraction ?? 0) > 0 && (effect.durationSeconds ?? 0) > 0)) report(`${file}: '${spell.id}' shield needs a flat absorb, a share of maximum health and a duration`);
     if (spell.resourceCost !== 0) report(`${file}: '${spell.id}' shield cost comes from its resource fraction, so resourceCost must be 0`);
   }
   if (!['damage', 'drain', 'heal', 'status', 'shield'].includes(effect.kind)) report(`${file}: '${spell.id}' has unknown effect '${effect.kind}'`);
@@ -820,6 +823,9 @@ function checkTranslations(): void {
 }
 
 checkTranslations();
+
+checkCombatModel(classes, monsters, spells, report);
+checkGearBudget(baseItems, load<Parameters<typeof checkGearBudget>[1]>('balance/items.json'), report);
 
 if (problems.length > 0) {
   console.error(problems.join('\n'));

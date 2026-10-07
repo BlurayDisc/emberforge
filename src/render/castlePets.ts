@@ -2,6 +2,7 @@ import { Sprite, type Container } from 'pixi.js';
 import { LOGICAL_WIDTH } from '../kernel/stageSize';
 import { ANIMAL_COATS, animalSpriteSize, drawAnimalFrame, type AnimalKind } from './animalArt';
 import { drawShadowOval } from './castleAmbientArt';
+import type { AnimalPetting } from './animalPetting';
 import { createPixiTexture } from './pixiTextures';
 
 const BREATH_SECONDS = 2.2;
@@ -25,9 +26,11 @@ const CASTLE_PETS: readonly CastlePet[] = [
 
 export interface CastlePets {
   update(elapsedSeconds: number): void;
+  // The kinds of the pets on this castle screen.
+  kindsOnScreen(screenIndex: number): readonly AnimalKind[];
 }
 
-export function createCastlePets(root: Container): CastlePets {
+export function createCastlePets(root: Container, petting: AnimalPetting): CastlePets {
   const resting = CASTLE_PETS.map((pet, index) => {
     const coats = ANIMAL_COATS[pet.kind];
     const { width, height } = animalSpriteSize(pet.kind);
@@ -52,13 +55,18 @@ export function createCastlePets(root: Container): CastlePets {
     sprite.zIndex = depth;
     root.addChild(sprite);
     const restingY = feetY;
-    return { sprite, restingY, phase: index * 0.7 };
+    const touch = petting.attach(sprite, pet.kind, { width, height, heartStart: { x: 0, y: -height }, artOrigin: { x: -width / 2, y: -height } });
+    return { sprite, restingY, phase: index * 0.7, touch };
   });
 
   return {
-    // A sleeping pet breathes: one whole pixel up for half of each slow cycle.
+    // A sleeping pet breathes: one whole pixel up for half of each slow cycle. A touched pet hops instead.
     update: (elapsedSeconds) => {
-      for (const pet of resting) pet.sprite.position.y = pet.restingY - ((elapsedSeconds + pet.phase) % BREATH_SECONDS < BREATH_SECONDS / 2 ? 0 : 1);
+      for (const pet of resting) {
+        const breath = (elapsedSeconds + pet.phase) % BREATH_SECONDS < BREATH_SECONDS / 2 ? 0 : 1;
+        pet.sprite.position.y = pet.restingY - (pet.touch.isHappy(elapsedSeconds) ? pet.touch.hopHeight(elapsedSeconds) : breath);
+      }
     },
+    kindsOnScreen: (screenIndex) => CASTLE_PETS.filter((pet) => pet.screen === screenIndex).map((pet) => pet.kind),
   };
 }

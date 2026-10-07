@@ -5,7 +5,7 @@ import { simulateBattle } from '../../../src/systems/battle';
 import { createEncounter } from '../../../src/systems/dungeons';
 import { heroToBattleUnit } from '../../../src/systems/stats';
 import { createSimulatedHero, learnSpellsFor } from '../simulatedHero';
-import { equipBestGear, type GearFloorProfile } from './bestEquippableGear';
+import { equipBestGear, type GearFloorProfile, type GearRule } from './bestEquippableGear';
 
 export interface PartyMember {
   classId: ClassId;
@@ -20,7 +20,7 @@ export interface PartyMeasurement {
 
 // A party fights the dungeon again and again. Each hero wears the best gear it can equip and uses its best spells.
 // Every battle forks its own random streams from the seed, so the same preset gives the same numbers.
-export function measureParty(members: readonly PartyMember[], dungeon: DungeonDefinition, battles: number, seed: number, floorProfile: GearFloorProfile | null = null): PartyMeasurement {
+export function measureParty(members: readonly PartyMember[], dungeon: DungeonDefinition, battles: number, seed: number, floorProfile: GearFloorProfile | null = null, gearRule: GearRule | null = null): PartyMeasurement {
   const seedRandom = createRandom(seed);
   let wins = 0;
   let secondsOfAllFights = 0;
@@ -28,7 +28,7 @@ export function measureParty(members: readonly PartyMember[], dungeon: DungeonDe
   for (let battle = 0; battle < battles; battle++) {
     const random = seedRandom.fork(`battle-${battle}`);
     const partyUnits = members.map((member, index) =>
-      heroToBattleUnit(learnSpellsFor(equipBestGear(createSimulatedHero(member.classId, member.level, index), random.fork(`gear-${index}`), floorProfile), true)),
+      heroToBattleUnit(learnSpellsFor(equipBestGear(createSimulatedHero(member.classId, member.level, index), random.fork(`gear-${index}`), floorProfile, gearRule), true)),
     );
     const monsterUnits = createEncounter(dungeon, partyUnits.length, random.fork('monsters'));
     const report = simulateBattle([...partyUnits, ...monsterUnits], random.fork('battle'));

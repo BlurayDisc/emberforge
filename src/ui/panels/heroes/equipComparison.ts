@@ -10,12 +10,16 @@ import { createItemPortrait } from '../../itemPortrait';
 import { createItemCard } from '../../itemText';
 import type { PanelContext } from '../panelContext';
 
-const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'speed', 'criticalChance', 'criticalDamage', 'lifeSteal', 'strength', 'skill', 'magic'];
+const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'strength', 'agility', 'intelligence'];
+
+// A shorter attack time is better, so it counts as a rise.
+const LOWER_IS_BETTER_STATS: readonly string[] = ['attackSeconds'];
 
 function deltaCell(stat: string, before: number, after: number): HTMLElement {
-  const difference = Math.round((after - before) * 10) / 10;
+  const difference = Math.round((after - before) * 100) / 100;
+  const betterDirection = LOWER_IS_BETTER_STATS.includes(stat) ? -difference : difference;
   const text = difference > 0 ? `+${formatStatValue(stat, difference)}` : formatStatValue(stat, difference);
-  return element('span', `delta ${difference > 0 ? 'delta-up' : difference < 0 ? 'delta-down' : 'delta-same'}`, difference === 0 ? '=' : text);
+  return element('span', `delta ${betterDirection > 0 ? 'delta-up' : betterDirection < 0 ? 'delta-down' : 'delta-same'}`, difference === 0 ? '=' : text);
 }
 
 function compareRow(stat: string, label: string, before: number, after: number): HTMLElement {

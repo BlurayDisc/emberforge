@@ -9,7 +9,7 @@ import { element } from './dom';
 import { materialName } from './displayNames';
 import { t } from './i18n';
 import { createMaterialIcon } from './iconArt';
-import { statName } from './itemStatTable';
+import { formatStatValue, statName } from './itemStatTable';
 import { openModal } from './modal';
 import { describeMonsterSpell, spellName } from './spellText';
 
@@ -28,14 +28,14 @@ function rankTag(monster: MonsterDefinition): string {
   return '';
 }
 
-function renderLootLine(drop: MonsterDefinition['drops'][number]): HTMLElement {
+function renderLootLine(drop: MonsterDefinition['drops'][number], showsDropRates: boolean): HTMLElement {
   const material = requireById(MATERIALS, drop.materialId);
   const quantity = drop.minQuantity === drop.maxQuantity ? String(drop.minQuantity) : `${drop.minQuantity}-${drop.maxQuantity}`;
   return element(
     'div',
     'loot-line',
     createMaterialIcon(material.id, material.category, 2),
-    element('span', 'card-text small', t('dungeons.dropLine', { material: materialName(material.id), quantity, chance: Math.round(drop.chance * 100) })),
+    element('span', 'card-text small', showsDropRates ? t('dungeons.dropLine', { material: materialName(material.id), quantity, chance: Math.round(drop.chance * 100) }) : t('dungeons.dropLineNoChance', { material: materialName(material.id), quantity })),
   );
 }
 
@@ -46,9 +46,9 @@ function renderStatisticsLine(monster: MonsterDefinition, dungeon: DungeonDefini
     ['physicalDamage', statistics.attack],
     ['armour', statistics.armour],
     ['resistance', statistics.resistance],
-    ['speed', statistics.speed],
+    ['attackSeconds', statistics.attackSeconds],
   ];
-  return element('div', 'card-text small', parts.map(([stat, value]) => `${statName(stat)} ${value}`).join(' - '));
+  return element('div', 'card-text small', parts.map(([stat, value]) => `${statName(stat)} ${formatStatValue(stat, value)}`).join(' - '));
 }
 
 function renderMonsterSpellLines(monster: MonsterDefinition): HTMLElement[] {
@@ -72,12 +72,13 @@ function renderMonsterEntry(monster: MonsterDefinition, dungeon: DungeonDefiniti
       element('div', 'card-text small', t('dungeons.monsterLevel', { level: dungeon.level })),
       options.showsMonsterStatistics ? renderStatisticsLine(monster, dungeon) : element('div', 'card-text small hint', t('dungeons.statisticsLocked')),
       ...renderMonsterSpellLines(monster),
-      ...(options.showsDropRates ? monster.drops.map(renderLootLine) : [element('div', 'card-text small hint', t('dungeons.dropsLocked'))]),
+      ...monster.drops.map((drop) => renderLootLine(drop, options.showsDropRates)),
+      ...(options.showsDropRates ? [] : [element('div', 'card-text small hint', t('dungeons.dropsLocked'))]),
     ),
   );
 }
 
 // The dungeon screen shows only the picture and the name of each monster, so it fits one screen. A tap opens these details.
 export function openMonsterDetail(monster: MonsterDefinition, dungeon: DungeonDefinition, options: MonsterDetailOptions): void {
-  openModal(t(`monster.${monster.id}`), element('div', 'dungeon-view', renderMonsterEntry(monster, dungeon, options), ...(options.showsDropRates ? [element('p', 'hint', t('dungeons.lootHint'))] : [])));
+  openModal(t(`monster.${monster.id}`), element('div', 'dungeon-view', renderMonsterEntry(monster, dungeon, options), element('p', 'hint', t('dungeons.lootHint'))));
 }

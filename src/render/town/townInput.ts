@@ -3,15 +3,15 @@ import type { TownScroll } from './townScroll';
 const DRAG_START_DISTANCE_PIXELS = 6;
 const TAP_PROTECTION_MILLISECONDS = 120;
 const VELOCITY_SMOOTHING = 0.35;
-const KEY_SLIDE_FRACTION = 0.6;
-const WHEEL_SPEED = 1;
+const WHEEL_PAGE_COOLDOWN_MILLISECONDS = 450;
+const WHEEL_MINIMUM_DELTA = 4;
 
 export interface TownInput {
   // True while a drag runs, and for a moment after it. A building tap in that moment is part of the drag, so it is ignored.
   isDragging(): boolean;
 }
 
-// Drag with a finger or the mouse, the wheel, and the arrow keys all move the town view.
+// Drag with a finger or the mouse, the wheel, and the arrow keys all move the town view. Every way ends on a page.
 export function attachTownInput(frame: HTMLElement, scroll: TownScroll, viewWidth: () => number, isBlocked: () => boolean): TownInput {
   let isTracking = false;
   let isDragging = false;
@@ -23,7 +23,7 @@ export function attachTownInput(frame: HTMLElement, scroll: TownScroll, viewWidt
   const logicalPerScreenPixel = (): number => viewWidth() / Math.max(1, frame.clientWidth);
 
   frame.addEventListener('pointerdown', (event) => {
-    if (!event.isPrimary || isBlocked() || frame.dataset.engine !== 'pixi') return;
+    if (!event.isPrimary || isBlocked()) return;
     isTracking = true;
     isDragging = false;
     startX = lastX = event.clientX;
@@ -50,26 +50,30 @@ export function attachTownInput(frame: HTMLElement, scroll: TownScroll, viewWidt
     if (!isDragging) return;
     isDragging = false;
     dragEndedAtMilliseconds = event.timeStamp;
-    if (event.timeStamp - lastMilliseconds < 80) scroll.fling(velocityPixelsPerSecond);
+    scroll.release(event.timeStamp - lastMilliseconds < 80 ? velocityPixelsPerSecond : 0);
   };
   frame.addEventListener('pointerup', endTracking);
   frame.addEventListener('pointercancel', endTracking);
 
+  let lastWheelPageMilliseconds = -Infinity;
   frame.addEventListener(
     'wheel',
     (event) => {
-      if (isBlocked() || frame.dataset.engine !== 'pixi') return;
+      if (isBlocked()) return;
       event.preventDefault();
-      const distance = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      scroll.dragBy(distance * WHEEL_SPEED * logicalPerScreenPixel());
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      // A trackpad sends many small events for one swipe. The cooldown turns them into one page.
+      if (Math.abs(delta) < WHEEL_MINIMUM_DELTA || event.timeStamp - lastWheelPageMilliseconds < WHEEL_PAGE_COOLDOWN_MILLISECONDS) return;
+      lastWheelPageMilliseconds = event.timeStamp;
+      scroll.slideToPage(scroll.targetPage() + Math.sign(delta));
     },
     { passive: false },
   );
 
   document.addEventListener('keydown', (event) => {
-    if (isBlocked() || frame.dataset.engine !== 'pixi') return;
-    if (event.key === 'ArrowLeft') scroll.slideBy(-viewWidth() * KEY_SLIDE_FRACTION);
-    if (event.key === 'ArrowRight') scroll.slideBy(viewWidth() * KEY_SLIDE_FRACTION);
+    if (isBlocked()) return;
+    if (event.key === 'ArrowLeft') scroll.slideToPage(scroll.targetPage() - 1);
+    if (event.key === 'ArrowRight') scroll.slideToPage(scroll.targetPage() + 1);
   });
 
   return { isDragging: () => isDragging || performance.now() - dragEndedAtMilliseconds < TAP_PROTECTION_MILLISECONDS };

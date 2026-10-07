@@ -4,6 +4,7 @@ import { PALETTE } from '../palette';
 import { createFlatSprite } from '../pixiTextures';
 import type { UiTextFactory } from '../uiText';
 import { WOOD_PANEL, createPixelPanel } from '../uiPanel';
+import type { AnimalVoice } from '../animalPetting';
 import type { TownInput } from './townInput';
 
 const SIGN_FONT_SIZE = 11;
@@ -18,6 +19,7 @@ export interface TownHooks {
   enterCastle(): void;
   collectMill(): void;
   pickSpeechText(): string;
+  animalVoice: AnimalVoice;
   isInputBlocked(): boolean;
 }
 

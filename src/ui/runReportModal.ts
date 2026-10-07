@@ -22,7 +22,8 @@ export function repeatRun(store: GameStore, report: RunReport, notify: (message:
 
 // Closing the report in any way marks it as read. Until then the dungeon shows "Results ready".
 // Repeat starts the same fight again and watches it. The first clear of the victory dungeon opens the Victory screen after the report.
-export function openRunReport(store: GameStore, report: RunReport, notify: (message: string) => void): void {
+// A report opened from a panel passes onRepeatStarted, so the panel decides if it stays open. Without it the battle screen is watched.
+export function openRunReport(store: GameStore, report: RunReport, notify: (message: string) => void, onRepeatStarted?: (newRunNumber: number) => void): void {
   const dungeon = requireById(DUNGEONS, report.dungeonId);
   const content = element('div', 'panel-body');
   if (report.firstClear) content.append(element('p', 'hint welcome', t('report.firstClear')));
@@ -35,7 +36,8 @@ export function openRunReport(store: GameStore, report: RunReport, notify: (mess
   const repeat = (): void => {
     const newRunNumber = repeatRun(store, report, notify);
     if (newRunNumber === null) return;
-    focusRun(newRunNumber);
+    if (onRepeatStarted) onRepeatStarted(newRunNumber);
+    else focusRun(newRunNumber);
     modal.close();
   };
   content.append(element('div', 'report-actions', actionButton(t('report.close'), () => modal.close()), actionButton(t('report.repeat'), repeat, { className: 'action-button primary' })));

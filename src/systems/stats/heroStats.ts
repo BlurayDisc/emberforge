@@ -1,71 +1,63 @@
 import {
-  ACTION_THRESHOLD,
-  CRITICAL_CHANCE_PER_SKILL_POINT,
+  BASE_CRITICAL_CHANCE,
   CRITICAL_DAMAGE_MULTIPLIER,
   MAXIMUM_CRITICAL_CHANCE,
-  MAXIMUM_DAMAGE_CUT,
-  MITIGATION_BASE,
-  MITIGATION_PER_ATTACKER_LEVEL,
+  MINIMUM_ATTACK_SPEED_FACTOR,
 } from '../../content/balance/battle';
+import { ATTACK_SPEED_BONUS_PER_AGILITY } from '../../content/balance/heroStats';
 import { CLASSES, type ClassDefinition } from '../../content/classes';
 import { requireById } from '../../content/lookup';
-import { MATERIALS } from '../../content/materials';
 import { findSpell } from '../../content/spells';
 import type { AttackKind, BattleUnit } from '../../model/battle';
 import type { Hero } from '../../model/hero';
-import type { AffixStat } from '../../model/item';
 import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
-import { classStatsAtLevel, STAT_NAMES } from './classStatsAtLevel';
+import { attributesAtLevel, statsFromAttributes } from './classStatsAtLevel';
+import { gearBonusForStat, gearDamage } from './gearBonuses';
 import { maximumResourceOf, startingResourceOf } from './maximumResource';
 
 const FRACTION_PER_PERCENT_POINT = 0.01;
 
-function affixBonusForStat(hero: Hero, stat: AffixStat): number {
-  return Object.values(hero.equipment).reduce(
-    (total, item) => total + item.affixes.reduce((sum, affix) => (affix.stat === stat ? sum + affix.value : sum), 0),
-    0,
-  );
-}
-
-function gearBonusForStat(hero: Hero, stat: keyof StatBlock): number {
-  return Object.values(hero.equipment).reduce((total, item) => {
-    const fromBase = item.baseStats[stat] ?? 0;
-    const fromAffixes = item.affixes.reduce((sum, affix) => (affix.stat === stat ? sum + affix.value : sum), 0);
-    const setBonus = MATERIALS.find((material) => material.id === item.materialId)?.setBonus;
-    const fromSetMaterial = setBonus?.stat === stat ? setBonus.value : 0;
-    return total + fromBase + fromAffixes + fromSetMaterial;
-  }, 0);
-}
-
+// Attributes come from the class level and the gear. HP and Resistance follow the attributes, then gear adds its flat values.
 export function computeHeroStats(hero: Hero): StatBlock {
-  const stats = classStatsAtLevel(hero.classId, hero.level);
-  for (const stat of STAT_NAMES) stats[stat] += gearBonusForStat(hero, stat);
+  const classDefinition = requireById(CLASSES, hero.classId);
+  const attributes = attributesAtLevel(classDefinition, hero.level);
+  attributes.strength += gearBonusForStat(hero, 'strength');
+  attributes.agility += gearBonusForStat(hero, 'agility');
+  attributes.intelligence += gearBonusForStat(hero, 'intelligence');
+  const stats = statsFromAttributes(classDefinition, attributes);
+  stats.hp += gearBonusForStat(hero, 'hp');
+  stats.defence += gearBonusForStat(hero, 'defence');
+  stats.resistance += gearBonusForStat(hero, 'resistance');
   return stats;
 }
 
-function gearDamage(hero: Hero, damageKey: 'physicalDamage' | 'magicalDamage'): number {
-  return Object.values(hero.equipment).reduce((total, item) => total + (item.baseStats[damageKey] ?? 0), 0);
-}
-
-// The primary attribute of the class gives the damage of its attack kind. The other kind uses the plain attribute.
+// The primary attribute of the class gives the damage of its attack kind. The other kind uses the plain attribute: Strength for physical, Intelligence for magic.
 function damageAttribute(classDefinition: ClassDefinition, attackKind: AttackKind, stats: StatBlock): number {
   if (classDefinition.attackKind === attackKind) return stats[classDefinition.primaryAttribute];
-  return attackKind === 'magic' ? stats.magic : stats.strength;
+  return attackKind === 'magic' ? stats.intelligence : stats.strength;
 }
 
-// Damage is the attribute plus the weapon damage. The class resource (mana, stamina, hatred or rage) pays for spells.
-function criticalChanceOf(stats: StatBlock, hero: Hero): number {
-  const fromAffixes = affixBonusForStat(hero, 'criticalChance') * FRACTION_PER_PERCENT_POINT;
-  return Math.min(MAXIMUM_CRITICAL_CHANCE, stats.skill * CRITICAL_CHANCE_PER_SKILL_POINT + fromAffixes);
+function criticalChanceOf(classDefinition: ClassDefinition, hero: Hero): number {
+  const fromGear = gearBonusForStat(hero, 'criticalChance') * FRACTION_PER_PERCENT_POINT;
+  return Math.min(MAXIMUM_CRITICAL_CHANCE, BASE_CRITICAL_CHANCE + classDefinition.criticalChanceBonus + fromGear);
 }
 
 function criticalDamageMultiplierOf(hero: Hero): number {
-  return CRITICAL_DAMAGE_MULTIPLIER + affixBonusForStat(hero, 'criticalDamage') * FRACTION_PER_PERCENT_POINT;
+  return CRITICAL_DAMAGE_MULTIPLIER + gearBonusForStat(hero, 'criticalDamage') * FRACTION_PER_PERCENT_POINT;
 }
 
 function lifeStealOf(hero: Hero): number {
-  return affixBonusForStat(hero, 'lifeSteal') * FRACTION_PER_PERCENT_POINT;
+  return gearBonusForStat(hero, 'lifeSteal') * FRACTION_PER_PERCENT_POINT;
+}
+
+// Agility and gear share one pool with Haste and Slow in battle.
+function attackSpeedBonusOf(stats: StatBlock, hero: Hero): number {
+  return stats.agility * ATTACK_SPEED_BONUS_PER_AGILITY + gearBonusForStat(hero, 'attackSpeed') * FRACTION_PER_PERCENT_POINT;
+}
+
+function attackSecondsOf(classDefinition: ClassDefinition, attackSpeedBonus: number): number {
+  return classDefinition.baseAttackSeconds / Math.max(MINIMUM_ATTACK_SPEED_FACTOR, 1 + attackSpeedBonus);
 }
 
 function toPercentPoints(fraction: number): number {
@@ -77,16 +69,16 @@ export function computeHeroSheet(hero: Hero): HeroSheet {
   const classDefinition = requireById(CLASSES, hero.classId);
   return {
     health: stats.hp,
-    resource: maximumResourceOf(classDefinition.resourceId, stats, hero.level),
-    physicalDamage: damageAttribute(classDefinition, 'physical', stats) + gearDamage(hero, 'physicalDamage'),
-    magicalDamage: damageAttribute(classDefinition, 'magic', stats) + gearDamage(hero, 'magicalDamage'),
+    resource: maximumResourceOf(classDefinition.resourceId),
+    physicalDamage: Math.round(classDefinition.baseDamage + damageAttribute(classDefinition, 'physical', stats) + gearDamage(hero, 'physicalDamage')),
+    magicalDamage: Math.round(classDefinition.baseDamage + damageAttribute(classDefinition, 'magic', stats) + gearDamage(hero, 'magicalDamage')),
     armour: stats.defence,
     resistance: stats.resistance,
-    speed: stats.speed,
+    attackSeconds: Math.round(attackSecondsOf(classDefinition, attackSpeedBonusOf(stats, hero)) * 100) / 100,
     strength: stats.strength,
-    skill: stats.skill,
-    magic: stats.magic,
-    criticalChance: toPercentPoints(criticalChanceOf(stats, hero)),
+    agility: stats.agility,
+    intelligence: stats.intelligence,
+    criticalChance: toPercentPoints(criticalChanceOf(classDefinition, hero)),
     criticalDamage: toPercentPoints(criticalDamageMultiplierOf(hero)),
     lifeSteal: toPercentPoints(lifeStealOf(hero)),
   };
@@ -110,13 +102,12 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     attackKind: classDefinition.attackKind,
     defence: stats.defence,
     resistance: stats.resistance,
-    speed: stats.speed,
-    critChance: criticalChanceOf(stats, hero),
+    baseAttackSeconds: classDefinition.baseAttackSeconds,
+    attackSpeedBonus: attackSpeedBonusOf(stats, hero),
+    critChance: criticalChanceOf(classDefinition, hero),
     damageVarianceFraction: classDefinition.damageVarianceFraction,
     criticalDamageMultiplier: criticalDamageMultiplierOf(hero),
-    mainAttribute: classDefinition.primaryAttribute,
     mainAttributeValue: stats[classDefinition.primaryAttribute],
-    skill: stats.skill,
     lifeSteal: lifeStealOf(hero),
     behavior: classDefinition.behavior,
     resourceId: classDefinition.resourceId,
@@ -125,12 +116,4 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     // The ultimate comes first, so the AI tries it before the normal slots.
     spells: [hero.equippedUltimateId, ...hero.equippedSpellIds].flatMap((id) => (id === null ? [] : (findSpell(id) ?? []))),
   };
-}
-
-export function computeHeroPower(hero: Hero): number {
-  const unit = heroToBattleUnit({ ...hero, healthFraction: 1 });
-  const reduction = Math.min(MAXIMUM_DAMAGE_CUT, unit.defence / (unit.defence + MITIGATION_BASE + MITIGATION_PER_ATTACKER_LEVEL * unit.level));
-  const offence = unit.attack * (unit.speed / ACTION_THRESHOLD) * (1 + unit.critChance * (unit.criticalDamageMultiplier - 1));
-  const durability = unit.maxHp / (1 - reduction);
-  return Math.round(Math.sqrt(offence * durability));
 }

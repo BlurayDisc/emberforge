@@ -1,43 +1,19 @@
-import { CRITICAL_DAMAGE_MULTIPLIER, MONSTER_DAMAGE_VARIANCE_FRACTION } from '../../content/balance/battle';
-import {
-  MONSTER_ATTACK,
-  MONSTER_CRITICAL_CHANCE,
-  MONSTER_DEFENCE,
-  MONSTER_HP,
-  MONSTER_RESISTANCE,
-} from '../../content/balance/monsterScaling';
+import { BASE_CRITICAL_CHANCE, CRITICAL_DAMAGE_MULTIPLIER, MONSTER_DAMAGE_VARIANCE_FRACTION } from '../../content/balance/battle';
+import { DEFAULT_MONSTER_ATTACK_SECONDS, monsterStatsAtLevel } from '../../content/balance/monsterScaling';
 import { MONSTER_SPELLS } from '../../content/monsterSpells';
-import { MONSTERS, type MonsterDefinition } from '../../content/monsters';
+import { MONSTERS, type FlatMonsterStats } from '../../content/monsters';
 import { requireById } from '../../content/lookup';
 import type { BattleUnit } from '../../model/battle';
 
-// The exponent bends the curve: above 1 it climbs faster with each level, below 1 it flattens.
-function scaledAtLevel(scaling: { base: number; perLevel: number; exponent?: number }, level: number): number {
-  return scaling.base + scaling.perLevel * level ** (scaling.exponent ?? 1);
-}
-
-interface MonsterStats {
-  hp: number;
-  attack: number;
-  defence: number;
-  resistance: number;
-}
-
-// A boss uses its own numbers as they are. A normal or rare monster follows the level curve.
-function statsOf(definition: MonsterDefinition, level: number): MonsterStats {
-  if (definition.fixedStats) return definition.fixedStats;
-  return {
-    hp: scaledAtLevel(MONSTER_HP, level) * (definition.hpFactor ?? 1),
-    attack: scaledAtLevel(MONSTER_ATTACK, level) * (definition.attackFactor ?? 1),
-    defence: scaledAtLevel(MONSTER_DEFENCE, level) * (definition.defenceFactor ?? 1),
-    resistance: scaledAtLevel(MONSTER_RESISTANCE, level) * (definition.defenceFactor ?? 1),
-  };
+function liftedCurveStats(level: number, statFactor: number): Omit<FlatMonsterStats, 'attackSeconds'> {
+  const curve = monsterStatsAtLevel(level);
+  return { hp: curve.hp * statFactor, damage: curve.damage * statFactor, armour: curve.armour * statFactor, resistance: curve.resistance * statFactor };
 }
 
 export function createMonsterUnit(monsterId: string, level: number, unitId: string): BattleUnit {
   const definition = requireById(MONSTERS, monsterId);
-  const stats = statsOf(definition, level);
-  const maxHp = Math.round(stats.hp);
+  const flatStats = definition.flatStats ?? liftedCurveStats(level, definition.statFactor ?? 1);
+  const maxHp = Math.round(flatStats.hp);
   return {
     id: unitId,
     definitionId: definition.id,
@@ -48,16 +24,15 @@ export function createMonsterUnit(monsterId: string, level: number, unitId: stri
     level,
     maxHp,
     hp: maxHp,
-    attack: stats.attack,
+    attack: Math.round(flatStats.damage),
     attackKind: 'physical',
-    defence: stats.defence,
-    resistance: stats.resistance,
-    speed: definition.speed,
-    critChance: MONSTER_CRITICAL_CHANCE,
+    defence: Math.round(flatStats.armour),
+    resistance: Math.round(flatStats.resistance),
+    baseAttackSeconds: definition.flatStats?.attackSeconds ?? definition.attackSeconds ?? DEFAULT_MONSTER_ATTACK_SECONDS,
+    attackSpeedBonus: 0,
+    critChance: BASE_CRITICAL_CHANCE,
     damageVarianceFraction: MONSTER_DAMAGE_VARIANCE_FRACTION,
-    mainAttribute: 'strength',
     mainAttributeValue: 0,
-    skill: 0,
     criticalDamageMultiplier: CRITICAL_DAMAGE_MULTIPLIER,
     lifeSteal: 0,
     behavior: 'fighter',

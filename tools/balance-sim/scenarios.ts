@@ -2,6 +2,7 @@ import { runBossFightScenario } from './scenarios/bossFightScenario';
 import { runCrafterCurveScenario } from './scenarios/crafterCurveScenario';
 import { runEconomyScenario } from './scenarios/economyScenario';
 import { runExperienceScenario } from './scenarios/experienceScenario';
+import { runFirstFightScenario } from './scenarios/firstFightScenario';
 import { runMobKillTimeScenario } from './scenarios/mobKillTimeScenario';
 import { runResourceUseScenario } from './scenarios/resourceUseScenario';
 
@@ -9,6 +10,7 @@ import { runResourceUseScenario } from './scenarios/resourceUseScenario';
 const SCENARIOS: Record<string, () => void> = {
   economy: runEconomyScenario,
   experience: runExperienceScenario,
+  'first-fight': runFirstFightScenario,
   'mob-kill-time': runMobKillTimeScenario,
   'boss-fight': runBossFightScenario,
   'resource-use': runResourceUseScenario,

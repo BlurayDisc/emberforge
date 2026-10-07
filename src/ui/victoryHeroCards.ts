@@ -16,13 +16,12 @@ interface StatRow {
 const STAT_ROWS: readonly StatRow[] = [
   { key: 'health', colorVariable: '--green' },
   { key: 'strength', colorVariable: '--crimson' },
-  { key: 'skill', colorVariable: '--green' },
-  { key: 'magic', colorVariable: '--blue' },
+  { key: 'agility', colorVariable: '--green' },
+  { key: 'intelligence', colorVariable: '--blue' },
   { key: 'physicalDamage', colorVariable: '--copper' },
   { key: 'magicalDamage', colorVariable: '--blue' },
   { key: 'armour', colorVariable: '--silver' },
   { key: 'resistance', colorVariable: '--blue' },
-  { key: 'speed', colorVariable: '--gold' },
 ];
 
 const CARD_DELAY_SECONDS = 1.2;

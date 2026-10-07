@@ -207,7 +207,7 @@ function renderCrafterScreen(context: PanelContext, crafter: CrafterView, recipe
     'div',
     'panel-body',
     element('div', 'crafter-intro', createCrafterPortrait(crafter.professionId, 4), renderCrafterHeader(context, crafter)),
-    createRecipeFilterBar(crafter.professionId, context.requestRender),
+    createRecipeFilterBar(crafter.professionId, craftableRecipes, context.requestRender),
     shownRecipes.length === 0 ? element('p', 'hint', t('workshop.noRecipesMatch')) : createList(...shownRecipes.map((recipe) => renderRecipe(context, recipe))),
   );
   if (nextRecipeLevel !== Infinity) body.append(element('p', 'hint', t('workshop.nextRecipeAt', { level: nextRecipeLevel })));

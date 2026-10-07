@@ -18,11 +18,13 @@ export interface ItemDropEntry {
   chance: number;
 }
 
-export interface MonsterFixedStats {
+// A boss has explicit numbers instead of a stat factor. The validator keeps them on one common factor of the normal level curve.
+export interface FlatMonsterStats {
   hp: number;
-  attack: number;
-  defence: number;
+  damage: number;
+  armour: number;
   resistance: number;
+  attackSeconds: number;
 }
 
 export interface MonsterDefinition {
@@ -30,15 +32,14 @@ export interface MonsterDefinition {
   name: string;
   rank: MonsterRank;
   spriteKey: string;
-  // A normal or rare monster takes its stats from the level curve in data/balance/monster-scaling.json, times these factors.
-  hpFactor?: number;
-  attackFactor?: number;
-  defenceFactor?: number;
-  // A boss has no level curve and no factors. These are its real stats.
-  fixedStats?: MonsterFixedStats;
-  speed: number;
+  // Every monster follows the level curve in data/balance/monster-scaling.json. This one factor lifts HP, damage, armour and resistance together (default 1).
+  statFactor?: number;
+  // Set on a boss only. The level of the dungeon does not change these numbers.
+  flatStats?: FlatMonsterStats;
+  // Seconds for one basic attack (a boss sets it in flatStats). The default is in data/balance/monster-scaling.json.
+  attackSeconds?: number;
   targetPriority?: TargetPriority;
-  // The share of the Defence of a hero that the monster ignores (0.4 ignores 40%). Resistance is not cut.
+  // The share of the flat Defence of a hero that the monster ignores (0.4 ignores 40%). Resistance is not cut.
   armourPenetration?: number;
   // Spells that the monster casts in battle. They cost no resource and only wait for their cooldown.
   spellIds?: readonly string[];

@@ -3,6 +3,7 @@ import { actionButton, element } from './dom';
 import { t, onLanguageChange } from './i18n';
 import { PANEL_CATALOG, panelTitleKey } from './panelCatalog';
 import type { PanelContext } from './panels/panelContext';
+import { closeEveryModalWithItsCloseAction } from './modal';
 import { createToastStack } from './toastStack';
 
 export interface PanelHost {
@@ -88,6 +89,8 @@ export function createPanelHost(store: GameStore): PanelHost {
       savedScrollOffsets.length = 0;
       backActions.length = 0;
       PANEL_CATALOG.find((panel) => panel.id === previousId)?.onClose?.();
+      // The windows a panel opened (choosers, details) belong to it. They must not stay over the next screen or the battle.
+      closeEveryModalWithItsCloseAction();
     }
     render();
     changeListeners.forEach((listener) => listener());

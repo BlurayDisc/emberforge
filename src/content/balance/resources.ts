@@ -1,12 +1,9 @@
 import data from '../../../data/balance/resources.json';
 import type { ResourceId } from '../../model/resource';
-import type { StatBlock } from '../../model/statBlock';
 
+// The pool is fixed: no level and no attribute changes the maximum.
 export interface ResourceRules {
-  maximumBase: number;
-  maximumPerLevel: number;
-  attribute: keyof StatBlock;
-  maximumPerAttributePoint: number;
+  maximum: number;
   startFraction: number;
   regenFractionPerSecond: number;
   gainFractionPerHitDealt: number;

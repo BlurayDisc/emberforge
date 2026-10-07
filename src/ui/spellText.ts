@@ -38,7 +38,7 @@ function describeEffect(effect: SpellEffect): string {
     case 'heal':
       return t(`spell.effect.heal.${effect.target}`, { percent: percentOf(effect.power) });
     case 'shield':
-      return t('spell.effect.shield', { percent: percentOf(effect.resourceFraction), absorb: effect.absorbPerResourcePoint, seconds: effect.durationSeconds });
+      return t('spell.effect.shield', { percent: percentOf(effect.resourceFraction), flat: effect.absorbFlat, health: percentOf(effect.absorbMaxHpFraction), seconds: effect.durationSeconds });
     case 'status': {
       const statusText = t('spell.effect.status', {
         effect: statusPhrase(effect),

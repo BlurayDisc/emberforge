@@ -2,7 +2,7 @@
   "description": "How many fights the player must spend in the two level 1 dungeons, the only source of basic material, to keep one crafter level with the hero. The hero fights the best dungeon. Whenever the crafter is below the hero level, the player runs a round: a few fights in the level 1 dungeon that drops the main material of the best recipe the crafter can make, then crafts everything it can afford. Fees and crafting time are ignored.",
   "firstLevel": 2,
   "lastLevel": 10,
-  "professionIds": ["weaponsmithing", "fletching", "woodworking", "armoursmithing", "leatherworking", "tailoring"],
+  "professionIds": ["weaponsmithing", "fletching", "enchanting", "armoursmithing", "leatherworking", "tailoring"],
   "basicFightsPerRound": 2,
   "basicFightShareRange": [0.3, 0.5],
   "games": 200,

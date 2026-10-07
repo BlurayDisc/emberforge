@@ -4,13 +4,12 @@ export const ACTION_THRESHOLD = data.actionThreshold;
 export const SECONDS_PER_TICK = data.secondsPerTick;
 export const MAXIMUM_BATTLE_SECONDS = data.maximumBattleSeconds;
 
+export const BASE_CRITICAL_CHANCE = data.baseCriticalChance;
 export const CRITICAL_DAMAGE_MULTIPLIER = data.criticalDamageMultiplier;
-export const CRITICAL_CHANCE_PER_SKILL_POINT = data.criticalChancePerSkillPoint;
 export const MAXIMUM_CRITICAL_CHANCE = data.maximumCriticalChance;
 
-export const MAXIMUM_DAMAGE_CUT = data.maximumDamageCut;
-export const MITIGATION_BASE = data.mitigationBase;
-export const MITIGATION_PER_ATTACKER_LEVEL = data.mitigationPerAttackerLevel;
+// The attack speed pool is 1 + bonus. It never goes below this, so the attack time stays finite.
+export const MINIMUM_ATTACK_SPEED_FACTOR = data.minimumAttackSpeedFactor;
 export const MONSTER_DAMAGE_VARIANCE_FRACTION = data.monsterDamageVarianceFraction;
 
 export const HEAL_BELOW_HEALTH_FRACTION = data.healBelowHealthFraction;

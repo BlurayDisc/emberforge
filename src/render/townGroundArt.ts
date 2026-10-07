@@ -11,11 +11,11 @@ const TREE_MARGIN = 10;
 
 function drawGrass(art: PixelCanvas, random: Random): void {
   art.fill('moss', 0, 0, TOWN_WIDTH, LOGICAL_HEIGHT);
-  for (let speckle = 0; speckle < 6600; speckle++) {
+  for (let speckle = 0; speckle < 2500; speckle++) {
     const color = random.chance(0.6) ? 'grass' : 'soil';
     art.fill(color, random.nextInt(0, TOWN_WIDTH - 1), random.nextInt(0, LOGICAL_HEIGHT - 1), 1, 1);
   }
-  for (let flower = 0; flower < 210; flower++) {
+  for (let flower = 0; flower < 80; flower++) {
     const color = random.pick(['gold', 'blood', 'parchment'] as const);
     art.fill(color, random.nextInt(4, TOWN_WIDTH - 5), random.nextInt(4, LOGICAL_HEIGHT - 5), 1, 1);
   }
@@ -53,7 +53,7 @@ function drawForestEdge(art: PixelCanvas, random: Random): void {
 // The trees are not painted here. They are sprites, so a person who walks behind a tree is hidden by it.
 function pickTreePositions(coverage: Uint8Array, random: Random): Point[] {
   const trees: Point[] = [];
-  for (let attempt = 0; attempt < 1400 && trees.length < 46; attempt++) {
+  for (let attempt = 0; attempt < 1400 && trees.length < 24; attempt++) {
     const x = random.nextInt(10, TOWN_WIDTH - 10);
     const y = random.nextInt(60, LOGICAL_HEIGHT - 2);
     const crowded = Math.hypot(POND_CENTER.x - x, POND_CENTER.y - y) < 34 || trees.some((tree) => Math.hypot(tree.x - x, tree.y - y) < 26);

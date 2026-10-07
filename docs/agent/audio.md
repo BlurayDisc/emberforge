@@ -11,3 +11,4 @@
 - `src/app/sceneMusic.ts` picks the track. A watched fight plays `battle` or `boss`. In the town, the music follows the oldest active run, so the player hears that the heroes fight. The castle keeps the `castle` track. With no run, the town plays `town`.
 - Volumes are saved apart from the game save (`emberforge.settings`).
 
+- Animal sounds: `animalSounds` in `sound-effects.json` maps `cat`, `dog` and `hen` to an `idle` list (one rare call, one is picked) and a `petted` list (all play, the happy reaction). `render/` only says which animal feels which mood (`AnimalVoice`). `app/animalVoice.ts` plays the sound. `npm run validate` checks that the effects exist.

@@ -3,11 +3,8 @@ import { createBuildBadge } from '../ui/buildBadge';
 import { CASTLE_SCREEN_COUNT } from '../kernel/stageSize';
 import { playSound } from '../audio';
 import type { GameStore } from '../game';
-import { drawBattleBackdrop } from '../render/battleBackdrops';
-import { CREATURE_DRAWERS } from '../render/creatureArt';
-import { registerArtProviders } from '../ui/artProviders';
 import { createBattleView } from '../render/battleView';
-import { FIGURE_DRAWERS } from '../render/castleFigureArt';
+import { playAnimalVoice } from './animalVoice';
 import { createCastleView } from '../render/castleView';
 import { createPixelStage } from '../render/pixelStage';
 import { createTownPresenter } from './townPresenter';
@@ -22,9 +19,9 @@ import { combineTownAndCastle } from './townScenes';
 import { startJobTicker } from './jobTicker';
 import { startFlowController } from './flowController';
 import { startRunPlayback } from './runPlayback';
+import { preloadTownArt } from './townArtPreloader';
 
 export function mountApp(root: HTMLElement, store: GameStore): void {
-  registerArtProviders({ dungeonBackdrop: drawBattleBackdrop, monsterSprite: (spriteKey) => CREATURE_DRAWERS[spriteKey]?.() ?? null, castleFigure: (look) => FIGURE_DRAWERS[look]?.() ?? null });
   const canvasHost = element('div', 'stage-canvas-host');
   const panelHost = createPanelHost(store);
   const hud = createRunHud(store, () => panelHost.open('dungeons'));
@@ -37,7 +34,7 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   const battleView = createBattleView(stage);
   const townView = createTownPresenter(store, stage, panelHost);
   createStageHudPresenter(store, stage);
-  const castleView = createCastleView(stage);
+  const castleView = createCastleView(stage, playAnimalVoice);
   const castleOverlay = createCastleOverlay({
     screenCount: CASTLE_SCREEN_COUNT,
     currentScreen: castleView.currentScreen,
@@ -48,6 +45,14 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   startRunPlayback(store, stage, { battleView, townView: combineTownAndCastle(townView, castleView) }, hud);
   startFlowController(store, panelHost);
   startJobTicker(store, panelHost);
+
+  let loadedTownId = store.getState().townId;
+  store.subscribe(() => {
+    const { townId } = store.getState();
+    if (townId === loadedTownId) return;
+    loadedTownId = townId;
+    void preloadTownArt(store, townId);
+  });
 
   // Escape closes the top window first, then the open panel. Capture phase, so it runs before the castle handler.
   document.addEventListener('keydown', (event) => {

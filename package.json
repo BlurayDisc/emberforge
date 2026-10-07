@@ -1,7 +1,7 @@
 {
   "name": "emberforge",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,6 +16,9 @@
     "sprites": "tsx tools/headless-art/sprites.ts",
     "animation": "tsx tools/headless-art/animation.ts",
     "shot": "tsx tools/headless-browser/shot.ts",
+    "check:realtime": "tsx tools/check-realtime-battle.ts",
+    "balance:realtime": "tsx tools/balance-sim/realtime-compare.ts",
+    "timeline:realtime": "tsx tools/balance-sim/realtime-timeline.ts",
     "audio-report": "tsx tools/audio-report.ts"
   },
   "dependencies": {
