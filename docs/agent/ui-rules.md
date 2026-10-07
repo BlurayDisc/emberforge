@@ -7,7 +7,7 @@ Read these before you touch any file in `src/ui/` or any CSS. Keep them true. Wh
 2. Main content first: the grid, the list or the map. The thing the player came for is at the top.
 3. Short info lines (space, gold, counts). Keep long descriptions short.
 4. Content that grows over time (stored materials, lists of results) is last, above the footer.
-5. Footer row: the action buttons, always last, in the class `panel-footer` (sticky, so a short desktop window never hides it). Leave / Back is the last button. Links to another screen (for example "Upgrade ... at the bank") sit in the same footer.
+5. Footer row: the action buttons, always last, in the class `panel-footer` (sticky, so a short desktop window never hides it). Leave, Back, Cancel and Close are the first button, at the left. The main action (Fight, Collect, Equip, Repeat, Next) is last, at the right: give it the class `footer-action`. Links to another screen (for example "Upgrade ... at the bank") sit in the same footer, on the right. `.report-actions` and `.compare-actions` follow the same rule. Every footer button has the same width (up to 200 px, at most 42% of the row), so a row never mixes a wide and a narrow button.
 - Never put action buttons in the middle of a list, or above the content they act on.
 
 **No dynamic movement (most important)**
@@ -21,7 +21,7 @@ Read these before you touch any file in `src/ui/` or any CSS. Keep them true. Wh
 **Notices and going back**
 - A small notice (`ui/toastStack.ts`, called with `context.notify`) shows at the top centre of the stage for 3.5 s. It ignores the pointer, so it never blocks a button or a building. Never put a notice at the bottom, where the buttons and the town hints are.
 - Notices stack (up to 3) and are not removed when a panel closes or redraws. Send one for events the player did not start: a hero level-up, a finished craft, a finished sale. Do not open a window for them.
-- Escape and Back go back one screen at a time. A sub screen (a crafter inside the Workshop) hands its back action to `enterSubScreen(goBack)`. Escape runs it first and closes the panel only from the main screen. An open dropdown list takes the first Escape.
+- Escape, the X button and Back go back one screen at a time. A sub screen (a crafter inside the Workshop) hands its back action to `enterSubScreen(goBack)`. Escape runs it first and closes the panel only from the main screen. An open dropdown list takes the first Escape.
 - The Back or Leave button of every panel and sub screen is in the sticky `panel-footer`, never at the end of a long list.
 
 **Mobile and desktop**

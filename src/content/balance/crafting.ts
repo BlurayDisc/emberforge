@@ -20,3 +20,4 @@ export const UPGRADE_MAXIMUM_LEVEL = data.upgradeMaximumLevel;
 export const UPGRADE_CHANCE_AT_RECIPE_LEVEL: readonly number[] = data.upgradeChanceAtRecipeLevel;
 export const UPGRADE_CHANCE_FAR_ABOVE_RECIPE: readonly number[] = data.upgradeChanceFarAboveRecipe;
 export const UPGRADE_FAR_ABOVE_LEVELS = data.upgradeFarAboveLevels;
+export const UPGRADE_MAIN_STAT_FRACTION_PER_LEVEL = data.upgradeMainStatFractionPerLevel;

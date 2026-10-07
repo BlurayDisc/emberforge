@@ -1,11 +1,9 @@
 import { requireById } from '../../content/lookup';
 import { MATERIALS } from '../../content/materials';
-import { describeStorage, findBackpackMoveAnchor, hasBankUnlock, listEquipOptions, listSaleJobs, merchantSaleSlotsOf, moveBackpackEntryCommand, sortBackpackCommand } from '../../game';
+import { describeStorage, findBackpackMoveAnchor, hasBankUnlock, listSaleJobs, merchantSaleSlotsOf, moveBackpackEntryCommand, sortBackpackCommand } from '../../game';
 import type { BackpackEntry } from '../../model/backpack';
-import type { Item } from '../../model/item';
 import { actionButton, element } from '../dom';
-import { openModal } from '../modal';
-import { heroDisplayName, materialName } from '../displayNames';
+import { materialName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
 import { createMoneyDisplay } from '../moneyDisplay';
 import { createItemNameElement } from '../itemNameElement';
@@ -13,7 +11,7 @@ import { createItemCard } from '../itemText';
 import type { PanelContext, PanelRenderer } from './panelContext';
 import { backpackEntryTitle, createBackpackEntryActions } from './backpack/backpackEntryMenu';
 import { createBackpackGrid } from './backpack/backpackGrid';
-import { equipIntoEmptySlot, renderEquipComparison } from './heroes/equipComparison';
+import { openEquipPreview } from './backpack/equipPreview';
 
 interface SelectedPosition {
   column: number;
@@ -24,16 +22,6 @@ let selectedPosition: SelectedPosition | null = null;
 
 export function resetInventorySelection(): void {
   selectedPosition = null;
-}
-
-function openEquipPreview(context: PanelContext, heroId: string, item: Item): void {
-  const hero = context.store.getState().company.find((candidate) => candidate.id === heroId);
-  if (!hero) return;
-  const problem = listEquipOptions(context.store.getState(), item).find((option) => option.heroId === heroId)?.problem ?? null;
-  if (equipIntoEmptySlot(context, hero, undefined, item, problem)) return;
-  const area = element('div', 'chooser-compare');
-  const modal = openModal(t('equip.previewTitle', { hero: heroDisplayName(hero.name) }), area);
-  renderEquipComparison(context, hero, undefined, item, problem, area, () => modal.close());
 }
 
 function renderDetail(entry: BackpackEntry): HTMLElement {

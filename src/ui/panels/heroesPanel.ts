@@ -3,11 +3,12 @@ import type { Hero } from '../../model/hero';
 import { ATTRIBUTE_BAR_BASE, ATTRIBUTE_BAR_PER_LEVEL } from '../../content/balance/heroSheet';
 import type { HeroSheet } from '../../model/heroSheet';
 import { actionButton, element, percentBar } from '../dom';
-import { createExperienceBar, createLiveHealthBar } from '../liveBars';
-import { className, classResourceName, heroDisplayName } from '../displayNames';
+import { createExperienceBar, createLiveHealthBar, createResourceBar } from '../liveBars';
+import { className, heroDisplayName } from '../displayNames';
 import { t } from '../i18n';
 import { createList, createListRow } from '../listRow';
-import { formatStatValue, statName } from '../itemStatTable';
+import { statName } from '../itemStatTable';
+import { classResourceId, createStatValueWithItemBonus, heroStatLabel } from '../heroStatLabels';
 import { createGrowthGain } from '../classGrowth';
 import { createFullBodyPortrait } from '../fullBody/fullBodyPortraitArt';
 import { createPortrait } from '../portraitArt';
@@ -17,7 +18,7 @@ import type { PanelContext, PanelRenderer } from './panelContext';
 
 type HeroTab = 'stats' | 'equipment' | 'spells' | 'record';
 
-const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'movementSpeed'];
+const MAIN_STAT_ORDER: readonly (keyof HeroSheet)[] = ['health', 'resource', 'damage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'movementSpeed'];
 const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'agility' | 'intelligence'; className: string }> = [
   { stat: 'strength', className: 'bar-strength' },
   { stat: 'agility', className: 'bar-agility' },
@@ -59,11 +60,11 @@ function statisticRow(label: string, value: string): HTMLElement {
 
 function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
-  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', stat === 'resource' ? classResourceName(hero.classId) : statName(stat)), element('span', 'stat-value', formatStatValue(stat, view.sheet[stat]))));
+  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', heroStatLabel(stat, hero.classId)), createStatValueWithItemBonus(stat, view.sheet[stat], view.itemBonus[stat])));
   const showAttributeGrowth = hasBankUnlock(context.store.getState(), 'attributeGrowth');
   const attributeMaximum = ATTRIBUTE_BAR_BASE + ATTRIBUTE_BAR_PER_LEVEL * hero.level;
   const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) =>
-    element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'stat-value', String(view.sheet[stat]), ...(showAttributeGrowth ? [createGrowthGain(hero.classId, stat)] : []))),
+    element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'attribute-value', createStatValueWithItemBonus(stat, view.sheet[stat], view.itemBonus[stat]), ...(showAttributeGrowth ? [createGrowthGain(hero.classId, stat)] : []))),
   );
   const identity = element(
     'div',
@@ -75,6 +76,7 @@ function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
       element('div', 'card-title', t('heroes.header', { name: heroDisplayName(hero.name), className: className(hero.classId), level: hero.level })),
       element('div', 'card-text', t('heroes.hp', { max: view.sheet.health })),
       createLiveHealthBar(context.store, hero.id),
+      createResourceBar(classResourceId(hero.classId), view.sheet.resource, heroStatLabel('resource', hero.classId), view.sheet.health),
       element('div', 'card-text', t('heroes.xpTitle')),
       createExperienceBar(hero.experience, view.experienceToNextLevel),
     ),
@@ -83,10 +85,10 @@ function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
     'div',
     'hero-detail',
     identity,
-    element('div', 'section-title', t('heroes.mainStats')),
-    element('div', 'stat-table', ...mainRows),
     element('div', 'section-title', t('heroes.attributes')),
     element('div', 'attribute-list', ...attributeRows),
+    element('div', 'section-title', t('heroes.mainStats')),
+    element('div', 'stat-table', ...mainRows),
   );
 }
 

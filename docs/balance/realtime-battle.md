@@ -1,6 +1,6 @@
 # Real-time battle (phase 2, stage A)
 
-Status: built in stage A and wired into the game in stage B (`src/game/encounterPlanner.ts` plans with `simulateRealtimeBattle`; the report is rebuilt from the seed and the party, so no save change was needed). `simulateRealtimeBattle(units, random)` has the same inputs as `simulateBattle`. The spec is section 12 of `combat-and-growth-mechanism.md`. Numbers are placeholders in `data/balance/battlefield.json` (loader: `src/content/balance/battlefield.ts`).
+Status: built in stage A and wired into the game in stage B (`src/game/encounterPlanner.ts` plans with `simulateRealtimeBattle`; the report is rebuilt from the seed and the party, so no save change was needed). `simulateRealtimeBattle(units, random)` takes the units and a seeded random. The spec is section 12 of `combat-and-growth-mechanism.md`. Numbers are placeholders in `data/balance/battlefield.json` (loader: `src/content/balance/battlefield.ts`).
 
 ## Placeholder numbers
 
@@ -12,7 +12,7 @@ Status: built in stage A and wired into the game in stage B (`src/game/encounter
 | Melee reach | 0.3 (edge to edge) | Melee = bodies touch. |
 | Base movement speed | 6 per second | All melee classes and all monsters. |
 | Ranged speed factor | 0.9 | Archer, Mage, Priest. |
-| Ranged range | 0.3333 x field length = 12 (edge to edge) | Per unit value (`attackReach`), so an ability can raise it later. |
+| Ranged range | 0.38 x field length = 13.7 (edge to edge) | Per unit value (`attackReach`), so an ability can raise it later. |
 | Melee meet time | 2.5 s | The start gap is computed from it: gap = 2.5 x (2 x 6) + contact distance. Party line x = 2.35. |
 | Ranged start offset | 2 behind the melee line (kept inside the field) | Only when the side has a melee unit. |
 | Attack hit fraction | 0.5 | The hit lands at half of the attack time. |
@@ -27,7 +27,7 @@ The Priest is treated as ranged support (range 12, speed x0.9). Range and speed 
 
 Each tick: burn ticks, then for each living unit in input order: regenerate resource, land a due hit or cast effect, and if free, decide.
 
-Decide: choose the enemy target (nearest by edge distance, keep the current one unless another is closer by the margin; a `highestDefence` boss ignores distance). Then in this order: a ready, paid, useful spell (enemy spells need the target in the spell range, default the attack range; self, ally and shield spells need no range); else a Priest heals a wounded ally (below the heal threshold, not itself); else a basic attack if the goal is in reach; else move one step toward the goal.
+Decide: choose the enemy target (nearest by edge distance, keep the current one unless another is closer by the margin). Then in this order: a ready, paid, useful spell (enemy spells need the target in the spell range, default the attack range; self, ally and shield spells need no range); else a Priest heals a wounded ally (below the heal threshold, not itself); else a basic attack if the goal is in reach; else move one step toward the goal.
 
 Basic attack: the unit stands still for the attack time (base attack seconds / attack speed pool, same guard as the old sim). The hit lands at the hit fraction. Ranged hits land at release; the projectile is only visual. A target that is dead at the hit moment takes nothing. When the unit became ready between two ticks, the next attack starts at that exact time, so a run of attacks keeps the true rhythm.
 
@@ -37,7 +37,7 @@ Blocking and steering: a step is refused when it brings the body inside another 
 
 Randomness: one stream `random.fork('realtimeCombat')`. Same seed and units give the same report.
 
-Code reuse: `rollDamage`, armour, shield, dodge, burn, life steal, thorns, resource pool and the spell effect code come from `systems/battle`. The orchestration of one basic attack (`realtime/basicStrike.ts`) repeats the 15 lines of `act()` in `simulateBattle.ts`, because that function is private and the file is frozen. `spellCasting.ts` got a backward compatible split (in stage B the heal and shield casting and the cast context moved to `supportSpellCasting.ts` and `spellCastContext.ts`): `tryCastSpell` now calls the new `pickReadySpell`, `beginSpellCast` and `resolveSpellCast`; an optional `focusTarget` aims single-target spells; two guards return no events when there is no opponent or no wounded ally (cannot happen in the old sim). Old behaviour is unchanged (smoke play passes).
+Code reuse: `rollDamage`, armour, shield, dodge, burn, life steal, thorns, resource pool and the spell effect code come from `systems/battle`. The orchestration of one basic attack is in `realtime/basicStrike.ts`. `spellCasting.ts` offers `pickReadySpell`, `beginSpellCast` and `resolveSpellCast` (the heal and shield casting and the cast context are in `supportSpellCasting.ts` and `spellCastContext.ts`); an optional `focusTarget` aims single-target spells; two guards return no events when there is no opponent or no wounded ally.
 
 ## Report format (`src/model/realtimeBattle.ts`)
 
@@ -59,3 +59,9 @@ Playback: show the windup from `attackStart` to `hitAtSeconds`; the matching `ev
 - Boss body radius 1.0 and monster speed profiles are guesses. Real range and speed per class and monster need the user's decision.
 - `maximumBattleSeconds` is 1200 s; at 20 ticks per second a stalemate stores 24000 samples per unit. Normal fights are 10 to 20 s.
 - Fight length rose a little for melee and fell a little for ranged versus the old sim; no balance retune was done.
+
+## Start and crowding rules
+
+- **Start:** a buff or shield spell (self or allies) waits until the nearest enemy is within `prepareSpellsWithinDistance` (10, edge to edge). Every unit then walks from the first tick, and nobody stands still for the length of a cast while the others run.
+- **Ranged heroes:** speed 0.8 of the base (it was 0.9) and a longer range (0.38 of the field, it was 0.3333). They keep shooting when a melee unit touches them.
+- **Stuck units:** a unit that gains no ground for `holdWhenStuckSeconds` (0.15) stands still, and moves only when the straight way stays free for 4 steps. Big bodies (a boss is 2 wide) that meet in a narrow gap no longer push in and out. A unit that cannot reach its goal hits any enemy that is already in reach.

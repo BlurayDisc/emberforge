@@ -19,7 +19,7 @@ import { applyQueryToForm } from './pageQuery';
 import { appendLogEntries, renderLivePanel, renderSummary, type LivePanel } from './simPanels';
 import { describeUnitStats } from './unitStatsText';
 
-const MONTE_CARLO_BATTLES = 100;
+const MONTE_CARLO_BATTLES = 20;
 const JUMP_STEP_SECONDS = 1 / 30;
 const MAXIMUM_FRAME_SECONDS = 0.1;
 const SPEEDS = [1, 2, 4] as const;
@@ -45,7 +45,7 @@ interface RunningBattle {
   battleSeconds: number;
   hasFinished: boolean;
   live: LivePanel;
-  logState: { unitsById: Map<string, BattleUnit>; lastLoggedTurn: number };
+  logState: { unitsById: Map<string, BattleUnit>; lastLoggedTimeMarker: number };
 }
 
 let battle: RunningBattle | null = null;
@@ -126,7 +126,7 @@ function startBattle(): void {
   const live = renderLivePanel(byId('sim-live'), units);
   byId('sim-log').replaceChildren();
   byId('sim-summary').replaceChildren();
-  battle = { report, units, unitsById, nextEventIndex: 0, battleSeconds: 0, hasFinished: false, live, logState: { unitsById, lastLoggedTurn: 0 } };
+  battle = { report, units, unitsById, nextEventIndex: 0, battleSeconds: 0, hasFinished: false, live, logState: { unitsById, lastLoggedTimeMarker: -1 } };
   appendLogEntries(byId('sim-log'), [{ kind: 'fight', monsters: listOf(creepUnits.map((unit) => unitDisplayName(unit))) }]);
   renderRunControls();
 }

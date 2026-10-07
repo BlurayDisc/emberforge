@@ -12,6 +12,7 @@ import { checkGearBudget, damageAtItemLevel } from './validate-gear-budget';
 import { PROFESSION_IDS } from '../src/content/baseItems';
 import { WORKSHOP_SECTIONS } from '../src/content/workshopSections';
 import { SPELL_THEMES } from '../src/render/spellEffects/spellThemes';
+import { STORY_SCENES } from '../src/ui/story/storyScenes';
 import { checkCombatModel } from './validate-combat-model';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -172,7 +173,8 @@ interface SpellData extends Identified {
 const spells = load<SpellData[]>('spells.json');
 const monsterSpells = load<Array<Omit<SpellData, 'classId' | 'unlockLevel'>>>('monster-spells.json');
 const buildings = load<Array<Identified & { label: string | null; panelId: string | null; opens?: string; style: string }>>('buildings.json');
-const castleSpots = load<{ spots: Array<Identified & { screen: number; kind: string; look: string | null; x: number; y: number; width: number; height: number; tales: number }> }>('castle.json').spots;
+const castleSpots = load<{ spots: Array<Identified & { screen: number; kind: string; look: string | null; x: number; y: number; width: number; height: number; tales: number; talesAfterChapter1?: number }> }>('castle.json').spots;
+const storyBeats = load<{ beats: Array<Identified & { chapter: number; trigger: { kind: string; dungeonId?: string }; pages: Array<{ scene: string; voice?: string }> }> }>('story-beats.json').beats;
 const languages = load<Array<{ id: string; nativeName: string }>>('i18n/languages.json');
 const translationsByLanguage: Record<string, Record<string, string>> = {};
 for (const language of languages) translationsByLanguage[language.id] = load<Record<string, string>>(`i18n/${language.id}.json`);
@@ -369,7 +371,8 @@ for (const dungeon of dungeons) {
 const dungeonsDroppingMaterial = (materialId: string): Dungeon[] => dungeons.filter((dungeon) =>
   [...dungeon.monsterIds, ...(dungeon.rareMonsterId ? [dungeon.rareMonsterId] : []), ...(dungeon.bossMonsterId ? [dungeon.bossMonsterId] : [])]
     .some((monsterId) => monstersById.get(monsterId)?.drops.some((drop) => drop.materialId === materialId)));
-const upgradeBalance = load<{ upgradeMaximumLevel: number; upgradeChanceAtRecipeLevel: number[]; upgradeChanceFarAboveRecipe: number[] }>('balance/crafting.json');
+const upgradeBalance = load<{ upgradeMaximumLevel: number; upgradeChanceAtRecipeLevel: number[]; upgradeChanceFarAboveRecipe: number[]; upgradeMainStatFractionPerLevel: number }>('balance/crafting.json');
+if (!(upgradeBalance.upgradeMainStatFractionPerLevel > 0 && upgradeBalance.upgradeMainStatFractionPerLevel < 1)) report('balance/crafting.json: upgradeMainStatFractionPerLevel must be between 0 and 1');
 for (const [name, chances] of [['upgradeChanceAtRecipeLevel', upgradeBalance.upgradeChanceAtRecipeLevel], ['upgradeChanceFarAboveRecipe', upgradeBalance.upgradeChanceFarAboveRecipe]] as const) {
   if (chances.length !== upgradeBalance.upgradeMaximumLevel) report(`balance/crafting.json: ${name} needs one chance for each upgrade level (${upgradeBalance.upgradeMaximumLevel})`);
   chances.forEach((chance, index) => {
@@ -525,11 +528,10 @@ const PANEL_IDS = ['heroes', 'inventory', 'dungeons', 'world', 'settings', 'tave
 const FIXED_KEY_GROUPS: Record<string, string[]> = {
   quality: ['common', 'uncommon', 'magic', 'rare', 'unique'],
   resource: ['mana', 'stamina', 'hatred', 'rage'],
-  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'defence', 'armour', 'resistance', 'attackSeconds', 'attackSpeed', 'movementSpeed', 'strength', 'agility', 'intelligence'],
+  statname: ['hp', 'health', 'lifeSteal', 'criticalChance', 'criticalDamage', 'physicalDamage', 'magicalDamage', 'damage', 'defence', 'armour', 'resistance', 'attackSeconds', 'attackSpeed', 'movementSpeed', 'strength', 'agility', 'intelligence'],
   slot: ['mainHand', 'offHand', 'helm', 'armour', 'gloves', 'legs', 'boots', 'belt', 'amulet', 'ringOne', 'ringTwo'],
   category: ['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'skin', 'silk', 'essence', 'catalyst'],
   armourweight: ['heavy', 'medium', 'light'],
-  endreason: ['stopped', 'party-defeated', 'party-weakened', 'backpack-full'],
 };
 
 function expectedEnglishNames(): Array<[string, string]> {
@@ -560,11 +562,17 @@ function expectedEnglishNames(): Array<[string, string]> {
 function expectedKeysWithoutEnglishSource(): string[] {
   const keys = PANEL_IDS.map((panelId) => `panel.${panelId}`);
   keys.push('lore.prologue.title', 'lore.prologue.1', 'lore.prologue.2', 'lore.prologue.3', 'lore.prologue.4', 'lore.prologue.5', 'lore.begin', 'lore.next', 'lore.skip');
+  keys.push('story.chapterTitle', 'story.done');
+  for (const beat of storyBeats) {
+    keys.push(`story.chapter.${beat.chapter}.name`, `story.${beat.id}.title`);
+    for (let page = 1; page <= beat.pages.length; page++) keys.push(`story.${beat.id}.${page}`);
+  }
   keys.push('castle.leave', 'castle.farewell');
   for (let screen = 0; screen < CASTLE_SCREEN_COUNT; screen++) keys.push(`castle.screen.${screen}`);
   for (const spot of castleSpots) {
     keys.push(`castle.${spot.id}.name`, `castle.${spot.id}.title`);
     for (let tale = 1; tale <= spot.tales; tale++) keys.push(`castle.${spot.id}.tale.${tale}`);
+    for (let tale = 1; tale <= (spot.talesAfterChapter1 ?? 0); tale++) keys.push(`castle.${spot.id}.tale.after1.${tale}`);
   }
   for (const spell of [...spells, ...monsterSpells]) keys.push(`spell.${spell.id}`);
   for (const affix of affixes) keys.push(`affix.${affix.id}.short`);
@@ -600,7 +608,7 @@ function checkAudio(): void {
     const lengths = track.voices.map((voice) => voice.notes.split(/\s+/).reduce((total, token) => total + Number(token.split(':')[1] ?? 1), 0));
     if (new Set(lengths).size !== 1) report(`audio/music.json: voices of track '${trackId}' must have the same length (found ${lengths.join(', ')})`);
   }
-  for (const required of ['town', 'battle', 'boss', 'castle']) if (!(required in music.tracks)) report(`audio/music.json: missing track '${required}'`);
+  for (const required of ['town', 'battle', 'boss', 'castle', 'story']) if (!(required in music.tracks)) report(`audio/music.json: missing track '${required}'`);
 }
 
 checkAudio();
@@ -621,6 +629,27 @@ function checkCastle(): void {
 }
 
 checkCastle();
+
+function checkStoryBeats(): void {
+  checkUniqueIds('story-beats.json', storyBeats);
+  const triggerKeys = new Set<string>();
+  for (const beat of storyBeats) {
+    const { kind, dungeonId } = beat.trigger;
+    if (kind === 'firstClear') {
+      if (!dungeons.some((dungeon) => dungeon.id === dungeonId)) report(`story-beats.json: '${beat.id}' uses unknown dungeon '${dungeonId}'`);
+    } else if (kind !== 'firstHeroHired' && kind !== 'secondHeroHired') report(`story-beats.json: '${beat.id}' uses unknown trigger '${kind}'`);
+    const triggerKey = `${kind}:${dungeonId ?? ''}`;
+    if (triggerKeys.has(triggerKey)) report(`story-beats.json: trigger '${triggerKey}' has more than one story beat`);
+    triggerKeys.add(triggerKey);
+    if (beat.pages.length < 1) report(`story-beats.json: '${beat.id}' needs at least one page`);
+    for (const page of beat.pages) {
+      if (!STORY_SCENES[page.scene]) report(`story-beats.json: '${beat.id}' uses unknown scene '${page.scene}'`);
+      if (page.voice !== undefined && page.voice !== 'ember') report(`story-beats.json: '${beat.id}' uses unknown voice '${page.voice}'`);
+    }
+  }
+}
+
+checkStoryBeats();
 
 for (const town of townsFile.towns) {
   const townDungeons = dungeons.filter((dungeon) => dungeon.townId === town.id);

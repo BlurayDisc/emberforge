@@ -23,9 +23,24 @@ function blockerAt(mover: RealtimeUnit, point: Point, others: readonly RealtimeU
   return null;
 }
 
+const POCKET_LOOKAHEAD_STEPS = 4;
+
+// Walks the straight line a few steps ahead with a copy of the body. A body that would be blocked on the way means a pocket that is too narrow.
+function isPocketAhead(mover: RealtimeUnit, directionX: number, directionY: number, length: number, others: readonly RealtimeUnit[]): boolean {
+  let probe = { ...mover };
+  for (let step = 1; step <= POCKET_LOOKAHEAD_STEPS; step++) {
+    const next = clampToField({ x: mover.x + step * length * directionX, y: mover.y + step * length * directionY }, mover.bodyRadius);
+    if (blockerAt(probe, next, others) !== null) return true;
+    probe = { ...probe, x: next.x, y: next.y };
+  }
+  return false;
+}
+
 // The unit steps straight at the goal. When a body is in the way it turns by a fixed set of angles, away from the blocker, and keeps that side
 // until the straight way is free, so it slides round without jitter. Returns how far it moved.
-export function stepToward(mover: RealtimeUnit, goal: Point, others: readonly RealtimeUnit[], stepLength: number): number {
+// A unit that is stuck (holdIfPocketAhead) moves only when the straight way stays free for a few steps. A pocket between two bodies that is too narrow
+// would otherwise draw it in, block it, and push it sideways, one tick after the other, which looks like shaking.
+export function stepToward(mover: RealtimeUnit, goal: Point, others: readonly RealtimeUnit[], stepLength: number, holdIfPocketAhead = false): number {
   const distanceToGoal = Math.hypot(goal.x - mover.x, goal.y - mover.y);
   if (distanceToGoal < 1e-9) return 0;
   const directionX = (goal.x - mover.x) / distanceToGoal;
@@ -36,6 +51,7 @@ export function stepToward(mover: RealtimeUnit, goal: Point, others: readonly Re
 
   const straightStep = stepAt(0);
   const straightBlocker = blockerAt(mover, straightStep, others);
+  if (holdIfPocketAhead && (straightBlocker !== null || isPocketAhead(mover, directionX, directionY, length, others))) return 0;
   let chosenStep: Point | null = straightBlocker === null ? straightStep : null;
   if (straightBlocker === null) mover.slideSign = 0;
   if (chosenStep === null) {

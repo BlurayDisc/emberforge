@@ -33,7 +33,7 @@ export const renderMillPanel: PanelRenderer = (context) => {
   const collectButton = actionButton(t('mill.collect'), () => {
     const result = context.store.execute(collectMillMaterialsCommand());
     if (!result.accepted) context.notify(describeRejection(result.rejection));
-  }, { disabled: mill.storedMaterials.length === 0 });
+  }, { disabled: mill.storedMaterials.length === 0, className: 'action-button primary footer-action' });
   return element(
     'div',
     'panel-body',
@@ -41,6 +41,6 @@ export const renderMillPanel: PanelRenderer = (context) => {
     element('div', 'card-text small', t('mill.usage', { stored: mill.storedCount, capacity: mill.capacity })),
     createNextProductionLine(context),
     storedRows.length > 0 ? createList(...storedRows) : element('p', 'hint', t('mill.empty')),
-    element('div', 'panel-footer', collectButton, actionButton(t('mill.leave'), context.closePanel)),
+    element('div', 'panel-footer', actionButton(t('mill.leave'), context.closePanel), collectButton),
   );
 };

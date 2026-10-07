@@ -7,7 +7,6 @@ import { applyStatus, armourFactorOf, combatantOf, damageFactorBetween, empowerA
 import { rollDamage, type DamageRoll } from './damage';
 import { dodgeEvent, dodgesHit, shieldFieldsOf, takeDamage } from './damageTaken';
 import { applyLifeSteal } from './lifeSteal';
-import { frontlineOpponent } from './frontlineTarget';
 import { gainResourceFromHit, spendResource } from './resourcePool';
 import { castHeal, castShield } from './supportSpellCasting';
 import { event, healthFractionOf, type CastContext } from './spellCastContext';
@@ -24,7 +23,6 @@ function statusTargets(effect: Extract<SpellEffect, { kind: 'status' }>, context
   if (effect.target === 'allAllies') return context.allies;
   if (effect.target === 'allEnemies') return context.opponents;
   if (context.focusTarget && context.focusTarget.hp > 0) return [context.focusTarget];
-  if (context.actor.unit.targetPriority === 'highestDefence' && context.opponents.length > 0) return [frontlineOpponent(context.opponents)];
   const strongestOpponent = [...context.opponents].sort((first, second) => second.maxHp - first.maxHp)[0];
   return strongestOpponent ? [strongestOpponent] : [];
 }
@@ -88,7 +86,7 @@ function castDamage(effect: Extract<SpellEffect, { kind: 'damage' | 'drain' }>, 
   const events: BattleEvent[] = [];
   if (context.opponents.length === 0) return events;
   const isSpread = effect.kind === 'damage' && effect.target === 'spreadEnemies';
-  const singleTarget = context.focusTarget && context.focusTarget.hp > 0 ? context.focusTarget : context.actor.unit.targetPriority === 'highestDefence' ? frontlineOpponent(context.opponents) : [...context.opponents].sort((first, second) => first.hp - second.hp)[0] as BattleUnit;
+  const singleTarget = context.focusTarget && context.focusTarget.hp > 0 ? context.focusTarget : [...context.opponents].sort((first, second) => first.hp - second.hp)[0] as BattleUnit;
   const targets = effect.kind === 'damage' && effect.target === 'allEnemies' ? context.opponents : [singleTarget];
   const landedOn = new Set<string>();
   let dealtTotal = 0;
@@ -144,7 +142,7 @@ function castStatus(effect: Extract<SpellEffect, { kind: 'status' }>, context: C
 }
 
 // A shield costs a share of the whole pool. Every other spell has a fixed cost.
-export function resourceCostOf(spell: BattleSpell, unit: BattleUnit): number {
+function resourceCostOf(spell: BattleSpell, unit: BattleUnit): number {
   return spell.effect.kind === 'shield' ? Math.round(unit.maxResource * spell.effect.resourceFraction) : spell.resourceCost;
 }
 
@@ -186,11 +184,4 @@ export function resolveSpellCast(actor: Combatant, combatants: readonly Combatan
   const firstEvent = events[0];
   if (firstEvent && resourceCost > 0) firstEvent.resourceSpent = resourceCost;
   return events;
-}
-
-// Returns the events of the first spell that is ready, paid for and useful, or null when the actor should attack.
-export function tryCastSpell(actor: Combatant, combatants: readonly Combatant[], timeSeconds: number, random: Random): BattleEvent[] | null {
-  const spell = pickReadySpell(actor, combatants, timeSeconds, random);
-  if (!spell) return null;
-  return resolveSpellCast(actor, combatants, spell, beginSpellCast(actor, spell, timeSeconds), timeSeconds, random);
 }

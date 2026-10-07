@@ -708,6 +708,18 @@
   text-align: right;
 }
 
+.bar-resource { height: 14px; background: #2a2a3d; }
+.bar-mana .bar-fill { background: #3b6fd6; }
+.bar-stamina .bar-fill { background: #d9a441; }
+.bar-hatred .bar-fill { background: #7b4bb7; }
+.bar-rage .bar-fill { background: #e2641f; }
+
+.item-bonus { margin-left: 6px; font-weight: 700; }
+.item-bonus-gain { color: #6adf6a; }
+.item-bonus-loss { color: #ff6a5a; }
+
+.attribute-value { text-align: right; white-space: nowrap; color: var(--parchment); }
+
 .bar-strength .bar-fill { background: var(--crimson); }
 .bar-agility .bar-fill { background: var(--green); }
 .bar-intelligence .bar-fill { background: var(--blue); }

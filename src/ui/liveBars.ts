@@ -1,4 +1,5 @@
 import { describeHero, type GameStore } from '../game';
+import type { ResourceId } from '../model/resource';
 import type { TimedJob } from '../model/timedJob';
 import { healthBarLength, type HealthBarLengthScale } from '../kernel/healthBarLength';
 import { element } from './dom';
@@ -35,6 +36,15 @@ export function createLiveHealthBar(store: GameStore, heroId: string, options: {
     else timeNote.textContent = view.secondsToFullHealth > 0 ? t('heroes.rested', { time: formatDuration(view.secondsToFullHealth) }) : '';
   });
   return element('div', 'health-line', bar, ...(options.showsTimeNote ? [timeNote] : []));
+}
+
+// The pool of a hero is fixed and a hero starts a fight with a full pool, so outside a fight the bar is full.
+export function createResourceBar(resourceId: ResourceId, maximum: number, resourceLabel: string, maximumHealth: number): HTMLElement {
+  const { bar, fill, label } = createBar(`bar-resource bar-${resourceId}`);
+  bar.style.width = `${menuHealthBarWidthPixels(maximumHealth)}px`;
+  fill.style.width = '100%';
+  label.textContent = `${resourceLabel} ${maximum} / ${maximum}`;
+  return bar;
 }
 
 export function createExperienceBar(current: number, next: number): HTMLElement {

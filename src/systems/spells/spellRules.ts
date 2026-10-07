@@ -70,8 +70,3 @@ export function unequipSpell(hero: Hero, spellId: string): Hero {
     equippedUltimateId: hero.equippedUltimateId === spellId ? null : hero.equippedUltimateId,
   };
 }
-
-export function equippedSpellsOf(hero: Hero): SpellDefinition[] {
-  const ids = [hero.equippedUltimateId, ...hero.equippedSpellIds];
-  return ids.flatMap((id) => (id === null ? [] : (findSpell(id) ?? [])));
-}

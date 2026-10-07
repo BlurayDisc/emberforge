@@ -13,6 +13,8 @@ export interface CastleSpot {
   width: number;
   height: number;
   tales: number;
+  // Extra tales that join the first ones when the player has cleared the victory dungeon (the end of chapter 1). Keys: castle.<id>.tale.after1.<n>.
+  talesAfterChapter1?: number;
 }
 
 export const CASTLE_SPOTS = castleData.spots as unknown as readonly CastleSpot[];
@@ -29,4 +31,11 @@ export function castleSpot(spotId: string): CastleSpot {
 
 export function castleWorldX(spot: CastleSpot): number {
   return spot.screen * LOGICAL_WIDTH + spot.x;
+}
+
+export function castleTaleKeys(spot: CastleSpot, isChapterOneCleared: boolean): string[] {
+  const firstTales = Array.from({ length: spot.tales }, (_, index) => `castle.${spot.id}.tale.${index + 1}`);
+  const laterTales = isChapterOneCleared ? Array.from({ length: spot.talesAfterChapter1 ?? 0 }, (_, index) => `castle.${spot.id}.tale.after1.${index + 1}`) : [];
+  // The news comes first, so the player sees it without a scroll.
+  return [...laterTales, ...firstTales];
 }

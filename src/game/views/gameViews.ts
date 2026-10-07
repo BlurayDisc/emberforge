@@ -10,12 +10,13 @@ import { experienceToNextLevel } from '../../systems/progression';
 import { healthFractionAt, isDowned, secondsToFullHealth } from '../../systems/recovery';
 import { isClassUnlocked } from '../classUnlocks';
 import { runOfHero } from '../runStatus';
-import { computeHeroPower, computeHeroSheet, computeHeroStats } from '../../systems/stats';
+import { computeHeroPower, computeHeroSheet, computeHeroStats, computeItemBonusSheet } from '../../systems/stats';
 
 export interface HeroView {
   stats: StatBlock;
   sheet: HeroSheet;
-  currentHp: number;
+  // What the equipped items add to each value of the sheet.
+  itemBonus: HeroSheet;
   healthFraction: number;
   isDowned: boolean;
   secondsToRevive: number;
@@ -46,7 +47,7 @@ export function describeHero(state: GameState, hero: Hero, nowMs: number): HeroV
   return {
     stats,
     sheet: computeHeroSheet(hero),
-    currentHp: Math.round(stats.hp * healthFraction),
+    itemBonus: computeItemBonusSheet(hero),
     healthFraction,
     isDowned: downed,
     secondsToRevive: downed ? Math.ceil(((hero.downedUntilMs ?? nowMs) - nowMs) / 1000) : 0,

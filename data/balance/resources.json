@@ -1,27 +1,27 @@
 {
   "mana": {
-    "maximum": 42,
+    "maximum": 30,
     "startFraction": 1,
     "regenFractionPerSecond": 0.018,
     "gainFractionPerHitDealt": 0,
     "gainFractionPerHitTaken": 0
   },
   "stamina": {
-    "maximum": 38,
+    "maximum": 28,
     "startFraction": 1,
     "regenFractionPerSecond": 0.022,
     "gainFractionPerHitDealt": 0,
     "gainFractionPerHitTaken": 0
   },
   "hatred": {
-    "maximum": 31,
+    "maximum": 24,
     "startFraction": 0.5,
     "regenFractionPerSecond": 0.02,
     "gainFractionPerHitDealt": 0.04,
     "gainFractionPerHitTaken": 0
   },
   "rage": {
-    "maximum": 33,
+    "maximum": 26,
     "startFraction": 0,
     "regenFractionPerSecond": 0,
     "gainFractionPerHitDealt": 0.08,

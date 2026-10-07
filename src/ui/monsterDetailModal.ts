@@ -43,7 +43,7 @@ function renderStatisticsLine(monster: MonsterDefinition, dungeon: DungeonDefini
   const statistics = describeMonsterStatistics(monster.id, dungeon.level);
   const parts: Array<[string, number]> = [
     ['health', statistics.health],
-    ['physicalDamage', statistics.attack],
+    [statistics.attackKind === 'magic' ? 'magicalDamage' : 'physicalDamage', statistics.attack],
     ['armour', statistics.armour],
     ['resistance', statistics.resistance],
     ['attackSeconds', statistics.attackSeconds],

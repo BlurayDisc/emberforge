@@ -6,8 +6,6 @@ export type MonsterRank = 'normal' | 'rare' | 'boss';
 export type UnitRank = 'hero' | MonsterRank;
 export type AttackKind = 'physical' | 'magic';
 export type UnitBehavior = 'fighter' | 'healer';
-// A unit without a priority keeps the default choice. 'highestDefence' attacks the opponent with the most Defence first (the frontline).
-export type TargetPriority = 'highestDefence';
 export type BattleActionKind = 'attack' | 'heal' | 'effect';
 
 export interface BattleUnit {
@@ -38,12 +36,13 @@ export interface BattleUnit {
   // A share of the movement speed in a real-time battle (0.05 means +5%). From boots. A monster has none.
   movementSpeedBonus?: number;
   behavior: UnitBehavior;
-  targetPriority?: TargetPriority;
   // The share of the flat Defence of the target that this unit's physical hits ignore. A boss uses it so a wall of Defence does not make it harmless.
   armourPenetration?: number;
   resourceId: ResourceId;
   maxResource: number;
   resource: number;
+  // A share added to the regeneration of the resource (0.3 means +30%). Heroes only: Intelligence speeds up mana.
+  resourceRegenBonus?: number;
   spells: readonly BattleSpell[];
 }
 

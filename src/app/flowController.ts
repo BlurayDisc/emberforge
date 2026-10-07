@@ -1,13 +1,17 @@
 import { playSound } from '../audio';
 import type { GameStore } from '../game';
 import type { RunReport } from '../model/gameState';
+import { VICTORY_DUNGEON_ID } from '../content/balance/progression';
+import { storyBeatForFirstHeroHired, storyBeatForSecondHeroHired } from '../content/storyBeats';
 import { heroDisplayName } from '../ui/displayNames';
 import { t } from '../ui/i18n';
 import type { PanelHost } from '../ui/panelHost';
 import { openPrologue } from '../ui/prologue';
 import { focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
+import { setCastleChapterOneCleared } from '../ui/castleVisit';
 import { hasOpenModal } from '../ui/modal';
 import { openRunReport } from '../ui/runReportModal';
+import { openStoryBeat } from '../ui/storyBeatModal';
 
 // A small notice for each hero that gained a level, also when the report opens at once or waits in the background.
 function announceLevelUps(store: GameStore, report: RunReport, notify: (message: string) => void): void {
@@ -50,14 +54,23 @@ export function startFlowController(store: GameStore, panelHost: PanelHost): voi
   let previousState = store.getState();
   const startStory = (): void => openPrologue(() => panelHost.open('tavern'));
   if (previousState.company.length === 0) startStory();
+  setCastleChapterOneCleared(previousState.clearedDungeonIds.includes(VICTORY_DUNGEON_ID));
   startReportFlow(store, panelHost.notify, () => panelHost.activePanelId() === null);
 
   store.subscribe(() => {
     const currentState = store.getState();
+    setCastleChapterOneCleared(currentState.clearedDungeonIds.includes(VICTORY_DUNGEON_ID));
     const justHiredFirstHero = previousState.company.length === 0 && currentState.company.length > 0;
+    const justHiredSecondHero = previousState.company.length === 1 && currentState.company.length === 2;
     const justStartedNewGame = previousState.company.length > 0 && currentState.company.length === 0;
-    if (justHiredFirstHero) panelHost.open('dungeons');
-    else if (justStartedNewGame) startStory();
+    if (justHiredFirstHero) {
+      panelHost.open('dungeons');
+      const firstHeroBeat = storyBeatForFirstHeroHired();
+      if (firstHeroBeat) openStoryBeat(firstHeroBeat);
+    } else if (justHiredSecondHero) {
+      const secondHeroBeat = storyBeatForSecondHeroHired();
+      if (secondHeroBeat) openStoryBeat(secondHeroBeat);
+    } else if (justStartedNewGame) startStory();
     previousState = currentState;
   });
 }

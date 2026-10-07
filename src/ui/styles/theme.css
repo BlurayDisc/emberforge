@@ -69,6 +69,44 @@ body {
   font-feature-settings: 'liga' 0, 'clig' 0;
 }
 
+/* Every scroll area uses the pixel look, never the native bar of the browser. WebKit and Blink take the pseudo elements. Firefox takes scrollbar-color. */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: var(--wood-500) var(--wood-900);
+}
+
+@supports selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+    background: var(--wood-900);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--wood-900);
+    box-shadow: inset 2px 0 0 var(--ink);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--wood-600);
+    box-shadow: inset 2px 2px 0 var(--wood-500), inset -2px -2px 0 var(--wood-800), 0 0 0 2px var(--ink);
+    border: 2px solid var(--wood-900);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--wood-500);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: var(--wood-900);
+  }
+}
+
 /* A phone browser bar changes the visible height. dvh follows it, so the bottom menu never hides under the bar. */
 #game-root {
   height: 100%;

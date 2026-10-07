@@ -22,7 +22,7 @@ export interface DamageModifiers {
 }
 
 // The flat armour that a hit meets: Defence for a physical hit (minus the armour penetration of the attacker), Resistance for a magical hit.
-export function armourAgainst(attacker: BattleUnit, target: BattleUnit, damageKind: AttackKind, targetArmourFactor: number): number {
+function armourAgainst(attacker: BattleUnit, target: BattleUnit, damageKind: AttackKind, targetArmourFactor: number): number {
   const penetration = damageKind === 'magic' ? 0 : attacker.armourPenetration ?? 0;
   return (damageKind === 'magic' ? target.resistance : target.defence) * targetArmourFactor * (1 - penetration);
 }

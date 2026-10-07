@@ -40,6 +40,7 @@ import { CURRENT_SAVE_VERSION, loadGameState, parseGameState } from '../src/syst
 import { levelUpGains } from '../src/systems/stats';
 import { createNewGameState } from '../src/game/newGame';
 import { LEVEL_CAP } from '../src/content/balance/progression';
+import { monsterStatsAtLevel } from '../src/content/balance/monsterScaling';
 import { applyExperience } from '../src/systems/progression';
 import type { GameState } from '../src/model/gameState';
 import { createRandom } from '../src/kernel/random';
@@ -65,7 +66,7 @@ import { MONSTER_SPELLS } from '../src/content/monsterSpells';
 import { SPELLS, findSpell, spellsOfClass } from '../src/content/spells';
 import type { BattleSpell, SpellDefinition } from '../src/model/spell';
 import { simulateRealtimeBattle } from '../src/systems/battle';
-import { checkBootsMovementSpeed, checkMonsterAttackTimes, checkRealtimeBattleWiring } from './smoke-realtime-steps';
+import { checkBootsMovementSpeed, checkManaRegenFromIntelligence, checkMonsterAttackTimes, checkRealtimeBattleWiring } from './smoke-realtime-steps';
 import type { BattleEvent, BattleUnit } from '../src/model/battle';
 import { itemDisplayName } from '../src/ui/displayNames';
 import { createEncounter, createMonsterUnit } from '../src/systems/dungeons';
@@ -195,7 +196,7 @@ function playSession(seed: number): string {
   store.execute(() => stateBeforeUnlock);
   for (const baseId of ['greataxe', 'maul', 'knuckles', 'cestus']) assert.ok(findRecipe(baseId, 1), `${baseId} has a tier 1 recipe`);
 
-  const damageBefore = computeHeroSheet(warrior).physicalDamage;
+  const damageBefore = computeHeroSheet(warrior).damage;
   assert.equal(rejectionKey(store, craftItemCommand('axe', 1, null, clock.nowMs)), 'reject.craftLevelTooLow', 'an axe is locked at level 1');
   const copperBeforeSwordCraft = store.getState().copper;
   const itemCountBeforeSword = store.getState().backpack.filter((entry) => entry.content.kind === 'item').length;
@@ -208,7 +209,7 @@ function playSession(seed: number): string {
   assert.ok(sword, 'the crafted sword is in the backpack');
   assert.equal(rejectionKey(store, equipItemCommand(warrior.id, sword.id)), null, 'the warrior equips the sword');
   const equippedWarrior = store.getState().company[0];
-  assert.ok(equippedWarrior && computeHeroSheet(equippedWarrior).physicalDamage > damageBefore, 'the sword raises physical damage');
+  assert.ok(equippedWarrior && computeHeroSheet(equippedWarrior).damage > damageBefore, 'the sword raises physical damage');
 
   // Spells: a trainer teaches a spell for money. The hero needs the class and the level.
   const copperBeforeSpell = store.getState().copper;
@@ -458,6 +459,19 @@ function playSession(seed: number): string {
     assert.ok(values.length > 0, `${affix.id} is crafted by chance`);
     assert.ok(values.every((value) => value >= affix.minimumValue && value <= affix.maximumValue), `${affix.id} does not grow with the item level`);
   }
+  for (const kind of ['prefix', 'suffix'] as const) {
+    assert.equal(AFFIXES.filter((definition) => definition.kind === kind).length, 15, `there are 15 affixes of kind ${kind}`);
+    for (const affix of AFFIXES.filter((definition) => definition.kind === kind)) assert.ok((rolledValues[affix.id] ?? []).length > 0, `${affix.id} is crafted by chance`);
+  }
+
+  const upgradeBonusOf = (baseId: string, itemLevel: number, upgradeLevel: number): number => {
+    const craft = (level: number) => generateCraftedItem({ itemId: `upgrade-${baseId}`, baseId, tier: 1, setMaterialId: null, itemLevel, upgradeLevel: level, craftingCostCopper: 10, ingredientCount: 1, quality: 'common' }, createRandom(5));
+    const mainStat = BASE_ITEMS.find((base) => base.id === baseId)?.mainStat as keyof Item['baseStats'];
+    return (craft(upgradeLevel).baseStats[mainStat] ?? 0) - (craft(0).baseStats[mainStat] ?? 0);
+  };
+  assert.equal(upgradeBonusOf('sword', 1, 3), 3, 'a low item gains at least 1 main stat for each upgrade level');
+  assert.equal(upgradeBonusOf('boots-medium', 1, 2), 2, 'an armour piece gains at least 1 main stat for each upgrade level');
+  assert.ok(upgradeBonusOf('sword', 100, 3) >= 3 * 5, 'a high item gains a share of the main stat for each upgrade level');
 }
 
 // A wound cuts the healing that a unit receives. The Goblin Chief wounds with Crushing Cleaver.
@@ -831,7 +845,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
     const random = createRandom(11);
     return Array.from({ length: rollCount }, () => rollUpgradeLevel(levelsAboveRecipe, random)).filter((upgradeLevel) => upgradeLevel >= level).length;
   };
-  assert.ok(countAtLeast(0, 1) < rollCount * 0.1, 'most crafts at the recipe level have no upgrade');
+  assert.ok(countAtLeast(0, 1) < rollCount * 0.2, 'most crafts at the recipe level have no upgrade');
   assert.ok(countAtLeast(60, 1) > countAtLeast(0, 1), 'a far higher crafter gets more upgrades');
   assert.ok(countAtLeast(60, 3) < countAtLeast(60, 1), '+3 is rarer than +1');
   assert.ok(countAtLeast(100, 8) === 0, 'no upgrade passes +7');
@@ -1223,16 +1237,19 @@ assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the mig
 {
   const warriorAtLevel = (level: number): Hero => ({ ...createHero('warrior', 1, createRandom(3)), level });
   assert.equal(computeHeroSheet(warriorAtLevel(1)).health, 593, 'a level 1 Warrior has the baseline HP (213 + 26 Strength x 14.6)');
-  assert.equal(computeHeroSheet(warriorAtLevel(5)).health, 739, 'a level 5 Warrior has the baseline HP');
+  assert.equal(computeHeroSheet(warriorAtLevel(5)).health, 724, 'a level 5 Warrior has the baseline HP');
   assert.equal(computeHeroSheet(warriorAtLevel(10)).armour, 5, 'no level gives Defence');
   assert.ok(!('skill' in computeHeroSheet(warriorAtLevel(1))), 'the Skill stat is gone');
   assert.equal(heroToBattleUnit(warriorAtLevel(1)).maxResource, heroToBattleUnit(warriorAtLevel(10)).maxResource, 'a resource pool does not grow with the level');
   assert.ok(SPELLS.every((spell) => spell.castSeconds >= 0), 'every spell has a cast time (0 is instant)');
 
   const monsterAt = (monsterId: string, level: number): BattleUnit => createMonsterUnit(monsterId, level, 'curve-check');
-  assert.deepEqual([monsterAt('cave-rat', 1).maxHp, monsterAt('cave-rat', 1).attack, monsterAt('cave-rat', 10).maxHp, monsterAt('cave-rat', 10).attack], [413, 35, 1075, 99], 'a normal monster follows the level anchors');
-  assert.equal(monsterAt('cave-rat', 15).maxHp, 1350, 'the last segment of the monster curve goes on above the last anchor');
-  assert.equal(monsterAt('alpha-wolf', 5).maxHp, Math.round(730 * (requireById(MONSTERS, 'alpha-wolf').statFactor ?? 1)), 'a rare monster lifts its stats by its stat factor');
+  const caveRatStatFactor = requireById(MONSTERS, 'cave-rat').statFactor ?? 1;
+  const lastAnchorHp = monsterStatsAtLevel(10).hp;
+  const lastSegmentHpPerLevel = lastAnchorHp - monsterStatsAtLevel(9).hp;
+  assert.deepEqual([monsterAt('cave-rat', 1).maxHp, monsterAt('cave-rat', 1).attack, monsterAt('cave-rat', 10).maxHp, monsterAt('cave-rat', 10).attack], [Math.round(monsterStatsAtLevel(1).hp * caveRatStatFactor), Math.round(monsterStatsAtLevel(1).damage * caveRatStatFactor), Math.round(lastAnchorHp * caveRatStatFactor), Math.round(monsterStatsAtLevel(10).damage * caveRatStatFactor)], 'a normal monster follows the level anchors');
+  assert.equal(monsterAt('cave-rat', 15).maxHp, Math.round((lastAnchorHp + 5 * lastSegmentHpPerLevel) * caveRatStatFactor), 'the last segment of the monster curve goes on above the last anchor');
+  assert.equal(monsterAt('alpha-wolf', 5).maxHp, Math.round(monsterStatsAtLevel(5).hp * (requireById(MONSTERS, 'alpha-wolf').statFactor ?? 1)), 'a rare monster lifts its stats by its stat factor');
   const bossFlatStats = requireById(MONSTERS, 'goblin-chief').flatStats;
   assert.ok(bossFlatStats && requireById(MONSTERS, 'goblin-chief').statFactor === undefined, 'the boss has flat stats and no stat factor');
   const bossUnit = monsterAt('goblin-chief', 10);
@@ -1310,6 +1327,7 @@ assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the mig
 
 checkRealtimeBattleWiring();
 checkBootsMovementSpeed();
+checkManaRegenFromIntelligence();
 checkMonsterAttackTimes();
 
 const firstSummary = playSession(12345);

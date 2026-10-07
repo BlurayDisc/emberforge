@@ -31,7 +31,7 @@ export interface BattleSpell {
   id: string;
   isUltimate: boolean;
   cooldownSeconds: number;
-  // How long the caster stands still while it casts. 0 is an instant cast. The battle does not use it yet.
+  // How long the caster stands still while it casts. 0 is an instant cast.
   castSeconds: number;
   resourceCost: number;
   effect: SpellEffect;

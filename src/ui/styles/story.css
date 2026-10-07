@@ -30,6 +30,12 @@
   margin-top: 4px;
 }
 
+/* The voice of Elowen in the hearth. */
+.story-ember {
+  color: var(--gold);
+  font-style: italic;
+}
+
 .story-dots {
   display: flex;
   justify-content: center;
@@ -45,10 +51,6 @@
 
 .story-dot.active {
   background: var(--gold);
-}
-
-.story-footer {
-  justify-content: space-between;
 }
 
 .story-hidden {

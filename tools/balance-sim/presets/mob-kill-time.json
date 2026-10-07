@@ -4,7 +4,7 @@
   "lastLevel": 10,
   "classIds": ["warrior", "archer", "mage", "priest", "thief", "barbarian", "fighter"],
   "monsterLevelRule": "hero-level",
-  "battlesPerCase": 200,
+  "battlesPerCase": 20,
   "seed": 2024,
   "targetSecondsByLevel": { "1": 7, "3": 11, "5": 15, "7": 19, "9": 23, "10": 25 }
 }

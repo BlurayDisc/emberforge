@@ -1,7 +1,7 @@
 {
   "name": "emberforge",
   "private": true,
-  "version": "0.5.2",
+  "version": "0.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,12 +13,12 @@
     "validate": "tsx tools/validate-data.ts",
     "smoke": "tsx tools/smoke-play.ts",
     "gallery": "vite --open /spell-gallery.html",
+    "story-gallery": "vite --open /story-gallery.html",
     "battlesim": "vite --open /battle-sim.html",
     "sprites": "tsx tools/headless-art/sprites.ts",
     "animation": "tsx tools/headless-art/animation.ts",
     "shot": "tsx tools/headless-browser/shot.ts",
     "check:realtime": "tsx tools/check-realtime-battle.ts",
-    "balance:realtime": "tsx tools/balance-sim/realtime-compare.ts",
     "timeline:realtime": "tsx tools/balance-sim/realtime-timeline.ts",
     "audio-report": "tsx tools/audio-report.ts"
   },

@@ -7,6 +7,7 @@ import type { BattleSpell } from '../src/model/spell';
 import { simulateRealtimeBattle } from '../src/systems/battle';
 import { MAXIMUM_BATTLE_SECONDS } from '../src/content/balance/battle';
 import { BODY_OVERLAP_TOLERANCE, FIELD_LENGTH } from '../src/content/balance/battlefield';
+import { createMonsterUnit } from '../src/systems/dungeons';
 import { commonGearHeroUnit, normalMonsterUnit } from './balance-sim/realtimeFixtures';
 
 const CLASS_IDS: readonly ClassId[] = ['warrior', 'archer', 'mage', 'priest', 'thief'];
@@ -61,12 +62,9 @@ for (let tick = 0; tick < crowd.tracks[0]!.x.length; tick++) {
   }
 }
 
-// 5. Nearest target: the monster hits the unit in front, not the archer behind it. The boss priority overrides it.
+// 5. Nearest target: the monster hits the unit in front, not the archer behind it.
 const frontAndBack = fight([sturdy(hero('warrior')), sturdy(hero('archer', 5, 1)), sturdy(monster('rat-a'))]);
 assert.equal(attackStartsOf(frontAndBack, 'rat-a')[0]!.targetId, 'hero-0', 'a monster attacks the nearest hero');
-const armoured = (unit: BattleUnit): BattleUnit => ({ ...unit, defence: 500 });
-const bossFight = fight([sturdy(hero('warrior')), armoured(sturdy(hero('archer', 5, 1))), { ...sturdy(monster('boss')), targetPriority: 'highestDefence' }]);
-assert.equal(attackStartsOf(bossFight, 'boss')[0]!.targetId, 'hero-1', 'the boss priority picks the highest Defence even though it is farther');
 
 // 6. A cast takes castSeconds and the cooldown starts when the cast starts. An instant spell lands at once.
 const testSpell = (castSeconds: number): BattleSpell => ({ id: 'test.strike', isUltimate: false, cooldownSeconds: 5, castSeconds, resourceCost: 0, effect: { kind: 'damage', damageKind: 'physical', target: 'enemy', hits: 1, power: 2 } });
@@ -85,6 +83,32 @@ assert.equal(instantCast.events.find((event) => event.spellId === 'test.strike')
 const woundedWarrior = { ...hero('warrior'), maxHp: 400, hp: 120 };
 const healFight = fight([woundedWarrior, hero('priest', 5, 1), { ...sturdy(monster('rat-a')), attack: 1 }]);
 assert.ok(healFight.events.some((event) => event.kind === 'heal' && event.actorId === 'hero-1' && event.targetId === 'hero-0' && event.amount > 0), 'the Priest heals the wounded warrior');
+
+// 7b. A ranged hero that a melee monster has closed in on keeps shooting projectiles, and a mana or stamina bar follows the regeneration.
+for (const rangedClassId of ['archer', 'mage'] as const) {
+  const closedIn = fight([sturdy(hero(rangedClassId)), sturdy(monster('rat-a'))]);
+  const ratFirstSwing = firstActionOf(closedIn, 'rat-a');
+  const shotsAfterContact = attackStartsOf(closedIn, 'hero-0').filter((attack) => attack.timeSeconds > ratFirstSwing + 0.5);
+  assert.ok(shotsAfterContact.length >= 2, `the ${rangedClassId} keeps attacking while the monster is in contact`);
+  assert.ok(shotsAfterContact.every((attack) => attack.projectile), `the ${rangedClassId} attacks with projectiles in contact`);
+  const resourceTrack = trackOf(closedIn, 'hero-0').resource;
+  const spentThenRegenerated = resourceTrack.some((value, tick) => tick > 0 && value > resourceTrack[tick - 1]!);
+  assert.ok(spentThenRegenerated, `the ${rangedClassId} resource rises between two actions`);
+}
+
+// 7c. Every unit starts to walk at the first tick (a buff waits until the enemy is near), and three big bosses behind each other do not shake.
+const startFight = fight([hero('warrior', 10), hero('mage', 10, 1), monster('rat-a', 10), monster('rat-b', 10)]);
+assert.ok(startFight.tracks.every((track) => track.state[1] === 'moving'), 'no unit stands still or casts a buff at the start');
+const bossCrowd = fight([hero('archer', 10), hero('priest', 10, 1), ...[0, 1, 2].map((index) => ({ ...createMonsterUnit('goblin-chief', 10, `big-${index}`) }))], 3);
+for (const track of bossCrowd.tracks.filter((candidate) => candidate.unitId.startsWith('big-'))) {
+  let directionChanges = 0;
+  for (let tick = 2; tick < track.y.length; tick++) {
+    const previousStep = track.y[tick - 1]! - track.y[tick - 2]!;
+    const step = track.y[tick]! - track.y[tick - 1]!;
+    if (Math.abs(previousStep) > 1e-6 && Math.abs(step) > 1e-6 && Math.sign(previousStep) !== Math.sign(step)) directionChanges += 1;
+  }
+  assert.ok(directionChanges <= 60, `${track.unitId} shakes: ${directionChanges} direction changes`);
+}
 
 // 8. No NaN or negative HP, and every battle ends. All classes, a few levels and seeds.
 let battlesRun = 0;

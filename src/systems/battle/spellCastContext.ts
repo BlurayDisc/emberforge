@@ -11,7 +11,7 @@ export interface CastContext {
   timeSeconds: number;
   random: Random;
   spell: BattleSpell;
-  // The real-time battle aims a single-target spell at the enemy that the caster is fighting. The turn battle leaves it out.
+  // The real-time battle aims a single-target spell at the enemy that the caster is fighting.
   focusTarget?: BattleUnit;
 }
 

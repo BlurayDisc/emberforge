@@ -102,6 +102,7 @@
 }
 
 .hero-detail {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -569,11 +570,6 @@
   gap: 10px;
 }
 
-/* The equip button comes first, so the player does not scroll down to it. */
-.equip-confirm {
-  order: -1;
-}
-
 .compare-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -583,18 +579,33 @@
 .compare-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
+/* Both cards fill the same row height, so the two boxes match even when one item has fewer lines. */
 .compare-card .item-card {
+  flex: 1;
   min-width: 0;
+  padding: 6px 8px;
+  gap: 3px;
 }
 
-/* The large picture sits in the middle of its card, so the two items face each other. */
+.compare-card .item-name { font-size: 17px; }
+
+/* The picture is a smaller copy of the big one, in the middle of its card. */
 .compare-card .item-portrait {
   align-self: center;
-  margin: 4px 0;
+  margin: 2px 0;
+  padding: 8px;
 }
+
+.compare-card .item-portrait img {
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+}
+
+.compare-card .section-title { margin: 0; }
 
 .compare-row {
   display: grid;
@@ -1058,12 +1069,21 @@
   gap: 8px;
 }
 
+/* The remove button keeps its own width and sits at the left, like the footer buttons of other screens. */
+.spell-chooser > .action-button {
+  align-self: flex-start;
+}
+
 .spell-choice {
-  justify-content: space-between;
+  gap: 12px;
   cursor: default;
 }
 
+/* The text takes the free space and starts at the icon, so the names line up on one left edge. */
 .spell-choice-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1124,12 +1144,6 @@
   .growth-bars {
     grid-template-columns: 1fr;
   }
-}
-
-.report-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
 }
 
 /* Victory screen: covers the whole page. */
@@ -1441,10 +1455,35 @@
   z-index: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   padding: 8px 0 2px;
   background: var(--wood-800);
   box-shadow: 0 -4px 0 var(--wood-800);
+}
+
+/* Button rows share one rule: Leave, Back, Cancel and Close are first, at the left. The main action is last, at the right (class footer-action). Every button in a row has the same width. */
+.report-actions,
+.compare-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.panel-footer > .action-button,
+.report-actions > .action-button,
+.compare-actions > .action-button {
+  flex: none;
+  width: min(200px, 42%);
+  margin: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.panel-footer > .footer-action,
+.report-actions > .footer-action,
+.compare-actions > .footer-action {
+  margin-left: auto;
 }
 
 /* Workshop crafter list: the whole list fits one screen with no scroll. The panel takes the full height, the sections share it, and the tiles share each section. */
@@ -1584,6 +1623,11 @@
   width: 100%;
   padding: 10px 12px;
   font-size: 18px;
+}
+
+.craft-summary .modal-columns {
+  justify-content: center;
+  align-items: center;
 }
 
 .craft-summary {
@@ -1763,13 +1807,6 @@
 .dungeon-screen > .panel-footer {
   margin-top: auto;
   flex-wrap: nowrap;
-}
-
-/* The Fight button takes all the free width, so it is a big target under the thumb. Close stays small. */
-.dungeon-screen > .panel-footer .action-button.primary {
-  flex: 1;
-  min-height: 52px;
-  font-size: 20px;
 }
 
 @media (max-width: 640px) {

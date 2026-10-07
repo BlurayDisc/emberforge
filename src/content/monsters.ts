@@ -1,5 +1,5 @@
 import monstersData from '../../data/monsters.json';
-import type { MonsterRank, TargetPriority } from '../model/battle';
+import type { MonsterRank } from '../model/battle';
 
 export interface DropEntry {
   materialId: string;
@@ -38,7 +38,6 @@ export interface MonsterDefinition {
   flatStats?: FlatMonsterStats;
   // Seconds for one basic attack (a boss sets it in flatStats). The default is in data/balance/monster-scaling.json.
   attackSeconds?: number;
-  targetPriority?: TargetPriority;
   // The share of the flat Defence of a hero that the monster ignores (0.4 ignores 40%). Resistance is not cut.
   armourPenetration?: number;
   // Spells that the monster casts in battle. They cost no resource and only wait for their cooldown.

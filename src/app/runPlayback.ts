@@ -10,8 +10,9 @@ import { isInCastle, onCastleVisitChange } from '../ui/castleVisit';
 import { focusRun, focusedRunNumber, onRunFocusChange } from '../ui/runFocus';
 import { presentBattleEvent } from './battleEventPresenter';
 import { logEntriesForEvent, logUnitOf } from './battleLogEntries';
-import { chooseMusicTrack } from './sceneMusic';
+import { chooseMusicTrack, STORY_TRACK_ID } from './sceneMusic';
 import { forgetRunProgress, publishRunProgress } from '../ui/runProgress';
+import { isStoryMusicActive, onStoryMusicChange } from '../ui/storyMusic';
 import type { RunHud } from '../ui/runHud';
 
 const MAXIMUM_FRAME_SECONDS = 0.1;
@@ -34,7 +35,7 @@ interface EncounterPlayback {
   nextEventIndex: number;
   elapsedSeconds: number;
   hasAnnouncedResult: boolean;
-  lastLoggedTurn: number;
+  lastLoggedTimeMarker: number;
 }
 
 // One player for each active run. Every player advances in time, so a run that is not
@@ -56,11 +57,6 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   let displayedRunNumber: number | null = null;
   let hasLoaded = false;
 
-  const showResourcesAfterEvent = (event: BattleEvent): void => {
-    view.setUnitResource(event.actorId, event.actorResourceAfter);
-    view.setUnitResource(event.targetId, event.targetResourceAfter);
-  };
-
   const applyEventToView = (event: BattleEvent, encounter: EncounterPlayback, eventIndex: number): void => {
     presentBattleEvent(view, event, encounter.events, eventIndex, encounter.unitsById);
     logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
@@ -81,10 +77,9 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
     view.setRealtimeBattle(encounter.realtimeReport);
     view.setBattleTime(encounter.elapsedSeconds);
     hud.appendLogEntry({ kind: 'fight', monsters: listOf(encounter.monsterUnits.map((unit) => unitDisplayName(unit))) });
-    encounter.lastLoggedTurn = 0;
+    encounter.lastLoggedTimeMarker = -1;
     for (const event of encounter.events.slice(0, encounter.nextEventIndex)) {
       logEntriesForEvent(event, encounter).forEach(hud.appendLogEntry);
-      showResourcesAfterEvent(event);
       const target = encounter.unitsById.get(event.targetId);
       if (!target) continue;
       view.setUnitHealth(target.id, event.targetHpAfter);
@@ -109,7 +104,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
       nextEventIndex: 0,
       elapsedSeconds: 0,
       hasAnnouncedResult: false,
-      lastLoggedTurn: 0,
+      lastLoggedTimeMarker: -1,
     };
     if (focusedRunNumber() === player.runNumber) presentEncounter(player);
   };
@@ -117,7 +112,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   const updateMusic = (): void => {
     const watchedPlayer = players.get(focusedRunNumber() ?? -1);
     const oldestPlayer = players.get(Math.min(...players.keys()));
-    playMusic(chooseMusicTrack(watchedPlayer?.dungeonId ?? null, oldestPlayer?.dungeonId ?? null, isInCastle()));
+    playMusic(isStoryMusicActive() ? STORY_TRACK_ID : chooseMusicTrack(watchedPlayer?.dungeonId ?? null, oldestPlayer?.dungeonId ?? null, isInCastle()));
   };
 
   const synchronizeScene = (): void => {
@@ -195,6 +190,7 @@ export function startRunPlayback(store: GameStore, stage: PixelStage, scenes: Sc
   store.subscribe(reconcilePlayers);
   onRunFocusChange(synchronizeScene);
   onCastleVisitChange(updateMusic);
+  onStoryMusicChange(updateMusic);
   reconcilePlayers();
   hasLoaded = true;
 }

@@ -148,9 +148,11 @@ Constants: HP per Strength 14.6. Resistance per Intelligence 0.2. Attack speed b
 
 | Class | Start Str / Agi / Int | Start total | Gain per level | Gain total | Class base HP | Class base damage | Base Defence | Base Resistance | Base attack time |
 |---|---|---|---|---|---|---|---|---|---|
-| Warrior | 26 / 18 / 8 | 52 | 2.4 / 1.9 / 0.9 | 5.2 | 213 | 13 | 5 | 3 | 1.65 s |
+| Warrior | 26 / 18 / 8 | 52 | 2.2 / 1.9 / 0.9 | 5.0 | 213 | 13 | 5 | 3 | 1.65 s |
 | Archer | 18 / 23 / 11 | 52 | 2.1 / 2.6 / 1.2 | 5.9 | 207 | 13 | 3 | 4 | 1.5 s |
 | Mage | 16 / 12 / 23 | 51 | 2.1 / 1.2 / 2.6 | 5.9 | 196 | 21 | 1 | 4 | 1.7 s |
+
+Note: Warrior Strength gain per level lowered from 2.4 to 2.2 (the Warrior won 63% with full Magic gear, the other melee classes 46-49%). Its Full Magic gear win rate is now 58%.
 
 | Level | Class | HP | Base damage | + Item | Base Defence | + Item |
 |---|---|---|---|---|---|---|
@@ -164,39 +166,41 @@ Constants: HP per Strength 14.6. Resistance per Intelligence 0.2. Attack speed b
 | 10 | Archer | 747 | 59 | 22 | 3 | 5 |
 | 10 | Mage | 707 | 67 | 22 | 1 | 4 |
 
-Normal monsters (balance pass 3: armour up to 13, damage lowered, HP up to 1,075). HP lost is the average of the baseline classes in the first fight against a same-level monster, from `npm run scenarios -- first-fight` (spells on; level 1 with the main hand weapon only, levels 2-10 with Common gear of the best item level; in brackets: crafted Magic gear). Kill time is the average of Warrior, Archer and Mage.
+Normal monsters (balance pass 4 on the real-time simulator: HP up to 1,250, damage up to 115, armour up to 13; the table is for statFactor 1). HP lost is the average of the baseline classes in the first fight against a same-level monster, from `npm run scenarios -- first-fight` (spells on; level 1 with the main hand weapon only, levels 2-10 with Common gear of the best item level; in brackets: crafted Magic gear). Kill time is the average of Warrior, Archer and Mage.
 
 | Level | HP | Damage | Armour | Resistance | HP / damage | HP lost Warrior / Archer / Mage | Average | Kill time |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 413 | 35 | 0 | 0 | 11.8 | 43 / 54 / 60 | 52 (41) | 13.7 s |
-| 2 | 500 | 48 | 1 | 0 | 10.4 | 49 / 61 / 70 | 60 (47) | 13.5 s |
-| 3 | 580 | 51 | 2 | 0.5 | 11.4 | 52 / 64 / 77 | 64 (51) | 14.2 s |
-| 4 | 655 | 58 | 3 | 1 | 11.3 | 53 / 56 / 67 | 59 (42) | 13.6 s |
-| 5 | 730 | 66 | 4.5 | 1.5 | 11.1 | 54 / 68 / 74 | 65 (44) | 13.8 s |
-| 6 | 810 | 74 | 6 | 2 | 10.9 | 48 / 60 / 76 | 61 (35) | 15.7 s |
-| 7 | 890 | 82 | 8 | 3 | 10.9 | 56 / 66 / 80 | 67 (33) | 15.2 s |
-| 8 | 960 | 90 | 10 | 4 | 10.7 | 44 / 61 / 84 | 63 (27) | 16.1 s |
-| 9 | 1020 | 95 | 12 | 5 | 10.7 | 48 / 61 / 78 | 62 (26) | 15.6 s |
-| 10 | 1075 | 99 | 13 | 5.5 | 10.9 | 48 / 64 / 92 | 68 (29) | 15.1 s |
+| 1 | 430 | 36 | 0 | 0 | 11.9 | 44 / 48 / 54 | 49 (38) | 16.2 s |
+| 2 | 580 | 53 | 1 | 0 | 10.9 | 57 / 65 / 70 | 64 (52) | 16.2 s |
+| 3 | 660 | 59 | 2 | 0.5 | 11.2 | 64 / 69 / 75 | 69 (55) | 15.0 s |
+| 4 | 750 | 67 | 3 | 1 | 11.2 | 64 / 55 / 63 | 61 (43) | 13.6 s |
+| 5 | 840 | 75 | 4.5 | 1.5 | 11.2 | 68 / 67 / 73 | 69 (47) | 15.5 s |
+| 6 | 930 | 84 | 6 | 2 | 11.1 | 61 / 66 / 57 | 61 (34) | 16.9 s |
+| 7 | 1015 | 93 | 8 | 3 | 10.9 | 67 / 62 / 52 | 60 (30) | 15.8 s |
+| 8 | 1095 | 101 | 10 | 4 | 10.8 | 57 / 67 / 64 | 63 (27) | 17.3 s |
+| 9 | 1170 | 108 | 12 | 5 | 10.8 | 64 / 67 / 63 | 65 (25) | 16.5 s |
+| 10 | 1250 | 115 | 13 | 5.5 | 10.9 | 58 / 63 / 72 | 64 (29) | 15.3 s |
 
 Targets used (soft, tolerance 15%): HP lost on the first fight averages 50% at level 1 and 60-70% at levels 2-10. Monster HP / damage stays near 10-12. Level 10 HP is at least about 900. Armour reaches about 13 at level 10. Resistance is about 40% of armour (a magic hero hits it, but all monsters hit physically). Crafted Magic gear stays clearly better (13 to 37 points less HP lost).
 
 Method of this pass: armour was added first (it cut the average HP lost by about 20%), then HP and damage were lifted together (HP lost grows with HP x damage) until the average sat at 60-68%. Damage went down against pass 2 (112 to 99 at level 10) because armour makes the same damage cost more time. The dips of the first-meeting average at levels 4, 6 and 8 are the gear unlock steps (helm, legs, chest).
 
-Boss (flat numbers in `monsters.json`, level 10 curve = 1,075 / 99 / 13 / 5.5): Goblin Chief HP 1,559 (x1.45), damage 144 (x1.45), armour 19 (x1.46), Resistance 8 (x1.45), basic attack every 1.65 s. One common factor, each stat within 15% of it. Crushing Cleaver power 1.95 (about 281 damage), cooldown 12 s. Result with `boss-fight` on the real-time simulator: gear floor 65%, normal crafted gear 84%, weapon only 19%, one hero without gear 0%, fight about 18 s. Other tries: factor 2 (HP 2,150, cleaver 1.5) gave 3% / 15% / 0% / 0%; factor 1.5 gave 60% / 79% / 14% / 0%; factor 1.2 made the boss too weak (95% at the gear floor, weapon only 55%).
+Method of pass 4 (real-time simulator): first the mob factors, then the anchors. A fast mob hits more often, so each normal monster got `statFactor` = sqrt(attack seconds / 1.65) (rat and wolf 0.92, spider 0.95, goblin 1, scarecrow, toad and hobgoblin 1.04). This removed the jumps between levels that came from the dungeon mob (before: 60 at level 3 with the wolf, 37 at level 6 with the toad). Then HP and damage were lifted together by about 1.2-1.25 and trimmed twice. HP lost reacts strongly to the lift (a 25% lift of HP and damage raised it from about 42 to about 80), so one trim step of 6-8% moved it by about 15 points. Armour, Resistance and monster attack times were not changed. Monster speed and size in `battlefield.json` were not changed. Result: 49, 64, 69, 61, 69, 61, 60, 63, 65, 64 (crafted Magic 38, 52, 55, 43, 47, 34, 30, 27, 25, 29).
 
-Open in this draft: the class spread of HP lost at levels 7-10 (Mage 78-92% against Warrior 44-56%; the Priest placeholder 95-99%). Attack time is not changed for now. Starting damage includes +5 for every class to offset the run-up time of the real-time battle.
+Boss (flat numbers in `monsters.json`, level 10 curve = 1,250 / 115 / 13 / 5.5): Goblin Chief HP 1,500 (x1.20), damage 138 (x1.20), armour 17 (x1.31), Resistance 7 (x1.27), basic attack every 1.65 s. One common factor of about x1.2, each stat within 15% of it (armour is a whole number and stays higher on purpose: it cuts the weak weapon-only heroes hardest). Crushing Cleaver power 1.95 (about 269 damage), cooldown 12 s. Result with `boss-fight` on the real-time simulator (baseline classes): gear floor 60%, normal crafted gear 77%, weapon only 28%, one hero without gear 0%. The fight lasts about 17.6 s. Later buff (the fight was too easy with full Uncommon to Rare gear, and each dungeon clear now unlocks story and lore): the whole monster curve in `data/balance/monster-scaling.json` is lifted by a ramp of x1.00 at level 1 to x1.25 at level 10, all four stats together. Rare monsters follow the curve. Goblin Chief flat stats: HP 1,650, damage 152, armour 19, Resistance 8. Hobgoblin `statFactor` 1.12 (it only appears in this lair). `boss-fight` has a new state "full Magic gear" (between Uncommon and Rare). Result: gear floor 41%, normal crafted gear 44%, full Magic gear 58%, weapon only 11%, one hero without gear 0%. New targets: 25-50, 30-55, 55-75. In `first-fight`, Common gear now loses 66-99% of health against a monster of its own level (the player must craft), and crafted Magic gear loses 51-65%. Resource pressure: mana, stamina and hatred regeneration was halved (mana 0.9%, stamina 1.1%, hatred 1% of the pool each second) and the pools still start full. Goblin Chief HP 1,600, damage 148. `boss-fight` result: gear floor 43%, normal crafted gear 44%, full Magic gear 57%, weapon only 13%, one hero without gear 0%. Tried and rejected: the factor x1.45 (36% / 50% / 3%: too hard), a higher Cleaver power (2.6) with lower base stats (64% / 80% / 35%: weapon only over 30%), the factor x1.25 (57% / 71% / 21%: crafted gear too low). The gap between the gear floor and crafted gear stays near 17 points for every setting, so the crafted gear target of 85% sits at 77%, inside the 15% tolerance.
+
+Open in this draft: the class spread of HP lost at levels 7-10 is smaller after pass 4 (Mage 52-72%, Warrior 57-67%, Archer 62-67%), but the placeholder classes are far off: Priest 76-99%, Fighter 79-99%, Thief 72-86%, Barbarian up to 90% at level 10. Attack time is not changed for now. Starting damage includes +5 for every class to offset the run-up time of the real-time battle.
 
 ## 12. Real-time battle spec (decided 2026-10-07, built and wired in stage B)
 
-No rounds. Heroes and monsters move on a battlefield and fight in real time. The simulation uses fixed ticks and stores positions, so the same seed gives the same battle and playback stays deterministic. `simulateRealtimeBattle` runs the game, the balance simulator and the checks. The old `simulateBattle` stays only for `tools/balance-sim/realtime-compare.ts`.
+No rounds. Heroes and monsters move on a battlefield and fight in real time. The simulation uses fixed ticks and stores positions, so the same seed gives the same battle and playback stays deterministic. `simulateRealtimeBattle` runs the game, the balance simulator and the checks.
 
 | Topic | Decision |
 |---|---|
 | Opening | Both sides start apart. Melee units meet after about 2.5 seconds of running. |
 | Range | Each class and monster has an attack range. A ranged class covers about 1/3 of the battlefield. A melee unit must touch its target. Abilities may raise the range later. |
 | Blocking | Units block each other. They cannot stand inside one another. A blocked unit slides sideways around the blocker. |
-| Targeting | A unit targets the nearest enemy and checks again when a closer enemy arrives. A boss `targetPriority` still overrides this. |
+| Targeting | A unit targets the nearest enemy and checks again when a closer enemy arrives. |
 | Start position | If the team has a melee unit, Archer and Mage (ranged classes) start slightly behind it. Without melee units, all start on one line. |
 | Movement speed | A stat. All melee classes and all monsters have the same base value (6 per second). Ranged classes have 0.9 of it. Boots add +5% (percent points, no growth, no spread). Buffs come later. Haste does not change movement speed. |
 | Casting | A hero stands still while it casts (see section 3). |
@@ -205,7 +209,7 @@ No rounds. Heroes and monsters move on a battlefield and fight in real time. The
 | Field shape | A shallow 2D field, 36 long and 8 deep. |
 | Spell range | The range of a spell is the attack range of the unit, unless the spell says otherwise (`spellRangeFieldFractions`). |
 | Monster attack time | Every normal, rare and boss monster of this town has a basic attack time of 1.0 to 2.0 seconds. The Warrior is 1.65 s. The validator checks the range. |
-| Boss | A normal monster lifted by one common factor (x1.45 now). The burst comes from its spells. |
+| Boss | A normal monster lifted by one common factor (x1.2 now). The burst comes from its spells. |
 | Duration targets | Run-up time is not counted in the targets for now. Each class got +5 starting damage to offset it. |
 
 Placeholders to tune in the simulation: battlefield length, start gap, movement speed, body size, range of each class (all in `data/balance/battlefield.json`).
@@ -275,3 +279,7 @@ Examples: Sword (1) 7, Axe (3) 10, Longsword (5) 13, Battle Axe (7) 17, Broadswo
 **Upgrades (+1 to +7).** Each step adds a flat +1 to the main stat: Defence for armour, shield and belt, damage for weapons and off-hand damage items, critical chance for the ring, attack speed for the amulet. The item level and the other stats do not change. Sell value still grows 3% per step.
 
 **Every craft must matter.** The validator fails when an armour piece gives less than 2 Defence, the order Heavy > Medium >= Light breaks, a base stat is not a whole number, a weapon differs from the rule by more than 1, or a craftable item has no useful stat (Resistance alone does not count).
+
+**Resource pools (fix of the regeneration halving).** Halving the regeneration was the wrong lever: a cost of 35 was too big for a pool of 42. The regeneration is back at mana 0.018, stamina 0.022 and hatred 0.02 of the pool each second. The pools are cut: mana 42 to 30, stamina 38 to 28, hatred 31 to 24, rage 33 to 26. Every spell cost is now a share of the pool of its class: basic 17-30%, mid 34-37%, big non-ultimate 40% (one thief spell is 42% by rounding), Ultimate 55-92%. Cost before and after (old pool, new pool): Warrior Power Strike 6 to 5, Cleave 11 to 8, Mighty Blow 16 to 10, Iron Wall 35 to 11, Heroic Strike (Ultimate) 39 to 15; Mage Fire Bolt 6 to 6, Fireball 11 to 9, Arcane Surge 35 to 12, Inferno 39 to 16; Priest Minor Heal 5 to 5, Smite 6 to 6, Divine Shield 8 to 7, Sanctuary 35 to 12; Thief Backstab 6 to 5, Eviscerate 16 to 8, Shadow Strike 39 to 13; Barbarian Savage Swing 6 to 5, Thick Skin 22 to 10, Mountain Breaker 39 to 14. Biggest Ultimates 69 / 99 / 129 became 70 / 82 / 90% of the pool. `resource-use` (lowest point at Lv 10, normal fight): Warrior 3 to 6, Archer 10 to 7, Mage 20 to 16, Priest 31 to 29, Thief 7 to 6 percent (about the same pressure as the halved regeneration). `boss-fight` (baseline classes): gear floor 42%, normal crafted gear 45%, full Magic gear 58%, all inside the targets 25-50 / 30-55 / 55-75. Intelligence gives no pool and no regeneration (it gives Magical damage and Resistance only).
+
+Intelligence and mana: Intelligence adds 1% of the base mana regeneration for each point (`manaRegenBonusPerIntelligence`). Mage and Priest have 23-47 Intelligence at levels 1-10, so +23% to +47% before gear. `boss-fight` full Magic gear moved from 58% to 60%. Stamina, hatred and rage have no attribute link.

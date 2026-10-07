@@ -115,7 +115,7 @@ function collectWaitingItem(context: PanelContext, professionId: ProfessionId): 
   const crafterAfter = listCrafters(context.store.getState()).find((crafter) => crafter.professionId === professionId);
   if (!crafterAfter) return;
   if (crafterAfter.level > levelBefore) playSound('crafter-level-up');
-  openCraftCollectSummary({ crafterAfter, levelBefore, experienceGained: job.crafterExperience, item: job.item });
+  openCraftCollectSummary(context, { crafterAfter, levelBefore, experienceGained: job.crafterExperience, item: job.item });
   context.requestRender();
 }
 

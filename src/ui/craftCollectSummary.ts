@@ -1,12 +1,15 @@
 import type { CrafterView } from '../game';
 import type { Item } from '../model/item';
-import { element } from './dom';
+import { actionButton, element } from './dom';
 import { createCrafterPortrait } from './crafterPortraitArt';
 import { t } from './i18n';
 import { createItemPortrait } from './itemPortrait';
 import { createItemCard } from './itemText';
 import { createExperienceGainBar } from './liveBars';
 import { openModal } from './modal';
+import { openEquipHeroChoice } from './panels/backpack/equipHeroChoice';
+import { openEquipPreview } from './panels/backpack/equipPreview';
+import type { PanelContext } from './panels/panelContext';
 
 export interface CraftCollectResult {
   crafterAfter: CrafterView;
@@ -27,7 +30,7 @@ function createCrafterExperienceBar({ crafterAfter, levelBefore, experienceGaine
   );
 }
 
-export function openCraftCollectSummary(result: CraftCollectResult): void {
+export function openCraftCollectSummary(context: PanelContext, result: CraftCollectResult): void {
   const { crafterAfter, levelBefore, item } = result;
   const crafterText = element('div', 'result-hero-text', element('div', 'card-title', t(`profession.${crafterAfter.professionId}`)));
   if (crafterAfter.level > levelBefore) crafterText.append(element('div', 'level-up', t('result.levelUp', { level: crafterAfter.level })));
@@ -40,5 +43,9 @@ export function openCraftCollectSummary(result: CraftCollectResult): void {
     element('div', 'modal-columns', createItemPortrait(item), createItemCard(item)),
     element('div', 'card-text small', t('workshop.collectInBackpack')),
   );
-  openModal(t('workshop.collectTitle'), content);
+  const modal = openModal(t('workshop.collectTitle'), content);
+  const equipButton = actionButton(t('slot.menuEquip'), () => {
+    openEquipHeroChoice(context, item, (heroId) => openEquipPreview(context, heroId, item, () => modal.close()));
+  }, { className: 'action-button primary footer-action' });
+  content.append(element('div', 'panel-footer', actionButton(t('report.close'), () => modal.close()), equipButton));
 }

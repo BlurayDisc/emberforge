@@ -13,7 +13,7 @@ export interface ResourceSpent {
 }
 
 export type LogEntry =
-  | { kind: 'turn'; turn: number }
+  | { kind: 'time' }
   | { kind: 'fight'; monsters: string }
   | { kind: 'hit'; actor: LogUnit; target: LogUnit; amount: number; isCritical: boolean; absorbed?: number; spellName?: string; resourceSpent?: ResourceSpent }
   | { kind: 'dodge'; actor: LogUnit; target: LogUnit; spellName?: string; resourceSpent?: ResourceSpent }
@@ -54,8 +54,8 @@ function appendResourceSpent(line: HTMLElement, resourceSpent: ResourceSpent | u
 
 export function createLogLine(entry: LogEntry): HTMLElement {
   switch (entry.kind) {
-    case 'turn':
-      return element('div', 'log-turn', t('log.turn', { turn: entry.turn }));
+    case 'time':
+      return element('div', 'log-time', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     case 'fight':
       return element('div', 'log-line log-fight', t('log.fight', { monsters: entry.monsters }));
     case 'hit': {

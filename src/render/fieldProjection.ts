@@ -1,8 +1,8 @@
 import { LOGICAL_WIDTH } from './pixelStage';
 
 const FIELD_MARGIN_PIXELS = 44;
-const GROUND_BACK_FEET_Y = 178;
-const GROUND_FRONT_FEET_Y = 232;
+const GROUND_BACK_FEET_Y = 164;
+const GROUND_FRONT_FEET_Y = 244;
 // A sprite is wider than the body circle of the simulation. Each side is drawn this share of its sprite width away from the circle,
 // so units that touch in the simulation do not paint over each other.
 const SIDE_GAP_SPRITE_FRACTION = 0.35;

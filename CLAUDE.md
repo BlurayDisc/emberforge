@@ -6,6 +6,7 @@ Render: Pixi.js draws the town, the battle and the castle. Audio: Tone.js. Both 
 ## Read first
 
 - `design.md` is the source of truth for game rules. Change it in the same step as any rule change.
+- `story-and-lore.md` is the source of truth for story, cast, names and tone (10 chapters, one per town). Read it before you write or change any story, lore, castle or letter text. Keep character voices as written there.
 - Use the words from the design.md glossary in names: `Company`, `Party`, `Bracket`, `Tier`, `Affix`, `Quality`.
 - `docs/balance/bracket-NN.md` holds the balance tables of each bracket (targets and simulator results). Start a new bracket with `new-bracket-prompt.md`.
 - Read the matching file in `docs/agent/` before you work in that area:
@@ -30,6 +31,7 @@ Render: Pixi.js draws the town, the battle and the castle. Audio: Tone.js. Both 
 | `npm run scenarios` | Five balance scenarios from `tools/balance-sim/presets/`. Change a preset file, not the code. |
 | `npm run smoke` | Headless smoke play (`tools/smoke-play.ts`). Fails on a broken rule. |
 | `npm run gallery` | Spell gallery in the browser. |
+| `npm run story-gallery` | Story gallery in the browser: the prologue, every story beat and every castle tale, in English and Chinese, with a button that opens each one as in the game. Dev tool, not in `vite build`. |
 | `npm run sprites` | Headless contact sheet PNG of heroes, creatures or backdrops. No browser. |
 | `npm run shot` | Real headless Chrome: opens a URL, runs steps (click, wait, screenshot), saves PNGs to `out/shots/`. Use it to run the game or the gallery. See Visual validation. |
 | `npm run audio-report` | Renders every music track and sound effect offline in headless Chrome. Prints peak, level, lead silence, length and rough pitch. Start `npm run dev` first and pass its URL. |

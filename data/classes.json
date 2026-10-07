@@ -16,7 +16,7 @@
     "armourWeights": ["heavy"],
     "balanceStatus": "baseline",
     "attributes": {
-      "strength": { "start": 26, "gainPerLevel": 2.4 },
+      "strength": { "start": 26, "gainPerLevel": 2.2 },
       "agility": { "start": 18, "gainPerLevel": 1.9 },
       "intelligence": { "start": 8, "gainPerLevel": 0.9 }
     },

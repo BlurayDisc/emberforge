@@ -10,6 +10,7 @@ import { createPortrait } from './portraitArt';
 export interface DungeonHeroPicker {
   element: HTMLElement;
   selectedHeroIds(): string[];
+  rememberSelection(): void;
   canFight(): boolean;
 }
 
@@ -26,6 +27,9 @@ function statusLine(store: GameStore, hero: Hero, dungeon: DungeonDefinition): H
   if (dungeon.minimumPartySize === 1 && hero.level < dungeon.minimumHeroLevel) return element('div', 'card-text small level-low', t('dungeons.heroTooLow', { level: dungeon.minimumHeroLevel }));
   return createLiveHealthBar(store, hero.id, { showsTimeNote: false });
 }
+
+// The heroes of the last fight in each dungeon. The picker chooses them again, so a repeat fight needs no tap on a hero. Lost on reload.
+const heroIdsOfLastFight = new Map<string, string[]>();
 
 // One tap selects the hero for a single-hero dungeon (a new tap moves the choice). A party dungeon toggles heroes up to the party size.
 // The first free hero is chosen already for a single-hero dungeon, so the usual fight needs one tap on Fight.
@@ -70,14 +74,17 @@ export function createDungeonHeroPicker(store: GameStore, dungeon: DungeonDefini
     if (isSelectable) tile.addEventListener('click', () => choose(hero));
     tiles.set(hero.id, tile);
   });
+  const heroesOfLastFight = heroes.filter((hero) => heroIdsOfLastFight.get(dungeon.id)?.includes(hero.id) && isHeroSelectable(store, hero, dungeon));
   const firstSelectable = heroes.find((hero) => isHeroSelectable(store, hero, dungeon));
-  if (!isParty && firstSelectable) selectedIds.push(firstSelectable.id);
+  if (heroesOfLastFight.length > 0) selectedIds.push(...heroesOfLastFight.slice(0, dungeon.maxPartySize).map((hero) => hero.id));
+  else if (!isParty && firstSelectable) selectedIds.push(firstSelectable.id);
 
   const grid = element('div', 'dungeon-hero-grid', ...tiles.values());
   markSelection();
   return {
     element: element('div', 'dungeon-heroes', element('div', 'section-title', t('dungeons.team')), hint, grid),
     selectedHeroIds: () => [...selectedIds],
+    rememberSelection: () => heroIdsOfLastFight.set(dungeon.id, [...selectedIds]),
     canFight: () => {
       const selectedHeroes = heroes.filter((hero) => selectedIds.includes(hero.id));
       return selectedHeroes.length >= dungeon.minimumPartySize && selectedHeroes.some((hero) => hero.level >= dungeon.minimumHeroLevel);

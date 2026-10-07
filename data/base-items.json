@@ -112,7 +112,7 @@
     "height": 4,
     "profession": "enchanting",
     "mainCategory": "wood",
-    "mainIngredientQuantity": 3,
+    "mainIngredientQuantity": 2,
     "baseStats": {
       "magicalDamage": 8
     },
@@ -121,7 +121,7 @@
       "magicalDamage": 1.83
     },
     "armourWeight": null,
-    "craftLevelOffset": 7
+    "craftLevelOffset": 5
   },
   {
     "id": "wand",
@@ -491,7 +491,7 @@
       "resistance": 4
     },
     "mainStat": "defence",
-    "craftLevelOffset": 6
+    "craftLevelOffset": 5
   },
   {
     "id": "boots-heavy",
@@ -757,7 +757,7 @@
       "magicalDamage": 1.88
     },
     "armourWeight": null,
-    "craftLevelOffset": 9
+    "craftLevelOffset": 7
   },
   {
     "id": "flanged-mace",

@@ -32,12 +32,104 @@
     "maximumValue": 3
   },
   {
+    "id": "swift",
+    "kind": "prefix",
+    "displayName": "Swift",
+    "stat": "agility",
+    "minimumValue": 1,
+    "maximumValue": 3
+  },
+  {
+    "id": "vital",
+    "kind": "prefix",
+    "displayName": "Vital",
+    "stat": "hp",
+    "minimumValue": 15,
+    "maximumValue": 40
+  },
+  {
+    "id": "robust",
+    "kind": "prefix",
+    "displayName": "Robust",
+    "stat": "hp",
+    "minimumValue": 25,
+    "maximumValue": 60
+  },
+  {
+    "id": "keen",
+    "kind": "prefix",
+    "displayName": "Keen",
+    "stat": "criticalChance",
+    "minimumValue": 1,
+    "maximumValue": 3,
+    "scalesWithItemLevel": false
+  },
+  {
+    "id": "savage",
+    "kind": "prefix",
+    "displayName": "Savage",
+    "stat": "criticalDamage",
+    "minimumValue": 4,
+    "maximumValue": 12,
+    "scalesWithItemLevel": false
+  },
+  {
+    "id": "vampiric",
+    "kind": "prefix",
+    "displayName": "Vampiric",
+    "stat": "lifeSteal",
+    "minimumValue": 1,
+    "maximumValue": 4,
+    "scalesWithItemLevel": false
+  },
+  {
+    "id": "brisk",
+    "kind": "prefix",
+    "displayName": "Brisk",
+    "stat": "attackSpeed",
+    "minimumValue": 2,
+    "maximumValue": 4,
+    "scalesWithItemLevel": false
+  },
+  {
+    "id": "brutal",
+    "kind": "prefix",
+    "displayName": "Brutal",
+    "stat": "strength",
+    "minimumValue": 2,
+    "maximumValue": 4
+  },
+  {
+    "id": "wise",
+    "kind": "prefix",
+    "displayName": "Wise",
+    "stat": "intelligence",
+    "minimumValue": 2,
+    "maximumValue": 4
+  },
+  {
+    "id": "stalwart",
+    "kind": "prefix",
+    "displayName": "Stalwart",
+    "stat": "defence",
+    "minimumValue": 2,
+    "maximumValue": 4
+  },
+  {
+    "id": "blessed",
+    "kind": "prefix",
+    "displayName": "Blessed",
+    "stat": "resistance",
+    "minimumValue": 2,
+    "maximumValue": 4
+  },
+  {
     "id": "of-the-bear",
     "kind": "suffix",
     "displayName": "of the Bear",
     "stat": "hp",
-    "minimumValue": 40,
-    "maximumValue": 100
+    "minimumValue": 20,
+    "maximumValue": 50
   },
   {
     "id": "of-haste",
@@ -93,8 +185,8 @@
     "kind": "suffix",
     "displayName": "of the Whale",
     "stat": "hp",
-    "minimumValue": 60,
-    "maximumValue": 140
+    "minimumValue": 30,
+    "maximumValue": 70
   },
   {
     "id": "of-the-titan",

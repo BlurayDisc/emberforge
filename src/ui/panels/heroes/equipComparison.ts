@@ -3,14 +3,15 @@ import type { Hero } from '../../../model/hero';
 import type { EquipmentSlot, Item } from '../../../model/item';
 import type { HeroSheet } from '../../../model/heroSheet';
 import { actionButton, element } from '../../dom';
-import { classResourceName, heroDisplayName, itemDisplayName } from '../../displayNames';
+import { heroDisplayName, itemDisplayName } from '../../displayNames';
+import { heroStatLabel } from '../../heroStatLabels';
 import { describeRejection, t } from '../../i18n';
-import { formatStatValue, statName } from '../../itemStatTable';
+import { formatStatValue } from '../../itemStatTable';
 import { createItemPortrait } from '../../itemPortrait';
 import { createItemCard } from '../../itemText';
 import type { PanelContext } from '../panelContext';
 
-const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'physicalDamage', 'magicalDamage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'movementSpeed', 'strength', 'agility', 'intelligence'];
+const COMPARED_STATS: readonly (keyof HeroSheet)[] = ['health', 'resource', 'damage', 'armour', 'resistance', 'attackSeconds', 'criticalChance', 'criticalDamage', 'lifeSteal', 'movementSpeed', 'strength', 'agility', 'intelligence'];
 
 // A shorter attack time is better, so it counts as a rise.
 const LOWER_IS_BETTER_STATS: readonly string[] = ['attackSeconds'];
@@ -41,18 +42,19 @@ export function equipIntoEmptySlot(context: PanelContext, hero: Hero, requestedS
 }
 
 // A requested slot of undefined lets the equipment system pick the slot. The comparison and the equip command then agree on it.
-export function renderEquipComparison(context: PanelContext, hero: Hero, requestedSlot: EquipmentSlot | undefined, item: Item, problem: SlotCandidate['problem'], area: HTMLElement, onEquipped: () => void): void {
+export function renderEquipComparison(context: PanelContext, hero: Hero, requestedSlot: EquipmentSlot | undefined, item: Item, problem: SlotCandidate['problem'], area: HTMLElement, onEquipped: () => void, onCancel: () => void): void {
   const comparison = compareEquip(context.store.getState(), hero.id, item, requestedSlot);
   const equipped = comparison ? hero.equipment[comparison.slot] : undefined;
-  const rows = comparison
+  const changedRows = comparison
     ? [
-        ...COMPARED_STATS.map((stat) => compareRow(stat, stat === 'resource' ? classResourceName(hero.classId) : statName(stat), comparison.before[stat], comparison.after[stat])),
-        compareRow('power', t('equip.power'), comparison.powerBefore, comparison.powerAfter),
+        ...COMPARED_STATS.filter((stat) => comparison.before[stat] !== comparison.after[stat]).map((stat) => compareRow(stat, heroStatLabel(stat, hero.classId), comparison.before[stat], comparison.after[stat])),
+        ...(comparison.powerBefore !== comparison.powerAfter ? [compareRow('power', t('equip.power'), comparison.powerBefore, comparison.powerAfter)] : []),
       ]
     : [];
+  const rows = changedRows.length > 0 ? changedRows : [element('p', 'hint', t('equip.noChange'))];
   const equipButton = actionButton(t('equip.confirm'), () => {
     if (equipAndNotify(context, hero, item, comparison?.slot)) onEquipped();
-  }, { disabled: problem !== null, className: 'action-button primary equip-confirm' });
+  }, { disabled: problem !== null, className: 'action-button primary footer-action' });
   area.replaceChildren(
     element(
       'div',
@@ -60,8 +62,8 @@ export function renderEquipComparison(context: PanelContext, hero: Hero, request
       element('div', 'compare-card', element('div', 'section-title', t('equip.current')), ...(equipped ? [createItemPortrait(equipped), createItemCard(equipped)] : [element('p', 'hint', t('equip.nothing'))])),
       element('div', 'compare-card', element('div', 'section-title', t('equip.candidate')), createItemPortrait(item), createItemCard(item)),
     ),
-    element('div', 'compare-table', ...rows),
     problem ? element('p', 'danger-text', t(problem.key, problem.params)) : element('span', ''),
-    equipButton,
+    element('div', 'compare-actions', actionButton(t('equip.cancel'), onCancel), equipButton),
+    element('div', 'compare-table', ...rows),
   );
 }

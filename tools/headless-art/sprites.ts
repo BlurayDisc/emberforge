@@ -6,7 +6,8 @@ import { CREATURE_DRAWERS } from '../../src/render/creatureArt';
 import { buildFullBodyPortrait } from '../../src/ui/fullBody/fullBodyPortraitArt';
 import { buildCrafterPortrait } from '../../src/ui/crafterPortraitArt';
 import { drawHeroBust } from '../../src/heroArt/bustIcon';
-import { drawHeroSprite } from '../../src/heroArt/battleSprite';
+import { CLASSES_WITH_POSES, drawHeroSprite } from '../../src/heroArt/battleSprite';
+import type { HeroPose } from '../../src/heroArt/heroPose';
 import type { SheetEntry, SheetOptions } from './contactSheet';
 import { headlessCanvasOf, installHeadlessCanvas } from './installHeadlessCanvas';
 import { writeContactSheet } from './writeSheet';
@@ -26,6 +27,13 @@ const SPRITE_GROUPS: Readonly<Record<string, SpriteGroup>> = {
         heroNamesForClass(definition.id)
           .slice(0, HERO_NAMES_PER_CLASS)
           .map((name) => ({ label: `${definition.id} ${name}`, canvas: headlessCanvasOf(drawHeroSprite(definition.id, name)) })),
+      ),
+  },
+  poses: {
+    options: { scale: 8, columns: 4 },
+    entries: () =>
+      CLASSES_WITH_POSES.flatMap((classId) =>
+        (['ready', 'charge', 'released', 'reload'] as const satisfies readonly HeroPose[]).map((pose) => ({ label: `${classId} ${pose}`, canvas: headlessCanvasOf(drawHeroSprite(classId, heroNamesForClass(classId)[0] as string, pose)) })),
       ),
   },
   portraits: {

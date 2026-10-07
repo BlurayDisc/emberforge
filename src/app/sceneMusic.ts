@@ -1,5 +1,8 @@
 import { DUNGEONS } from '../content/dungeons';
 
+// The track of the story scenes (the opening and the chapter beats). It plays over every other track while a story window is open.
+export const STORY_TRACK_ID = 'story';
+
 function fightTrackOf(dungeonId: string): string {
   return DUNGEONS.find((dungeon) => dungeon.id === dungeonId)?.bossMonsterId ? 'boss' : 'battle';
 }

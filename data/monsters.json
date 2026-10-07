@@ -4,7 +4,7 @@
     "name": "Cave Rat",
     "rank": "normal",
     "spriteKey": "monster-rat",
-    "statFactor": 1,
+    "statFactor": 0.92,
     "attackSeconds": 1.4,
     "drops": [
       { "materialId": "rawhide", "chance": 1, "minQuantity": 1, "maxQuantity": 2, "maxQuantityChance": 0.1 },
@@ -16,7 +16,7 @@
     "name": "Wolf",
     "rank": "normal",
     "spriteKey": "monster-wolf",
-    "statFactor": 1,
+    "statFactor": 0.92,
     "attackSeconds": 1.4,
     "drops": [
       { "materialId": "sharp-fang", "chance": 0.8, "minQuantity": 1, "maxQuantity": 2 }
@@ -53,7 +53,7 @@
     "name": "Straw Scarecrow",
     "rank": "normal",
     "spriteKey": "monster-scarecrow",
-    "statFactor": 1,
+    "statFactor": 1.04,
     "attackSeconds": 1.8,
     "drops": [
       { "materialId": "linen", "chance": 1, "minQuantity": 1, "maxQuantity": 2, "maxQuantityChance": 0.1 },
@@ -92,7 +92,7 @@
     "name": "Mill Toad",
     "rank": "normal",
     "spriteKey": "monster-toad",
-    "statFactor": 1,
+    "statFactor": 1.04,
     "attackSeconds": 1.8,
     "drops": [
       { "materialId": "toadskin", "chance": 0.8, "minQuantity": 1, "maxQuantity": 2 }
@@ -130,8 +130,7 @@
     "name": "Goblin Chief",
     "rank": "boss",
     "spriteKey": "monster-goblin-chief",
-    "flatStats": {"hp": 1559, "damage": 144, "armour": 19, "resistance": 8, "attackSeconds": 1.65},
-    "targetPriority": "highestDefence",
+    "flatStats": {"hp": 1600, "damage": 148, "armour": 19, "resistance": 8, "attackSeconds": 1.65},
     "spellIds": ["goblin-chief.cowing-roar", "goblin-chief.war-cry", "goblin-chief.crushing-cleaver"],
     "drops": [
       { "materialId": "coarse-sinew", "chance": 1, "minQuantity": 3, "maxQuantity": 5 },
@@ -148,7 +147,7 @@
     "name": "Bark Spider",
     "rank": "normal",
     "spriteKey": "monster-spider",
-    "statFactor": 1,
+    "statFactor": 0.95,
     "attackSeconds": 1.5,
     "drops": [
       { "materialId": "spider-silk", "chance": 0.8, "minQuantity": 1, "maxQuantity": 2 }
@@ -162,7 +161,7 @@
     "name": "Hobgoblin",
     "rank": "normal",
     "spriteKey": "monster-hobgoblin",
-    "statFactor": 1,
+    "statFactor": 1.12,
     "attackSeconds": 1.8,
     "drops": [
       { "materialId": "coarse-sinew", "chance": 0.7, "minQuantity": 1, "maxQuantity": 2 },

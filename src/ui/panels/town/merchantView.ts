@@ -53,5 +53,5 @@ export const renderMerchantPanel: PanelRenderer = (context) =>
     'panel-body',
     element('div', 'merchant-gold-line', createMoneyDisplay(context.store.getState().copper)),
     ...renderSellSections(context),
-    element('div', 'panel-footer', actionButton(t('merchant.upgradeShop'), () => context.openPanel('bank')), actionButton(t('merchant.leave'), context.closePanel)),
+    element('div', 'panel-footer', actionButton(t('merchant.leave'), context.closePanel), actionButton(t('merchant.upgradeShop'), () => context.openPanel('bank'), { className: 'action-button footer-action' })),
   );

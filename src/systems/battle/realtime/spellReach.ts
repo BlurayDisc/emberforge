@@ -8,6 +8,11 @@ export function spellNeedsEnemyInRange(effect: SpellEffect): boolean {
   return effect.kind === 'status' && (effect.target === 'enemy' || effect.target === 'allEnemies');
 }
 
+// A buff or a shield on the caster or its allies. It waits for the enemy to come near, so the caster walks with the rest at the start of the fight.
+export function isPreparationSpell(effect: SpellEffect): boolean {
+  return effect.kind === 'shield' || (effect.kind === 'status' && !spellNeedsEnemyInRange(effect));
+}
+
 // A spell reaches as far as the attack of the unit, unless the data lists a range for the spell.
 export function spellReachOf(caster: RealtimeUnit, spell: BattleSpell): number {
   const listedFraction = SPELL_RANGE_FIELD_FRACTIONS[spell.id];

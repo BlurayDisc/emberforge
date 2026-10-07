@@ -268,8 +268,9 @@
   flex: none;
   flex-direction: column;
   gap: 4px;
-  height: 10em;
-  padding: 6px 12px 8px;
+  height: calc(10em + 56px);
+  /* The build badge floats over the bottom of the stage area, so the log keeps its last lines above it. */
+  padding: 18px 12px 52px;
   font-size: 14px;
   color: var(--parchment-dim);
   background: rgba(36, 25, 18, 0.96);
@@ -280,6 +281,7 @@
   flex: none;
   font-family: var(--font-title);
   font-size: 22px;
+  line-height: 1.3;
   color: var(--gold);
   text-shadow: 2px 2px 0 var(--ink);
 }
@@ -297,7 +299,7 @@
   flex-shrink: 0;
 }
 
-.log-turn {
+.log-time {
   margin-top: 4px;
   padding-top: 2px;
   font-size: 12px;

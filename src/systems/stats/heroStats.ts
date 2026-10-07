@@ -4,11 +4,11 @@ import {
   MAXIMUM_CRITICAL_CHANCE,
   MINIMUM_ATTACK_SPEED_FACTOR,
 } from '../../content/balance/battle';
-import { ATTACK_SPEED_BONUS_PER_AGILITY } from '../../content/balance/heroStats';
+import { ATTACK_SPEED_BONUS_PER_AGILITY, MANA_REGEN_BONUS_PER_INTELLIGENCE } from '../../content/balance/heroStats';
 import { CLASSES, type ClassDefinition } from '../../content/classes';
 import { requireById } from '../../content/lookup';
 import { findSpell } from '../../content/spells';
-import type { AttackKind, BattleUnit } from '../../model/battle';
+import type { BattleUnit } from '../../model/battle';
 import type { Hero } from '../../model/hero';
 import type { HeroSheet } from '../../model/heroSheet';
 import type { StatBlock } from '../../model/statBlock';
@@ -30,12 +30,6 @@ export function computeHeroStats(hero: Hero): StatBlock {
   stats.defence += gearBonusForStat(hero, 'defence');
   stats.resistance += gearBonusForStat(hero, 'resistance');
   return stats;
-}
-
-// The primary attribute of the class gives the damage of its attack kind. The other kind uses the plain attribute: Strength for physical, Intelligence for magic.
-function damageAttribute(classDefinition: ClassDefinition, attackKind: AttackKind, stats: StatBlock): number {
-  if (classDefinition.attackKind === attackKind) return stats[classDefinition.primaryAttribute];
-  return attackKind === 'magic' ? stats.intelligence : stats.strength;
 }
 
 function criticalChanceOf(classDefinition: ClassDefinition, hero: Hero): number {
@@ -70,8 +64,7 @@ export function computeHeroSheet(hero: Hero): HeroSheet {
   return {
     health: stats.hp,
     resource: maximumResourceOf(classDefinition.resourceId),
-    physicalDamage: Math.round(classDefinition.baseDamage + damageAttribute(classDefinition, 'physical', stats) + gearDamage(hero, 'physicalDamage')),
-    magicalDamage: Math.round(classDefinition.baseDamage + damageAttribute(classDefinition, 'magic', stats) + gearDamage(hero, 'magicalDamage')),
+    damage: Math.round(classDefinition.baseDamage + stats[classDefinition.primaryAttribute] + gearDamage(hero, classDefinition.attackKind === 'magic' ? 'magicalDamage' : 'physicalDamage')),
     armour: stats.defence,
     resistance: stats.resistance,
     attackSeconds: Math.round(attackSecondsOf(classDefinition, attackSpeedBonusOf(stats, hero)) * 100) / 100,
@@ -83,6 +76,14 @@ export function computeHeroSheet(hero: Hero): HeroSheet {
     lifeSteal: toPercentPoints(lifeStealOf(hero)),
     movementSpeed: gearBonusForStat(hero, 'movementSpeed'),
   };
+}
+
+// What the equipped items add on top of the stats of the same hero without items. The stat screens show it as a green "+N" beside the base value.
+export function computeItemBonusSheet(hero: Hero): HeroSheet {
+  const total = computeHeroSheet(hero);
+  const withoutItems = computeHeroSheet({ ...hero, equipment: {} });
+  const entries = (Object.keys(total) as (keyof HeroSheet)[]).map((stat) => [stat, Math.round((total[stat] - withoutItems[stat]) * 100) / 100]);
+  return Object.fromEntries(entries) as unknown as HeroSheet;
 }
 
 export function heroToBattleUnit(hero: Hero): BattleUnit {
@@ -99,7 +100,7 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     level: hero.level,
     maxHp: stats.hp,
     hp: Math.max(1, Math.round(stats.hp * hero.healthFraction)),
-    attack: classDefinition.attackKind === 'magic' ? sheet.magicalDamage : sheet.physicalDamage,
+    attack: sheet.damage,
     attackKind: classDefinition.attackKind,
     defence: stats.defence,
     resistance: stats.resistance,
@@ -115,6 +116,7 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     resourceId: classDefinition.resourceId,
     maxResource: sheet.resource,
     resource: startingResourceOf(classDefinition.resourceId, sheet.resource),
+    resourceRegenBonus: classDefinition.resourceId === 'mana' ? stats.intelligence * MANA_REGEN_BONUS_PER_INTELLIGENCE : 0,
     // The ultimate comes first, so the AI tries it before the normal slots.
     spells: [hero.equippedUltimateId, ...hero.equippedSpellIds].flatMap((id) => (id === null ? [] : (findSpell(id) ?? []))),
   };

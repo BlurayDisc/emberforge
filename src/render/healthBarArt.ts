@@ -5,7 +5,7 @@ import { createPixiTexture } from './pixiTextures';
 import { RESOURCE_BAR_COLORS } from './resourceColors';
 
 const BAR_HEIGHT = 9;
-const RESOURCE_STRIP_EXTRA_HEIGHT = 2;
+const RESOURCE_STRIP_EXTRA_HEIGHT = 3;
 const GHOST_HOLD_SECONDS = 0.35;
 const GHOST_DRAIN_PER_SECOND = 1.2;
 const TICK_UNIT_CANDIDATES = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
@@ -101,6 +101,8 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
   let shieldValue = 0;
   let shieldExpiresAtSeconds = 0;
 
+  // The strip is redrawn only when its filled width changes by a pixel, because this is called every frame.
+  const resourceWidthOf = (value: number): number => (options.resource ? Math.round((Math.min(options.resource.max, Math.max(0, value)) / options.resource.max) * innerWidth) : 0);
   const widthOf = (value: number): number => Math.round((Math.max(0, value) / options.maxHp) * innerWidth);
 
   const draw = (): void => {
@@ -143,11 +145,11 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
     }
     if (options.resource) {
       context.fillStyle = '#17110d';
-      context.fillRect(barLeft, 7, options.barWidth, 4);
+      context.fillRect(barLeft, 7, options.barWidth, 5);
       context.fillStyle = '#3a2e24';
-      context.fillRect(barLeft + 1, 8, innerWidth, 2);
+      context.fillRect(barLeft + 1, 8, innerWidth, 3);
       context.fillStyle = RESOURCE_BAR_COLORS[options.resource.id];
-      context.fillRect(barLeft + 1, 8, Math.round((Math.min(options.resource.max, Math.max(0, resourceValue)) / options.resource.max) * innerWidth), 2);
+      context.fillRect(barLeft + 1, 8, Math.round((Math.min(options.resource.max, Math.max(0, resourceValue)) / options.resource.max) * innerWidth), 3);
     }
     // The canvas is drawn again, so the GPU copy must be refreshed.
     texture.source.update();
@@ -163,7 +165,9 @@ export function createHealthBar(options: HealthBarOptions): HealthBar {
       draw();
     },
     setResource: (value) => {
-      if (!options.resource || value === resourceValue) return;
+      if (!options.resource) return;
+      const filledWidth = resourceWidthOf(value);
+      if (filledWidth === resourceWidthOf(resourceValue)) return;
       resourceValue = value;
       draw();
     },

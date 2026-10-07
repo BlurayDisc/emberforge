@@ -10,9 +10,17 @@ import type { BattleView } from '../render/battleView';
 import { t } from '../ui/i18n';
 import { playSpellSounds } from './spellSounds';
 
+// A life steal or drain heal comes right after the hit of the same unit and stays silent: the chime is louder than
+// the spell sounds and covered them on every hit of a hero with life steal gear.
+function isHealFollowingOwnHit(event: BattleEvent, previousEvent: BattleEvent | undefined): boolean {
+  return event.kind === 'heal' && event.actorId === event.targetId && previousEvent !== undefined
+    && previousEvent.actorId === event.actorId && previousEvent.timeSeconds === event.timeSeconds
+    && (previousEvent.kind === 'attack' || previousEvent.kind === 'heal');
+}
+
 // A hero attack sounds as the weapon plus the monster's cry. A monster attack sounds as its own
 // strike plus the hit on the armour type of the hero. A spell with its own sounds plays them instead of the weapon.
-function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>, spell: SpellPresentation | null): void {
+function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, BattleUnit>, spell: SpellPresentation | null, isLifeStealOrDrainHeal: boolean): void {
   const actor = unitsById.get(event.actorId);
   const target = unitsById.get(event.targetId);
   if (!actor || !target) return;
@@ -20,7 +28,7 @@ function playEventSounds(event: BattleEvent, unitsById: ReadonlyMap<string, Batt
   if (spell) playSpellSounds(spell);
   if (event.isDodge) return;
   if (event.kind === 'heal' || event.kind === 'effect') {
-    if (!spell) playSound('heal-chime');
+    if (!spell && !isLifeStealOrDrainHeal) playSound('heal-chime');
     return;
   }
   if (actor.rank === 'hero') {
@@ -45,15 +53,13 @@ function showSpellOnView(view: BattleView, event: BattleEvent, spell: SpellPrese
   else if (spell.statusDurationSeconds !== null) view.playSpellStatus(event.actorId, event.targetId, spell.visual, spell.role, spell.statusDurationSeconds);
 }
 
-// Shows one battle event on the stage and plays its sounds: health, resources, hit or heal looks, spell effects, shield, defeat.
+// Shows one battle event on the stage and plays its sounds: health, hit or heal looks, spell effects, shield, defeat.
 // The battle screen and the battle sim page both use it.
 export function presentBattleEvent(view: BattleView, event: BattleEvent, events: readonly BattleEvent[], eventIndex: number, unitsById: ReadonlyMap<string, BattleUnit>): void {
   const target = unitsById.get(event.targetId);
   if (target) view.setUnitHealth(target.id, event.targetHpAfter);
   const spell = describeSpellEvent(events, eventIndex, unitsById);
   if (target && event.targetShieldAfter !== undefined) view.setUnitShield(target.id, event.targetShieldAfter, event.kind === 'effect' ? spell?.statusDurationSeconds ?? undefined : undefined);
-  view.setUnitResource(event.actorId, event.actorResourceAfter);
-  view.setUnitResource(event.targetId, event.targetResourceAfter);
   const spellWithLook = spell?.visual ? { ...spell, visual: spell.visual } : null;
   const absorbed = event.absorbed ?? 0;
   if (event.isDamageOverTime) {
@@ -68,6 +74,6 @@ export function presentBattleEvent(view: BattleView, event: BattleEvent, events:
     else if (event.kind === 'heal') view.playHeal(event.actorId, event.targetId, event.amount);
     if (absorbed > 0) view.playAbsorb(event.targetId, absorbed);
   }
-  playEventSounds(event, unitsById, spellWithLook);
+  playEventSounds(event, unitsById, spellWithLook, isHealFollowingOwnHit(event, events[eventIndex - 1]));
   if (target && event.targetHpAfter === 0) view.markDefeated(target.id);
 }

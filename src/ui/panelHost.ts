@@ -56,6 +56,13 @@ export function createPanelHost(store: GameStore): PanelHost {
     backActions.pop();
   };
 
+  // The X button and the Escape key both go back one screen first, and close the panel only from the main screen.
+  const goBackOrClose = (): void => {
+    const goBack = backActions[backActions.length - 1];
+    if (goBack) goBack();
+    else setActive(null);
+  };
+
   const render = (): void => {
     const scrollOffsets = scrollOffsetsForNextRender ?? (renderedPanelId === activeId ? readScrollOffsets() : []);
     scrollOffsetsForNextRender = null;
@@ -73,7 +80,7 @@ export function createPanelHost(store: GameStore): PanelHost {
         leaveSubScreen,
       };
       const header = element('div', 'panel-header', element('span', 'panel-title', t(panelTitleKey(definition.id))));
-      if (!isActivePanelLocked()) header.append(actionButton('x', () => setActive(null), { className: 'action-button close-button' }));
+      if (!isActivePanelLocked()) header.append(actionButton('x', goBackOrClose, { className: 'action-button close-button' }));
       host.append(element('div', `panel panel-${definition.id}`, header, definition.render(context)));
     }
     restoreScrollOffsets(scrollOffsets);
@@ -129,12 +136,7 @@ export function createPanelHost(store: GameStore): PanelHost {
     activePanelId: () => activeId,
     closeActivePanel: () => {
       if (activeId === null || isActivePanelLocked()) return false;
-      const goBack = backActions[backActions.length - 1];
-      if (goBack) {
-        goBack();
-        return true;
-      }
-      setActive(null);
+      goBackOrClose();
       return true;
     },
     notify,

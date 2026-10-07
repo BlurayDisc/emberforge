@@ -8,6 +8,7 @@ import { createHero } from '../src/systems/heroes';
 import { generateCraftedItem } from '../src/systems/items';
 import { simulateRealtimeBattle } from '../src/systems/battle';
 import { computeHeroSheet, heroToBattleUnit } from '../src/systems/stats';
+import { regenerateResource } from '../src/systems/battle/resourcePool';
 
 const RUN_START_MS = 1_000_000;
 const WARRIOR_ATTACK_SECONDS = 1.65;
@@ -20,6 +21,18 @@ function plannedFirstEncounter() {
   store.execute((state) => ({ ...state, seed: 77, company: [hero] }));
   assert.ok(store.execute(startDungeonRunCommand('rat-cellar', [hero.id], RUN_START_MS)).accepted, 'the real-time smoke run starts');
   return planNextEncounter(store.getState(), store.getState().dungeonRuns[0]!.runNumber);
+}
+
+// Intelligence speeds up mana regeneration. Stamina, hatred and rage do not follow it.
+export function checkManaRegenFromIntelligence(): void {
+  const regainedIn = (classId: 'mage' | 'warrior', level: number): number => {
+    const unit = { ...heroToBattleUnit({ ...createHero(classId, 1, createRandom(5)), level }), resource: 0 };
+    regenerateResource(unit, 10);
+    return unit.resource / unit.maxResource;
+  };
+  assert.ok(regainedIn('mage', 10) > regainedIn('mage', 1), 'a mage with more Intelligence regains mana faster');
+  const warriorUnit = heroToBattleUnit({ ...createHero('warrior', 1, createRandom(5)), level: 10 });
+  assert.equal(warriorUnit.resourceRegenBonus, 0, 'stamina does not follow Intelligence');
 }
 
 // The real-time battle is wired into the game: the plan carries the new report, the replay data and a fight that repeats from its seed.

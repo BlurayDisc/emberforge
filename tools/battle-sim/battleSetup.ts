@@ -64,7 +64,7 @@ export interface AverageResult {
 
 const BATTLES_PER_SLICE = 10;
 
-// The seeds run from the seed in the field upward. The slices keep the page responsive while the 100 battles run.
+// The seeds run from the seed in the field upward. The slices keep the page responsive while the 20 battles run.
 export async function runManyBattles(setup: BattleSetup, battleCount: number): Promise<AverageResult> {
   const { heroUnits, creepUnits } = buildUnits(setup);
   const heroMaxHp = heroUnits.reduce((sum, unit) => sum + unit.maxHp, 0);

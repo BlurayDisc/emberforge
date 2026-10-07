@@ -1,7 +1,6 @@
 import data from '../../../data/balance/items.json';
 
 export const QUALITY_WEIGHTS = data.qualityWeights;
-export const CATALYST_MATERIAL_ID = data.catalystMaterialId;
 
 export const LEVELS_PER_BRACKET = data.levelsPerBracket;
 

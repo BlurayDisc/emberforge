@@ -48,8 +48,10 @@ export function openDungeonView(dungeonId: string, options: DungeonViewOptions):
   const { fight } = options;
   let handle: ModalHandle;
   const fightButton = actionButton(t(dungeon.minimumPartySize > 1 ? 'dungeons.startParty' : 'dungeons.start'), () => {
-    if (picker) fight?.start(picker.selectedHeroIds(), handle);
-  }, { className: 'action-button primary', disabled: true });
+    if (!picker) return;
+    picker.rememberSelection();
+    fight?.start(picker.selectedHeroIds(), handle);
+  }, { className: 'action-button primary footer-action', disabled: true });
   const picker = fight ? createDungeonHeroPicker(fight.store, dungeon, () => {
     fightButton.disabled = !picker?.canFight();
   }) : null;
@@ -73,7 +75,7 @@ export function openDungeonView(dungeonId: string, options: DungeonViewOptions):
       ),
     ),
     ...(picker ? [picker.element] : []),
-    element('div', 'panel-footer', ...(picker ? [fightButton] : []), actionButton(t('report.close'), () => handle.close())),
+    element('div', 'panel-footer', actionButton(t('report.close'), () => handle.close()), ...(picker ? [fightButton] : [])),
   );
   handle = openModal(t(`dungeon.${dungeon.id}`), content);
 }

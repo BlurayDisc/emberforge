@@ -1,14 +1,14 @@
 import { RESOURCE_RULES } from '../../content/balance/resources';
 import type { BattleUnit } from '../../model/battle';
 
-type ResourceHolder = Pick<BattleUnit, 'resourceId' | 'resource' | 'maxResource'>;
+type ResourceHolder = Pick<BattleUnit, 'resourceId' | 'resource' | 'maxResource' | 'resourceRegenBonus'>;
 
 function addToResource(unit: ResourceHolder, amount: number): void {
   unit.resource = Math.min(unit.maxResource, Math.max(0, unit.resource + amount));
 }
 
 export function regenerateResource(unit: ResourceHolder, seconds: number): void {
-  addToResource(unit, unit.maxResource * RESOURCE_RULES[unit.resourceId].regenFractionPerSecond * seconds);
+  addToResource(unit, unit.maxResource * RESOURCE_RULES[unit.resourceId].regenFractionPerSecond * (1 + (unit.resourceRegenBonus ?? 0)) * seconds);
 }
 
 export function spendResource(unit: ResourceHolder, cost: number): void {

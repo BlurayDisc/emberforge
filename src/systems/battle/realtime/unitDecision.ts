@@ -1,18 +1,18 @@
-import { ATTACK_HIT_FRACTION, TICK_SECONDS, UNREACHABLE_SWITCH_SECONDS } from '../../../content/balance/battlefield';
+import { ATTACK_HIT_FRACTION, HOLD_WHEN_STUCK_SECONDS, PREPARE_SPELLS_WITHIN_DISTANCE, TICK_SECONDS, UNREACHABLE_SWITCH_SECONDS } from '../../../content/balance/battlefield';
 import { HEAL_BELOW_HEALTH_FRACTION } from '../../../content/balance/battle';
 import type { BattleSpell } from '../../../model/spell';
 import { attackSpeedFactorOf } from '../combatant';
 import { beginSpellCast, pickReadySpell } from '../spellCasting';
 import { livingAlliesOf, livingEnemiesOf, type FieldBattle } from './fieldBattle';
 import { edgeDistanceBetween, unitIdOf, type RealtimeUnit } from './realtimeUnit';
-import { spellNeedsEnemyInRange, spellReachOf } from './spellReach';
+import { isPreparationSpell, spellNeedsEnemyInRange, spellReachOf } from './spellReach';
 import { stepToward } from './steering';
 import { chooseEnemyTarget } from './targeting';
 import { firstTickTimeAtOrAfter, roundSeconds } from './tickClock';
 
 const healthFractionOf = (unit: RealtimeUnit): number => unit.combatant.unit.hp / unit.combatant.unit.maxHp;
 
-// A healer never heals itself, as in the turn battle.
+// A healer never heals itself.
 function woundedAllyOf(battle: FieldBattle, healer: RealtimeUnit): RealtimeUnit | undefined {
   if (healer.combatant.unit.behavior !== 'healer') return undefined;
   return livingAlliesOf(battle, healer)
@@ -60,9 +60,13 @@ function startAttack(battle: FieldBattle, unit: RealtimeUnit, target: RealtimeUn
 
 function moveToward(battle: FieldBattle, unit: RealtimeUnit, goal: RealtimeUnit): void {
   const stepLength = unit.movementSpeed * TICK_SECONDS;
-  const moved = stepToward(unit, goal, battle.units, stepLength);
+  const distanceBefore = edgeDistanceBetween(unit, goal);
+  const moved = stepToward(unit, goal, battle.units, stepLength, unit.stuckSeconds >= HOLD_WHEN_STUCK_SECONDS);
   unit.motion = moved > 0 ? 'moving' : 'idle';
-  unit.stuckSeconds = moved < stepLength * 0.25 ? unit.stuckSeconds + TICK_SECONDS : 0;
+  // Progress is the gain on the goal, not the length moved. A unit that jitters against a wall gains a step and loses it again,
+  // so a gain only pays back half of the time that a non-gain adds.
+  const gainedOnGoal = distanceBefore - edgeDistanceBetween(unit, goal);
+  unit.stuckSeconds = gainedOnGoal < stepLength * 0.25 ? unit.stuckSeconds + TICK_SECONDS : Math.max(0, unit.stuckSeconds - TICK_SECONDS / 2);
   faceToward(unit, goal);
 }
 
@@ -70,7 +74,7 @@ function moveToward(battle: FieldBattle, unit: RealtimeUnit, goal: RealtimeUnit)
 export function decideAction(battle: FieldBattle, unit: RealtimeUnit, timeSeconds: number): void {
   const enemies = livingEnemiesOf(battle, unit);
   const avoidId = unit.stuckSeconds >= UNREACHABLE_SWITCH_SECONDS ? unit.targetId : null;
-  if (avoidId !== null) unit.stuckSeconds = 0;
+  if (avoidId !== null && enemies.length > 1) unit.stuckSeconds = 0;
   const enemyTarget = chooseEnemyTarget(unit, enemies, avoidId);
   unit.targetId = enemyTarget ? unitIdOf(enemyTarget) : null;
   if (!enemyTarget) {
@@ -78,7 +82,10 @@ export function decideAction(battle: FieldBattle, unit: RealtimeUnit, timeSecond
     return;
   }
   const spell = pickReadySpell(unit.combatant, battle.combatants, timeSeconds, battle.random, enemyTarget.combatant.unit,
-    (candidate) => !spellNeedsEnemyInRange(candidate.effect) || edgeDistanceBetween(unit, enemyTarget) <= spellReachOf(unit, candidate));
+    (candidate) => {
+      if (isPreparationSpell(candidate.effect)) return edgeDistanceBetween(unit, enemyTarget) <= PREPARE_SPELLS_WITHIN_DISTANCE;
+      return !spellNeedsEnemyInRange(candidate.effect) || edgeDistanceBetween(unit, enemyTarget) <= spellReachOf(unit, candidate);
+    });
   if (spell) {
     startCast(battle, unit, spell, enemyTarget, timeSeconds);
     return;
@@ -87,6 +94,13 @@ export function decideAction(battle: FieldBattle, unit: RealtimeUnit, timeSecond
   const goal = woundedAlly ?? enemyTarget;
   if (edgeDistanceBetween(unit, goal) <= unit.attackReach) {
     startAttack(battle, unit, goal, woundedAlly !== undefined, timeSeconds);
+    return;
+  }
+  // A goal that is walled off does not stop the unit from hitting an enemy that is already in reach.
+  const enemyInReach = enemies.find((enemy) => edgeDistanceBetween(unit, enemy) <= unit.attackReach);
+  if (woundedAlly === undefined && enemyInReach) {
+    unit.targetId = unitIdOf(enemyInReach);
+    startAttack(battle, unit, enemyInReach, false, timeSeconds);
     return;
   }
   moveToward(battle, unit, goal);

@@ -8,7 +8,7 @@ import { applyLifeSteal } from '../lifeSteal';
 import { gainResourceFromHit } from '../resourcePool';
 import { reflectThorns } from '../thorns';
 
-// The hit moment of a basic attack. The rules are the ones of the turn battle: rollDamage, armour, shield, life steal and thorns.
+// The hit moment of a basic attack. The hit uses rollDamage, armour, shield, life steal and thorns.
 export function resolveBasicAttack(attacker: Combatant, struck: Combatant, timeSeconds: number, random: Random): BattleEvent[] {
   const actor = attacker.unit;
   const target = struck.unit;

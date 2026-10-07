@@ -48,8 +48,8 @@ function openEquipChooser(context: PanelContext, hero: Hero, slot: EquipmentSlot
       return;
     }
     const compareArea = element('div', 'chooser-compare');
-    renderEquipComparison(context, hero, slot, candidate.item, candidate.problem, compareArea, () => (handle as ModalHandle).close());
-    screen.replaceChildren(actionButton(t('equip.backToList'), showList), compareArea);
+    renderEquipComparison(context, hero, slot, candidate.item, candidate.problem, compareArea, () => (handle as ModalHandle).close(), showList);
+    screen.replaceChildren(compareArea);
   };
 
   showList();

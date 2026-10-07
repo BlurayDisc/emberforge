@@ -37,7 +37,7 @@ function createRealtimeUnit(source: BattleUnitWithMovement): RealtimeUnit {
 
 const sideIsAlive = (units: readonly RealtimeUnit[], side: BattleUnit['side']): boolean => units.some((unit) => unit.combatant.unit.side === side && isAlive(unit));
 
-// The real-time battle. Same inputs as simulateBattle. The whole fight is simulated at once from a seed, in fixed ticks,
+// The real-time battle. The whole fight is simulated at once from a seed, in fixed ticks,
 // then replayed by the screen. Units run at each other, stop when the target is in reach, attack or cast, and block each other.
 // Units act in the order of the input list within a tick (a fixed order keeps the result the same on every run).
 export function simulateRealtimeBattle(sourceUnits: readonly BattleUnitWithMovement[], random: Random): RealtimeBattleReport {

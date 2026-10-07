@@ -25,7 +25,7 @@
     "barbarian",
     "fighter"
   ],
-  "battlesPerCase": 150,
+  "battlesPerCase": 20,
   "seed": 2024,
   "targetSeconds": 30,
   "averagedClassIds": [
@@ -44,8 +44,8 @@
       "slots": null,
       "quality": null,
       "targetWinRatePercent": [
-        45,
-        75
+        25,
+        50
       ]
     },
     {
@@ -56,8 +56,31 @@
       "slots": null,
       "quality": null,
       "targetWinRatePercent": [
-        70,
-        100
+        30,
+        55
+      ]
+    },
+    {
+      "name": "full Magic gear",
+      "description": "Magic gear (between Uncommon and Rare) of the best item level in every slot.",
+      "partySize": 2,
+      "gearFloor": null,
+      "slots": [
+        "mainHand",
+        "offHand",
+        "helm",
+        "armour",
+        "gloves",
+        "legs",
+        "boots",
+        "belt",
+        "amulet",
+        "ring"
+      ],
+      "quality": "magic",
+      "targetWinRatePercent": [
+        55,
+        75
       ]
     },
     {

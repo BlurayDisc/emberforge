@@ -40,12 +40,13 @@ function createAdventureTotals(state: GameState, heroes: readonly Hero[]): HTMLE
 }
 
 // The Victory screen covers the whole page. It opens when the player first clears the victory dungeon, and again from the Settings screen.
-// The player may keep playing.
-export function openVictoryScreen(state: GameState, heroes: readonly Hero[]): void {
+// The player may keep playing. onClosed runs when the screen closes (the chapter story follows it).
+export function openVictoryScreen(state: GameState, heroes: readonly Hero[], onClosed?: () => void): void {
   const overlay = element('div', 'victory-overlay');
   const close = (): void => {
     document.removeEventListener('keydown', closeOnEscape);
     overlay.remove();
+    onClosed?.();
   };
   const closeOnEscape = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') close();

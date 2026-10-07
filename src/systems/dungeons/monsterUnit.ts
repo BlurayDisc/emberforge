@@ -36,7 +36,6 @@ export function createMonsterUnit(monsterId: string, level: number, unitId: stri
     criticalDamageMultiplier: CRITICAL_DAMAGE_MULTIPLIER,
     lifeSteal: 0,
     behavior: 'fighter',
-    targetPriority: definition.targetPriority,
     armourPenetration: definition.armourPenetration,
     resourceId: 'mana',
     maxResource: 0,

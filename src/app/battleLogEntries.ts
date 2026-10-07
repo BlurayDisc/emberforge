@@ -1,4 +1,4 @@
-import { LOG_TURN_SECONDS } from '../content/balance/battle';
+import { LOG_TIME_MARKER_SECONDS } from '../content/balance/battle';
 import type { BattleEvent, BattleUnit } from '../model/battle';
 import type { LogEntry, LogUnit } from '../ui/battleLogLines';
 import { resourceName, unitDisplayName } from '../ui/displayNames';
@@ -9,22 +9,22 @@ export function logUnitOf(unit: BattleUnit | undefined): LogUnit {
   return unit ? { name: unitDisplayName(unit), side: unit.side } : { name: t('log.someone'), side: 'enemy' };
 }
 
-// A turn is a fixed span of battle time, so a long fight reads as a list of numbered turns.
-function turnOf(event: BattleEvent): number {
-  return Math.floor(event.timeSeconds / LOG_TURN_SECONDS) + 1;
+// A fixed span of battle time gets one clock-time line in the log, so a long fight reads as a timeline.
+function timeMarkerOf(event: BattleEvent): number {
+  return Math.floor(event.timeSeconds / LOG_TIME_MARKER_SECONDS) * LOG_TIME_MARKER_SECONDS;
 }
 
 export interface LogContext {
   unitsById: ReadonlyMap<string, BattleUnit>;
-  lastLoggedTurn: number;
+  lastLoggedTimeMarker: number;
 }
 
 export function logEntriesForEvent(event: BattleEvent, encounter: LogContext): LogEntry[] {
   const entries: LogEntry[] = [];
-  const turn = turnOf(event);
-  if (turn !== encounter.lastLoggedTurn) {
-    encounter.lastLoggedTurn = turn;
-    entries.push({ kind: 'turn', turn });
+  const seconds = timeMarkerOf(event);
+  if (seconds !== encounter.lastLoggedTimeMarker) {
+    encounter.lastLoggedTimeMarker = seconds;
+    entries.push({ kind: 'time' });
   }
   const actor = logUnitOf(encounter.unitsById.get(event.actorId));
   const targetUnit = encounter.unitsById.get(event.targetId);

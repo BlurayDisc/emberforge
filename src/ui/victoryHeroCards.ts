@@ -18,8 +18,7 @@ const STAT_ROWS: readonly StatRow[] = [
   { key: 'strength', colorVariable: '--crimson' },
   { key: 'agility', colorVariable: '--green' },
   { key: 'intelligence', colorVariable: '--blue' },
-  { key: 'physicalDamage', colorVariable: '--copper' },
-  { key: 'magicalDamage', colorVariable: '--blue' },
+  { key: 'damage', colorVariable: '--copper' },
   { key: 'armour', colorVariable: '--silver' },
   { key: 'resistance', colorVariable: '--blue' },
 ];

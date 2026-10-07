@@ -1,5 +1,5 @@
 import { BASE_ITEMS, type BaseItemDefinition } from '../../content/baseItems';
-import { baseStatAtItemLevel } from '../../content/baseItemStats';
+import { baseStatAtItemLevel, upgradeBonusToMainStat } from '../../content/baseItemStats';
 import {
   BASE_STAT_SPREAD_FRACTION,
   QUALITY_WEIGHTS,
@@ -38,18 +38,17 @@ function rollQuality(random: Random): CraftableQuality {
   return random.pickWeighted(qualities, (quality) => QUALITY_WEIGHTS[quality]);
 }
 
-// Every upgrade step adds a flat +1 to the main stat of the base item. Neither the item level nor the other stats change.
+// Every upgrade step adds at least +1 to the main stat of the base item, or a share of it on a high item. Neither the item level nor the other stats change.
 function rollBaseStats(base: BaseItemDefinition, itemLevel: number, upgradeLevel: number, random: Random): StatBonuses {
   const rolled: StatBonuses = {};
   for (const [stat, value] of Object.entries(base.baseStats) as Array<[keyof StatBonuses, number]>) {
-    const upgradeBonus = stat === base.mainStat ? upgradeLevel : 0;
-    if (UNSCALED_BASE_STATS.includes(stat)) {
-      rolled[stat] = value + upgradeBonus;
-      continue;
+    let statBeforeUpgrade = value;
+    if (!UNSCALED_BASE_STATS.includes(stat)) {
+      const { average, minimum } = baseStatAtItemLevel(base, stat, value, itemLevel);
+      const spread = 1 + (random.nextFloat() * 2 - 1) * BASE_STAT_SPREAD_FRACTION;
+      statBeforeUpgrade = Math.max(minimum, Math.round(average * spread));
     }
-    const { average, minimum } = baseStatAtItemLevel(base, stat, value, itemLevel);
-    const spread = 1 + (random.nextFloat() * 2 - 1) * BASE_STAT_SPREAD_FRACTION;
-    rolled[stat] = Math.max(minimum, Math.round(average * spread)) + upgradeBonus;
+    rolled[stat] = statBeforeUpgrade + (stat === base.mainStat ? upgradeBonusToMainStat(statBeforeUpgrade, upgradeLevel) : 0);
   }
   return rolled;
 }

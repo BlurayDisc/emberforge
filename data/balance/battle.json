@@ -1,6 +1,4 @@
 {
-  "actionThreshold": 100,
-  "secondsPerTick": 0.1,
   "maximumBattleSeconds": 1200,
   "baseCriticalChance": 0.04,
   "criticalDamageMultiplier": 2,
@@ -9,6 +7,6 @@
   "monsterDamageVarianceFraction": 0.1,
   "healBelowHealthFraction": 0.5,
   "healPowerMultiplier": 1.5,
-  "logTurnSeconds": 1,
+  "logTimeMarkerSeconds": 1,
   "burnTickSeconds": 1
 }

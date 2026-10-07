@@ -2,8 +2,8 @@
 export interface HeroSheet {
   health: number;
   resource: number;
-  physicalDamage: number;
-  magicalDamage: number;
+  // The damage of one basic attack. It is physical or magical by the attack kind of the class.
+  damage: number;
   armour: number;
   resistance: number;
   // Seconds for one basic attack.
