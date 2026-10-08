@@ -5,6 +5,10 @@ import { measureSoloHero } from './measureBattles';
 import { FIRST_FIGHT_PRESET } from './presets';
 import { printTable } from './table';
 
+function targetBandText(band: readonly number[] | undefined): string {
+  return band ? band.join('-') : '-';
+}
+
 export function runFirstFightScenario(): void {
   const preset = FIRST_FIGHT_PRESET;
   const levels = Array.from({ length: preset.lastLevel - preset.firstLevel + 1 }, (_, index) => preset.firstLevel + index);
@@ -18,7 +22,7 @@ export function runFirstFightScenario(): void {
     const averagedColumns = preset.classIds.flatMap((classId, column) => (preset.averagedClassIds.includes(classId) ? [column] : []));
     const averageOf = (values: number[]): number => values.reduce((sum, value) => sum + value, 0) / values.length;
     console.log(`\nGear state: ${gearState.name}. ${gearState.description}`);
-    printTable('Health lost in percent (average of the baseline classes in the last column)', ['Level', ...preset.classIds, 'Baseline average', 'Target'], levels.map((level, row) => [level, ...measurements[row]!.map((measurement) => measurement.healthLostPercent), averageOf(averagedColumns.map((column) => measurements[row]![column]!.healthLostPercent)).toFixed(1), (preset.targetHealthLostPercent[String(level)] ?? preset.targetHealthLostPercent['2-10'])!.join('-')]));
+    printTable('Health lost in percent (average of the baseline classes in the last column)', ['Level', ...preset.classIds, 'Baseline average', 'Target'], levels.map((level, row) => [level, ...measurements[row]!.map((measurement) => measurement.healthLostPercent), averageOf(averagedColumns.map((column) => measurements[row]![column]!.healthLostPercent)).toFixed(1), targetBandText(gearState.targetHealthLostPercentByLevel[String(level)])]));
     printTable('Seconds to kill the monster (fights won)', ['Level', ...preset.classIds], levels.map((level, row) => [level, ...measurements[row]!.map((measurement) => (measurement.averageSecondsOfWins === null ? '-' : measurement.averageSecondsOfWins.toFixed(1)))]));
     printTable('Win rate in percent', ['Level', ...preset.classIds], levels.map((level, row) => [level, ...measurements[row]!.map((measurement) => measurement.winRatePercent)]));
   }

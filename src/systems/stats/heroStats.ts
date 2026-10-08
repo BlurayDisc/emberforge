@@ -117,7 +117,7 @@ export function heroToBattleUnit(hero: Hero): BattleUnit {
     maxResource: sheet.resource,
     resource: startingResourceOf(classDefinition.resourceId, sheet.resource),
     resourceRegenBonus: classDefinition.resourceId === 'mana' ? stats.intelligence * MANA_REGEN_BONUS_PER_INTELLIGENCE : 0,
-    // The ultimate comes first, so the AI tries it before the normal slots.
-    spells: [hero.equippedUltimateId, ...hero.equippedSpellIds].flatMap((id) => (id === null ? [] : (findSpell(id) ?? []))),
+    // Slot order 1, 2, 3, then the Ultimate: the battle casts hero spells in this order.
+    spells: [...hero.equippedSpellIds, hero.equippedUltimateId].flatMap((id) => (id === null ? [] : (findSpell(id) ?? []))),
   };
 }

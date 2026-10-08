@@ -4,7 +4,7 @@ import { requireById } from '../../src/content/lookup';
 import { createRandom } from '../../src/kernel/random';
 import { createEncounter } from '../../src/systems/dungeons';
 import { hireCostForCompanySize } from '../../src/systems/economy';
-import { rollMonsterLoot } from '../../src/systems/loot';
+import { rollDungeonBonusDrops, rollMonsterLoot } from '../../src/systems/loot';
 import { craftAndSellAll } from './craftedSales';
 import { experienceForKill, experienceToNextLevel } from '../../src/systems/progression';
 
@@ -41,6 +41,10 @@ export function playUntilLevels(seed: number, lastLevel: number = LAST_LEVEL): M
       for (const stack of loot.materials) materialsHeld[stack.materialId] = (materialsHeld[stack.materialId] ?? 0) + stack.quantity;
       copperFromSoldMaterials += loot.materials.reduce((sum, stack) => sum + stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper, 0);
       experience += experienceForKill(monster.level, level, monster.rank);
+    }
+    for (const stack of rollDungeonBonusDrops(dungeon, random.fork(`dungeon-bonus-drops-${fights}`))) {
+      materialsHeld[stack.materialId] = (materialsHeld[stack.materialId] ?? 0) + stack.quantity;
+      copperFromSoldMaterials += stack.quantity * requireById(MATERIALS, stack.materialId).sellValueCopper;
     }
     while (experience >= experienceToNextLevel(level) && level < lastLevel) {
       experience -= experienceToNextLevel(level);

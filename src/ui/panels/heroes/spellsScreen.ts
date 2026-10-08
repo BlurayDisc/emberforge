@@ -77,6 +77,7 @@ export function renderSpellsScreen(context: PanelContext, hero: Hero): HTMLEleme
     element('div', 'section-title', t('spells.title')),
     element('p', 'hint', t('spells.hint')),
     element('div', 'spell-slots', ...normalSlots, renderSlot(context, hero, null)),
+    element('p', 'hint', t('spells.castOrder')),
     element('p', 'hint', t('spells.learnedCount', { count: hero.learnedSpellIds.length })),
   );
 }

@@ -6,5 +6,5 @@
   "monsterLevelRule": "hero-level",
   "battlesPerCase": 20,
   "seed": 2024,
-  "targetSecondsByLevel": { "1": 7, "3": 11, "5": 15, "7": 19, "9": 23, "10": 25 }
+  "targetSecondsByLevel": { "1": 15, "3": 15, "5": 16, "7": 17, "9": 18, "10": 18 }
 }

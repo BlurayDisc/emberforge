@@ -27,7 +27,7 @@ const CRAFTER_PAINTERS: Record<ProfessionId, CrafterPortraitPainters> = {
   jewelcrafting: { paintBackground: paintJewelerBackground, paintFigure: paintJeweler },
 };
 
-// The portrait is drawn at twice the old 32 px size, so the display scale is halved to keep the same on-screen size.
+// The portrait is drawn at twice the 32 px design size, so the display scale is halved to keep the on-screen size.
 const DETAIL_FACTOR = 2;
 
 export function buildCrafterPortrait(professionId: ProfessionId): HTMLCanvasElement {

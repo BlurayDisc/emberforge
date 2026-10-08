@@ -25,7 +25,7 @@ Ask in rounds of up to 4 questions. Every question has 2 to 4 options with a rec
 1. **Shape:** number of dungeons (default: the shape of the previous bracket), the two starting dungeons, the unlock chain.
 2. **Mood and theme:** tone of the town and each dungeon, and what to avoid.
 3. **Boss:** the idea, the adds, the spells (name 3, with effect and cooldown) and the target priority.
-4. **Class unlocks:** any "for now" row in the Hiring lock table (for example the Barbarian) and where it moves.
+4. **Class unlocks:** whether a class unlocks in this town (`unlockAfterDungeonId` in `classes.json`, see the Hiring lock rule in `design.md`).
 5. **Special mechanics:** any new rule (for example `armourPenetration` on a family). Default: none.
 6. **Materials and set bonuses:** names, the set bonus of each set material, and how the sell price rises.
 7. **Spells:** which classes get a new spell or only a new rank in this bracket (follow the Warrior blueprint).
@@ -59,7 +59,7 @@ Report progress after each Part in 2 or 3 lines. Run `npm run check` after each 
 ## Stage 5: Balance and finish (gate 2)
 
 1. Run `npm run balance-report -- N` and tune `data/` and the preset files until every row in Part B passes. Never change the simulator code or weaken a target. Read the tables yourself.
-2. Check the visual work in a browser at about 360x640 and 1280x720 (see CLAUDE.md "Visual validation"). Do not leave a dev server running.
+2. Check the visual work in a browser at about 412x915 and 1280x720 (see CLAUDE.md "Visual validation"). Do not leave a dev server running.
 3. Show the user the final summary: the Part B result, what was not verified, what is left. Ask: "Accept the bracket?" with the options "Accept", "Fix something" and "Review a part first".
 4. After acceptance, set the status to "balanced", update the "Status" line in `new-bracket-prompt.md`, and fix any step or template table that was wrong or missing. Do not commit unless the user asks.
 

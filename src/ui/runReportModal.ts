@@ -2,7 +2,7 @@ import { VICTORY_DUNGEON_ID } from '../content/balance/progression';
 import { DUNGEONS } from '../content/dungeons';
 import { requireById } from '../content/lookup';
 import { storyBeatForFirstClear } from '../content/storyBeats';
-import { dismissReportCommand, repeatDungeonRunCommand, runInDungeon, type GameStore } from '../game';
+import { describeHero, dismissReportCommand, repeatDungeonRunCommand, runInDungeon, type GameStore } from '../game';
 import type { RunReport } from '../model/gameState';
 import { actionButton, element } from './dom';
 import { createEncounterResultCard } from './encounterResultCard';
@@ -48,7 +48,13 @@ export function openRunReport(store: GameStore, report: RunReport, notify: (mess
     modal.close();
   };
   // A story scene or the Victory screen follows, so Repeat would drag the player into a new fight before the story.
+  // A hero that is down cannot start a run, so the fight cannot repeat until the whole party is back.
+  const state = store.getState();
+  const isPartyReady = report.result.heroes.every((heroResult) => {
+    const hero = state.company.find((candidate) => candidate.id === heroResult.heroId);
+    return hero !== undefined && !describeHero(state, hero, Date.now()).isDowned;
+  });
   const hasStoryAfterReport = storyBeat !== null || showsVictory;
-  const closeButton = actionButton(t('report.close'), () => modal.close(), hasStoryAfterReport ? { className: 'action-button primary' } : {});
-  content.append(element('div', 'report-actions', closeButton, ...(hasStoryAfterReport ? [] : [actionButton(t('report.repeat'), repeat, { className: 'action-button primary footer-action' })])));
+  const closeButton = actionButton(t('report.close'), () => modal.close(), hasStoryAfterReport || !isPartyReady ? { className: 'action-button primary' } : {});
+  content.append(element('div', 'report-actions', closeButton, ...(hasStoryAfterReport || !isPartyReady ? [] : [actionButton(t('report.repeat'), repeat, { className: 'action-button primary footer-action' })])));
 }

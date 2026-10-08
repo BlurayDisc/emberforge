@@ -28,7 +28,7 @@ interface EncounterPlayback {
   monsterUnits: readonly BattleUnit[];
   events: readonly BattleEvent[];
   unitsById: ReadonlyMap<string, BattleUnit>;
-  // Set when the planner gives a real-time report: the stage then moves the units along its tracks. Null keeps the old fixed slots.
+  // Set when the planner gives a real-time report: the stage then moves the units along its tracks. Null keeps the fixed slots.
   realtimeReport: RealtimeBattleReport | null;
   durationSeconds: number;
   partyWon: boolean;

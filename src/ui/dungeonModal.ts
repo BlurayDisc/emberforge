@@ -1,5 +1,5 @@
 import { DUNGEONS } from '../content/dungeons';
-import type { DungeonDefinition } from '../content/dungeons';
+import type { DungeonBonusDrop, DungeonDefinition } from '../content/dungeons';
 import { requireById } from '../content/lookup';
 import { MONSTERS, type MonsterDefinition } from '../content/monsters';
 import type { GameStore } from '../game';
@@ -30,6 +30,12 @@ function monsterIdsOf(dungeon: DungeonDefinition): string[] {
 function dropNamesOf(monsters: readonly MonsterDefinition[]): string[] {
   const materialIds = new Set(monsters.flatMap((monster) => monster.drops.map((drop) => drop.materialId)));
   return [...materialIds].map((materialId) => materialName(materialId));
+}
+
+function bonusDropLine(bonusDrop: DungeonBonusDrop, showsDropRates: boolean): HTMLElement {
+  const list = listOf(bonusDrop.materialIds.map((materialId) => materialName(materialId)));
+  const text = showsDropRates ? t('dungeons.bonusDropChance', { chance: Math.round(bonusDrop.chance * 100), quantity: bonusDrop.quantity, list }) : t('dungeons.bonusDrop', { quantity: bonusDrop.quantity, list });
+  return element('div', 'card-text small dungeon-drops', text);
 }
 
 function createMonsterTile(monster: MonsterDefinition, dungeon: DungeonDefinition, options: DungeonViewOptions): HTMLElement {
@@ -72,6 +78,7 @@ export function openDungeonView(dungeonId: string, options: DungeonViewOptions):
         element('div', 'section-title', t('dungeons.creeps')),
         element('div', 'monster-tiles', ...monsters.map((monster) => createMonsterTile(monster, dungeon, options))),
         element('div', 'card-text small dungeon-drops', t('dungeons.dropsOverview', { list: listOf(dropNamesOf(monsters)) })),
+        ...dungeon.bonusDrops.map((bonusDrop) => bonusDropLine(bonusDrop, options.showsDropRates)),
       ),
     ),
     ...(picker ? [picker.element] : []),

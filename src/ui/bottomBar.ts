@@ -5,6 +5,7 @@ import { closeEveryModalWithItsCloseAction } from './modal';
 import { PANEL_CATALOG, panelTitleKey } from './panelCatalog';
 import type { PanelHost } from './panelHost';
 import { createPixelIcon } from './pixelIcons';
+import { focusRun, focusedRunNumber } from './runFocus';
 
 const BADGE_PANEL_IDS: readonly string[] = ['dungeons', 'workshop', 'inventory'];
 
@@ -35,6 +36,12 @@ export function createBottomBar(store: GameStore, panelHost: PanelHost): HTMLEle
     const label = element('span', 'bar-label');
     const button = actionButton('', () => {
       closeEveryModalWithItsCloseAction();
+      // Leaving the battle view only changes the focus. The run keeps going in the background.
+      if (focusedRunNumber() !== null) {
+        focusRun(null);
+        panelHost.open(panel.id);
+        return;
+      }
       panelHost.toggle(panel.id);
     }, { className: 'bar-button' });
     button.append(createPixelIcon(panel.barIcon, 2), label);

@@ -6,6 +6,7 @@ export interface ModalHandle {
 
 const modalHost = element('div', 'modal-host');
 const closeFunctionOfBackdrop = new WeakMap<Element, () => void>();
+const backdropsOfStoryModals = new WeakSet<Element>();
 
 export function getModalHost(): HTMLElement {
   return modalHost;
@@ -20,7 +21,8 @@ const NEAR_POINTER_MARGIN_PIXELS = 8;
 
 // Modals stack: a menu can open a chooser on top of itself. Clicking outside the modal closes the top one.
 // A short menu passes the point of the click. It opens as a narrow panel at that point, and the screen stays undimmed.
-export function openModal(title: string, content: HTMLElement, onClose?: () => void, nearPoint?: ScreenPoint): ModalHandle {
+// A story modal is read to the end. A click outside it and Escape do not close it, and it has no X button: only the buttons in its own footer close it.
+export function openModal(title: string, content: HTMLElement, onClose?: () => void, nearPoint?: ScreenPoint, isStoryModal = false): ModalHandle {
   const backdrop = element('div', `modal-backdrop${nearPoint ? ' modal-backdrop-near' : ''}`);
   const close = (): void => {
     // A panel change can close the window before its own button does. The close action must run once.
@@ -29,12 +31,13 @@ export function openModal(title: string, content: HTMLElement, onClose?: () => v
     backdrop.remove();
     onClose?.();
   };
-  const header = element('div', 'panel-header', element('span', 'panel-title', title), actionButton('x', close, { className: 'action-button close-button' }));
+  const header = element('div', 'panel-header', element('span', 'panel-title', title), ...(isStoryModal ? [] : [actionButton('x', close, { className: 'action-button close-button' })]));
   const modal = element('div', 'modal panel', header, element('div', 'modal-body', content));
   backdrop.append(modal);
   backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop) close();
+    if (event.target === backdrop && !isStoryModal) close();
   });
+  if (isStoryModal) backdropsOfStoryModals.add(backdrop);
   closeFunctionOfBackdrop.set(backdrop, close);
   modalHost.append(backdrop);
   if (nearPoint) placeNearPoint(modal, nearPoint);
@@ -60,16 +63,20 @@ export function closeAllModals(): void {
   modalHost.replaceChildren();
 }
 
-// Returns false when no modal is open. Used by the Escape key.
+// Returns false when no modal is open. Used by the Escape key. An open story modal takes the key and stays open.
 export function closeTopModal(): boolean {
   const topBackdrop = modalHost.lastElementChild;
-  const close = topBackdrop ? closeFunctionOfBackdrop.get(topBackdrop) : undefined;
-  if (!close) return false;
-  close();
+  if (!topBackdrop) return false;
+  if (backdropsOfStoryModals.has(topBackdrop)) return true;
+  closeFunctionOfBackdrop.get(topBackdrop)?.();
   return true;
 }
 
-// Runs the close action of every open modal, top first, so a report is marked as read.
+// Runs the close action of every open modal, top first, so a report is marked as read. A panel change or a menu button is a player action, but a story modal stays open: it is read to the end.
 export function closeEveryModalWithItsCloseAction(): void {
-  while (closeTopModal());
+  const backdropsTopFirst = Array.from(modalHost.children).reverse();
+  for (const backdrop of backdropsTopFirst) {
+    if (backdropsOfStoryModals.has(backdrop)) continue;
+    closeFunctionOfBackdrop.get(backdrop)?.();
+  }
 }

@@ -16,6 +16,7 @@ import { createLevelUpGrowth } from './levelUpGrowth';
 import { createMaterialTooltip } from './materialBoxes';
 import { createMoneyDisplay } from './moneyDisplay';
 import { createPortrait } from './portraitArt';
+import { createSkeletonPortrait } from './skeletonPortrait';
 
 function formatNumber(value: number): string {
   return value >= 100 ? String(Math.round(value)) : value.toFixed(1);
@@ -38,10 +39,13 @@ function createHeroResultRow(result: EncounterResult['heroes'][number], hero: He
     t('result.taken', { taken: result.damageTaken, healing: result.healingDone }),
   ];
   const text = element('div', 'result-hero-text', element('div', 'card-title', hero ? `${name} (${className(hero.classId)})` : name), element('div', 'card-text small', listOf(lines)));
+  const hasFallen = result.healthBefore - result.healthLost <= 0;
+  if (hasFallen) text.append(element('div', 'danger-text', t('result.fallen')));
   if (result.reachedLevel !== null) text.append(element('div', 'level-up', t('result.levelUp', { level: result.reachedLevel })));
   if (result.reachedLevel !== null && hero) text.append(createLevelUpGrowth(hero.classId, result.levelBefore, result.levelAfter));
   text.append(createHealthLossBarOf(result), createExperienceBarOf(result));
-  return element('div', 'result-hero', hero ? createPortrait(hero.classId, hero.name, 2) : element('span', ''), text);
+  const portrait = hasFallen ? createSkeletonPortrait(2) : hero ? createPortrait(hero.classId, hero.name, 2) : element('span', '');
+  return element('div', 'result-hero', portrait, text);
 }
 
 // A big box for each loot stack. Hover shows the details at once. A tap opens the same details on a touch screen.

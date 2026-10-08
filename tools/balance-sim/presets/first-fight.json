@@ -1,5 +1,5 @@
 {
-  "description": "The first fight of a hero against a normal monster of its own level. The hero uses its best spells.",
+  "description": "The first fight of a hero against a normal monster of its own level. The hero uses its best spells. Common gear is a hard fight, crafted Magic gear is the reference.",
   "firstLevel": 1,
   "lastLevel": 10,
   "classIds": ["warrior", "archer", "mage", "priest", "thief", "barbarian", "fighter"],
@@ -7,8 +7,7 @@
   "battlesPerCase": 20,
   "seed": 99,
   "gearStates": [
-    { "name": "first meeting", "description": "Level 1: the main hand weapon only. Higher levels: Common gear of the best item level in every slot.", "weaponOnlyUpToLevel": 1, "quality": "common" },
-    { "name": "crafted magic", "description": "Magic gear of the best item level in every slot.", "weaponOnlyUpToLevel": 0, "quality": "magic" }
-  ],
-  "targetHealthLostPercent": { "1": [40, 60], "2-10": [60, 70] }
+    {"name": "first meeting", "description": "Level 1: the main hand weapon only. Higher levels: Common gear of the best item level in every slot.", "weaponOnlyUpToLevel": 1, "quality": "common", "targetHealthLostPercentByLevel": {"1": [40, 55], "2": [60, 72], "3": [70, 85], "4": [70, 85], "5": [80, 95], "6": [85, 100], "7": [85, 100], "8": [85, 100], "9": [85, 100], "10": [90, 100]}},
+    {"name": "crafted magic", "description": "Magic gear of the best item level in every slot.", "weaponOnlyUpToLevel": 0, "quality": "magic", "targetHealthLostPercentByLevel": {"1": [30, 45], "2": [45, 60], "3": [55, 70], "4": [45, 62], "5": [52, 70], "6": [50, 67], "7": [45, 63], "8": [45, 63], "9": [38, 55], "10": [45, 63]}}
+  ]
 }

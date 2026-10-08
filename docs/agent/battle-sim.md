@@ -43,7 +43,7 @@ To find a good moment, print `report.actionEvents` for the setup (`attackStart`,
 - `battleView.setRealtimeBattle(report)` after `showUnits`, then `setBattleTime(seconds)` each frame. The caller owns the battle time, so speed and pause are the caller's choice. `setTimeScale(n)` gives the effects the same speed (0 = pause). `advanceTime(seconds)` steps the effects without a frame.
 - Positions come from the tracks, linearly interpolated between ticks. Field x maps to the stage width (44 px margins), field y to the ground depth (draw order by feet y). A side is drawn a little apart from the body circle (`render/fieldProjection.ts`) because sprites are wider than the circles.
 - The pose comes from the action events (`render/unitActionWindows.ts`, `render/unitMotion.ts`): a hop while moving, a pull back during the windup and a lunge at the hit (a short draw and recoil for a ranged attack), a raise and a glow while casting. Sprites are mirrored by the facing. All offsets are whole pixels. There are no run or attack frames.
-- Damage, flashes, spell effects and sounds come from the old events (`presentBattleEvent`). A ranged hit shows when its projectile lands.
+- Damage, flashes, spell effects and sounds come from the battle events (`presentBattleEvent`). A ranged hit shows when its projectile lands.
 
 ## Shots of the real game
 

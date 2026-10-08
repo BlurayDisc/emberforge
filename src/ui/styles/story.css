@@ -53,6 +53,23 @@
   background: var(--gold);
 }
 
+/* Previous, Skip and Next share one row on a phone. */
+.panel-footer:has(> .story-skip-button) {
+  flex-wrap: nowrap;
+}
+
+.panel-footer:has(> .story-skip-button) > .action-button:not(.story-skip-button) {
+  width: min(200px, 36%);
+}
+
+/* Skip is a small button beside Previous, so a tap on Next or Previous is never a skip by mistake. */
+.panel-footer > .story-skip-button {
+  width: auto;
+  min-width: 0;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
 .story-hidden {
   visibility: hidden;
 }
@@ -79,6 +96,19 @@
   min-height: 100dvh;
   background: var(--wood-900);
   color: var(--gold);
+}
+
+.loading-name {
+  font-family: var(--font-title);
+  text-shadow: 2px 2px 0 var(--ink);
+  font-size: 32px;
+  letter-spacing: 2px;
+}
+
+.loading-version {
+  margin-top: -12px;
+  font-size: 12px;
+  color: var(--gold-dark);
 }
 
 .loading-screen .bar {

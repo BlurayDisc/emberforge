@@ -40,7 +40,7 @@ export interface BattleView {
   setVisible(isVisible: boolean): void;
   setBackdrop(dungeonId: string): void;
   showUnits(units: readonly BattleUnit[]): void;
-  // Real-time battle. Call it after showUnits. The units then follow the tracks of the report. Pass null for the old fixed slots.
+  // Real-time battle. Call it after showUnits. The units then follow the tracks of the report. Pass null for the fixed slots.
   setRealtimeBattle(report: RealtimeBattleReport | null): void;
   // The battle time in seconds that the tracks are drawn at. The caller advances it, so pause and speed are the caller's choice.
   setBattleTime(battleSeconds: number): void;

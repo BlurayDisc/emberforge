@@ -3,11 +3,10 @@ import { MATERIALS } from '../../content/materials';
 import { describeStorage, findBackpackMoveAnchor, hasBankUnlock, listSaleJobs, merchantSaleSlotsOf, moveBackpackEntryCommand, sortBackpackCommand } from '../../game';
 import type { BackpackEntry } from '../../model/backpack';
 import { actionButton, element } from '../dom';
-import { materialName } from '../displayNames';
+import { itemBaseDisplayName, qualityName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
 import { createMoneyDisplay } from '../moneyDisplay';
 import { createItemNameElement } from '../itemNameElement';
-import { createItemCard } from '../itemText';
 import type { PanelContext, PanelRenderer } from './panelContext';
 import { backpackEntryTitle, createBackpackEntryActions } from './backpack/backpackEntryMenu';
 import { createBackpackGrid } from './backpack/backpackGrid';
@@ -24,19 +23,23 @@ export function resetInventorySelection(): void {
   selectedPosition = null;
 }
 
-function renderDetail(entry: BackpackEntry): HTMLElement {
-  if (entry.content.kind === 'item') return createItemCard(entry.content.item);
+// The short description under the name. The full item card opens with View, so the price shows once, on the Sell button.
+function renderDescription(entry: BackpackEntry): HTMLElement {
+  if (entry.content.kind === 'item') {
+    const item = entry.content.item;
+    return element('p', 'hint selection-hint', t('item.meta', { baseName: itemBaseDisplayName(item), quality: qualityName(item.quality), tier: item.tier }), ' ', t('item.requiresLevel', { level: item.itemLevel }));
+  }
   const material = requireById(MATERIALS, entry.content.materialId);
   return element(
     'p',
-    'hint',
+    'hint selection-hint',
     t('inventory.materialDetail', {
-      name: materialName(material.id),
-      cells: material.width * material.height,
       tier: material.tier,
       category: t(`category.${material.category}`),
-      price: material.sellValueCopper,
+      cells: material.width * material.height,
     }),
+    ' ',
+    t(`material.${material.id}.lore`),
   );
 }
 
@@ -70,14 +73,14 @@ function renderMerchantSaleStatus(context: PanelContext): HTMLElement {
   return element('span', used >= slots ? 'danger-text' : '', t('inventory.merchantSales', { used, slots }));
 }
 
-// The action bar has a fixed place and a fixed height above the grid, so the grid does not jump when the selection changes.
+// The preview sits at the bottom of the panel and replaces the helper text while an entry is selected. The grid is above it, so it never jumps.
 function renderSelectionBar(context: PanelContext, selected: BackpackEntry | undefined): HTMLElement {
   if (!selected) return element('div', 'selection-bar', element('p', 'hint', t('inventory.select')));
   return element(
     'div',
     'selection-bar',
     element('div', 'section-title', selected.content.kind === 'item' ? createItemNameElement(selected.content.item) : backpackEntryTitle(selected)),
-    element('p', 'hint selection-hint', t('inventory.moveHint')),
+    renderDescription(selected),
     element('div', 'hero-choice-row', ...createBackpackEntryActions(context, selected, {
       onEquipOnHero: (heroId) => selected.content.kind === 'item' && openEquipPreview(context, heroId, selected.content.item),
       afterAction: () => {
@@ -113,11 +116,10 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
         'div',
         'inventory-grid-column',
         grid,
-        renderSelectionBar(context, selected),
         element('div', 'hint status-row', createMoneyDisplay(context.store.getState().copper), element('span', '', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })), renderMerchantSaleStatus(context)),
         element('div', 'hero-choice-row', ...renderSortControl(context), actionButton(t('inventory.upgradeBackpack'), () => context.openPanel('bank'))),
+        renderSelectionBar(context, selected),
       ),
-      element('div', 'inventory-detail-column', ...(selected ? [renderDetail(selected)] : [])),
     ),
   );
   return body;

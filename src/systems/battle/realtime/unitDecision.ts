@@ -4,6 +4,7 @@ import type { BattleSpell } from '../../../model/spell';
 import { attackSpeedFactorOf } from '../combatant';
 import { beginSpellCast, pickReadySpell } from '../spellCasting';
 import { livingAlliesOf, livingEnemiesOf, type FieldBattle } from './fieldBattle';
+import { followsSlotCastOrder, nextSpellInSlotOrder, recordBasicAction, recordSlotCast } from './heroCastOrder';
 import { edgeDistanceBetween, unitIdOf, type RealtimeUnit } from './realtimeUnit';
 import { isPreparationSpell, spellNeedsEnemyInRange, spellReachOf } from './spellReach';
 import { stepToward } from './steering';
@@ -45,6 +46,7 @@ function startAttack(battle: FieldBattle, unit: RealtimeUnit, target: RealtimeUn
   unit.pending = { kind: isHeal ? 'heal' : 'attack', targetId: unitIdOf(target), hitAtSeconds };
   unit.readyAtSeconds = startSeconds + attackSeconds;
   unit.motion = 'attacking';
+  recordBasicAction(unit);
   faceToward(unit, target);
   battle.actionEvents.push({
     kind: 'attackStart',
@@ -70,7 +72,7 @@ function moveToward(battle: FieldBattle, unit: RealtimeUnit, goal: RealtimeUnit)
   faceToward(unit, goal);
 }
 
-// What a free unit does this tick: cast a ready spell, or strike or heal if the goal is in reach, or move toward the goal.
+// What a free unit does this tick: cast a ready spell (a hero in slot order, see heroCastOrder), or strike or heal if the goal is in reach, or move toward the goal.
 export function decideAction(battle: FieldBattle, unit: RealtimeUnit, timeSeconds: number): void {
   const enemies = livingEnemiesOf(battle, unit);
   const avoidId = unit.stuckSeconds >= UNREACHABLE_SWITCH_SECONDS ? unit.targetId : null;
@@ -81,12 +83,15 @@ export function decideAction(battle: FieldBattle, unit: RealtimeUnit, timeSecond
     unit.motion = 'idle';
     return;
   }
-  const spell = pickReadySpell(unit.combatant, battle.combatants, timeSeconds, battle.random, enemyTarget.combatant.unit,
-    (candidate) => {
-      if (isPreparationSpell(candidate.effect)) return edgeDistanceBetween(unit, enemyTarget) <= PREPARE_SPELLS_WITHIN_DISTANCE;
-      return !spellNeedsEnemyInRange(candidate.effect) || edgeDistanceBetween(unit, enemyTarget) <= spellReachOf(unit, candidate);
-    });
+  const isInReach = (candidate: BattleSpell): boolean => {
+    if (isPreparationSpell(candidate.effect)) return edgeDistanceBetween(unit, enemyTarget) <= PREPARE_SPELLS_WITHIN_DISTANCE;
+    return !spellNeedsEnemyInRange(candidate.effect) || edgeDistanceBetween(unit, enemyTarget) <= spellReachOf(unit, candidate);
+  };
+  const spell = followsSlotCastOrder(unit)
+    ? nextSpellInSlotOrder(battle, unit, enemyTarget, timeSeconds, isInReach)
+    : pickReadySpell(unit.combatant, battle.combatants, timeSeconds, battle.random, enemyTarget.combatant.unit, isInReach);
   if (spell) {
+    if (followsSlotCastOrder(unit)) recordSlotCast(unit, spell);
     startCast(battle, unit, spell, enemyTarget, timeSeconds);
     return;
   }

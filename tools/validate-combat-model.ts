@@ -73,7 +73,7 @@ function checkAttributeBudget(classes: readonly CombatClass[], report: (message:
 function checkBalanceFiles(report: (message: string) => void): void {
   const battle = load<Record<string, number>>('balance/battle.json') as Record<string, number> & { baseCriticalChance: number; criticalDamageMultiplier: number; minimumAttackSpeedFactor: number };
   for (const removed of ['maximumDamageCut', 'mitigationBase', 'mitigationPerAttackerLevel', 'criticalChancePerSkillPoint']) {
-    if (removed in battle) report(`balance/battle.json: '${removed}' belongs to the old percentage model and must be removed`);
+    if (removed in battle) report(`balance/battle.json: '${removed}' is not part of the flat combat model and must be removed`);
   }
   if (!(battle.baseCriticalChance >= 0 && battle.baseCriticalChance < 1 && battle.criticalDamageMultiplier >= 1)) report('balance/battle.json: baseCriticalChance must be from 0 to below 1 and criticalDamageMultiplier at least 1');
   if (!(battle.minimumAttackSpeedFactor > 0 && battle.minimumAttackSpeedFactor <= 1)) report('balance/battle.json: minimumAttackSpeedFactor must be above 0 and at most 1');

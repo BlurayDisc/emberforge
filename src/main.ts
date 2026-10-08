@@ -13,12 +13,14 @@ import { preloadTownArt } from './app/townArtPreloader';
 import { configureAudio } from './audio';
 import { createBrowserSaveStorage, createGameStore, loadAudioPreferences } from './game';
 import { initializeLanguage } from './ui/i18n';
+import { startAppIdentity } from './ui/appIdentity';
 import { createLoadingScreen } from './ui/loadingScreen';
 
 const gameRoot = document.getElementById('game-root');
 if (!gameRoot) throw new Error('Missing #game-root element');
 
 initializeLanguage();
+startAppIdentity();
 configureAudio(loadAudioPreferences());
 const store = createGameStore(createBrowserSaveStorage());
 const loadingScreen = createLoadingScreen();

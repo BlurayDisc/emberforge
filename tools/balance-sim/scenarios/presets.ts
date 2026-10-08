@@ -60,8 +60,8 @@ export interface FirstFightPreset {
   battlesPerCase: number;
   seed: number;
   // Up to this hero level only the main hand weapon is worn. Above it, every slot is worn.
-  gearStates: { name: string; description: string; weaponOnlyUpToLevel: number; quality: 'common' | 'uncommon' | 'magic' | 'rare' }[];
-  targetHealthLostPercent: Record<string, number[]>;
+  // Each gear state has its own target band of health lost, one entry for each level.
+  gearStates: { name: string; description: string; weaponOnlyUpToLevel: number; quality: 'common' | 'uncommon' | 'magic' | 'rare'; targetHealthLostPercentByLevel: Record<string, number[]> }[];
 }
 
 export interface BossFightPreset {

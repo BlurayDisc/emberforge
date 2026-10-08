@@ -1,4 +1,3 @@
-import { BUILD_LABEL } from '../kernel/buildInfo';
 import { createBuildBadge } from '../ui/buildBadge';
 import { CASTLE_SCREEN_COUNT } from '../kernel/stageSize';
 import { playSound } from '../audio';
@@ -29,7 +28,6 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   const stageArea = element('div', 'stage-area', hud.element, canvasHost, hud.logElement, panelHost.element, panelHost.notificationsElement, getModalHost(), createBuildBadge());
   root.replaceChildren(stageArea, createBottomBar(store, panelHost));
 
-  document.title = `Emberforge ${BUILD_LABEL}`;
   setWideTownView(loadWideTownView());
   const stage = createPixelStage(canvasHost);
 

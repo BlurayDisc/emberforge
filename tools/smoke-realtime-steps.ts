@@ -70,6 +70,6 @@ export function checkMonsterAttackTimes(): void {
     const attackSeconds = createMonsterUnit(monster.id, 10, 'smoke-attack-time').baseAttackSeconds;
     assert.ok(attackSeconds >= 1 && attackSeconds <= 2, `${monster.id} attacks in 1.0 to 2.0 seconds`);
   }
-  assert.equal(createMonsterUnit('goblin-chief', 10, 'smoke-boss').baseAttackSeconds, WARRIOR_ATTACK_SECONDS, 'the boss attacks as fast as the Warrior');
+  assert.ok(createMonsterUnit('goblin-chief', 10, 'smoke-boss').baseAttackSeconds < WARRIOR_ATTACK_SECONDS, 'the boss attacks faster than the Warrior');
   assert.ok(BASE_ITEMS.filter((base) => base.slot === 'boots').every((base) => base.mainStat === 'defence'), 'the main stat of boots stays Defence');
 }

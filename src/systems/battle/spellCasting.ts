@@ -12,8 +12,6 @@ import { castHeal, castShield } from './supportSpellCasting';
 import { event, healthFractionOf, type CastContext } from './spellCastContext';
 import { reflectThorns } from './thorns';
 
-const isWounded = (unit: BattleUnit): boolean => healthFractionOf(unit) < HEAL_SPELL_CAST_BELOW_HEALTH_FRACTION;
-
 function readyAtSeconds(actor: Combatant, spell: BattleSpell): number {
   return actor.spellReadyAtSeconds[spell.id] ?? (spell.isUltimate ? ULTIMATE_OPENING_DELAY_SECONDS : 0);
 }
@@ -31,10 +29,10 @@ function lacksStatus(effect: Extract<SpellEffect, { kind: 'status' }>, unit: Bat
   return statusStrength(combatantOf(context.combatants, unit), effect.status, context.timeSeconds) === 0;
 }
 
-// The AI casts a spell only when it does something: no heal for a healthy party, no second buff on top of a buff.
-function isUseful(effect: SpellEffect, context: CastContext): boolean {
+// A cast must do something: no heal when nobody is below the heal line, no second status on top of the same status, no shield on a shield.
+function isUseful(effect: SpellEffect, context: CastContext, healBelowHealthFraction: number): boolean {
   if (effect.kind === 'damage' || effect.kind === 'drain') return context.opponents.length > 0;
-  if (effect.kind === 'heal') return (effect.target === 'self' ? [context.actor.unit] : context.allies).some(isWounded);
+  if (effect.kind === 'heal') return (effect.target === 'self' ? [context.actor.unit] : context.allies).some((unit) => healthFractionOf(unit) < healBelowHealthFraction);
   if (effect.kind === 'shield') return context.opponents.length > 0 && !(context.actor.shield && context.actor.shield.expiresAtSeconds > context.timeSeconds);
   return statusTargets(effect, context).some((unit) => lacksStatus(effect, unit, context));
 }
@@ -160,11 +158,20 @@ function contextFor(actor: Combatant, combatants: readonly Combatant[], timeSeco
   return { actor, combatants, allies, opponents, timeSeconds, random, spell, ...(focusTarget ? { focusTarget } : {}) };
 }
 
-// The first spell that is ready, paid for, useful and allowed by canUse (for example in range), or null when the actor should attack. Nothing is spent yet.
+export function isSpellReadyAndPaid(actor: Combatant, spell: BattleSpell, timeSeconds: number): boolean {
+  return timeSeconds >= readyAtSeconds(actor, spell) && actor.unit.resource >= resourceCostOf(spell, actor.unit);
+}
+
+// A hero heals as soon as an ally is hurt at all (health fraction below 1). Only the monster choice below uses the heal line from the data.
+export function spellCastDoesSomething(actor: Combatant, combatants: readonly Combatant[], timeSeconds: number, random: Random, spell: BattleSpell, focusTarget?: BattleUnit, healBelowHealthFraction = 1): boolean {
+  return isUseful(spell.effect, contextFor(actor, combatants, timeSeconds, random, spell, focusTarget), healBelowHealthFraction);
+}
+
+// Monster choice: the first spell in list order that is ready, paid for, useful and allowed by canUse (for example in range), or null when the monster should attack. Nothing is spent yet.
 export function pickReadySpell(actor: Combatant, combatants: readonly Combatant[], timeSeconds: number, random: Random, focusTarget?: BattleUnit, canUse: (spell: BattleSpell) => boolean = () => true): BattleSpell | null {
   for (const spell of actor.unit.spells) {
-    if (timeSeconds < readyAtSeconds(actor, spell) || actor.unit.resource < resourceCostOf(spell, actor.unit)) continue;
-    if (!isUseful(spell.effect, contextFor(actor, combatants, timeSeconds, random, spell, focusTarget)) || !canUse(spell)) continue;
+    if (!isSpellReadyAndPaid(actor, spell, timeSeconds)) continue;
+    if (!spellCastDoesSomething(actor, combatants, timeSeconds, random, spell, focusTarget, HEAL_SPELL_CAST_BELOW_HEALTH_FRACTION) || !canUse(spell)) continue;
     return spell;
   }
   return null;

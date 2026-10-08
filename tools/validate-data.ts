@@ -62,6 +62,7 @@ interface Dungeon extends Identified {
   monsterIds: string[];
   rareMonsterId: string | null;
   bossMonsterId: string | null;
+  bonusDrops: Array<{ materialIds: string[]; chance: number; quantity: number }>;
 }
 interface Town extends Identified {
   name: string;
@@ -325,7 +326,25 @@ for (const dungeon of dungeons) {
 
 const droppedMaterialIds = new Set(monsters.flatMap((monster) => (monster as unknown as { drops: Array<{ materialId: string }> }).drops.map((drop) => drop.materialId)));
 for (const material of materials) {
-  if (material.category !== 'catalyst' && !droppedMaterialIds.has(material.id)) report(`monsters.json: no monster drops material '${material.id}'`);
+  // Essence and Catalyst have no use and no source now. They stay in the data so that old saves load and can sell them.
+  if (!['essence', 'catalyst'].includes(material.category) && !droppedMaterialIds.has(material.id)) report(`monsters.json: no monster drops material '${material.id}'`);
+}
+for (const monster of monsters) {
+  const drops = (monster as unknown as { drops: Array<{ materialId: string; canBeGuaranteed?: boolean }> }).drops;
+  if (drops.length > 0 && !drops.some((drop) => drop.canBeGuaranteed !== false)) report(`monsters.json: '${monster.id}' needs at least one drop that can be the guaranteed drop`);
+}
+for (const dungeon of dungeons) {
+  if (!Array.isArray(dungeon.bonusDrops)) report(`dungeons.json: '${dungeon.id}' needs a bonusDrops list (empty for none)`);
+  for (const bonusDrop of dungeon.bonusDrops ?? []) {
+    if (!(bonusDrop.chance > 0 && bonusDrop.chance < 1)) report(`dungeons.json: '${dungeon.id}' bonus drop chance must be above 0 and below 1`);
+    if (!(Number.isInteger(bonusDrop.quantity) && bonusDrop.quantity >= 1)) report(`dungeons.json: '${dungeon.id}' bonus drop quantity must be a whole number of at least 1`);
+    if (bonusDrop.materialIds.length === 0) report(`dungeons.json: '${dungeon.id}' bonus drop needs at least one material`);
+    for (const materialId of bonusDrop.materialIds) {
+      const material = materialsById.get(materialId);
+      if (!material) report(`dungeons.json: '${dungeon.id}' bonus drop names unknown material '${materialId}'`);
+      else if (material.tier !== bracketOf(dungeon.level)) report(`dungeons.json: '${dungeon.id}' bonus drop '${materialId}' must be of the tier of the dungeon`);
+    }
+  }
 }
 
 const tiersWithMaterials = [...new Set(materials.map((material) => material.tier))];

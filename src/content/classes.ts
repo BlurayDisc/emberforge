@@ -28,7 +28,7 @@ export interface ClassDefinition {
   offHandTypes: readonly GearType[];
   // The armour weights the class can wear. The first one is its main weight (it sets the sound of a hit on the hero).
   armourWeights: readonly ArmourWeight[];
-  // A placeholder class has numbers that are derived from the baseline classes and wait for their own balance pass.
+  // A placeholder class has numbers that are derived from the baseline classes and are not tuned on their own yet.
   balanceStatus: BalanceStatus;
   // Attribute at level L is round(start + gainPerLevel x (L - 1)).
   attributes: Record<AttributeName, AttributeGrowth>;

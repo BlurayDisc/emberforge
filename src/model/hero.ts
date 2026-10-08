@@ -27,7 +27,7 @@ export interface Hero {
   downedUntilMs: number | null;
   equipment: HeroEquipment;
   learnedSpellIds: string[];
-  // One entry for each normal slot, in priority order. An empty slot is null. Ultimate spells go in equippedUltimateId only.
+  // One entry for each normal slot, in cast order (slot 1 first). An empty slot is null. Ultimate spells go in equippedUltimateId only.
   equippedSpellIds: Array<string | null>;
   equippedUltimateId: string | null;
   statistics: HeroStatistics;

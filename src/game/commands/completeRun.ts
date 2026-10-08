@@ -1,3 +1,5 @@
+import { DUNGEONS } from '../../content/dungeons';
+import { requireById } from '../../content/lookup';
 import type { BattleUnit } from '../../model/battle';
 import type { EncounterResult, GameState, HeroEncounterResult } from '../../model/gameState';
 import type { Hero } from '../../model/hero';
@@ -5,7 +7,7 @@ import type { Item } from '../../model/item';
 import { findRecipe } from '../../systems/crafting';
 import { addItem, addMaterials } from '../../systems/inventory';
 import { generateCraftedItem } from '../../systems/items';
-import { rollMonsterLoot, type LootRoll } from '../../systems/loot';
+import { rollDungeonBonusDrops, rollMonsterLoot, type LootRoll } from '../../systems/loot';
 import { heroAfterFight } from '../../systems/recovery';
 import { applyExperience } from '../../systems/progression';
 import { experienceForDefeatedMonsters } from '../encounterExperience';
@@ -96,7 +98,10 @@ function buildDroppedItems(state: GameState, run: DungeonRun, loot: readonly Loo
 
 function rollRunLoot(state: GameState, run: DungeonRun, monsters: readonly BattleUnit[]): LootRoll[] {
   const lootRandom = encounterRandomFor(state, run).fork('loot');
-  return monsters.map((monster) => rollMonsterLoot(monster.definitionId, lootRandom.fork(monster.id)));
+  const monsterLoot = monsters.map((monster) => rollMonsterLoot(monster.definitionId, lootRandom.fork(monster.id)));
+  // The dungeon bonus has its own stream and comes last, so it does not change the monster rolls or the dropped item ids.
+  const dungeonBonusDrops = rollDungeonBonusDrops(requireById(DUNGEONS, run.dungeonId), lootRandom.fork('dungeon-bonus-drops'));
+  return [...monsterLoot, { materials: dungeonBonusDrops, items: [] }];
 }
 
 export function completeRunCommand(runNumber: number, nowMs: number): Command {

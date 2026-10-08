@@ -4,7 +4,6 @@ import { element } from '../../dom';
 import { createItemNameElement } from '../../itemNameElement';
 import { t } from '../../i18n';
 import { formatDuration } from '../../liveUpdate';
-import { createMoneyDisplay } from '../../moneyDisplay';
 import type { PanelContext } from '../panelContext';
 import { backpackEntryTitle, createBackpackEntryActions, saleValueOf } from './backpackEntryMenu';
 
@@ -17,6 +16,6 @@ export function createMerchantSelectionBar(context: PanelContext, selected: Back
     'selection-bar',
     element('div', 'section-title', selected.content.kind === 'item' ? createItemNameElement(selected.content.item) : backpackEntryTitle(selected)),
     element('div', 'card-text small selection-hint', t('merchant.saleTime', { time: formatDuration(saleDurationSeconds(saleValue)) })),
-    element('div', 'hero-choice-row', ...createBackpackEntryActions(context, selected, { afterAction }), createMoneyDisplay(saleValue)),
+    element('div', 'hero-choice-row', ...createBackpackEntryActions(context, selected, { afterAction })),
   );
 }

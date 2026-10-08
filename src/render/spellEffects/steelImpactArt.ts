@@ -6,7 +6,7 @@ import { EFFECT_CENTER, EFFECT_FRAME_SIZE, type EffectArtBuilder } from './effec
 const SIZE = EFFECT_FRAME_SIZE;
 const CENTER = EFFECT_CENTER;
 const FRAME_COUNT = 9;
-// About 0.75 seconds. The old impacts lasted about 0.25 seconds, so the metal stays on the enemy longer.
+// About 0.75 seconds, so the metal stays on the enemy for a while.
 const FRAMES_PER_SECOND = 12;
 const SPARK_COUNT = 9;
 

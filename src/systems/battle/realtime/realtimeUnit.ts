@@ -25,6 +25,9 @@ export interface RealtimeUnit {
   // Which way the unit slides round a blocker, kept until the way is free again so it does not jitter. 0 means no slide.
   slideSign: -1 | 0 | 1;
   stuckSeconds: number;
+  // Hero cast order: a cast is due after a basic attack, and the next cast starts at the slot after this index (-1 before the first cast).
+  castIsDue: boolean;
+  lastCastSpellIndex: number;
 }
 
 export const unitIdOf = (unit: RealtimeUnit): string => unit.combatant.unit.id;

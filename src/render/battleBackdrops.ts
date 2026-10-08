@@ -185,6 +185,39 @@ function drawMill(art: PixelCanvas, random: Random): void {
   for (let pad = 0; pad < 14; pad++) art.fill('#4f7a3a', random.nextInt(0, WIDTH), random.nextInt(150, HEIGHT - 4), 9, 3);
 }
 
+function tatteredBanner(art: PixelCanvas, x: number, top: number): void {
+  art.fill('timber', x - 2, top - 2, 12, 2);
+  art.fill('carpetDark', x, top, 8, 40);
+  art.fill('carpet', x + 1, top, 6, 38);
+  for (const [notchX, notchHeight] of [[x, 4], [x + 3, 7], [x + 6, 3]] as const) art.fill('#2a1d2a', notchX, top + 40 - notchHeight, 2, notchHeight);
+  art.fill('bone', x + 3, top + 10, 2, 2);
+  art.fill('bone', x + 2, top + 13, 4, 1);
+}
+
+function chiefThrone(art: PixelCanvas, centerX: number, floorY: number): void {
+  art.fill('leatherDark', centerX - 20, floorY - 44, 40, 44);
+  for (let plank = centerX - 18; plank < centerX + 18; plank += 6) art.fill('timber', plank, floorY - 42, 5, 42);
+  art.fill('leatherDark', centerX - 26, floorY - 16, 52, 16);
+  art.fill('leather', centerX - 24, floorY - 16, 48, 4);
+  art.fill('uiWood600', centerX - 24, floorY - 12, 48, 1);
+  for (const side of [-1, 1] as const) {
+    const tuskX = centerX + side * 22;
+    for (let step = 0; step < 6; step++) art.fill(step < 4 ? 'bone' : 'parchment', tuskX + side * (step < 3 ? 0 : step - 2) - 1, floorY - 46 - step * 3, 3, 3);
+  }
+  art.fill('bone', centerX - 7, floorY - 58, 14, 10);
+  art.fill('#c9c5b0', centerX + 4, floorY - 57, 3, 9);
+  art.fill('#c9c5b0', centerX - 5, floorY - 48, 10, 3);
+  art.fill('void', centerX - 5, floorY - 54, 4, 3);
+  art.fill('void', centerX + 1, floorY - 54, 4, 3);
+  art.fill('blood', centerX - 4, floorY - 53, 1, 1);
+  art.fill('blood', centerX + 3, floorY - 53, 1, 1);
+  art.fill('void', centerX - 1, floorY - 50, 2, 2);
+  for (let tooth = centerX - 4; tooth < centerX + 5; tooth += 2) art.fill('void', tooth, floorY - 47, 1, 2);
+  art.fill('gold', centerX - 7, floorY - 60, 14, 2);
+  for (const spikeX of [centerX - 7, centerX - 1, centerX + 5]) art.fill('gold', spikeX, floorY - 63, 2, 3);
+  art.fill('uiGoldDark', centerX - 7, floorY - 59, 14, 1);
+}
+
 function drawLair(art: PixelCanvas, random: Random): void {
   verticalGradient(art, 0, HEIGHT, [24, 14, 26], [44, 28, 36]);
   for (let spike = 0; spike < WIDTH; spike += 16) {
@@ -199,12 +232,8 @@ function drawLair(art: PixelCanvas, random: Random): void {
     art.fill('blood', x - 3, 52, 7, 9);
     art.fill('lamp', x - 1, 54, 3, 4);
   }
-  art.fill('bone', 210, 70, 60, 6);
-  art.fill('bone', 220, 76, 40, 36);
-  art.fill('#c9c5b0', 222, 78, 36, 4);
-  art.fill('#17110d', 228, 84, 8, 8);
-  art.fill('#17110d', 244, 84, 8, 8);
-  art.fill('gold', 226, 62, 28, 8);
+  for (const x of [176, 296]) tatteredBanner(art, x, 22);
+  chiefThrone(art, 240, 110);
   for (let pile = 0; pile < 16; pile++) {
     const x = random.nextInt(10, WIDTH - 20);
     const y = random.nextInt(150, HEIGHT - 10);

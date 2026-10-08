@@ -14,6 +14,16 @@ export interface DungeonDefinition {
   minimumHeroLevel: number;
   recommendedMaxLevel: number;
   unlockAfter: string | null;
+  // Drops of the dungeon itself, on top of the monster drops. Each entry rolls once for each won fight.
+  bonusDrops: readonly DungeonBonusDrop[];
+}
+
+// One of the materials, picked with the same chance for each, in this quantity.
+export interface DungeonBonusDrop {
+  materialIds: readonly string[];
+  chance: number;
+  quantity: number;
 }
 
 export const DUNGEONS = dungeonsData as unknown as readonly DungeonDefinition[];
+

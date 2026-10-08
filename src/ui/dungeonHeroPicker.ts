@@ -1,11 +1,13 @@
 import type { DungeonDefinition } from '../content/dungeons';
-import { runOfHero, type GameStore } from '../game';
+import { describeHero, runOfHero, type GameStore } from '../game';
 import type { Hero } from '../model/hero';
 import { element } from './dom';
 import { className, heroDisplayName } from './displayNames';
 import { t } from './i18n';
 import { createLiveHealthBar } from './liveBars';
+import { addLiveUpdate, formatDuration } from './liveUpdate';
 import { createPortrait } from './portraitArt';
+import { createSkeletonPortrait } from './skeletonPortrait';
 
 export interface DungeonHeroPicker {
   element: HTMLElement;
@@ -14,16 +16,31 @@ export interface DungeonHeroPicker {
   canFight(): boolean;
 }
 
-// A hero in another run cannot go. A dungeon for one hero also needs a hero at the dungeon level.
+// A hero in another run or a down hero cannot go. A dungeon for one hero also needs a hero at the dungeon level.
 // A party dungeon needs only one hero at the dungeon level, so a weaker partner can join the fight.
+function isHeroDown(store: GameStore, hero: Hero): boolean {
+  return describeHero(store.getState(), hero, Date.now()).isDowned;
+}
+
+function downTimerLine(store: GameStore, hero: Hero): HTMLElement {
+  const line = element('div', 'card-text small danger-text');
+  addLiveUpdate(line, () => {
+    const view = describeHero(store.getState(), hero, Date.now());
+    line.textContent = t('heroes.downed', { time: formatDuration(view.secondsToRevive) });
+  });
+  return line;
+}
+
 function isHeroSelectable(store: GameStore, hero: Hero, dungeon: DungeonDefinition): boolean {
   if (runOfHero(store.getState(), hero.id) !== undefined) return false;
+  if (isHeroDown(store, hero)) return false;
   return dungeon.minimumPartySize > 1 || hero.level >= dungeon.minimumHeroLevel;
 }
 
 function statusLine(store: GameStore, hero: Hero, dungeon: DungeonDefinition): HTMLElement {
   const run = runOfHero(store.getState(), hero.id);
   if (run) return element('div', 'card-text small busy-note', t('heroes.awayIn', { dungeon: t(`dungeon.${run.dungeonId}`) }));
+  if (isHeroDown(store, hero)) return downTimerLine(store, hero);
   if (dungeon.minimumPartySize === 1 && hero.level < dungeon.minimumHeroLevel) return element('div', 'card-text small level-low', t('dungeons.heroTooLow', { level: dungeon.minimumHeroLevel }));
   return createLiveHealthBar(store, hero.id, { showsTimeNote: false });
 }
@@ -62,7 +79,7 @@ export function createDungeonHeroPicker(store: GameStore, dungeon: DungeonDefini
     const tile = element(
       'div',
       `dungeon-hero${isSelectable ? '' : ' busy'}`,
-      createPortrait(hero.classId, hero.name, 2),
+      isHeroDown(store, hero) ? createSkeletonPortrait(2) : createPortrait(hero.classId, hero.name, 2),
       element(
         'div',
         'dungeon-hero-text',

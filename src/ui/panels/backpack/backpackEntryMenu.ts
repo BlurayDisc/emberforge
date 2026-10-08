@@ -5,6 +5,7 @@ import type { BackpackEntry } from '../../../model/backpack';
 import { actionButton } from '../../dom';
 import { itemDisplayName, materialName } from '../../displayNames';
 import { describeRejection, t } from '../../i18n';
+import { createMoneyDisplay } from '../../moneyDisplay';
 import { openItemView, openMaterialView } from '../../itemModals';
 import type { PanelContext } from '../panelContext';
 import { openEquipHeroChoice } from './equipHeroChoice';
@@ -43,12 +44,18 @@ export function createBackpackEntryActions(context: PanelContext, entry: Backpac
       afterAction?.();
       openEquipHeroChoice(context, content.item, onEquipOnHero);
     }, { className: 'action-button primary' })] : []),
-    actionButton(t('merchant.sell'), () => {
-      const result = context.store.execute(sellBackpackEntryCommand({ column: entry.column, row: entry.row }, Date.now()));
-      if (!result.accepted) context.notify(describeRejection(result.rejection));
-      afterAction?.();
-    }, { className: 'action-button primary' }),
+    createSellButton(context, entry, afterAction),
   ];
+}
+
+function createSellButton(context: PanelContext, entry: BackpackEntry, afterAction?: () => void): HTMLButtonElement {
+  const sellButton = actionButton(t('merchant.sell'), () => {
+    const result = context.store.execute(sellBackpackEntryCommand({ column: entry.column, row: entry.row }, Date.now()));
+    if (!result.accepted) context.notify(describeRejection(result.rejection));
+    afterAction?.();
+  }, { className: 'action-button primary sell-button' });
+  sellButton.append(createMoneyDisplay(saleValueOf(entry)));
+  return sellButton;
 }
 
 export function backpackEntryTitle(entry: BackpackEntry): string {

@@ -2,7 +2,7 @@ import { DUNGEONS } from '../../../src/content/dungeons';
 import { createRandom, type Random } from '../../../src/kernel/random';
 import { applyCraftingExperience, craftingExperienceForCraft, listRecipes, type Recipe } from '../../../src/systems/crafting';
 import { createEncounter } from '../../../src/systems/dungeons';
-import { rollMonsterLoot } from '../../../src/systems/loot';
+import { rollDungeonBonusDrops, rollMonsterLoot } from '../../../src/systems/loot';
 import { experienceForKill, experienceToNextLevel } from '../../../src/systems/progression';
 import { dungeonForLevel } from '../economy';
 import { CRAFTER_CURVE_PRESET, type CrafterCurvePreset } from './presets';
@@ -47,6 +47,9 @@ function milestonesPerHeroLevel(professionId: string, seed: number, preset: Craf
         materialsHeld[stack.materialId] = (materialsHeld[stack.materialId] ?? 0) + stack.quantity;
       }
       heroExperience += experienceForKill(monster.level, heroLevel, monster.rank);
+    }
+    for (const stack of rollDungeonBonusDrops(dungeon, random.fork(`dungeon-bonus-drops-${fights}`))) {
+      materialsHeld[stack.materialId] = (materialsHeld[stack.materialId] ?? 0) + stack.quantity;
     }
   };
 

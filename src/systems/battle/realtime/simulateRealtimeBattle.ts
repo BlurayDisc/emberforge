@@ -32,6 +32,8 @@ function createRealtimeUnit(source: BattleUnitWithMovement): RealtimeUnit {
     pending: null,
     slideSign: 0,
     stuckSeconds: 0,
+    castIsDue: true,
+    lastCastSpellIndex: -1,
   };
 }
 

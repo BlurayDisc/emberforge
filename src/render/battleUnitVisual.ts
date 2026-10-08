@@ -48,7 +48,7 @@ export interface UnitVisual {
   lungeDirection: number;
   shakeStartSeconds: number;
   defeatedStartSeconds: number;
-  // Set only in a real-time battle. The stage then follows the track instead of the old fixed slot.
+  // Set only in a real-time battle. The stage then follows the track instead of the fixed slot.
   motion: UnitMotion | null;
   placement: ReturnType<typeof createUnitPlacement>;
 }
@@ -61,7 +61,7 @@ export function placeHealthBar(visual: UnitVisual): void {
   visual.healthBar.sprite.position.set(Math.round(visual.centerX - visual.healthBarHalfWidth), healthBarTopY(visual));
 }
 
-// Draws one unit for this moment: the pose from the motion (real time) or the old bob and lunge, then the hit shake, the hit flash and the collapse.
+// Draws one unit for this moment: the pose from the motion (real time) or the fixed-slot bob and lunge, then the hit shake, the hit flash and the collapse.
 export function applyAnimation(visual: UnitVisual, elapsedSeconds: number): void {
   const isDefeated = visual.defeatedStartSeconds > 0;
   let offsetX = 0;

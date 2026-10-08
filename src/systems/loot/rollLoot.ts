@@ -1,6 +1,5 @@
 import { GUARANTEED_MATERIAL_DROPS } from '../../content/balance/dungeonRun';
 import { requireById } from '../../content/lookup';
-import { MATERIALS } from '../../content/materials';
 import { MONSTERS, type DropEntry, type ItemDropEntry } from '../../content/monsters';
 import type { Random } from '../../kernel/random';
 import type { MaterialStack } from '../../model/material';
@@ -11,10 +10,8 @@ export interface LootRoll {
   items: Array<Omit<ItemDropEntry, 'chance'>>;
 }
 
-const NON_CRAFTING_CATEGORIES = ['essence', 'catalyst'];
-
-function isCraftingMaterialDrop(drop: DropEntry): boolean {
-  return !NON_CRAFTING_CATEGORIES.includes(requireById(MATERIALS, drop.materialId).category);
+function canBeGuaranteedDrop(drop: DropEntry): boolean {
+  return drop.canBeGuaranteed !== false;
 }
 
 function rollQuantity(drop: DropEntry, random: Random): MaterialStack {
@@ -27,11 +24,11 @@ function rollQuantity(drop: DropEntry, random: Random): MaterialStack {
 // A drop that was guaranteed does not roll again, so no drop gives more than its maximum quantity.
 export function rollMonsterLoot(monsterId: string, random: Random): LootRoll {
   const definition = requireById(MONSTERS, monsterId);
-  const craftingDrops = definition.drops.filter(isCraftingMaterialDrop);
+  const guaranteeableDrops = definition.drops.filter(canBeGuaranteedDrop);
   const guaranteed: MaterialStack[] = [];
   const guaranteedDrops = new Set<DropEntry>();
-  for (let pick = 0; pick < GUARANTEED_MATERIAL_DROPS && craftingDrops.length > 0; pick++) {
-    const pickedDrop = random.pickWeighted(craftingDrops, (drop) => drop.chance);
+  for (let pick = 0; pick < GUARANTEED_MATERIAL_DROPS && guaranteeableDrops.length > 0; pick++) {
+    const pickedDrop = random.pickWeighted(guaranteeableDrops, (drop) => drop.chance);
     guaranteedDrops.add(pickedDrop);
     guaranteed.push(rollQuantity(pickedDrop, random));
   }

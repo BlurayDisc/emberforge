@@ -46,7 +46,7 @@ import type { GameState } from '../src/model/gameState';
 import { createRandom } from '../src/kernel/random';
 import type { Item } from '../src/model/item';
 import { generateCraftedItem } from '../src/systems/items';
-import { rollMonsterLoot } from '../src/systems/loot';
+import { rollDungeonBonusDrops, rollMonsterLoot } from '../src/systems/loot';
 import { QUALITY_WEIGHTS, SELL_ADDED_VALUE_COPPER_PER_INGREDIENT, SELL_QUALITY_FACTOR } from '../src/content/balance/items';
 import { requireById } from '../src/content/lookup';
 import { MATERIALS } from '../src/content/materials';
@@ -67,6 +67,7 @@ import { SPELLS, findSpell, spellsOfClass } from '../src/content/spells';
 import type { BattleSpell, SpellDefinition } from '../src/model/spell';
 import { simulateRealtimeBattle } from '../src/systems/battle';
 import { checkBootsMovementSpeed, checkManaRegenFromIntelligence, checkMonsterAttackTimes, checkRealtimeBattleWiring } from './smoke-realtime-steps';
+import { checkHeroSlotCastOrder } from './smoke-cast-order-step';
 import type { BattleEvent, BattleUnit } from '../src/model/battle';
 import { itemDisplayName } from '../src/ui/displayNames';
 import { createEncounter, createMonsterUnit } from '../src/systems/dungeons';
@@ -817,6 +818,22 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   }
 }
 
+// A dungeon gives its own bonus drops from dungeons.json. The level 1 dungeons have none, the Wolf Trail gives 1 basic material in 15% of fights.
+// Quartz never takes the guaranteed drop, so its real chance is the chance in the data.
+{
+  const ratCellar = DUNGEONS.find((dungeon) => dungeon.id === 'rat-cellar')!;
+  const wolfTrail = DUNGEONS.find((dungeon) => dungeon.id === 'wolf-trail')!;
+  const bonusRolls = (dungeon: typeof wolfTrail) => Array.from({ length: 1000 }, (_, seed) => rollDungeonBonusDrops(dungeon, createRandom(seed))).flat();
+  assert.equal(bonusRolls(ratCellar).length, 0, 'a level 1 dungeon gives no basic material bonus');
+  const wolfBonus = bonusRolls(wolfTrail);
+  assert.ok(wolfBonus.length > 100 && wolfBonus.length < 200, `the Wolf Trail gives a basic material in about 15% of fights (got ${wolfBonus.length} of 1000)`);
+  assert.ok(wolfBonus.every((stack) => stack.quantity === 1 && ['copper-ore', 'pine-wood', 'rawhide', 'linen'].includes(stack.materialId)), 'the bonus is 1 basic material');
+  const quartzFights = Array.from({ length: 2000 }, (_, seed) => rollMonsterLoot('goblin', createRandom(seed)).materials.some((stack) => stack.materialId === 'quartz')).filter(Boolean).length;
+  assert.ok(quartzFights > 40 && quartzFights < 120, `a Goblin drops Quartz in about 4% of fights (got ${quartzFights} of 2000)`);
+  const noEssenceOrCatalyst = Array.from({ length: 200 }, (_, seed) => rollMonsterLoot('goblin-chief', createRandom(seed)).materials).flat().every((stack) => stack.materialId !== 'faint-essence' && stack.materialId !== 'tarnished-catalyst');
+  assert.ok(noEssenceOrCatalyst, 'no monster drops Faint Essence or a Catalyst');
+}
+
 // Crafter experience follows the main material count: the same recipe level with twice the material pays twice the experience.
 {
   const sword = findRecipe('sword', 1);
@@ -1326,6 +1343,7 @@ assert.ok(!('copperGained' in (migratedNine.reports[0]?.result ?? {})), 'the mig
 }
 
 checkRealtimeBattleWiring();
+checkHeroSlotCastOrder();
 checkBootsMovementSpeed();
 checkManaRegenFromIntelligence();
 checkMonsterAttackTimes();

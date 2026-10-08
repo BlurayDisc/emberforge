@@ -8,6 +8,8 @@ export interface DropEntry {
   maxQuantity: number;
   // When set, the quantity is the maximum with this chance and the minimum otherwise. When missing, it is a flat roll from minimum to maximum.
   maxQuantityChance?: number;
+  // False for a rare bonus drop, so it never takes the guaranteed drop and its chance in the data is its real chance. Missing means true.
+  canBeGuaranteed?: boolean;
 }
 
 // A monster can drop a ready item. The quality is fixed here: the item rolls its affixes from it.

@@ -1,7 +1,7 @@
 {
   "name": "emberforge",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,7 @@
     "battlesim": "vite --open /battle-sim.html",
     "sprites": "tsx tools/headless-art/sprites.ts",
     "animation": "tsx tools/headless-art/animation.ts",
+    "icons": "tsx tools/make-app-icons.ts",
     "shot": "tsx tools/headless-browser/shot.ts",
     "check:realtime": "tsx tools/check-realtime-battle.ts",
     "timeline:realtime": "tsx tools/balance-sim/realtime-timeline.ts",

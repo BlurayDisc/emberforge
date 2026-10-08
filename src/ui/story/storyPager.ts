@@ -37,10 +37,12 @@ export function openStoryPager({ title, heading, pages, canSkip, finishLabel, on
   const modal = openModal(title, content, () => {
     setStoryMusicActive(false);
     onFinished?.();
-  });
+  }, undefined, true);
   let pageIndex = 0;
 
-  const skipButton = actionButton(t('lore.skip'), () => modal.close());
+  const previousButton = actionButton(t('lore.previous'), () => showPage(pageIndex - 1));
+  const skipButton = actionButton(`X ${t('lore.skip')}`, () => modal.close(), { className: 'action-button story-skip-button' });
+  skipButton.title = t('lore.skip');
   const nextButton = actionButton('', () => {
     if (pageIndex === pages.length - 1) modal.close();
     else showPage(pageIndex + 1);
@@ -52,6 +54,7 @@ export function openStoryPager({ title, heading, pages, canSkip, finishLabel, on
     [...pictures, ...texts].forEach((slot, slotIndex) => slot.classList.toggle('story-slot-active', slotIndex % pages.length === index));
     dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === index));
     nextButton.textContent = isLastPage ? (finishLabel ?? t('story.done')) : t('lore.next');
+    previousButton.classList.toggle('story-hidden', index === 0);
     skipButton.classList.toggle('story-hidden', isLastPage || !canSkip);
   }
 
@@ -60,7 +63,7 @@ export function openStoryPager({ title, heading, pages, canSkip, finishLabel, on
     element('div', 'story-stack story-picture-frame', ...pictures),
     element('div', 'story-stack', ...texts),
     element('div', 'story-dots', ...dots),
-    element('div', 'panel-footer', skipButton, nextButton),
+    element('div', 'panel-footer', previousButton, ...(canSkip ? [skipButton] : []), nextButton),
   );
   showPage(0);
   nextButton.focus();

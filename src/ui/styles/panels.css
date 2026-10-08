@@ -956,6 +956,13 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  flex: 1;
+}
+
+.castle-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .castle-tale {
@@ -982,7 +989,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  height: 150px;
+  min-height: 150px;
   padding: 6px 8px;
   background: var(--wood-800);
   box-shadow: 0 0 0 2px var(--ink);
@@ -1113,11 +1120,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.inventory-detail-column {
-  flex: 1 1 240px;
-  min-width: 0;
 }
 
 .growth-bars {
@@ -1867,4 +1869,13 @@
   color: var(--gold);
   background: var(--leather);
   box-shadow: var(--outline-2);
+}
+
+/* The coins on the Sell button take the colour of the button text, so they stay readable on the yellow. */
+.sell-button .money {
+  margin-left: 6px;
+}
+
+.sell-button .money-part {
+  color: inherit;
 }
