@@ -37,3 +37,9 @@ Add a new system: make `src/systems/<name>/` with an `index.ts` that exports the
 - All randomness uses `Random` from `kernel/random.ts`. Give each activity its own stream with `fork('name')` (for example `fork('loot')`, `fork('battle')`).
 - The same seed and the same input must give the same result. The balance simulator and the battle replay depend on this.
 
+## Web and platform
+
+- The build is a static folder. `base` is `'./'`. Use relative asset paths so it works on GitHub Pages and Vercel.
+- No server code. Saves live in the browser. File export and import is planned, not built yet.
+- The app icon is drawn by `npm run icons` (`tools/make-app-icons.ts`) into `public/icons/`. Run it again when the picture changes.
+- `public/manifest.webmanifest` is the English install manifest. `src/ui/appIdentity.ts` swaps in a manifest and a tab title in the game language. An installed app keeps its name until it is installed again.

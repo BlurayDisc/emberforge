@@ -3,9 +3,9 @@
 This is the baseline bracket. Town 2 copies its structure and continues its curves.
 
 - **Part A (targets)** is written by hand. The targets follow the measured game data. The bands live in the preset files in `tools/balance-sim/presets/`.
-- **Part B (actuals)** should come from `npm run balance-report -- 1`. That tool is not built yet, so Part B is a manual snapshot of `npm run scenarios` and `npm run balance`. Replace it with the tool output when the tool exists.
+- **Part B (actuals)** is a manual snapshot of `npm run scenarios` and `npm run balance`.
 - Reference classes: **Warrior, Archer, Mage** (`balanceStatus: baseline`). Priest, Thief, Barbarian and Fighter are placeholders. Their numbers are in Part B for information only and are not checked against Part A.
-- Rules live in `design.md`. This file holds numbers and tables only.
+- Rules live in `docs/design.md`. This file holds numbers and tables only.
 
 Status: targets approved, built, balanced for Warrior, Archer and Mage (economy open, see A12)
 
@@ -47,6 +47,21 @@ Status: targets approved, built, balanced for Warrior, Archer and Mage (economy 
 | Spell price (copper) | log-log curve through anchors | 18 (lv 2) | 127 | not set (anchors must reach the cap) | `learnCostAnchors` |
 | Hero heal time, empty to full (s) | straight line, level 1 to the cap | 60 | 82 | - | `recovery.json` |
 
+Monster curve anchors (a monster with `statFactor` 1). Armour and Resistance are rounded to whole numbers when a monster is built. Armour grows from 0 at level 1 to 15 at level 9 and 16 at level 10. Resistance is about 40% of armour.
+
+| Level | HP | Damage | Armour | Resistance | HP / damage |
+|---|---|---|---|---|---|
+| 1 | 430 | 36 | 0 | 0 | 11.9 |
+| 2 | 596 | 54 | 1.03 | 0 | 11.0 |
+| 3 | 697 | 62 | 2.11 | 0.53 | 11.2 |
+| 4 | 812 | 73 | 3.25 | 1.08 | 11.1 |
+| 5 | 933 | 83 | 5 | 1.67 | 11.2 |
+| 6 | 1,059 | 96 | 6.83 | 2.28 | 11.0 |
+| 7 | 1,184 | 108 | 9.33 | 3.5 | 11.0 |
+| 8 | 1,308 | 121 | 11.94 | 4.78 | 10.8 |
+| 9 | 1,430 | 132 | 14.67 | 6.11 | 10.8 |
+| 10 | 1,562 | 144 | 16.25 | 6.88 | 10.8 |
+
 ## A3. Boundary check
 
 Not used for bracket 1. Bracket 2 compares its level 11 with level 10 of this file.
@@ -80,42 +95,48 @@ Target kills in the best dungeon: 1.9-4 in the first levels, 5-7 in the last lev
 
 Level 1 dungeon share of all fights: 30-50% (`crafter-curve.json`, `basicFightShareRange`).
 
+Kills to level in the best dungeon, as built: 1.9, 2.9, 2.9, 2.9, 3.9, 4.9, 4.9, 5.4, 5.4, 6.9 for levels 1 to 10. The numbers sit just under a whole kill on purpose, so a level-up leaves a bit of XP over. Each lower monster level adds about 1.5 kills, so a level 10 hero needs about 19 level 1 kills. Kills in each column grow by 1 to 4 from one level to the next, so no level jumps. The Goblin Chief pays 1,820 XP to a level 10 hero, about 0.9 of a level. The first town takes a hero from level 1 to the cap of 10.
+
+Normal fight length (one hero, best gear at the normal quality odds): about 15 s at levels 1-3, 16 s at level 5, 17 s at level 7 and 18 s at levels 9-10, with the run-up of about 2.5 s in the time. Boss: about 20 s.
+
 ## A5. Dungeons and monsters
 
-| Dungeon (id) | Level | Unlocks after | Party size | Normal monsters | Rare monster | Drops |
-|---|---|---|---|---|---|---|
-| Rat Cellar (`rat-cellar`) | 1 | - | 1 | Cave Rat | Rat King | Rawhide, Copper Ore |
-| Scarecrow Field (`scarecrow-field`) | 1 | Rat Cellar | 1 | Straw Scarecrow | Harvest King | Linen, Pine Wood |
-| Wolf Trail (`wolf-trail`) | 3 | Rat Cellar | 1 | Wolf | Alpha Wolf | Sharp Fang, Quartz 2% |
-| Sunken Mill (`sunken-mill`) | 5 | Wolf Trail | 1 | Mill Toad | Warty Elder | Toadskin, Quartz 3% |
-| Goblin Camp (`goblin-camp`) | 7 | Sunken Mill | 1 | Goblin | Goblin Captain | Bone Shard, Quartz 4% |
-| Old Wood Hollow (`old-wood-hollow`) | 9 | Goblin Camp | 1 | Bark Spider | Hollow Broodmother | Spider Silk, Quartz 5% |
-| Goblin Chief's Lair (`goblin-chief-lair`) | 10 | Goblin Camp | 2 | Hobgoblin (add, 0 or 1) | - | Coarse Sinew, Quartz 6% (add) and 15% (boss) |
+The level, unlock chain, party size, drops and bonus drops of each dungeon are in `data/dungeons.json` and `data/monsters.json`.
 
-Every dungeon from the Wolf Trail on also gives 1 random basic material in 15% of won fights.
+| Dungeon (id) | Normal monsters | Rare monster |
+|---|---|---|
+| Rat Cellar (`rat-cellar`) | Cave Rat | Rat King |
+| Scarecrow Field (`scarecrow-field`) | Straw Scarecrow | Harvest King |
+| Wolf Trail (`wolf-trail`) | Wolf | Alpha Wolf |
+| Sunken Mill (`sunken-mill`) | Mill Toad | Warty Elder |
+| Goblin Camp (`goblin-camp`) | Goblin | Goblin Captain |
+| Old Wood Hollow (`old-wood-hollow`) | Bark Spider | Hollow Broodmother |
+| Goblin Chief's Lair (`goblin-chief-lair`) | Hobgoblin (add, 0 or 1) | - |
 
-Monster stats as built at the dungeon level (damage per second is damage / attack seconds, before armour):
+Dungeon notes: the Rat Cellar is open at the start. The Scarecrow Field and the Wolf Trail both open after the first win in the Rat Cellar. The Scarecrow Field drops the wood, cloth and sinew that the first Archer, Mage and Priest recipes need.
 
-| Monster (id) | Dungeon | Rank | Level | HP | Damage | Armour | Resistance | Attack s | Dmg/s | Role or trick |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `cave-rat` | Rat Cellar | normal | 1 | 396 | 33 | 0 | 0 | 1.4 | 24 | fast, weak hits |
-| `rat-king` | Rat Cellar | rare | 1 | 538 | 45 | 0 | 0 | 1.4 | 32 | |
-| `straw-scarecrow` | Scarecrow Field | normal | 1 | 447 | 37 | 0 | 0 | 1.8 | 21 | slow |
-| `harvest-king` | Scarecrow Field | rare | 1 | 538 | 45 | 0 | 0 | 1.8 | 25 | |
-| `wolf` | Wolf Trail | normal | 3 | 641 | 57 | 2 | 0 | 1.4 | 41 | fast |
-| `alpha-wolf` | Wolf Trail | rare | 3 | 871 | 78 | 3 | 1 | 1.4 | 56 | |
-| `mill-toad` | Sunken Mill | normal | 5 | 970 | 86 | 5 | 2 | 1.8 | 48 | slow, heavy |
-| `warty-elder` | Sunken Mill | rare | 5 | 1,166 | 104 | 6 | 2 | 1.8 | 58 | |
-| `goblin` | Goblin Camp | normal | 7 | 1,184 | 108 | 9 | 4 | 1.65 | 65 | reference mob |
-| `goblin-captain` | Goblin Camp | rare | 7 | 1,480 | 135 | 12 | 4 | 1.65 | 82 | |
-| `bark-spider` | Old Wood Hollow | normal | 9 | 1,287 | 119 | 13 | 5 | 1.5 | 79 | factor 0.90, below the boss |
-| `hollow-broodmother` | Old Wood Hollow | rare | 9 | 1,788 | 165 | 18 | 8 | 1.5 | 110 | |
-| `hobgoblin` | Goblin Chief's Lair | normal (add) | 10 | 1,296 | 120 | 13 | 6 | 1.8 | 67 | factor 0.83, about a Goblin plus 10% |
-| `goblin-chief` | Goblin Chief's Lair | boss | 10 | 1,800 | 148 | 19 | 8 | 1.5 | 99 | spells, see A8 |
+Monsters. The stats are the curve anchors of A2 times `statFactor`, and the attack time, both in `data/monsters.json`. The drops and unlock chain are in `data/dungeons.json` and `data/monsters.json`.
+
+| Monster (id) | Dungeon | Rank | Level | Role or trick |
+|---|---|---|---|---|
+| `cave-rat` | Rat Cellar | normal | 1 | fast, weak hits |
+| `rat-king` | Rat Cellar | rare | 1 |  |
+| `straw-scarecrow` | Scarecrow Field | normal | 1 | slow |
+| `harvest-king` | Scarecrow Field | rare | 1 |  |
+| `wolf` | Wolf Trail | normal | 3 | fast |
+| `alpha-wolf` | Wolf Trail | rare | 3 |  |
+| `mill-toad` | Sunken Mill | normal | 5 | slow, heavy |
+| `warty-elder` | Sunken Mill | rare | 5 |  |
+| `goblin` | Goblin Camp | normal | 7 | reference mob |
+| `goblin-captain` | Goblin Camp | rare | 7 |  |
+| `bark-spider` | Old Wood Hollow | normal | 9 | factor 0.90, below the boss |
+| `hollow-broodmother` | Old Wood Hollow | rare | 9 |  |
+| `hobgoblin` | Goblin Chief's Lair | normal (add) | 10 | factor 0.83, about a Goblin plus 10% |
+| `goblin-chief` | Goblin Chief's Lair | boss | 10 | spells, see A8 |
 
 ## A6. Crafts (base items)
 
-The tier 1 recipes are in `base-items.json` and the level plan is in `design.md` section 6. Main hand weapon steps (crafter level: damage at that item level):
+The tier 1 recipes are in `base-items.json` and the level plan is in `docs/design/items-and-crafting.md` section 6. Main hand weapon steps (crafter level: damage at that item level):
 
 | Class | Weapons |
 |---|---|
@@ -127,21 +148,15 @@ Armour opens at Boots 1, Gloves 2, Helm 4, Shield 5 (light Leggings 5), Legs 6, 
 
 ## A7. Set materials and set effects
 
-| Set material | Dungeon | Bonus on each piece | Sell price | Sort position |
-|---|---|---|---|---|
-| Sharp Fang | Wolf Trail | +2 Agility | 4 | 2 |
-| Toadskin | Sunken Mill | +25 Health | 5 | 3 |
-| Bone Shard | Goblin Camp | +2 Defence | 6 | 4 |
-| Spider Silk | Old Wood Hollow | +2 Attack speed | 7 | 5 |
-| Coarse Sinew | Goblin Chief's Lair | +2 Strength | 8 | 6 |
+Each dungeon after the first ones drops one set material. The set bonus (`setBonus`), the sell price and the craft level offset of each set material are in `data/materials.json`. The dungeon is in the `drops` of its monsters (`data/monsters.json`). Sort position 1 is the basic recipe, then the set recipes by dungeon level.
 
 ## A8. Boss
 
 | Item | Target |
 |---|---|
-| Boss, HP, damage, armour, Resistance, attack seconds | Goblin Chief: 1,800 / 148 / 19 / 8, 1.5 s (common factor of the level 10 curve within 15%, validator) |
+| Boss stats | `flatStats` of `goblin-chief` in `data/monsters.json`: one common factor of the level 10 curve within 15% (validator) |
 | Adds | 0 or 1 Hobgoblin (50% each), level 10, factor 0.83 |
-| Spells | Cowing Roar: Weaken 20% for 8 s, every 20 s. War Cry: self Haste 25% for 8 s, every 24 s. Crushing Cleaver: 1.95 x attack (about 289) and Wound 85% for 9 s, every 12 s. |
+| Spells | `data/monster-spells.json`, ids `goblin-chief.*`: a weaken, a haste and a wound hit that answers heal spells |
 | Target priority | nearest enemy, like every unit |
 | Party size | exactly 2 |
 | Fight duration | about 20 s (`targetSeconds`) |
@@ -150,7 +165,9 @@ Armour opens at Boots 1, Gloves 2, Helm 4, Shield 5 (light Leggings 5), Legs 6, 
 | Win rate: full Magic gear | 55-75% |
 | Win rate: weapon only | 0-30% |
 | Win rate: one hero, no gear | 0% |
-| Drops | Coarse Sinew 3-5, Quartz 15%, Uncommon Ring (item level 7) 35% |
+| Drops | `drops` and `itemDrops` of `goblin-chief` in `data/monsters.json` |
+
+Notes: the Goblin Chief's Lair opens after the Goblin Camp is cleared, and a hero of level 8 can enter. The recommended level is 10-11, so an early party can try, at a risk. The boss is a normal monster lifted by one common factor of the level 10 curve (1,562 / 144 / 16 / 7). The armour is the one stat above the factor (x1.17, whole numbers; the validator allows it) because it cuts the weak weapon-only heroes hardest. The boss burst comes from its spells, not from a slow attack. The spells follow its attack (Crushing Cleaver is 1.95x, about 289 damage). The wound of Crushing Cleaver is the answer to heal spells, so the Priest and the Fighter cannot out-heal the boss. Two level 10 heroes win almost always: a full pair is the goal of the town. The dungeon screen shows the three spells with their numbers.
 
 ## A9. Class direction at level 10
 
@@ -210,12 +227,12 @@ Change a target only with the user's approval, and say why.
 | 6 | How does a hero choose a spell? | Slot 1, 2, 3, then the Ultimate, with one basic attack after each spell. The player sets the order. | decided |
 | 7 | Multi-hit spells lose much to flat armour (a Volley arrow at level 12 is about 34 before armour). | Raise the power per arrow (0.45 to about 0.55), or add an `armourPenetration` field to spells (about 30%). Decide in the spell pass of bracket 2. | open |
 | 8 | Do the Archer and the Mage kite (step back while they shoot)? | Not needed in bracket 1. They stand and shoot. | open |
+| 9 | Known limits of bracket 1: the class spread is large at levels 7-10 (the Mage loses much more HP than the Warrior, because it has less Defence and less HP). Multi-hit spells lose more to armour, because the armour comes off each hit: Quick Shot and Quick Stab (2 hits, power 0.99), Combo Strike (3 hits, power 0.7) and Volley (5 arrows at power 0.45). The Fighter pays most. | By design (`docs/design/heroes-and-spells.md` section 4). | decided |
 
 ---
 
 # Part B - Actuals (manual snapshot)
 
-<!-- generated:start -->
 
 Manual snapshot of `npm run scenarios` and `npm run balance`. 20 fights for each case unless said otherwise, so a single cell can move by 10-20 points between runs. Columns W / A / M are Warrior / Archer / Mage.
 
@@ -313,6 +330,5 @@ Levels 6-10 include the dungeon bonus drops. Quartz is the only extra sell mater
 
 ## Not measured
 
-B3, B6, B9, B10, B12-B17 need the `balance-report` tool.
+B3, B6, B9, B10, B12-B17 are not measured yet.
 
-<!-- generated:end -->

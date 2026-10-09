@@ -1,6 +1,6 @@
 # Combat and hero growth mechanism
 
-This file is the spec of combat and hero growth. `design.md` holds the game rules, and the data files in `data/` hold the numbers. The balance tables and simulator results of bracket 1 are in `docs/balance/bracket-01.md`. When a rule changes, change `design.md` in the same step as the data.
+This file is the spec of combat and hero growth. `docs/design.md` holds the game rules, and the data files in `data/` hold the numbers. The balance tables and simulator results of bracket 1 are in `docs/balance/bracket-01.md`. When a rule changes, change `docs/design.md` in the same step as the data.
 
 ## 1. Principles
 
@@ -121,7 +121,7 @@ If hero HP grows 1.5x and the fight gets 1.4x longer, monster damage grows about
 - `data/balance/monster-scaling.json` and `data/monsters.json`: the monster curve, `statFactor`, attack times and boss `flatStats`.
 - `data/base-items.json`, `data/affixes.json`, `data/balance/items.json`: gear stats and the gear budget (section 14).
 - `data/spells.json`, `data/monster-spells.json`, `data/balance/spells.json`: spells, costs, cooldowns and cast time.
-- `data/balance/battlefield.json`: the real-time battlefield (section 12).
+- `data/balance/battlefield.json`: the real-time battlefield (see `realtime-battle.md`).
 
 ## 10. Open questions
 
@@ -171,7 +171,7 @@ Normal monster curve (anchors in `balance/monster-scaling.json`, for `statFactor
 
 Targets (soft, tolerance 15%): monster HP / damage stays near 10-12. Resistance is about 40% of armour (a magic hero hits it, but all monsters hit physically). Crafted Magic gear stays clearly better than Common gear. The bands of HP lost and fight time are in the preset files in `tools/balance-sim/presets/` and in `docs/balance/bracket-01.md`.
 
-**Mob factors.** A fast mob hits more often, so each normal monster has `statFactor` = sqrt(attack seconds / 1.65): Cave Rat and Wolf 0.92, Goblin 1, Straw Scarecrow and Mill Toad 1.04. The Bark Spider (0.90) and the Hobgoblin (0.83) sit below this rule on purpose (see `design.md`). Rare monsters have `statFactor` 1.25.
+**Mob factors.** A fast mob hits more often, so each normal monster has `statFactor` = sqrt(attack seconds / 1.65): Cave Rat and Wolf 0.92, Goblin 1, Straw Scarecrow and Mill Toad 1.04. The Bark Spider (0.90) and the Hobgoblin (0.83) sit below this rule on purpose (see `docs/design.md`). Rare monsters have `statFactor` 1.25.
 
 **Boss.** The Goblin Chief has flat stats in `monsters.json`: HP 1,800, damage 148, armour 19, Resistance 8, a basic attack every 1.5 s. The level 10 curve is 1,562 / 144 / 16.25 / 6.88. Each stat stays within 15% of one common factor (the validator checks it). Its spells are Cowing Roar, War Cry and Crushing Cleaver (power 1.95, cooldown 12 s). The boss-fight bands are in `tools/balance-sim/presets/boss-fight.json`.
 
@@ -179,33 +179,7 @@ Open: the placeholder classes (Priest, Thief, Barbarian, Fighter) are not balanc
 
 ## 12. Real-time battle spec
 
-No rounds. Heroes and monsters move on a battlefield and fight in real time. The simulation uses fixed ticks and stores positions, so the same seed gives the same battle and playback stays deterministic. `simulateRealtimeBattle` runs the game, the balance simulator and the checks. The numbers are in `data/balance/battlefield.json`. The algorithm and the report format are in `docs/balance/realtime-battle.md`.
-
-| Topic | Rule |
-|---|---|
-| Opening | Both sides start apart. Melee units meet after about 2.5 seconds of running (`meleeMeetSeconds`). |
-| Range | Each class and monster has an attack range. A ranged class (Archer, Mage, Priest) reaches 0.38 of the battlefield length (`rangeFieldFraction`). A melee unit must touch its target. Abilities may raise the range later. |
-| Blocking | Units block each other. They cannot stand inside one another. A blocked unit slides sideways around the blocker. |
-| Targeting | A unit targets the nearest enemy and checks again when a closer enemy arrives. |
-| Start position | If the team has a melee unit, the ranged classes start 2 behind it (`rangedStartOffset`). Without melee units, all start on one line. |
-| Movement speed | A stat. All melee classes and all monsters have the same base value (6 per second). Ranged classes have 0.8 of it. Boots add +5% (percent points, no growth, no spread). Buffs come later. Haste does not change movement speed. |
-| Casting | A hero stands still while it casts (see section 3). |
-| Hit moment | Damage lands at half of the attack time. A ranged projectile is only visual and the damage lands at the release. |
-| Target switching | Switch only when the new enemy is clearly closer (margin 2), or when the current one is out of reach for 1 s, so units do not flicker between targets. |
-| Field shape | A shallow 2D field, 36 long and 8 deep. |
-| Spell range | The range of a spell is the attack range of the unit, unless the spell says otherwise (`spellRangeFieldFractions`). |
-| Monster attack time | Every normal, rare and boss monster has a basic attack time of 1.0 to 2.0 seconds (`minimumAttackSeconds`, `maximumAttackSeconds`). The validator checks the range. |
-| Boss | A normal monster lifted by one common factor of the curve. The burst comes from its spells. |
-| Duration targets | The run-up (about 2.5 s) counts in the fight length and in the duration targets. |
-
-Known limit: a side puts its units in one start line spread over the depth, so each unit gets depth 8 / (units + 1). With 8 or more units on one line this is less than the body width of 1.0 and the bodies overlap. A second rank or a deeper field is needed before such fights exist. Today a fight has at most 3 monsters (`maximumMonstersPerEncounter`) and a party of at most 2.
-
-Open questions (defaults if no answer):
-
-| Question | Default |
-|---|---|
-| Ranged units never kite: they stand and shoot even when a monster is on top of them. | Keep for now. |
-| Units act in input order within a tick, so the first unit wins a same-tick trade. | Keep. A tick is 0.05 s. |
+The full spec (rules, numbers, algorithm, report format) is in `docs/balance/realtime-battle.md`.
 
 ## 13. Later work (planned)
 

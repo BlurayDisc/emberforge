@@ -1,6 +1,6 @@
 # Real-time battle
 
-`simulateRealtimeBattle(units, random)` takes the units and a seeded random. `src/game/encounterPlanner.ts` plans each fight with it. The report is rebuilt from the seed and the party, so the save does not store it. The spec is section 12 of `combat-and-growth-mechanism.md`. The numbers are in `data/balance/battlefield.json` (loader: `src/content/balance/battlefield.ts`).
+`simulateRealtimeBattle(units, random)` takes the units and a seeded random. `src/game/encounterPlanner.ts` plans each fight with it. The report is rebuilt from the seed and the party, so the save does not store it. This file is the full spec. The numbers are in `data/balance/battlefield.json` (loader: `src/content/balance/battlefield.ts`).
 
 ## Numbers
 
@@ -25,11 +25,20 @@
 
 The Priest is ranged support (range 0.38 of the field, speed x0.8). Range and speed live in `battlefield.json` by class id (`classProfiles`) and for monsters by id (`monsterProfiles`) then rank (`monsterRankProfiles`). `spellRangeFieldFractions` can give one spell its own range (empty now). The unit input may carry `movementSpeedBonus` (0 by default; set from the boots, +5% each, by `heroToBattleUnit`).
 
+## Other rules
+
+- **Movement speed** is a stat. Boots add +5% (percent points, no growth, no spread). Buffs come later. Haste does not change movement speed.
+- **Casting:** a hero stands still while it casts (see section 3 of `combat-and-growth-mechanism.md`). Spell range is the attack range of the unit, unless the spell says otherwise (`spellRangeFieldFractions`).
+- **Monster attack time:** every normal, rare and boss monster has a basic attack time of 1.0 to 2.0 seconds (`minimumAttackSeconds`, `maximumAttackSeconds`). The validator checks the range.
+- **Boss:** a normal monster lifted by one common factor of the curve. The burst comes from its spells.
+- **Duration targets:** the run-up (about 2.5 s) counts in the fight length and in the duration targets.
+- **Known limit:** a side puts its units on one start line spread over the depth, so each unit gets depth 8 / (units + 1). With 8 or more units on one line the bodies overlap. A second rank or a deeper field is needed before such fights exist. Today a fight has at most 3 monsters (`maximumMonstersPerEncounter`) and a party of at most 2.
+
 ## Algorithm
 
 Each tick: burn ticks, then for each living unit in input order: regenerate resource, land a due hit or cast effect, and if free, decide.
 
-Decide: choose the enemy target (nearest by edge distance, keep the current one unless another is closer by the margin). Then in this order: a ready, paid, useful spell (a hero takes it in slot order, round robin, and only when a cast is due: after a cast the next action is a basic attack, see `heroCastOrder.ts` and the cast order rule in `design.md`; a monster takes the first ready spell in its list; enemy spells need the target in the spell range, default the attack range; self, ally and shield spells need no range); else a Priest heals a wounded ally (below the heal threshold, not itself); else a basic attack if the goal is in reach; else move one step toward the goal.
+Decide: choose the enemy target (nearest by edge distance, keep the current one unless another is closer by the margin). Then in this order: a ready, paid, useful spell (a hero takes it in slot order, round robin, and only when a cast is due: after a cast the next action is a basic attack, see `heroCastOrder.ts` and the cast order rule in `docs/design.md`; a monster takes the first ready spell in its list; enemy spells need the target in the spell range, default the attack range; self, ally and shield spells need no range); else a Priest heals a wounded ally (below the heal threshold, not itself); else a basic attack if the goal is in reach; else move one step toward the goal.
 
 Basic attack: the unit stands still for the attack time (base attack seconds / (1 + attack speed bonus), with the `minimumAttackSpeedFactor` guard). The hit lands at the hit fraction. Ranged hits land at release; the projectile is only visual. A target that is dead at the hit moment takes nothing. When the unit became ready between two ticks, the next attack starts at that exact time, so a run of attacks keeps the true rhythm.
 

@@ -18,3 +18,8 @@
 - Travel to a new town runs it again in the background. It first releases the icons of lower tiers (`releaseIconsBelowTier`) and the drawn backdrops and monsters (`releaseDrawnArt`). A released picture is drawn again when a screen asks for it.
 - A new kind of art that a panel builds on open must join the preloader task list, or use a cache.
 
+## Spell visuals
+
+- Spell looks are in `data/spell-visuals.json` (theme, cast, projectile, impact, buff, debuff, icon). The art is drawn in code in `src/render/spellEffects/`. The art ids are listed in `content/spellVisuals.ts`.
+- The spell gallery (`npm run gallery`) reads `SPELL_VISUALS`, so a new spell with a visual shows in it with no extra step. A new art id, a new theme or a new kind of effect (for example a new status) may need a change in `tools/spell-gallery/main.ts` too. The gallery is a dev tool. `vite build` does not include it.
+- When you add or change a spell animation: follow the Visual validation loop in CLAUDE.md. Use the gallery (`npm run gallery`) as the page to open. Keep the gallery working for the new effect kind.

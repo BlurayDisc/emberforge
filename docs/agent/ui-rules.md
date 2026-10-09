@@ -25,7 +25,7 @@ Read these before you touch any file in `src/ui/` or any CSS. Keep them true. Wh
 - The Back or Leave button of every panel and sub screen is in the sticky `panel-footer`, never at the end of a long list.
 
 **Mobile and desktop**
-- Mobile first, for a modern phone in portrait: a Pixel 9 (about 412x915) and the current iPhones (about 393x852 to 430x932). Check every change at 412x915 and at 1280x720 (`npm run shot -- <url> '<steps>' 412 915`). Do not squeeze a screen for a small old phone such as 360x640: no hidden text, no tiny pictures and no cut padding to save height. A screen that is taller than the phone scrolls, and its footer stays in view.
+- Mobile first, for a modern phone (2025 or newer) in portrait. The sizes are examples, not strict: a Pixel 10 is about 412x915 and current iPhones are about 393x852 to 430x932. Check every change at one such phone size and at 1280x720 (`npm run shot -- <url> '<steps>' 412 915`). Do not support small or old phones (for example 360x640): no hidden text, no tiny pictures and no cut padding to save height. A screen that is taller than the phone scrolls, and its footer stays in view.
 - Every action works with touch. No information only on hover (a `title` is an extra, not the only place).
 - Touch targets are about 44 px high. Tile grids use a fixed column count that fits a phone about 390 px wide (2 for big tiles, up to 6 for small tiles).
 - No sideways scroll. Wrap chips and buttons into rows.

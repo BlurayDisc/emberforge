@@ -1,120 +1,31 @@
-# Prompt: add a new bracket (town and levels)
+# Bracket build rules
 
-Reusable prompt. Every bracket has one balance file, `docs/balance/bracket-NN.md`, made from `docs/balance/_template.md`. Part A of that file (the targets) is the spec for the whole bracket. Part B (the actual numbers) comes from `npm run balance-report -- N` when that tool exists. Today Part B is a manual snapshot of `npm run scenarios` and `npm run balance`.
+Build rules for the `/new-bracket` skill (`SKILL.md` in this folder). The skill makes the next bracket of 10 levels (levels 11-20, 21-30, up to level 100). Do not read this file for normal work.
+
+Every bracket has one balance file, `docs/balance/bracket-NN.md`, made from `balance-template.md` in this folder. Part A of that file (the targets) is the spec for the whole bracket. Part B (the actual numbers) is a manual snapshot of `npm run scenarios` and `npm run balance`.
 
 Status: not used yet. The next bracket to build is bracket 2 (Barrowgate, levels 11-20).
 
-**TODO before the first use:** create the `npm run balance-report -- N` tool. It reads the balance simulator output and `data/`, and writes Part B of the balance file between the `generated` markers. It must not change the simulator code. As the first test, let it write Part B of `docs/balance/bracket-01.md`.
+## Parameters
 
-## How to use
-
-**Interactive (recommended):** type `/new-bracket`. The skill in `.claude/skills/new-bracket/SKILL.md` asks you the questions, writes Part A of the balance file, waits for your approval, and then builds the bracket. It uses the rules in this file. You do not paste anything.
-
-**Manual:** use the steps below if you want to run the prompt without the skill.
-
-1. Open a new session in the Emberforge folder.
-2. Copy one **paste block** from the examples below (bracket 2 or bracket 3), or fill in the empty one.
-3. Paste the block, and then paste everything under "Prompt" (the part inside the markdown fence) right after it.
-4. The agent writes Part A of the balance file and stops. You review it, change what you want, and say OK.
-5. The agent builds the bracket. It stops again if it hits an open question.
-
-## Parameters (the values you fill in)
-
-Take the town, region, families and boss from the table in `design.md` section 9.
+The skill collects these in its Stages 1 and 2. Take the town, region, families and boss from the table in `docs/design/world-and-dungeons.md` section 9.
 
 | Name | Meaning | How to get it |
 |---|---|---|
 | `N` | Bracket number, also the material tier | the next number after the last built bracket |
 | `FIRST` | First level | `10 x (N - 1) + 1` |
 | `LAST` | Last level, and the new level cap | `10 x N` |
-| `TOWN` | Town name and id | `design.md` section 9, or `data/towns.json` |
-| `REGION` | Region and biome | `design.md` section 9, or `data/towns.json` |
-| `FAMILIES` | Monster families | `design.md` section 9 |
-| `BOSS` | Boss of the bracket | `design.md` section 9 |
+| `TOWN` | Town name and id | `docs/design/world-and-dungeons.md` section 9, or `data/towns.json` |
+| `REGION` | Region and biome | `docs/design/world-and-dungeons.md` section 9, or `data/towns.json` |
+| `FAMILIES` | Monster families | `docs/design/world-and-dungeons.md` section 9 |
+| `BOSS` | Boss of the bracket | `docs/design/world-and-dungeons.md` section 9 |
 | `PREVIOUS_BOSS` | Boss that opens the town | the boss of bracket N - 1 |
-| `NEXT_TOWN` | Town of the next bracket, for lore links | `design.md` section 9 |
+| `NEXT_TOWN` | Town of the next bracket, for lore links | `docs/design/world-and-dungeons.md` section 9 |
 | `PARTNER_LEVEL` | Partner level in the boss scenario | `LAST - 3` |
 
-**Optional inputs.** Add any of these lines to the paste block when you have a view. If you leave them out, the agent proposes a value in A12 of the balance file.
+Use the parameters above wherever this text says N, FIRST, LAST, TOWN, REGION, FAMILIES, BOSS, PREVIOUS_BOSS, NEXT_TOWN or PARTNER_LEVEL. Treat the answers of the interview in `SKILL.md` Stage 2 as the user's decisions. For anything left open, propose a value in A12 of the balance file.
 
-| Optional input | Example |
-|---|---|
-| Number of dungeons | `DUNGEONS: 7, same shape as bracket 1` |
-| Mood and theme notes | `MOOD: cold, quiet, bones and grave fog. No gore.` |
-| Class unlock choices | `UNLOCKS: Barbarian moves to the second dungeon of this town` |
-| Art direction | `ART: WC3 style, muted greens and greys, see hero-art-direction memory` |
-| Things to keep out | `AVOID: no undead healers, no poison in this bracket` |
-| Special mechanic | `MECHANIC: one monster family that ignores 20% of Defence (armourPenetration)` |
-| Boss idea | `BOSS_IDEA: the Barrow Lord raises two skeleton adds every 30 s` |
-
-### Paste block: bracket 2
-
-```text
-PARAMETERS
-N: 2
-FIRST: 11
-LAST: 20
-TOWN: Barrowgate (barrowgate)
-REGION: Barrow Downs (barrow)
-FAMILIES: skeletons, wights, clay golems
-BOSS: Barrow Lord
-PREVIOUS_BOSS: Goblin Chief
-NEXT_TOWN: Mirewatch (marshes)
-PARTNER_LEVEL: 17
-
-OPTIONAL
-DUNGEONS: 7, same shape as bracket 1 (two level 11 dungeons at the start)
-MOOD: cold, quiet, bones and grave fog. No gore.
-UNLOCKS: move the Barbarian unlock to a dungeon of this town
-BOSS_IDEA: the Barrow Lord calls two skeleton adds, and a wound or weaken spell that fits the boss rules
-```
-
-### Paste block: bracket 3
-
-```text
-PARAMETERS
-N: 3
-FIRST: 21
-LAST: 30
-TOWN: Mirewatch (mirewatch)
-REGION: Marshes (marsh)
-FAMILIES: lizardfolk, bog wraiths, giant spiders
-BOSS: Bog Hag
-PREVIOUS_BOSS: Barrow Lord
-NEXT_TOWN: Deepdelve (mines)
-PARTNER_LEVEL: 27
-
-OPTIONAL
-DUNGEONS: 7
-MOOD: wet, green, slow and dangerous
-```
-
-### Paste block: empty
-
-```text
-PARAMETERS
-N:
-FIRST:
-LAST:
-TOWN:
-REGION:
-FAMILIES:
-BOSS:
-PREVIOUS_BOSS:
-NEXT_TOWN:
-PARTNER_LEVEL:
-
-OPTIONAL
-```
-
-## Prompt
-
-````markdown
-# Task: Add bracket N, the town TOWN (levels FIRST-LAST)
-
-The PARAMETERS block above this text holds the values. Use them wherever this text says N, FIRST, LAST, TOWN, REGION, FAMILIES, BOSS, PREVIOUS_BOSS, NEXT_TOWN or PARTNER_LEVEL. Treat the OPTIONAL lines as my decisions. For anything I left out, propose a value in A12 of the balance file.
-
-Read `CLAUDE.md`, `docs/balance/_template.md`, the balance file of the previous bracket, `design.md` (all of sections 4, 4b, 5, 6, 8, 9), the memory notes, and the matching files in `docs/agent/` (`architecture.md`, `balance-and-validation.md`, `runs-and-economy.md`, `languages.md`, `pixel-art.md`, `ui-rules.md`, `audio.md`) before you start. Read any `CONTEXT.md` file if one exists. Use the glossary words: Company, Run party, Bracket, Tier, Affix, Quality. Do not commit. Work on `main`. Do not write unit tests.
+Read `CLAUDE.md`, `balance-template.md`, the balance file of the previous bracket, `docs/design.md` and the topic files it lists for sections 4, 4b, 5, 6, 8 and 9, the memory notes, and the matching files in `docs/agent/` (`architecture.md`, `balance-and-validation.md`, `runs-and-economy.md`, `languages.md`, `pixel-art.md`, `ui-rules.md`, `audio.md`) before you start. Read any `CONTEXT.md` file if one exists. Use the glossary words: Company, Run party, Bracket, Tier, Affix, Quality. Do not commit. Work on `main`. Do not write unit tests.
 
 ## Goal
 
@@ -126,21 +37,21 @@ Use the previous bracket as the pattern for the shape only. Open its towns, dung
 
 ## Step 0: Write the targets (stop and show me)
 
-Do not edit `data/`, art or code yet.
+Before the user approves, you may write only the design records into `data/` (see step 2). Do not touch art, code, XP tables, recipes or preset files yet.
 
-1. If `npm run balance-report` does not exist, tell me. Building it is a separate task and comes first. It formats the output of the sim and `data/` into Part B of the balance file. It does not change the sim code.
-2. Copy `docs/balance/_template.md` to `docs/balance/bracket-NN.md` and fill in **Part A** completely (A1 to A12):
+1. Copy `balance-template.md` to `docs/balance/bracket-NN.md` and fill in **Part A** completely (A1 to A12):
    - A2: the curve for each measure, with its rule, its value at FIRST and LAST, and its projection at level 100. Fit each curve to the earlier brackets, and say how well it fits.
    - A3: the boundary check between bracket N-1 and N. Name any cliff and how you remove it.
-   - A4 to A10: the level-by-level pacing, the dungeons and monsters, the base items, the set materials and effects, the boss, the class Defence bands and the economy.
+   - A4 to A10: the level-by-level pacing, the dungeons and monsters (intent only), the base items, the set materials (intent only), the boss (intent and targets only), the class Defence bands and the economy.
    - A12: every open question, with a recommendation for each.
-3. Stop and wait for my OK. I may change the targets. After I approve, set the status to "targets approved". From then on Part A is the spec. Change it only with my approval.
+2. Write the design records into the data files, so each value has one copy: the town (`towns.json`), the dungeons (`dungeons.json`), the monsters with `statFactor`, `attackSeconds`, drops and the boss `flatStats` (`monsters.json`), the set materials with `setBonus` (`materials.json`), the boss spells (`monster-spells.json`), and the names in `en.json` and `zh.json`. Take the stats from the curves of A2. Then point to these files from A5, A7 and A8. Do not copy values into the balance file. A sprite key may point to art that Part 3 builds later, so `npm run validate` may fail on missing art only. Fix every other error.
+3. Stop and wait for my OK. I may change the targets or the records. After I approve, set the status to "targets approved". From then on Part A and these records are the spec. Change them only with my approval.
 
 ## Part 1: Level cap and progression
 
 - Raise `levelCap` in `data/balance/progression.json` to LAST.
 - Extend `experienceToNextLevelByLevel` and `normalKillExperienceByHeroLevelThenMonsterLevel` as absolute numbers (no formula, no gap factor). Keep the method of the earlier brackets: the kills to level in the best dungeon stay in the 5-7 range, with no jump between levels. Each lower monster level adds about 1.5 kills. Boss XP is x5 and rare XP is x3.
-- Check the pace with `npm run scenarios -- experience`. The numbers must match A2 and A4 of the balance file. Update the rules in design.md only when a rule changes, and put the numbers in the balance file.
+- Check the pace with `npm run scenarios -- experience`. The numbers must match A2 and A4 of the balance file. Update the rules in `docs/design/` only when a rule changes, and put the numbers in the balance file.
 - Add a `learnCostAnchors` anchor in `data/balance/spells.json` for the new levels, from `npm run scenarios -- economy`. The validator fails without it. The price must stay under 65% of the solo hero income.
 - Check `regenSecondsToFullAtMaxLevel` and the recovery rules. Keep the straight-line growth. Say what you changed.
 
@@ -148,18 +59,20 @@ Do not edit `data/`, art or code yet.
 
 - Add TOWN to the town data (`data/towns.json` may already hold the map position, biome and levels). Add everything else it needs: town buildings in `data/buildings.json` (workshop, merchant, tavern, academy, dungeon board), the town scene art and the biome battle backdrop (Pixi.js, cached textures; follow `docs/agent/pixel-art.md` and `docs/agent/architecture.md`; the current town code is in `src/render/town/`, `src/render/townView.ts` and `src/app/townPresenter.ts`), the town layout and the town labels, and the travel rules (time = 2 s + 1 s per bracket crossed, the town opens when PREVIOUS_BOSS is beaten).
 - Follow `docs/agent/ui-rules.md` for any screen you touch (no dynamic movement, footer buttons, mobile first).
-- Region: REGION. Monster families from design.md section 9: FAMILIES. Boss: BOSS.
-- Check the Hiring lock rule in design.md (`unlockAfterDungeonId` in `classes.json`). If a class should unlock in this town, decide it with me in A12 of the balance file.
+- Region: REGION. Monster families from `docs/design/world-and-dungeons.md` section 9: FAMILIES. Boss: BOSS.
+- Check the Hiring lock rule in `docs/design/heroes-and-spells.md` (`unlockAfterDungeonId` in `classes.json`). If a class should unlock in this town, decide it with me in A12 of the balance file.
 
 ## Part 3: Dungeons and monsters
+
+The dungeon, monster, boss and boss spell records already exist from Step 0. This part finishes them: art, sounds, drop tuning and checks.
 
 Follow section 9 rules exactly:
 - 6-8 dungeons. Levels rise by at most 2 per step (a step of 1 only at the end). The last dungeon is the boss dungeon at level LAST, for exactly 2 heroes (`minimumPartySize` 2). Use the same shape as the previous bracket, shifted by 10 levels.
 - Two dungeons open at the start of the bracket, so the player has a choice and the first-dungeon materials are easy to get.
 - 1-3 monster families for each dungeon, 1 rare monster for each normal dungeon. Every dungeon has its own monsters. A monster id and a sprite key appear in one dungeon only.
 - Draw each new creature in `render/creatureArt.ts` with a new sprite key. Cache the texture. Use only colours from `render/palette.ts` (add a colour there first if needed). Follow `docs/agent/pixel-art.md`.
-- Monster stats come from the per-level anchors in `data/balance/monster-scaling.json` (flat HP, damage, armour, resistance). A monster lifts all four together with one `statFactor`. Do not copy the earlier bracket stats. Add anchors for the new levels so the targets in design.md section 8 hold.
-- The boss fight has the same design as the earlier bosses: a boss with flat stats (`flatStats`) on one common factor of the curve, plus add monsters, and the fight length target of design.md section 8. Give BOSS its spells in `monster-spells.json`.
+- Monster stats come from the per-level anchors in `data/balance/monster-scaling.json` (flat HP, damage, armour, resistance). A monster lifts all four together with one `statFactor`. Do not copy the earlier bracket stats. Add anchors for the new levels so the targets in A11 of the previous balance file hold.
+- The boss fight has the same design as the earlier bosses: a boss with flat stats (`flatStats`) on one common factor of the curve, plus add monsters, and the fight length target in A11 of the previous balance file. Give BOSS its spells in `monster-spells.json`.
 - Each dungeon has `minimumHeroLevel` = monster level and `recommendedMaxLevel`.
 - Add the sounds for new monsters and armour types in `data/audio/sound-effects.json`. Follow `docs/agent/audio.md` (the audio engine is Tone.js).
 
@@ -168,7 +81,7 @@ Follow section 9 rules exactly:
 - Add tier N materials (bracket rule: tier N drops only from bracket N monsters). Main materials: Ore, Wood, Hide, Cloth, Gem. One set material for each dungeon after the first ones of the bracket. Base materials drop only in the first dungeons of the bracket. Every later dungeon drops exactly one set material. Two dungeons share at most 1 crafting material. Set material sell price rises with the dungeon level.
 - Add tier N base items, recipes and set recipes for all slots and all 7 classes (item level inside FIRST-LAST). A recipe uses one tier only. Recipes are locked by crafter level. Extend crafter levels so every recipe is craftable at crafter level LAST.
 - Add affixes for the new item levels in `data/affixes.json`. Add the Unique items for the bracket (2 per bracket).
-- Keep flat armour (`hit - armour`, a hit never does less than 1) and the gear budget in section 14 of `docs/balance/combat-and-growth-mechanism.md`: whole numbers, at least 2 Defence per armour piece, Heavy > Medium >= Light, and the weapon damage rule. Tier N armour values must keep each class on its direction in design.md ("Defence and class direction") and on the A9 targets at level LAST. If a class is off, fix it with data and say so in your report.
+- Keep flat armour (`hit - armour`, a hit never does less than 1) and the gear budget in section 14 of `docs/balance/combat-and-growth-mechanism.md`: whole numbers, at least 2 Defence per armour piece, Heavy > Medium >= Light, and the weapon damage rule. Tier N armour values must keep each class on its direction in docs/design.md ("Defence and class direction") and on the A9 targets at level LAST. If a class is off, fix it with data and say so in your report.
 - Keep the sell value rules and the upgrade factor. Check with `npm run scenarios -- economy`.
 - Add i18n keys for every new name in both `data/i18n/en.json` and `data/i18n/zh.json`.
 
@@ -180,11 +93,11 @@ Follow the Warrior blueprint (memory note `spell-rank-blueprint-warrior`) for al
 - Make sure every spell up to LAST is learnable at the Academy, that the loadout rules still work, and that each spell has a look in `data/spell-visuals.json` and sounds in `sound-effects.json` (the validator needs them up to the cap).
 - Any new spell animation: run `npm run gallery`, open it, take a screenshot, show me the page. Do not leave the dev server running.
 - Promotion (level 20 and level 50): if the command and screen are not built, do not build them here. Tell me in the report what is missing.
-- Keep each class identity (see design.md 4b).
+- Keep each class identity (see `docs/design/heroes-and-spells.md` 4b).
 
 ## Part 6: Balance (the key part)
 
-Use the same kind of targets as the earlier brackets (design.md section 8 and A11 of the previous balance file), with L = hero level FIRST-LAST. The targets are for the average of the Warrior, Archer and Mage:
+Use the same kind of targets as the earlier brackets (A11 of the previous balance file), with L = hero level FIRST-LAST. The targets are for the average of the Warrior, Archer and Mage:
 
 | Case | Target (bracket 1 bands) |
 |---|---|
@@ -199,12 +112,12 @@ Use the same kind of targets as the earlier brackets (design.md section 8 and A1
 | Boss fight length | about 20 s |
 
 - Update the preset files in `tools/balance-sim/presets/` (level range, partner levels, targets). Do not change the code.
-- Run `npm run balance` and `npm run scenarios` (all seven), then `npm run balance-report -- N`. It fills Part B of the balance file. Fix numbers in `data/` until every row in Part B passes against Part A. Read the tables yourself: a pass mark is not proof that the numbers make sense. Resource pools must still dip as in design.md (`resource-use`, the lowest point targets).
+- Run `npm run balance` and `npm run scenarios` (all seven). Write the results into Part B of the balance file by hand. Fix numbers in `data/` until every row in Part B passes against Part A. Read the tables yourself: a pass mark is not proof that the numbers make sense. Resource pools must still dip as in docs/design.md (`resource-use`, the lowest point targets).
 - Check that all earlier brackets did not change (table B16). Check that this bracket sits on the curves (table B17) and that the projection to level 100 still looks sane.
 
 ## Part 7: Lore
 
-- Write a short lore text for TOWN and REGION: who lives in the town, what the threat is, what BOSS is, how it links to PREVIOUS_BOSS and to NEXT_TOWN. Put it in design.md (inside section 9 or a short new section), and the player text in the i18n files (town description, dungeon names and descriptions, boss name, monster names).
+- Write a short lore text for TOWN and REGION: who lives in the town, what the threat is, what BOSS is, how it links to PREVIOUS_BOSS and to NEXT_TOWN. Put it in `docs/design/world-and-dungeons.md` (inside section 9 or a short new section), and the player text in the i18n files (town description, dungeon names and descriptions, boss name, monster names).
 - Dungeon names: one place and one mood for each. Keep the tone of the earlier towns.
 - Player text goes through `t()` with keys in both languages. Chinese uses full-width punctuation.
 
@@ -218,9 +131,9 @@ Use the same kind of targets as the earlier brackets (design.md section 8 and A1
 ## Part 9: Tools and docs
 
 - Add steps to `tools/smoke-play.ts`: travel to TOWN, clear the first dungeon, craft a tier N item, kill BOSS with a 2-hero party, load an old save.
-- Update `design.md` in the same step as each rule change. Rules stay in `design.md`. Numbers and tables stay in `docs/balance/bracket-NN.md`. Move a number out of `design.md` if you find one that belongs to a single bracket. Update `CLAUDE.md` only if a rule changes.
+- Update the matching file in `docs/design/` in the same step as each rule change. Rules stay in `docs/design/`. Numbers and tables stay in `docs/balance/bracket-NN.md`. Move a number out of `docs/design/` if you find one that belongs to a single bracket. Update `CLAUDE.md` only if a rule changes.
 - Update the validator if a new rule needs a check. Run `npm run validate` after every `data/` edit.
-- At the end, update the "Not used yet" line in `new-bracket-prompt.md` to say which brackets it built, and fix any step in this prompt, and any table in `_template.md`, that was wrong or missing.
+- At the end, update the "Not used yet" line in `build-rules.md` to say which brackets it built, and fix any step in this prompt, and any table in `balance-template.md`, that was wrong or missing.
 
 ## Execution order (subagents)
 
@@ -231,7 +144,7 @@ Use the same kind of targets as the earlier brackets (design.md section 8 and A1
   2. Creature art: the sprites for the monster list in A5 (`creatureArt.ts`, new colours in `palette.ts`).
   3. Spell looks and sounds: Part 5 entries in `spell-visuals.json` and `sound-effects.json`, and the gallery check.
   4. Lore and translations: Part 7, after the names are final. It writes the lore text and the `zh.json` keys.
-- Give each agent its own files and its own list of keys, taken from Part A of the balance file. Two agents never edit the same file. The main session merges `en.json`, `zh.json`, `design.md` and the balance file.
+- Give each agent its own files and its own list of keys, taken from the data files and Part A of the balance file. Two agents never edit the same file. The main session merges `en.json`, `zh.json`, the `docs/design/` files and the balance file.
 - Each agent follows CLAUDE.md, runs `npm run validate`, and reports the files it changed and anything it did not verify.
 - When all agents finish, the main session runs `npm run check` and the browser check. A subagent report is not proof: read the changed files before you say a part is done.
 
@@ -244,4 +157,3 @@ Use the same kind of targets as the earlier brackets (design.md section 8 and A1
 5. Your final report says what you did, what you did not verify (for example any screen you did not look at in a browser), and what is left.
 
 Work in small steps. Finish one part end to end before the next. Run `npm run check` after each part.
-````

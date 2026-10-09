@@ -2,7 +2,7 @@
 
 This file is the one story of the game, told in 10 chapters. One chapter is one Bracket and one town. It also holds the lore bible (the true history of the world), the cast, and the rules that keep the characters consistent.
 
-`design.md` stays the source of truth for game rules. This file is the source of truth for story, names and tone. The short texts in `data/i18n/` (prologue, castle tales, town, monster and material lore) must agree with this file. Section 9 lists the old texts that must change when the story is built into the game.
+`docs/design.md` stays the source of truth for game rules. This file is the source of truth for story, names and tone. The short texts in `data/i18n/` (prologue, castle tales, town, monster and material lore) must agree with this file. Section 9 lists the old texts that must change when the story is built into the game.
 
 Spoilers: this file tells the whole story, including every twist.
 
@@ -440,9 +440,9 @@ When the story is built in, these old texts disagree with this file:
 2. `lore.prologue.3` says the king "cannot leave his throne" and the knights "cannot leave the walls". These stay true as the king's claim. They are lies the player finds out in ch4 and ch10.
 3. `castle.chronicler.tale.2` and `castle.bishop.tale.2` should stay. They are clues. Do not make the chronicler or the bishop say more until ch8.
 4. `town.hollowbrook.lore` and the cellar tale should stay. They are seeds.
-5. The Barbarian's unlock dungeon moves to Barrowgate (already planned in `design.md`).
+5. The Barbarian's unlock dungeon moves to Barrowgate (already planned in `docs/design/heroes-and-spells.md`).
 
-Built so far: chapter 1 (8 story beats and a new 5-page prologue, each page with its own picture, plus the `story` music track, in English and Chinese). See the Story beats bullet in `design.md`. The Chinese game texts follow the names in `data/i18n/zh.json`.
+Built so far: chapter 1 (8 story beats and a new 5-page prologue, each page with its own picture, plus the `story` music track, in English and Chinese). See the Story beats bullet in `docs/design/screens-and-art.md`. The Chinese game texts follow the names in `data/i18n/zh.json`.
 
 New text keys for the other chapters, when they are built:
 
