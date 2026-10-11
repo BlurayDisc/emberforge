@@ -183,7 +183,7 @@ The full spec (rules, numbers, algorithm, report format) is in `docs/balance/rea
 
 ## 13. Later work (planned)
 
-- **Customisable hero sprites.** Equipped items change the look of the full-body figure and the battle sprite. Portraits stay as they are. This needs a link from items to looks in the data, layered sprite parts, and updates to `docs/agent/pixel-art.md`.
+- **Customisable hero sprites.** Equipped items change the look of the full-body figure and the battle sprite. Portraits stay as they are. This needs a link from items to looks in the data, layered sprite parts, and updates to `.claude/skills/art-change/pixel-art-rules.md`.
 
 ## 14. Gear budget
 

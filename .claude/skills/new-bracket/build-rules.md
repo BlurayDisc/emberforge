@@ -57,8 +57,8 @@ Before the user approves, you may write only the design records into `data/` (se
 
 ## Part 2: Town and world
 
-- Add TOWN to the town data (`data/towns.json` may already hold the map position, biome and levels). Add everything else it needs: town buildings in `data/buildings.json` (workshop, merchant, tavern, academy, dungeon board), the town scene art and the biome battle backdrop (Pixi.js, cached textures; follow `docs/agent/pixel-art.md` and `docs/agent/architecture.md`; the current town code is in `src/render/town/`, `src/render/townView.ts` and `src/app/townPresenter.ts`), the town layout and the town labels, and the travel rules (time = 2 s + 1 s per bracket crossed, the town opens when PREVIOUS_BOSS is beaten).
-- Follow `docs/agent/ui-rules.md` for any screen you touch (no dynamic movement, footer buttons, mobile first).
+- Add TOWN to the town data (`data/towns.json` may already hold the map position, biome and levels). Add everything else it needs: town buildings in `data/buildings.json` (workshop, merchant, tavern, academy, dungeon board), the town scene art and the biome battle backdrop (Pixi.js, cached textures; follow `.claude/skills/art-change/pixel-art-rules.md` and `docs/agent/architecture.md`; the current town code is in `src/render/town/`, `src/render/townView.ts` and `src/app/townPresenter.ts`), the town layout and the town labels, and the travel rules (time = 2 s + 1 s per bracket crossed, the town opens when PREVIOUS_BOSS is beaten).
+- Follow `.claude/skills/ui-change/rules.md` for any screen you touch (no dynamic movement, footer buttons, mobile first).
 - Region: REGION. Monster families from `docs/design/world-and-dungeons.md` section 9: FAMILIES. Boss: BOSS.
 - Check the Hiring lock rule in `docs/design/heroes-and-spells.md` (`unlockAfterDungeonId` in `classes.json`). If a class should unlock in this town, decide it with me in A12 of the balance file.
 
@@ -70,11 +70,11 @@ Follow section 9 rules exactly:
 - 6-8 dungeons. Levels rise by at most 2 per step (a step of 1 only at the end). The last dungeon is the boss dungeon at level LAST, for exactly 2 heroes (`minimumPartySize` 2). Use the same shape as the previous bracket, shifted by 10 levels.
 - Two dungeons open at the start of the bracket, so the player has a choice and the first-dungeon materials are easy to get.
 - 1-3 monster families for each dungeon, 1 rare monster for each normal dungeon. Every dungeon has its own monsters. A monster id and a sprite key appear in one dungeon only.
-- Draw each new creature in `render/creatureArt.ts` with a new sprite key. Cache the texture. Use only colours from `render/palette.ts` (add a colour there first if needed). Follow `docs/agent/pixel-art.md`.
+- Draw each new creature in `render/creatureArt.ts` with a new sprite key. Cache the texture. Use only colours from `render/palette.ts` (add a colour there first if needed). Follow `.claude/skills/art-change/pixel-art-rules.md`.
 - Monster stats come from the per-level anchors in `data/balance/monster-scaling.json` (flat HP, damage, armour, resistance). A monster lifts all four together with one `statFactor`. Do not copy the earlier bracket stats. Add anchors for the new levels so the targets in A11 of the previous balance file hold.
 - The boss fight has the same design as the earlier bosses: a boss with flat stats (`flatStats`) on one common factor of the curve, plus add monsters, and the fight length target in A11 of the previous balance file. Give BOSS its spells in `monster-spells.json`.
 - Each dungeon has `minimumHeroLevel` = monster level and `recommendedMaxLevel`.
-- Add the sounds for new monsters and armour types in `data/audio/sound-effects.json`. Follow `docs/agent/audio.md` (the audio engine is Tone.js).
+- Add the sounds for new monsters and armour types in `data/audio/sound-effects.json`. Follow `.claude/skills/audio-change/audio-rules.md` (the audio engine is Tone.js).
 
 ## Part 4: Materials, items and crafting
 

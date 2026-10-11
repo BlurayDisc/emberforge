@@ -1,6 +1,6 @@
 # UI rules (layout, buttons, mobile and desktop)
 
-Read these before you touch any file in `src/ui/` or any CSS. Keep them true. When the user agrees a new UI rule, add it here in the same step.
+Keep these rules true. When the user agrees a new UI rule, add it here in the same step.
 
 **Screen order (top to bottom)**
 1. Tabs, if the screen has them (heroes, settings).

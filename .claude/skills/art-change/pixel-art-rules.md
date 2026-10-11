@@ -22,4 +22,4 @@
 
 - Spell looks are in `data/spell-visuals.json` (theme, cast, projectile, impact, buff, debuff, icon). The art is drawn in code in `src/render/spellEffects/`. The art ids are listed in `content/spellVisuals.ts`.
 - The spell gallery (`npm run gallery`) reads `SPELL_VISUALS`, so a new spell with a visual shows in it with no extra step. A new art id, a new theme or a new kind of effect (for example a new status) may need a change in `tools/spell-gallery/main.ts` too. The gallery is a dev tool. `vite build` does not include it.
-- When you add or change a spell animation: follow the Visual validation loop in CLAUDE.md. Use the gallery (`npm run gallery`) as the page to open. Keep the gallery working for the new effect kind.
+- When you add or change a spell animation: follow the loop in `SKILL.md`. Use the gallery (`npm run gallery`) as the page to open. Keep the gallery working for the new effect kind.
