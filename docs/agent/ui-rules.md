@@ -71,4 +71,4 @@ Read these before you touch any file in `src/ui/` or any CSS. Keep them true. Wh
 - Text on the stage uses `render/uiText.ts`. It draws at screen resolution, so letters stay sharp, and it takes its fonts from the same CSS variables as the menus.
 - The town has 3 pages (west, castle, east) of 180 logical pixels. Drag with a finger or the mouse, the wheel, the arrow keys and the arrow buttons all end on a page, centred in the view. One swipe moves one page. The town opens on the castle page. If a building does not fit a page, move the building in `data/buildings.json`.
 - `app/townPresenter.ts` gives the town its words (sign names, hint, mill timer) from the game state and the language. `render/` never imports `ui/` or the state.
-- Test the town with `npm run shot` at about 360x640 and 1512x772. The tool can tap, drag and hover with the real mouse.
+- Test the town with `npm run shot` at a modern phone size (about 412x915) and at 1280x720. The tool can tap, drag and hover with the real mouse.

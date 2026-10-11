@@ -36,8 +36,8 @@ Read only the file for the area you work in. Do not load them all.
 | `npm run gallery` | Spell gallery in the browser. |
 | `npm run story-gallery` | Story gallery in the browser: the prologue, every story beat and every castle tale, in English and Chinese, with a button that opens each one as in the game. Dev tool, not in `vite build`. |
 | `npm run sprites` | Headless contact sheet PNG of heroes, creatures or backdrops. No browser. |
-| `npm run shot` | Real headless Chrome: opens a URL, runs steps (click, wait, screenshot), saves PNGs to `out/shots/`. Use it to run the game or the gallery. See Visual validation. |
-| `npm run audio-report` | Renders every music track and sound effect offline in headless Chrome. Prints peak, level, lead silence, length and rough pitch. Start `npm run dev` first and pass its URL. |
+| `npm run shot` | Real headless Chrome: opens a URL, runs steps (click, wait, screenshot), saves PNGs to `out/shots/`. Use it to run the game or the gallery. See Visual validation. It stops its own Chrome on exit. If a Chrome is left, run `pkill -f emberforge-chrome-`. |
+| `npm run audio-report` | Renders every music track and sound effect offline in headless Chrome. Prints peak, level, lead silence, length and rough pitch. Start `npm run dev` first and pass its URL. It stops its own Chrome on exit, like `shot`. |
 | `npm run animation` | Headless frame strip PNG of a spell (`warrior.cleave`) or one effect (`impact:steel-cleave:steel`). |
 | `npm run validate` | Data validator. `check` and `build` run it too. |
 
