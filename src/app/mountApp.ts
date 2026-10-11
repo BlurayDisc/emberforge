@@ -8,8 +8,8 @@ import { playAnimalVoice } from './animalVoice';
 import { createCastleView } from '../render/castleView';
 import { createPixelStage } from '../render/pixelStage';
 import { createTownPresenter } from './townPresenter';
-import { createStageHudPresenter } from './stageHudPresenter';
 import { createBottomBar } from '../ui/bottomBar';
+import { createTopBar } from '../ui/topBar';
 import { createCastleOverlay } from '../ui/castleOverlay';
 import { element } from '../ui/dom';
 import { createPanelHost } from '../ui/panelHost';
@@ -26,14 +26,13 @@ export function mountApp(root: HTMLElement, store: GameStore): void {
   const panelHost = createPanelHost(store);
   const hud = createRunHud(store, () => panelHost.open('dungeons'));
   const stageArea = element('div', 'stage-area', hud.element, canvasHost, hud.logElement, panelHost.element, panelHost.notificationsElement, getModalHost(), createBuildBadge());
-  root.replaceChildren(stageArea, createBottomBar(store, panelHost));
+  root.replaceChildren(createTopBar(store, panelHost), stageArea, createBottomBar(store, panelHost));
 
   setWideTownView(loadWideTownView());
   const stage = createPixelStage(canvasHost);
 
   const battleView = createBattleView(stage);
   const townView = createTownPresenter(store, stage, panelHost);
-  createStageHudPresenter(store, stage);
   const castleView = createCastleView(stage, playAnimalVoice);
   const castleOverlay = createCastleOverlay({
     screenCount: CASTLE_SCREEN_COUNT,

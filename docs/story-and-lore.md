@@ -428,19 +428,24 @@ The cliffs, the abyss, demons, titans and dragons. The Ember Forge is a black an
 - **Never let the Smith be a chosen one.** Nobody says "you are the one". People say "any hammer will do".
 - **No kiss, no confession.** The ending only hints. A look, a shared silence, a ribbon, a joke that lands softer than it should.
 
-Style for game text: keep the lines short and plain, as the existing castle tales do. A person speaks in the voice from section 4. Names and places are written exactly as in this file.
+Style for game text:
+
+- Keep the lines short and plain. A person speaks in the voice from section 4. Names and places are written exactly as in this file.
+- Tell it like a story, in time order. One person tells one thing they saw or know, as a fact. No "perhaps", "some say" or "my guess is". A person may say "I believe" once, and must then say they have no proof.
+- Say a lore word (Ember Forge, Long Dark, Wyrm, ember bell) with its plain meaning the first time the player meets it. The opening story does this for the Forge, the Long Dark and the Wyrm.
+- Give one clear time: "nine nights ago" for the abduction. Do not mix it with other dates in the same text.
+- A clue is a plain fact that the player can add up later. It is not a riddle.
 
 ---
 
-## 9. What must change in the game text later
+## 9. Game text to keep and new text keys
 
-When the story is built in, these old texts disagree with this file:
+When the story is built in, keep these texts as they are:
 
-1. `lore.prologue.4` says "You are that smith, with a small shop in Hollowbrook and an old hammer from your teacher." It must say the Smith came to Hollowbrook from a hamlet nobody remembers, with a dead teacher's hammer.
-2. `lore.prologue.3` says the king "cannot leave his throne" and the knights "cannot leave the walls". These stay true as the king's claim. They are lies the player finds out in ch4 and ch10.
-3. `castle.chronicler.tale.2` and `castle.bishop.tale.2` should stay. They are clues. Do not make the chronicler or the bishop say more until ch8.
-4. `town.hollowbrook.lore` and the cellar tale should stay. They are seeds.
-5. The Barbarian's unlock dungeon moves to Barrowgate (already planned in `docs/design/heroes-and-spells.md`).
+1. `lore.prologue.4` and `castle.king.tale.3` say the king "cannot leave his throne" and the knights "cannot leave the walls". These stay true as the king's claim. They are lies the player finds out in ch4 and ch10.
+2. `castle.chronicler.tale.2` and `castle.bishop.tale.2` stay. They are clues. Do not make the chronicler or the bishop say more until ch8.
+3. `town.hollowbrook.lore` and the cellar tale stay. They are seeds.
+4. The Barbarian's unlock dungeon moves to Barrowgate (already planned in `docs/design/heroes-and-spells.md`).
 
 Built so far: chapter 1 (8 story beats and a new 5-page prologue, each page with its own picture, plus the `story` music track, in English and Chinese). See the Story beats bullet in `docs/design/screens-and-art.md`. The Chinese game texts follow the names in `data/i18n/zh.json`.
 

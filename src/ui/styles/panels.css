@@ -261,9 +261,15 @@
 
 .hero-identity-text {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+.hero-identity-text > .bar {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .result-card {
@@ -431,15 +437,25 @@
   align-items: flex-start;
 }
 
-/* Each upgrade level has its own colour, from green at +1 to red at +7. The top levels glow. */
-.upgrade-suffix { font-weight: 700; }
-.upgrade-1 { color: var(--upgrade-1); }
-.upgrade-2 { color: var(--upgrade-2); }
-.upgrade-3 { color: var(--upgrade-3); }
-.upgrade-4 { color: var(--upgrade-4); }
-.upgrade-5 { color: var(--upgrade-5); text-shadow: 0 0 6px var(--upgrade-5); }
-.upgrade-6 { color: var(--upgrade-6); text-shadow: 0 0 6px var(--upgrade-6); }
-.upgrade-7 { color: var(--upgrade-7); text-shadow: 0 0 8px var(--upgrade-7); }
+/* The upgrade suffix is a small framed tag: ink fill, hard 2 px frame. Three colour bands (+1 to +3, +4 to +5, +6 to +7).
+   Regular weight, because faux bold smears the pixel font. */
+.upgrade-suffix {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 4px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--upgrade-band);
+  color: var(--upgrade-band);
+  font-size: 0.8em;
+  font-weight: 400;
+  line-height: 1.3;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-shadow: none;
+}
+.upgrade-1, .upgrade-2, .upgrade-3 { --upgrade-band: var(--silver); }
+.upgrade-4, .upgrade-5 { --upgrade-band: var(--gold); }
+.upgrade-6, .upgrade-7 { --upgrade-band: var(--copper); }
 
 .item-portrait {
   flex: none;
@@ -1246,7 +1262,6 @@
 .victory-card-title { display: flex; flex-direction: column; gap: 2px; }
 .victory-hero-name { font-family: var(--font-title); font-size: 26px; color: var(--gold); }
 .victory-hero-class { color: var(--parchment); }
-.victory-power { font-weight: 700; color: var(--copper); }
 
 .victory-card-section {
   color: var(--gold);
@@ -1424,8 +1439,23 @@
 }
 
 .panel-host:has(.panel-world) {
-  padding: 4px;
+  padding: 0 4px 4px;
   align-items: stretch;
+}
+
+/* The map panel sits right under the top bar, with no gap. */
+.panel-world {
+  margin-top: 0;
+}
+
+/* Two joined choices, one active: the stats view of a hero (total, or base plus item bonus). */
+.view-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.view-toggle .action-button {
+  margin: 0;
 }
 
 /* Every dungeon row has the room of the tallest state (a fight with a bar and two buttons), so a row that changes state moves no row below it. */
@@ -1662,6 +1692,7 @@
   .crafter-tile {
     flex-direction: column;
     flex-wrap: nowrap;
+    justify-content: center;
     align-items: stretch;
     text-align: center;
     padding: 4px;

@@ -10,7 +10,7 @@ import { createMonsterUnit } from './monsterUnit';
 
 function pickMonsterIds(dungeon: DungeonDefinition, partySize: number, random: Random): string[] {
   if (dungeon.bossMonsterId !== null) {
-    const addCount = random.nextInt(0, Math.min(MAXIMUM_BOSS_ADDS, partySize - 1));
+    const addCount = Math.min(MAXIMUM_BOSS_ADDS, partySize - 1);
     const adds = Array.from({ length: addCount }, () => random.pick(dungeon.monsterIds));
     return [dungeon.bossMonsterId, ...adds];
   }

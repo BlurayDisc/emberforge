@@ -17,7 +17,6 @@ export interface RunHud {
 
 export function createRunHud(store: GameStore, openDungeonList: () => void): RunHud {
   const bar = element('div', 'run-bar');
-  const title = element('div', 'hud-title');
   const logTitle = element('div', 'log-title');
   const logLines = element('div', 'log-lines');
   const log = element('div', 'battle-log', logTitle, logLines);
@@ -29,7 +28,7 @@ export function createRunHud(store: GameStore, openDungeonList: () => void): Run
     focusRun(null);
     openDungeonList();
   });
-  bar.append(title, element('div', 'hud-controls', townButton, stopButton));
+  bar.append(element('div', 'hud-controls', townButton, stopButton));
 
   const refresh = (): void => {
     const runNumber = focusedRunNumber();
@@ -38,7 +37,6 @@ export function createRunHud(store: GameStore, openDungeonList: () => void): Run
     log.style.display = run ? 'flex' : 'none';
     bar.parentElement?.classList.toggle('run-active', run !== undefined);
     if (!run) return;
-    title.textContent = t(`dungeon.${run.dungeonId}`);
     stopButton.textContent = t('dungeons.runAway');
     townButton.textContent = t('hud.backToTown');
     logTitle.textContent = t('log.title');

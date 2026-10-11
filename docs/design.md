@@ -2,7 +2,7 @@
 
 Working title. Pixel-art, real-time-battle, Middle-earth-style fantasy. You lead a company of heroes and run a workshop.
 
-This file and the files in `docs/design/` hold the game rules and the current numbers. They do not hold code layout or change history (see `docs/agent/` and git). Numbers that live in `data/` are named by their JSON key. Balance tables for each bracket (curves, pacing, dungeons, crafts, boss, simulator results) live in `docs/balance/bracket-NN.md`.
+This file and the files in `docs/design/` hold the game rules and the current numbers. They do not hold code layout or change history (see `docs/architecture.md` and git). Numbers that live in `data/` are named by their JSON key. Balance tables for each bracket (curves, pacing, dungeons, crafts, boss, simulator results) live in `docs/balance/bracket-NN.md`.
 
 Sections 1-3, 10 and 12 are in this file. The other sections are in `docs/design/`, and each has a stub heading below. Read the topic file only for the area you work in.
 

@@ -3,7 +3,7 @@ import type { ClassId } from '../../model/hero';
 import type { EquipmentSlot, Item } from '../../model/item';
 import type { HeroSheet } from '../../model/heroSheet';
 import { classIdsThatCanUse, equipItem, findEquipProblem, slotsForItem, type EquipProblem } from '../../systems/equipment';
-import { computeHeroPower, computeHeroSheet } from '../../systems/stats';
+import { computeHeroSheet } from '../../systems/stats';
 
 export interface SlotCandidate {
   item: Item;
@@ -14,8 +14,6 @@ export interface EquipComparison {
   slot: EquipmentSlot;
   before: HeroSheet;
   after: HeroSheet;
-  powerBefore: number;
-  powerAfter: number;
 }
 
 // The classes that may use this item. A list of every class means the item has no class limit.
@@ -46,7 +44,5 @@ export function compareEquip(state: GameState, heroId: string, item: Item, reque
     slot,
     before: computeHeroSheet(hero),
     after: computeHeroSheet(equipped),
-    powerBefore: computeHeroPower(hero),
-    powerAfter: computeHeroPower(equipped),
   };
 }

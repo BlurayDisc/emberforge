@@ -1,8 +1,9 @@
 import { findSpellVisual, type SpellIconMotif } from '../content/spellVisuals';
-import { findSpell } from '../content/spells';
+import { familyIdOf, findSpell } from '../content/spells';
 import type { ClassId } from '../model/hero';
 import type { SpellDefinition } from '../model/spell';
 import { drawAscii, drawingToImage } from './pixelDraw';
+import { GLYPH_BY_FAMILY_ID } from './spellGlyphs/allGlyphs';
 import { SPELL_ICON_GLYPHS } from './spellIconGlyphs';
 
 interface IconTheme {
@@ -30,7 +31,6 @@ const DAMAGE_MOTIF_BY_CLASS: Readonly<Record<ClassId, SpellIconMotif>> = { warri
 const STATUS_MOTIFS: Readonly<Record<string, SpellIconMotif>> = { guard: 'shield', haste: 'wind', weaken: 'weaken', slow: 'snow', wound: 'drop' };
 
 const ICON_SIZE = 16;
-const GLYPH_SIZE = 12;
 const ULTIMATE_RING_COLOR = '#f2c14e';
 const imageCache = new Map<string, HTMLCanvasElement>();
 
@@ -42,27 +42,35 @@ function motifAndThemeOf(spell: SpellDefinition): { motif: SpellIconMotif; theme
   return { motif: look?.icon ?? fallbackMotif, themeId: look?.theme ?? THEME_BY_CLASS[spell.classId] };
 }
 
-// A framed square: a dark border, the theme colour behind, and the picture in the middle. An ultimate has a gold ring.
-function iconRows(motif: SpellIconMotif, isUltimate: boolean): string[] {
-  const glyph = SPELL_ICON_GLYPHS[motif];
-  const ring = isUltimate ? 'g' : 'b';
-  const innerWidth = ICON_SIZE - 2;
-  const ringRow = `o${ring.repeat(innerWidth)}o`;
-  const margin = (ICON_SIZE - GLYPH_SIZE) / 2 - 1;
-  const glyphRows = glyph.map((row) => row.replaceAll('.', 'b')).map((row) => `o${ring}${'b'.repeat(margin - 1)}${row}${'b'.repeat(margin - 1)}${ring}o`);
-  const paddingRow = `o${ring}${'b'.repeat(innerWidth - 2)}${ring}o`;
-  return [`o${'o'.repeat(innerWidth)}o`, ringRow, ...Array.from({ length: margin - 1 }, () => paddingRow), ...glyphRows, ...Array.from({ length: margin - 1 }, () => paddingRow), ringRow, `o${'o'.repeat(innerWidth)}o`];
+// A framed square: a dark outline, the theme colour behind, and a 14 by 14 picture inside. An ultimate has a gold outline.
+function iconRows(glyphRows: readonly string[], isUltimate: boolean): string[] {
+  const outline = isUltimate ? 'g' : 'o';
+  const edge = outline.repeat(ICON_SIZE);
+  return [edge, ...glyphRows.map((row) => `${outline}${row.replaceAll('.', 'b')}${outline}`), edge];
 }
 
 export function createSpellIcon(spellId: string, scale = 3): HTMLImageElement {
+  return drawingToImage({ canvas: drawSpellIcon(spellId), fill: () => undefined }, scale);
+}
+
+function paddedMotifRows(motif: SpellIconMotif): string[] {
+  const blankRow = '.'.repeat(ICON_SIZE - 2);
+  return [blankRow, ...SPELL_ICON_GLYPHS[motif].map((row) => `.${row}.`), blankRow];
+}
+
+// Ranks of one family share one picture.
+export function drawSpellIcon(spellId: string): HTMLCanvasElement {
   const spell = findSpell(spellId);
   if (!spell) throw new Error(`Unknown spell: ${spellId}`);
-  const cached = imageCache.get(spellId);
-  if (cached) return drawingToImage({ canvas: cached, fill: () => undefined }, scale);
-  const { motif, themeId } = motifAndThemeOf(spell);
-  const theme = ICON_THEMES[themeId] ?? ICON_THEMES.steel as IconTheme;
-  const legend = { o: '#17110d', w: '#ffffff', l: theme.light, m: theme.main, d: theme.dark, b: theme.background, g: ULTIMATE_RING_COLOR };
-  const canvas = drawAscii(iconRows(motif, spell.isUltimate), legend).canvas;
-  imageCache.set(spellId, canvas);
-  return drawingToImage({ canvas, fill: () => undefined }, scale);
+  const cacheKey = `${familyIdOf(spell)}:${spell.isUltimate}`;
+  const cached = imageCache.get(cacheKey);
+  if (cached) return cached;
+  const { motif, themeId: classThemeId } = motifAndThemeOf(spell);
+  const glyph = GLYPH_BY_FAMILY_ID[familyIdOf(spell)];
+  const themeId = glyph?.theme ?? findSpellVisual(familyIdOf(spell))?.theme ?? classThemeId;
+  const theme = ICON_THEMES[themeId] ?? (ICON_THEMES.steel as IconTheme);
+  const legend = { o: '#17110d', k: '#000000', w: '#ffffff', l: theme.light, m: theme.main, d: theme.dark, b: theme.background, g: ULTIMATE_RING_COLOR, r: '#c0392b' };
+  const canvas = drawAscii(iconRows(glyph?.rows ?? paddedMotifRows(motif), spell.isUltimate), legend).canvas;
+  imageCache.set(cacheKey, canvas);
+  return canvas;
 }

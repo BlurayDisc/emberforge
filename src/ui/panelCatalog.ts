@@ -16,6 +16,8 @@ import type { IconName } from './pixelIcons';
 export interface PanelDefinition {
   id: string;
   barIcon: IconName | null;
+  // A panel with a top bar icon opens from the top bar instead of the bottom bar.
+  topBarIcon?: IconName;
   render: PanelRenderer;
   onClose?: () => void;
   isLocked?: (state: GameState) => boolean;
@@ -25,13 +27,13 @@ export const PANEL_CATALOG: readonly PanelDefinition[] = [
   { id: 'heroes', barIcon: 'heroes', render: renderHeroesPanel, onClose: resetHeroesTab },
   { id: 'inventory', barIcon: 'inventory', render: renderInventoryPanel, onClose: resetInventorySelection },
   { id: 'workshop', barIcon: 'workshop', render: renderWorkshopPanel, onClose: resetWorkshopSelection },
-  { id: 'merchant', barIcon: 'merchant', render: renderMerchantPanel, onClose: resetMerchantSelection },
   { id: 'dungeons', barIcon: 'dungeons', render: renderDungeonsPanel },
-  { id: 'world', barIcon: 'world', render: renderWorldPanel },
-  { id: 'settings', barIcon: 'menu', render: renderSettingsPanel },
+  { id: 'academy', barIcon: 'academy', render: renderAcademyPanel },
+  { id: 'merchant', barIcon: 'merchant', render: renderMerchantPanel, onClose: resetMerchantSelection },
+  { id: 'bank', barIcon: 'bank', render: renderBankPanel },
+  { id: 'world', barIcon: null, topBarIcon: 'world', render: renderWorldPanel },
+  { id: 'settings', barIcon: null, topBarIcon: 'gear', render: renderSettingsPanel },
   { id: 'tavern', barIcon: null, render: renderTavernPanel, isLocked: (state) => state.company.length === 0 },
-  { id: 'bank', barIcon: null, render: renderBankPanel },
-  { id: 'academy', barIcon: null, render: renderAcademyPanel },
   { id: 'mill', barIcon: null, render: renderMillPanel },
 ];
 

@@ -2,7 +2,8 @@ import { describeHero, hasBankUnlock } from '../../game';
 import type { Hero } from '../../model/hero';
 import { ATTRIBUTE_BAR_BASE, ATTRIBUTE_BAR_PER_LEVEL } from '../../content/balance/heroSheet';
 import type { HeroSheet } from '../../model/heroSheet';
-import { actionButton, element, percentBar } from '../dom';
+import { actionButton, element } from '../dom';
+import { attributeBar } from '../attributeBar';
 import { createExperienceBar, createLiveHealthBar, createResourceBar } from '../liveBars';
 import { className, heroDisplayName } from '../displayNames';
 import { t } from '../i18n';
@@ -27,6 +28,7 @@ const ATTRIBUTE_BARS: ReadonlyArray<{ stat: 'strength' | 'agility' | 'intelligen
 
 let selectedHeroId: string | null = null;
 let activeTab: HeroTab = 'stats';
+let isItemBonusSplit = false;
 
 export function resetHeroesTab(): void {
   activeTab = 'stats';
@@ -60,12 +62,32 @@ function statisticRow(label: string, value: string): HTMLElement {
 
 function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
-  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', heroStatLabel(stat, hero.classId)), createStatValueWithItemBonus(stat, view.sheet[stat], view.itemBonus[stat])));
+  const mainRows = MAIN_STAT_ORDER.map((stat) => element('div', 'stat-table-row', element('span', 'stat-name', heroStatLabel(stat, hero.classId)), createStatValueWithItemBonus(stat, view.sheet[stat], view.itemBonus[stat], isItemBonusSplit)));
   const showAttributeGrowth = hasBankUnlock(context.store.getState(), 'attributeGrowth');
   const attributeMaximum = ATTRIBUTE_BAR_BASE + ATTRIBUTE_BAR_PER_LEVEL * hero.level;
-  const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) =>
-    element('div', 'attribute-row', element('span', 'stat-name', statName(stat)), percentBar(view.sheet[stat] / attributeMaximum, barClass), element('span', 'attribute-value', createStatValueWithItemBonus(stat, view.sheet[stat], view.itemBonus[stat]), ...(showAttributeGrowth ? [createGrowthGain(hero.classId, stat)] : []))),
-  );
+  const attributeRows = ATTRIBUTE_BARS.map(({ stat, className: barClass }) => {
+    const valueOf = (isSplit: boolean): HTMLElement => element('span', '', createStatValueWithItemBonus(stat, view.sheet[stat], view.itemBonus[stat], isSplit), ...(showAttributeGrowth ? [createGrowthGain(hero.classId, stat)] : []));
+    // The hidden copy in the other view keeps the value column as wide in both views, so the bar does not change length when the view changes.
+    const widthKeeper = element('span', 'attribute-width-keeper', valueOf(!isItemBonusSplit));
+    widthKeeper.setAttribute('aria-hidden', 'true');
+    return element(
+      'div',
+      'attribute-row',
+      element('span', 'stat-name', statName(stat)),
+      attributeBar(view.sheet[stat], view.itemBonus[stat], attributeMaximum, barClass, isItemBonusSplit),
+      element('span', 'attribute-value', valueOf(isItemBonusSplit), widthKeeper),
+    );
+  });
+  const statsViewButton = (isSplit: boolean, label: string): HTMLButtonElement => {
+    const button = actionButton(label, () => {
+      isItemBonusSplit = isSplit;
+      context.requestRender();
+    });
+    button.classList.toggle('active', isItemBonusSplit === isSplit);
+    button.setAttribute('aria-pressed', String(isItemBonusSplit === isSplit));
+    return button;
+  };
+  const itemBonusToggle = element('div', 'view-toggle', statsViewButton(false, t('heroes.statsViewTotal')), statsViewButton(true, t('heroes.statsViewSplit')));
   const identity = element(
     'div',
     'hero-identity',
@@ -85,6 +107,7 @@ function renderStatsTab(context: PanelContext, hero: Hero): HTMLElement {
     'div',
     'hero-detail',
     identity,
+    itemBonusToggle,
     element('div', 'section-title', t('heroes.attributes')),
     element('div', 'attribute-list', ...attributeRows),
     element('div', 'section-title', t('heroes.mainStats')),
@@ -96,7 +119,6 @@ function renderRecordTab(context: PanelContext, hero: Hero): HTMLElement {
   const view = describeHero(context.store.getState(), hero, Date.now());
   const { statistics } = hero;
   const record = [
-    statisticRow(t('heroes.power'), String(view.power)),
     statisticRow(t('heroes.kills'), String(statistics.monstersDefeated)),
     statisticRow(t('heroes.damageDealt'), String(statistics.damageDealt)),
     statisticRow(t('heroes.dps'), formatNumber(view.damagePerSecond)),

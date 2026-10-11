@@ -1,3 +1,8 @@
+import { BASE_ITEMS } from '../../src/content/baseItems';
+import { MATERIALS } from '../../src/content/materials';
+import { SPELLS, familyIdOf } from '../../src/content/spells';
+import { drawDungeonIcon, drawFightIcon, drawItemIcon, drawLockIcon, drawMaterialIcon } from '../../src/ui/iconArt';
+import { drawSpellIcon } from '../../src/ui/spellIconArt';
 import { CLASSES } from '../../src/content/classes';
 import { DUNGEONS } from '../../src/content/dungeons';
 import { heroNamesForClass } from '../../src/content/heroNames';
@@ -65,6 +70,36 @@ const SPRITE_GROUPS: Readonly<Record<string, SpriteGroup>> = {
   creatures: {
     options: { scale: 4, columns: 8 },
     entries: () => Object.entries(CREATURE_DRAWERS).map(([spriteKey, draw]) => ({ label: spriteKey, canvas: headlessCanvasOf(draw()) })),
+  },
+  items: {
+    options: { scale: 8, columns: 6 },
+    entries: () => BASE_ITEMS.map((item) => ({ label: item.id, canvas: headlessCanvasOf(drawItemIcon(item.id, 'category-default', item.mainCategory)) })),
+  },
+  sets: {
+    options: { scale: 8, columns: 6 },
+    entries: () =>
+      ['sword', 'dagger', 'bow', 'helm-heavy', 'armour-heavy', 'armour-medium', 'armour-light', 'gloves-light', 'boots-medium'].flatMap((baseId) => {
+        const base = BASE_ITEMS.find((item) => item.id === baseId);
+        return ['copper-ore', 'sharp-fang', 'bone-shard', 'coarse-sinew', 'toadskin', 'spider-silk'].map((materialId) => ({ label: `${baseId} ${materialId}`, canvas: headlessCanvasOf(drawItemIcon(baseId, materialId, base?.mainCategory ?? 'ore')) }));
+      }),
+  },
+  materials: {
+    options: { scale: 8, columns: 8 },
+    entries: () => MATERIALS.map((material) => ({ label: material.id, canvas: headlessCanvasOf(drawMaterialIcon(material.id, material.category)) })),
+  },
+  icons: {
+    options: { scale: 8, columns: 6 },
+    entries: () => [
+      ...DUNGEONS.map((dungeon) => ({ label: dungeon.id, canvas: headlessCanvasOf(drawDungeonIcon(dungeon.id)) })),
+      ...(['ore', 'wood', 'hide', 'cloth', 'gem', 'fang', 'scale', 'bone', 'sinew', 'essence', 'skin', 'silk', 'catalyst'] as const).map((category) => ({ label: `category-${category}`, canvas: headlessCanvasOf(drawMaterialIcon(`category-${category}`, category)) })),
+      { label: 'town', canvas: headlessCanvasOf(drawDungeonIcon('town')) },
+      { label: 'lock', canvas: headlessCanvasOf(drawLockIcon()) },
+      { label: 'fight', canvas: headlessCanvasOf(drawFightIcon()) },
+    ],
+  },
+  spellicons: {
+    options: { scale: 6, columns: 12 },
+    entries: () => SPELLS.filter((spell) => familyIdOf(spell) === spell.id).map((spell) => ({ label: spell.id, canvas: headlessCanvasOf(drawSpellIcon(spell.id)) })),
   },
   backdrops: {
     options: { scale: 1, columns: 2 },

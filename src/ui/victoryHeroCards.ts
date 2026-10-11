@@ -56,7 +56,7 @@ function createHeroCard(state: GameState, hero: Hero, cardIndex: number, stronge
       'div',
       'victory-card-head',
       createPortrait(hero.classId, hero.name, 4),
-      element('div', 'victory-card-title', element('div', 'victory-hero-name', heroDisplayName(hero.name)), element('div', 'victory-hero-class', t('heroes.levelShort', { className: className(hero.classId), level: hero.level })), element('div', 'victory-power', t('victory.power', { power: formatNumber(view.power) }))),
+      element('div', 'victory-card-title', element('div', 'victory-hero-name', heroDisplayName(hero.name)), element('div', 'victory-hero-class', t('heroes.levelShort', { className: className(hero.classId), level: hero.level }))),
     ),
     element('div', 'victory-card-section', t('victory.stats')),
     element('div', 'victory-stats', ...STAT_ROWS.map((row, rowIndex) => createStatRow(row, view.sheet[row.key], strongestSheet[row.key], startSeconds + 0.4 + rowIndex * ROW_SPACING_SECONDS))),

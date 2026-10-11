@@ -31,26 +31,8 @@ interface Hotspot {
   building: BuildingDefinition;
   container: Container;
   sign: Container;
-  hoverOutline: Container;
   isClickable: boolean;
   isHovered: boolean;
-}
-
-function createHoverOutline(width: number, height: number): Container {
-  const outline = new Container();
-  outline.addChild(
-    createFlatSprite(PALETTE.uiGold, width + 4, 1),
-    createFlatSprite(PALETTE.uiGold, width + 4, 1),
-    createFlatSprite(PALETTE.uiGold, 1, height + 4),
-    createFlatSprite(PALETTE.uiGold, 1, height + 4),
-  );
-  const [top, bottom, left, right] = outline.children as [Container, Container, Container, Container];
-  top.position.set(-2, -2);
-  bottom.position.set(-2, height + 1);
-  left.position.set(-2, -2);
-  right.position.set(width + 1, -2);
-  outline.visible = false;
-  return outline;
 }
 
 // A name sign above each named building, and a tap area over it. A tap opens the building's menu, or the castle.
@@ -62,10 +44,9 @@ export function createTownSigns(world: Container, buildings: readonly BuildingDe
       const container = new Container();
       container.position.set(Math.round(building.x - building.width / 2), building.y - building.height);
       container.zIndex = SIGN_DRAW_ORDER + building.y;
-      const hoverOutline = createHoverOutline(building.width, building.height);
       const sign = new Container();
-      container.addChild(hoverOutline, sign);
-      const hotspot: Hotspot = { building, container, sign, hoverOutline, isClickable, isHovered: false };
+      container.addChild(sign);
+      const hotspot: Hotspot = { building, container, sign, isClickable, isHovered: false };
       if (isClickable) {
         container.eventMode = 'static';
         container.cursor = 'pointer';
@@ -103,7 +84,6 @@ export function createTownSigns(world: Container, buildings: readonly BuildingDe
 
   const setHovered = (hotspot: Hotspot, isHovered: boolean): void => {
     hotspot.isHovered = isHovered;
-    hotspot.hoverOutline.visible = isHovered;
     drawSign(hotspot);
   };
 

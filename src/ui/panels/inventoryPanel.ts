@@ -5,7 +5,6 @@ import type { BackpackEntry } from '../../model/backpack';
 import { actionButton, element } from '../dom';
 import { itemBaseDisplayName, qualityName } from '../displayNames';
 import { describeRejection, t } from '../i18n';
-import { createMoneyDisplay } from '../moneyDisplay';
 import { createItemNameElement } from '../itemNameElement';
 import type { PanelContext, PanelRenderer } from './panelContext';
 import { backpackEntryTitle, createBackpackEntryActions } from './backpack/backpackEntryMenu';
@@ -116,7 +115,7 @@ export const renderInventoryPanel: PanelRenderer = (context) => {
         'div',
         'inventory-grid-column',
         grid,
-        element('div', 'hint status-row', createMoneyDisplay(context.store.getState().copper), element('span', '', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })), renderMerchantSaleStatus(context)),
+        element('div', 'hint status-row', element('span', '', t('inventory.space', { used: storage.usedCells, total: storage.totalCells })), renderMerchantSaleStatus(context)),
         element('div', 'hero-choice-row', ...renderSortControl(context), actionButton(t('inventory.upgradeBackpack'), () => context.openPanel('bank'))),
         renderSelectionBar(context, selected),
       ),

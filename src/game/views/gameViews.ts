@@ -10,7 +10,7 @@ import { experienceToNextLevel } from '../../systems/progression';
 import { healthFractionAt, isDowned, secondsToFullHealth } from '../../systems/recovery';
 import { isClassUnlocked } from '../classUnlocks';
 import { runOfHero } from '../runStatus';
-import { computeHeroPower, computeHeroSheet, computeHeroStats, computeItemBonusSheet } from '../../systems/stats';
+import { computeHeroSheet, computeHeroStats, computeItemBonusSheet } from '../../systems/stats';
 
 export interface HeroView {
   stats: StatBlock;
@@ -22,7 +22,6 @@ export interface HeroView {
   secondsToRevive: number;
   secondsToFullHealth: number;
   experienceToNextLevel: number;
-  power: number;
   damagePerSecond: number;
 }
 
@@ -53,7 +52,6 @@ export function describeHero(state: GameState, hero: Hero, nowMs: number): HeroV
     secondsToRevive: downed ? Math.ceil(((hero.downedUntilMs ?? nowMs) - nowMs) / 1000) : 0,
     secondsToFullHealth: isAway ? 0 : secondsToFullHealth(hero, nowMs),
     experienceToNextLevel: hero.level >= LEVEL_CAP ? 0 : experienceToNextLevel(hero.level),
-    power: computeHeroPower(hero),
     damagePerSecond: hero.statistics.secondsFought > 0 ? hero.statistics.damageDealt / hero.statistics.secondsFought : 0,
   };
 }

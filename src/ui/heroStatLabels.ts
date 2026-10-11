@@ -28,8 +28,9 @@ function createItemBonusText(stat: string, bonus: number): HTMLElement | null {
   return element('span', `item-bonus ${isGain ? 'item-bonus-gain' : 'item-bonus-loss'}`, `${sign}${formatStatValue(stat, Math.abs(bonus))}`);
 }
 
-// Like Warcraft III: the base value from the class and level, then the part that the equipped items add in green.
-export function createStatValueWithItemBonus(stat: string, total: number, itemBonus: number): HTMLElement {
+// The total value by default. With the item bonus split on, like Warcraft III: the base value from the class and level, then the part that the equipped items add in green.
+export function createStatValueWithItemBonus(stat: string, total: number, itemBonus: number, isItemBonusSplit: boolean): HTMLElement {
+  if (!isItemBonusSplit) return element('span', 'stat-value', formatStatValue(stat, total));
   const bonusText = createItemBonusText(stat, itemBonus);
   const baseValue = Math.round((total - itemBonus) * 100) / 100;
   return element('span', 'stat-value', formatStatValue(stat, baseValue), ...(bonusText ? [bonusText] : []));

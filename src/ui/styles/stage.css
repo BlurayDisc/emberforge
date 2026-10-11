@@ -172,13 +172,6 @@
   margin-top: 8px;
 }
 
-.hud-title {
-  font-family: var(--font-title);
-  font-size: 22px;
-  color: var(--gold);
-  text-shadow: 1px 1px 0 var(--ink);
-}
-
 .hud-log {
   margin-top: 4px;
   color: var(--parchment-dim);
@@ -250,7 +243,7 @@
   display: none;
   flex: none;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
   padding: 6px 12px;
@@ -501,8 +494,7 @@
 
 .castle-leave-button {
   position: absolute;
-  /* Under the Pixi gold and clock HUD in the same corner. The HUD is about 50 stage pixels tall. */
-  top: calc(var(--u) * 54);
+  top: calc(var(--u) * 5);
   right: calc(var(--u) * 5);
   width: auto;
   margin: 0;

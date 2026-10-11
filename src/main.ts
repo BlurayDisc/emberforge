@@ -7,6 +7,7 @@ import './ui/styles/components.css';
 import './ui/styles/stage.css';
 import './ui/styles/panels.css';
 import './ui/styles/story.css';
+import './ui/styles/topBar.css';
 import { mountApp } from './app/mountApp';
 import { registerStageArtProviders } from './app/stageArtProviders';
 import { preloadTownArt } from './app/townArtPreloader';

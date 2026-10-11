@@ -11,12 +11,8 @@ Read only the file for the area you work in. Do not load them all.
 - `docs/story-and-lore.md` is the source of truth for story, cast, names and tone (10 chapters, one per town). Read it before you write or change any story, lore, castle or letter text. Keep character voices as written there. `docs/story-and-lore.zh-CN.md` is the Chinese version.
 - Use the words from the docs/design.md glossary in names: `Company`, `Party`, `Bracket`, `Tier`, `Affix`, `Quality`.
 - `docs/balance/` holds the balance tables of each bracket (`bracket-NN.md`: targets and simulator results), the combat and growth spec, and the real-time battle spec.
-- Read the matching file in `docs/agent/` before you work in that area:
-  - `architecture.md` - layers, import rules, determinism, static build, saves.
-  - `balance-and-validation.md` - balance simulator and data validator.
-  - `languages.md` - English and Chinese texts.
-  - `runs-and-economy.md` - dungeon runs, reports, crafters, gold.
-  - `battle-sim.md` - the battle sim dev page.
+- `docs/architecture.md` - layers, import rules, determinism, static build, saves, languages, runs and economy. Read it before you add or move code.
+- `docs/balance/validation.md` - balance simulator and data validator. `docs/balance/battle-sim.md` - the battle sim dev page.
 - Skills in `.claude/skills/` hold the rules and the check loop for one kind of work. Use the matching skill before you start, and do not read its files for other work:
   - `ui-change` - any menu, panel, modal, screen, button, layout or CSS change (`src/ui/`). It also checks the UI in headless Chrome at phone and web size.
   - `art-change` - sprites, hero and creature art, backdrops, town art, spell effects, animation, the spell gallery. It runs the render, inspect, fix loop.
@@ -32,7 +28,7 @@ Read only the file for the area you work in. Do not load them all.
 | `npm run build` | `check` + production build into `dist/` |
 | `npm run balance` | Balance simulator. Win rate, duration and HP lost per dungeon and party. |
 | `npm run scenarios` | Five balance scenarios from `tools/balance-sim/presets/`. Change a preset file, not the code. |
-| `npm run battlesim` | Battle sim page in the browser: a dummy hero fights any creep. See `docs/agent/battle-sim.md`. |
+| `npm run battlesim` | Battle sim page in the browser: a dummy hero fights any creep. See `docs/balance/battle-sim.md`. |
 | `npm run smoke` | Headless smoke play (`tools/smoke-play.ts`). Fails on a broken rule. |
 | `npm run gallery` | Spell gallery in the browser. |
 | `npm run story-gallery` | Story gallery in the browser: the prologue, every story beat and every castle tale, in English and Chinese, with a button that opens each one as in the game. Dev tool, not in `vite build`. |

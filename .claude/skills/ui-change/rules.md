@@ -36,9 +36,10 @@ Keep these rules true. When the user agrees a new UI rule, add it here in the sa
 - Settings has a "Wide view" switch (`kernel/wideTownView.ts`, saved in `emberforge.settings`). On, the town view shows at least two pages (360 logical px), so one swipe crosses the whole town. On a narrow screen the stage gets less tall. Off, the stage fills the full height.
 
 **Where things live**
-- Gold and the local date and time are on the stage, in the top right corner. Pixi.js draws them over the town, the battle and the castle (`render/hud/stageHud.ts`, fed by `app/stageHudPresenter.ts`). Gold that comes in bumps the panel and floats a "+" beside it. A panel covers the stage, so a screen that deals with gold shows it again as an info line.
+- The top bar (`ui/topBar.ts`) is page layout above the stage, always visible, also in a fight and in the castle. It is the only place that shows the gold of the player, in one format (`createMoneyDisplay`). Do not show the player's gold anywhere else. A price (cost, fee, sell value) is not the gold of the player and stays where it is. With no menu open the bar shows the place name (town, castle or the dungeon of the fight), the local date and time, the gold, and the World and Settings buttons (icons, with a title and an aria label). With a menu open it shrinks to the menu title, the gold and the X button. A panel has no header of its own. A gold gain only flashes the colour of the number. A locked panel hides the X button.
+- The bottom bar holds the other menu buttons: 7 buttons in two rows on a phone, 4 above 3. A new menu goes to the top bar only if it is a rare, global screen (World, Settings). Otherwise it needs a place in the bottom bar, and a third row is not allowed.
 - The Dungeons panel has no team strip. The hero health shows in the fight screen and the run report.
-- Nothing else sits in the top corners of the stage: the town title is top left, the castle Leave button is under the gold in the top right.
+- Nothing sits in the top corners of the stage except the area name of the town screen (top left). The castle Leave button is in the top right corner.
 - Text goes through `t()` in both languages. Colours come from `theme.css`.
 
 **Before you finish a UI task**
@@ -66,7 +67,7 @@ Keep these rules true. When the user agrees a new UI rule, add it here in the sa
 
 ## The town (Pixi.js)
 
-- The town fills the whole stage area on a phone and on a wide window (`stage.setLayout('fill')`). The height is 270 logical pixels. The width follows the shape of the screen, from 180 to 640 logical pixels, so a phone shows one whole page. The battle and the castle keep the framed 480x270 picture (`'fixed'`).
+- The town fills the whole stage area on a phone and on a wide window (`stage.setLayout('fill')`). The height is 270 logical pixels. The width follows the shape of the screen, from 180 to 540 logical pixels (the whole town), so a phone shows one whole page and a very wide window shows bands at the sides. The battle and the castle keep the framed 480x270 picture (`'fixed'`).
 - Everything on the town scene is drawn by Pixi.js, not by DOM: building signs and tap areas (`render/town/townSigns.ts`), the arrows, the area name and the hint (`townInterface.ts`), the mill timer and Collect button (`townMillStatus.ts`), the speech bubbles, and the guide arrow for a new player (`townGuide.ts`). Animals are touchable in the town and the castle (`render/animalPetting.ts`: hop, hearts, a call) and call rarely by themselves (`render/animalChatter.ts`). The villager lines come from `ui/townTalkFacts.ts` (facts of the save) and `ui/townTalkStories.ts` (town stories); a new line needs a key in both languages. Menus, panels and modals stay DOM.
 - Text on the stage uses `render/uiText.ts`. It draws at screen resolution, so letters stay sharp, and it takes its fonts from the same CSS variables as the menus.
 - The town has 3 pages (west, castle, east) of 180 logical pixels. Drag with a finger or the mouse, the wheel, the arrow keys and the arrow buttons all end on a page, centred in the view. One swipe moves one page. The town opens on the castle page. If a building does not fit a page, move the building in `data/buildings.json`.

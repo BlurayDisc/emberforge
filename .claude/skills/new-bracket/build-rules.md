@@ -25,7 +25,7 @@ The skill collects these in its Stages 1 and 2. Take the town, region, families 
 
 Use the parameters above wherever this text says N, FIRST, LAST, TOWN, REGION, FAMILIES, BOSS, PREVIOUS_BOSS, NEXT_TOWN or PARTNER_LEVEL. Treat the answers of the interview in `SKILL.md` Stage 2 as the user's decisions. For anything left open, propose a value in A12 of the balance file.
 
-Read `CLAUDE.md`, `balance-template.md`, the balance file of the previous bracket, `docs/design.md` and the topic files it lists for sections 4, 4b, 5, 6, 8 and 9, the memory notes, and the matching files in `docs/agent/` (`architecture.md`, `balance-and-validation.md`, `runs-and-economy.md`, `languages.md`, `pixel-art.md`, `ui-rules.md`, `audio.md`) before you start. Read any `CONTEXT.md` file if one exists. Use the glossary words: Company, Run party, Bracket, Tier, Affix, Quality. Do not commit. Work on `main`. Do not write unit tests.
+Read `CLAUDE.md`, `balance-template.md`, the balance file of the previous bracket, `docs/design.md` and the topic files it lists for sections 4, 4b, 5, 6, 8 and 9, the memory notes, `docs/architecture.md` (layers, languages, runs and economy), `docs/balance/validation.md`, and the rules of the `ui-change`, `art-change` and `audio-change` skills before you start. Read any `CONTEXT.md` file if one exists. Use the glossary words: Company, Run party, Bracket, Tier, Affix, Quality. Do not commit. Work on `main`. Do not write unit tests.
 
 ## Goal
 
@@ -57,7 +57,7 @@ Before the user approves, you may write only the design records into `data/` (se
 
 ## Part 2: Town and world
 
-- Add TOWN to the town data (`data/towns.json` may already hold the map position, biome and levels). Add everything else it needs: town buildings in `data/buildings.json` (workshop, merchant, tavern, academy, dungeon board), the town scene art and the biome battle backdrop (Pixi.js, cached textures; follow `.claude/skills/art-change/pixel-art-rules.md` and `docs/agent/architecture.md`; the current town code is in `src/render/town/`, `src/render/townView.ts` and `src/app/townPresenter.ts`), the town layout and the town labels, and the travel rules (time = 2 s + 1 s per bracket crossed, the town opens when PREVIOUS_BOSS is beaten).
+- Add TOWN to the town data (`data/towns.json` may already hold the map position, biome and levels). Add everything else it needs: town buildings in `data/buildings.json` (workshop, merchant, tavern, academy, dungeon board), the town scene art and the biome battle backdrop (Pixi.js, cached textures; follow `.claude/skills/art-change/pixel-art-rules.md` and `docs/architecture.md`; the current town code is in `src/render/town/`, `src/render/townView.ts` and `src/app/townPresenter.ts`), the town layout and the town labels, and the travel rules (time = 2 s + 1 s per bracket crossed, the town opens when PREVIOUS_BOSS is beaten).
 - Follow `.claude/skills/ui-change/rules.md` for any screen you touch (no dynamic movement, footer buttons, mobile first).
 - Region: REGION. Monster families from `docs/design/world-and-dungeons.md` section 9: FAMILIES. Boss: BOSS.
 - Check the Hiring lock rule in `docs/design/heroes-and-spells.md` (`unlockAfterDungeonId` in `classes.json`). If a class should unlock in this town, decide it with me in A12 of the balance file.

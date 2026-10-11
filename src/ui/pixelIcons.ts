@@ -1,4 +1,4 @@
-export type IconName = 'heroes' | 'inventory' | 'workshop' | 'merchant' | 'dungeons' | 'world' | 'menu' | 'coin-gold' | 'coin-silver' | 'coin-copper';
+export type IconName = 'heroes' | 'inventory' | 'workshop' | 'merchant' | 'academy' | 'bank' | 'gear' | 'dungeons' | 'world' | 'menu' | 'coin-gold' | 'coin-silver' | 'coin-copper';
 
 interface IconArt {
   rows: readonly string[];
@@ -99,6 +99,57 @@ const ICONS: Record<IconName, IconArt> = {
       '.oggddddggo.',
       '..oggggggo..',
       '...oooooo...',
+    ],
+    legend: BASE_LEGEND,
+  },
+  academy: {
+    rows: [
+      '............',
+      '.oooooooooo.',
+      'orrrrrrrrrro',
+      'orppppppprro',
+      'orpooooopro.',
+      'orppppppprro',
+      'orpooooopro.',
+      'orppppppprro',
+      'orrrrrrrrrro',
+      '.oooooooooo.',
+      '............',
+      '............',
+    ],
+    legend: BASE_LEGEND,
+  },
+  bank: {
+    rows: [
+      '............',
+      '.....oo.....',
+      '...oossoo...',
+      '.oosssssSoo.',
+      'oSSSSSSSSSSo',
+      '.oooooooooo.',
+      '..ogo..ogo..',
+      '..ogo..ogo..',
+      '..ogo..ogo..',
+      '..ogo..ogo..',
+      'oSSSSSSSSSSo',
+      'oooooooooooo',
+    ],
+    legend: BASE_LEGEND,
+  },
+  gear: {
+    rows: [
+      '.....oo.....',
+      '..o.osso.o..',
+      '.osooSSooso.',
+      '..osssssso..',
+      '.oossooosso.',
+      'ossssooossso',
+      'ossssooossso',
+      '.oossooosso.',
+      '..osssssso..',
+      '.osooSSooso.',
+      '..o.osso.o..',
+      '.....oo.....',
     ],
     legend: BASE_LEGEND,
   },

@@ -7,6 +7,8 @@ import { CASTLE_SCREEN_COUNT, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../src/kerne
 import { ITEM_SHAPE_ROWS } from '../src/ui/itemShapes';
 import { SPELL_ICON_MOTIFS } from '../src/content/spellVisuals';
 import { SPELL_ICON_GLYPHS } from '../src/ui/spellIconGlyphs';
+import { GLYPH_BY_FAMILY_ID } from '../src/ui/spellGlyphs/allGlyphs';
+import { SPELLS, familyIdOf } from '../src/content/spells';
 import { BUFF_ART_IDS, CAST_ART_IDS, DEBUFF_ART_IDS, IMPACT_ART_IDS, PROJECTILE_ART_IDS } from '../src/content/spellVisuals';
 import { checkGearBudget, damageAtItemLevel } from './validate-gear-budget';
 import { PROFESSION_IDS } from '../src/content/baseItems';
@@ -355,7 +357,7 @@ const MAXIMUM_MAIN_INGREDIENT_QUANTITY = 4;
 for (const base of baseItems) {
   const shapeRows = ITEM_SHAPE_ROWS[base.id];
   if (!shapeRows) report(`ui/itemShapes.ts: base item '${base.id}' has no icon picture`);
-  else if (shapeRows.length !== 12 || shapeRows.some((row) => row.length !== 12)) report(`ui/itemShapes.ts: the picture of '${base.id}' must be 12 rows of 12 letters`);
+  else if (shapeRows.length !== 16 || shapeRows.some((row) => row.length !== 16)) report(`ui/itemShapes.ts: the picture of '${base.id}' must be 16 rows of 16 letters`);
   if (base.mainIngredientQuantity > MAXIMUM_MAIN_INGREDIENT_QUANTITY) report(`base-items.json: '${base.id}' needs more than ${MAXIMUM_MAIN_INGREDIENT_QUANTITY} main ingredients`);
   if (!professions[base.profession]) report(`base-items.json: '${base.id}' uses unknown profession '${base.profession}'`);
   if (!RECIPE_OFFSETS.includes(base.craftLevelOffset)) report(`base-items.json: '${base.id}' needs a craftLevelOffset of ${RECIPE_OFFSETS.join(', ')}`);
@@ -799,6 +801,12 @@ function checkSpellLooks(): void {
   for (const motif of SPELL_ICON_MOTIFS) {
     const rows = SPELL_ICON_GLYPHS[motif];
     if (rows.length !== 12 || rows.some((row) => row.length !== 12)) report(`ui/spellIconGlyphs.ts: the icon '${motif}' must be 12 rows of 12 letters`);
+  }
+  for (const [familyId, glyph] of Object.entries(GLYPH_BY_FAMILY_ID)) {
+    if (glyph.rows.length !== 14 || glyph.rows.some((row) => row.length !== 14)) report(`ui/spellGlyphs: the picture of '${familyId}' must be 14 rows of 14 letters`);
+  }
+  for (const spell of SPELLS) {
+    if (!GLYPH_BY_FAMILY_ID[familyIdOf(spell)]) report(`ui/spellGlyphs: spell family '${familyIdOf(spell)}' has no icon picture`);
   }
   const looks = load<{ spells: Record<string, SpellLookData> }>('spell-visuals.json').spells;
   const audio = load<{ effects: Record<string, unknown>; spellSounds: Record<string, Partial<Record<'cast' | 'projectile' | 'impact' | 'buff' | 'debuff', string>>> }>('audio/sound-effects.json');

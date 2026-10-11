@@ -48,7 +48,6 @@ export function renderEquipComparison(context: PanelContext, hero: Hero, request
   const changedRows = comparison
     ? [
         ...COMPARED_STATS.filter((stat) => comparison.before[stat] !== comparison.after[stat]).map((stat) => compareRow(stat, heroStatLabel(stat, hero.classId), comparison.before[stat], comparison.after[stat])),
-        ...(comparison.powerBefore !== comparison.powerAfter ? [compareRow('power', t('equip.power'), comparison.powerBefore, comparison.powerAfter)] : []),
       ]
     : [];
   const rows = changedRows.length > 0 ? changedRows : [element('p', 'hint', t('equip.noChange'))];

@@ -1,7 +1,7 @@
 import type { GameStore } from '../game';
-import { actionButton, element } from './dom';
-import { t, onLanguageChange } from './i18n';
-import { PANEL_CATALOG, panelTitleKey } from './panelCatalog';
+import { element } from './dom';
+import { onLanguageChange } from './i18n';
+import { PANEL_CATALOG } from './panelCatalog';
 import type { PanelContext } from './panels/panelContext';
 import { closeEveryModalWithItsCloseAction } from './modal';
 import { createToastStack } from './toastStack';
@@ -14,6 +14,7 @@ export interface PanelHost {
   open(panelId: string): void;
   activePanelId(): string | null;
   closeActivePanel(): boolean;
+  canCloseActivePanel(): boolean;
   notify(message: string): void;
   onChange(listener: () => void): void;
 }
@@ -79,9 +80,7 @@ export function createPanelHost(store: GameStore): PanelHost {
         enterSubScreen,
         leaveSubScreen,
       };
-      const header = element('div', 'panel-header', element('span', 'panel-title', t(panelTitleKey(definition.id))));
-      if (!isActivePanelLocked()) header.append(actionButton('x', goBackOrClose, { className: 'action-button close-button' }));
-      host.append(element('div', `panel panel-${definition.id}`, header, definition.render(context)));
+      host.append(element('div', `panel panel-${definition.id}`, definition.render(context)));
     }
     restoreScrollOffsets(scrollOffsets);
     renderedPanelId = definition ? definition.id : null;
@@ -134,6 +133,7 @@ export function createPanelHost(store: GameStore): PanelHost {
     toggle: (panelId) => setActive(activeId === panelId ? null : panelId),
     open: (panelId) => setActive(panelId),
     activePanelId: () => activeId,
+    canCloseActivePanel: () => activeId !== null && !isActivePanelLocked(),
     closeActivePanel: () => {
       if (activeId === null || isActivePanelLocked()) return false;
       goBackOrClose();

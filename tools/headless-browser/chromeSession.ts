@@ -42,13 +42,19 @@ function stopChromeAndRemoveProfile(chrome: ChildProcess, profileDirectory: stri
   rmSync(profileDirectory, { recursive: true, force: true, maxRetries: 3 });
 }
 
-// A headless Chrome window gets animation frames, which a background tab does not. SwiftShader gives it WebGL without a GPU.
-// SwiftShader renders on the CPU, so a Chrome that is left running burns CPU. Every exit path must stop it.
+// A headless Chrome window gets animation frames, which a background tab does not.
+// On a Mac, Metal draws WebGL on the GPU (about 20% CPU). SwiftShader draws it on the CPU and uses every core (over 800% CPU),
+// so it is only the fallback: set EMBERFORGE_SOFTWARE_GL=1 or run on another platform.
+// Either way, a Chrome that is left running burns resources. Every exit path must stop it.
+const GL_FLAGS = process.platform === 'darwin' && !process.env.EMBERFORGE_SOFTWARE_GL
+  ? ['--use-angle=metal']
+  : ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'];
+
 export async function startChromeSession(width: number, height: number): Promise<ChromeSession> {
   const profileDirectory = mkdtempSync(join(tmpdir(), 'emberforge-chrome-'));
   const chrome: ChildProcess = spawn(CHROME_PATH, [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profileDirectory}`, `--window-size=${width},${height}`,
-    '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--no-first-run', '--no-default-browser-check', 'about:blank',
+    ...GL_FLAGS, '--no-first-run', '--no-default-browser-check', 'about:blank',
   ], { stdio: 'ignore', detached: true });
 
   let socket: WebSocket | undefined;

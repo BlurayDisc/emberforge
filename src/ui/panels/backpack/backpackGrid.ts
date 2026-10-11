@@ -34,7 +34,7 @@ function createEntryCell(store: GameStore, entry: BackpackEntry, options: Backpa
     cell.classList.add(`quality-border-${content.item.quality}`);
     const base = requireById(BASE_ITEMS, content.item.baseId);
     cell.title = itemDisplayName(content.item);
-    cell.append(createItemIcon(content.item.baseId, content.item.materialId, base.mainCategory, 3));
+    cell.append(createItemIcon(content.item.baseId, content.item.materialId, base.mainCategory, 2));
   } else {
     const material = requireById(MATERIALS, content.materialId);
     cell.classList.add(`category-${material.category}`);

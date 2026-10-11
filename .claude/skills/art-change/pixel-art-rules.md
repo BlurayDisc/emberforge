@@ -23,3 +23,12 @@
 - Spell looks are in `data/spell-visuals.json` (theme, cast, projectile, impact, buff, debuff, icon). The art is drawn in code in `src/render/spellEffects/`. The art ids are listed in `content/spellVisuals.ts`.
 - The spell gallery (`npm run gallery`) reads `SPELL_VISUALS`, so a new spell with a visual shows in it with no extra step. A new art id, a new theme or a new kind of effect (for example a new status) may need a change in `tools/spell-gallery/main.ts` too. The gallery is a dev tool. `vite build` does not include it.
 - When you add or change a spell animation: follow the loop in `SKILL.md`. Use the gallery (`npm run gallery`) as the page to open. Keep the gallery working for the new effect kind.
+
+## Item, material and spell icons
+
+- Item icons are 16x16 pictures in `src/ui/itemShapes*.ts` (melee, caster and ranged with trinkets, armour). Letters: o outline, a main, d dark, l light (tinted by the material, `ui/iconArt.ts`), plus the fixed colours of `BASE_LEGEND`. Material and dungeon icons are in `ui/iconArt.ts`.
+- A set piece takes its colours from the set material only (`item.materialId`). Give each set material its own tint and a 6x6 emblem (`ui/setEmblems.ts`), so two sets never look the same.
+- Spell icons are one 14x14 picture for each spell family in `src/ui/spellGlyphs/<class>Glyphs.ts`, inside a 16x16 frame drawn by `ui/spellIconArt.ts` (a gold frame for an ultimate). Ranks of one family share the picture. A family without a picture uses the old 12x12 motif of `ui/spellIconGlyphs.ts`.
+- Item icons show at scale 2 in the backpack (cells are 35 to 46 px) and at scale 3 elsewhere.
+- Look at them with `npm run sprites -- items`, `materials`, `icons`, `sets` and `spellicons` (add a label filter, for example `spellicons mage`). The spell sheet skips spells with `reservedFor`.
+

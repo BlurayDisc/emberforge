@@ -718,14 +718,19 @@
 .item-bonus-gain { color: #6adf6a; }
 .item-bonus-loss { color: #ff6a5a; }
 
-.attribute-value { text-align: right; white-space: nowrap; color: var(--parchment); }
+.attribute-value { display: inline-grid; justify-items: end; text-align: right; white-space: nowrap; color: var(--parchment); }
+.attribute-value > * { grid-area: 1 / 1; }
+.attribute-width-keeper { visibility: hidden; }
+
+.bar-segmented { display: flex; }
+.bar.bar-segmented .bar-fill.bar-fill-item-bonus { background: #6adf6a; border-left: 2px solid var(--ink); box-sizing: border-box; }
 
 .bar-strength .bar-fill { background: var(--crimson); }
 .bar-agility .bar-fill { background: var(--green); }
 .bar-intelligence .bar-fill { background: var(--blue); }
 .bar-hp .bar-fill { background: var(--log-taken); }
 .bar-defence .bar-fill { background: var(--silver); }
-.bar-resistance .bar-fill { background: var(--upgrade-4); }
+.bar-resistance .bar-fill { background: var(--blue); }
 .bar-attackSpeed .bar-fill { background: var(--gold); }
 
 .growth-gain {
@@ -761,7 +766,7 @@
 .class-tag-barbarian { background: #c98a52; }
 .class-tag-fighter { background: #e8c24a; }
 
-/* Phone layout: seven buttons in two rows (4 above 3), icon above label. A single row of seven left labels at 10 px.
+/* Phone layout: seven buttons in two rows, 4 above 3, icon above label. A single row of seven left labels at 10 px.
    A 12-column grid lets each row fill the full width, so nothing scrolls sideways. */
 @media (max-width: 640px) {
   .bottom-bar {

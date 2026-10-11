@@ -64,7 +64,9 @@ function rollRareNameParts(quality: CraftableQuality, random: Random): [string, 
 function computeSellValue(craftingCostCopper: number, ingredientCount: number, quality: CraftableQuality, affixCount: number, upgradeLevel: number): number {
   const upgradeFactor = 1 + SELL_GROWTH_PER_UPGRADE_LEVEL * upgradeLevel;
   const materialsAndQualityCopper = (craftingCostCopper + SELL_ADDED_VALUE_COPPER_PER_INGREDIENT * ingredientCount) * SELL_QUALITY_FACTOR[quality];
-  return Math.max(1, Math.round((materialsAndQualityCopper + SELL_ADDED_VALUE_COPPER_PER_AFFIX * affixCount + SELL_ADDED_VALUE_COPPER_PER_ITEM) * upgradeFactor));
+  const valueBeforeUpgrade = Math.max(1, Math.round(materialsAndQualityCopper + SELL_ADDED_VALUE_COPPER_PER_AFFIX * affixCount + SELL_ADDED_VALUE_COPPER_PER_ITEM));
+  const upgradedValue = Math.round(valueBeforeUpgrade * upgradeFactor);
+  return Math.max(upgradedValue, valueBeforeUpgrade + upgradeLevel);
 }
 
 export function generateCraftedItem(request: CraftedItemRequest, random: Random): Item {

@@ -26,7 +26,7 @@ Part of the game design. The headings of `docs/design.md` list every section and
 - **Damage of a hero:** a hero attacks with the damage kind of its class.
 - **Start and money:** the company starts empty. The player starts with 50 copper, for the first crafter fees. The **first hero is free** at the Tavern (any open class). More heroes cost gold: 3s (300 copper), 9s, 27s … (×3 each, `heroHireCostByCompanySize`). Monsters drop no money: the player earns money only by selling materials and items at the merchant. The second hero is a goal for level 5 to 6. The measured income is in `docs/balance/bracket-01.md` (B11).
 - **Money:** 100 copper = 1 silver, 100 silver = 1 gold. The game stores copper only.
-- **Statistics:** each hero records monsters defeated, damage dealt and taken, healing done, fight time, and battles won and lost. The Heroes screen shows them with damage per second and **Power** (the square root of damage output times durability).
+- **Statistics:** each hero records monsters defeated, damage dealt and taken, healing done, fight time, and battles won and lost. The Heroes screen shows them with damage per second.
 - **Promotion** (Fire Emblem style): at Lv 20 the player picks one of two branches. At Lv 50 the hero takes the master class. The hero keeps the level. The data and texts exist in `data/advancements.json` (2 branches per base class, 1 master per branch). The promotion command and screen are not built yet.
 
 | Class | Role | Lv 20 branches | Lv 50 master | Weapon | Off hand | Armour |

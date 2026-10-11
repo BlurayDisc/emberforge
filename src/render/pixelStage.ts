@@ -1,5 +1,5 @@
 import { Application, Container } from 'pixi.js';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_PAGE_WIDTH } from '../kernel/stageSize';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, TOWN_PAGE_WIDTH, TOWN_WIDTH } from '../kernel/stageSize';
 import { isWideTownView, onWideTownViewChange } from '../kernel/wideTownView';
 import { PALETTE } from './palette';
 
@@ -33,10 +33,10 @@ export interface PixelStage {
 
 // The frame outline is a box-shadow outside the frame. This margin keeps it from being cut by the container.
 const FRAME_OUTLINE_MARGIN_PIXELS = 8;
-// The view always shows a whole town page, because the town moves one page at a time. A very wide window stops growing at the maximum.
+// The view always shows a whole town page, because the town moves one page at a time. A very wide window stops growing at the width of the whole town, so no empty ground shows.
 const MINIMUM_FILL_VIEW_WIDTH = TOWN_PAGE_WIDTH;
 const MINIMUM_WIDE_VIEW_WIDTH = 2 * TOWN_PAGE_WIDTH;
-const MAXIMUM_FILL_VIEW_WIDTH = 640;
+const MAXIMUM_FILL_VIEW_WIDTH = TOWN_WIDTH;
 
 interface ViewGeometry {
   viewWidth: number;

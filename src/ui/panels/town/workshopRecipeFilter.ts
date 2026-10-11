@@ -19,7 +19,7 @@ function preferencesOf(professionId: string): RecipeFilterPreferences {
   let preferences = preferencesByProfessionId.get(professionId);
   if (!preferences) {
     const saved = loadRecipeFilterPreferences(professionId);
-    preferences = { classId: saved.classId, slot: saved.slot, sortDirection: saved.sortDirection };
+    preferences = { ...saved };
     preferencesByProfessionId.set(professionId, preferences);
   }
   return preferences;
@@ -56,11 +56,12 @@ export function applyRecipeFilter(professionId: string, recipes: readonly Worksh
   const preferences = preferencesOf(professionId);
   const classId = chosenOrAll(preferences.classId, classIdsOffered(recipes));
   const slot = chosenOrAll(preferences.slot, slotsOffered(recipes));
-  const { sortDirection } = preferences;
+  const { sortDirection, isCraftableOnly } = preferences;
   const direction = sortDirection === 'up' ? 1 : -1;
   return recipes
     .filter((recipe) => classId === ALL || recipe.usableByClassIds.includes(classId as ClassId))
     .filter((recipe) => slot === ALL || recipe.slot === slot)
+    .filter((recipe) => !isCraftableOnly || recipe.hasMaterials)
     .sort((first, second) => direction * (
       first.requiredCraftLevel - second.requiredCraftLevel
       || baseItemOrder(first) - baseItemOrder(second)
@@ -87,11 +88,17 @@ export function createRecipeFilterBar(professionId: string, recipes: readonly Wo
     rememberChoice(professionId, preferences);
     requestRender();
   };
+  const craftableOnlyBox = element('input', 'stay-toggle-box');
+  craftableOnlyBox.type = 'checkbox';
+  craftableOnlyBox.checked = preferences.isCraftableOnly;
+  craftableOnlyBox.addEventListener('change', () => choose({ isCraftableOnly: craftableOnlyBox.checked }));
+  const craftableOnlyToggle = element('label', 'stay-toggle', craftableOnlyBox, element('span', 'card-text', t('workshop.filterCraftableOnly')));
   return element(
     'div',
     'filter-bar',
     createThemedDropdown(t('workshop.filterClass'), classOptions, chosenOrAll(preferences.classId, offeredClassIds), (value) => choose({ classId: value })),
     createThemedDropdown(t('workshop.filterSlot'), slotOptions, chosenOrAll(preferences.slot, offeredSlots), (value) => choose({ slot: value })),
     createThemedDropdown(t('workshop.sortLevelUp'), sortOptions, preferences.sortDirection, (value) => choose({ sortDirection: value as RecipeSortDirection })),
+    craftableOnlyToggle,
   );
 }

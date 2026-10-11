@@ -7,7 +7,7 @@ description: Interactive workflow to add a new bracket (town, dungeons, boss, ti
 
 You add one bracket to Emberforge together with the user. Do not guess what the user must decide. Ask with AskUserQuestion, and give a recommendation as the first option.
 
-Read first: `CLAUDE.md`, `balance-template.md` in this folder, the balance file of the previous bracket (if it exists), `build-rules.md` in this folder (the build rules, Parts 1 to 9, the subagent plan, and "Done when"), and `docs/design.md` and the topic files for sections 4, 4b, 5, 6, 8 and 9. Read a file of `docs/agent/` only when you reach the part that needs it (for example `ui-rules.md` for a screen, `audio.md` for sounds). These files are for this skill only. Normal work does not read them. Follow every rule in `build-rules.md`. Where it says "the parameters", use the answers you collect below.
+Read first: `CLAUDE.md`, `balance-template.md` in this folder, the balance file of the previous bracket (if it exists), `build-rules.md` in this folder (the build rules, Parts 1 to 9, the subagent plan, and "Done when"), and `docs/design.md` and the topic files for sections 4, 4b, 5, 6, 8 and 9. Read `docs/architecture.md` and `docs/balance/validation.md` before you edit data or code. Use the `ui-change`, `art-change` and `audio-change` skills for screens, art and sounds. These files are for this skill only. Normal work does not read them. Follow every rule in `build-rules.md`. Where it says "the parameters", use the answers you collect below.
 
 ## Stage 1: Parameters
 

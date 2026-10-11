@@ -15,14 +15,22 @@ Keep these project rules:
 
 ## Render, inspect, fix
 
-1. **Render it.**
-   - Sprites: `npm run sprites -- heroes|creatures|backdrops`. It writes a contact sheet to `out/art/`.
-   - Spell animation: `npm run animation -- <spellId>` (for example `warrior.cleave`), or one effect (`impact:steel-cleave:steel`).
-   - Stage, gallery or anything that moves: start `npm run dev`, then `npm run shot` against the spell gallery (`npm run gallery`), the battle sim (`npm run battlesim`) or the game. A background tab gets no animation frames, so a fight never advances there.
+1. **Render it.** Pick the tool by what you changed, and look at the result in context, not only alone:
+
+   | You changed | Look at it first | Then look at it in the fight |
+   |---|---|---|
+   | A spell or effect (`spell-visuals.json`, `render/spellEffects/`) | Spell gallery: `npm run gallery`, then `shot` and click the spell. Frame strip: `npm run animation -- <spellId>` | Battle sim with a hero of that class, paused at the cast time (see below) |
+   | A creature or monster sprite | `npm run sprites -- creatures` (contact sheet) | Battle sim with `creep=<monsterId>`. The monster record must exist in `data/monsters.json` first |
+   | A hero sprite, pose or attack animation | `npm run sprites -- heroes` | Battle sim with `class=<class>`: windup, hit and recoil, and the ranged poses |
+   | A backdrop | `npm run sprites -- backdrops` | Battle sim (it draws the backdrop behind the fight) |
+   | An item, material, dungeon or spell icon | `npm run sprites -- items` (or `materials`, `icons`, `sets`, `spellicons`) | The real game with `npm run shot`: backpack, equipment, workshop and spells screens at phone and web size |
+| Town, castle or a menu look | `shot` on the game | Same, at phone and web size |
+
+   Battle sim: start `npx vite --port 5190`, then `npm run shot -- 'http://localhost:5190/battle-sim.html?class=archer&level=5&gear=magic&creep=wolf&count=1&seed=3' '[{"wait":1500},{"eval":"battleSim.jumpTo(1.2)"},{"shot":"cast"}]' 1280 720`. Use `localhost`. The page params, `at=<seconds>` and `battleSim.jumpTo` are in `docs/balance/battle-sim.md`. To find the cast or hit moment, read `castStart` and `attackStart` in `report.actionEvents`. A background tab gets no animation frames, so a fight never advances there. Use `shot`.
 2. **Make it repeatable.** Use fixed waits, a fixed seed and the same scenario for each run (the battle sim takes `seed`, `class`, `level` and `creep` in its URL). Then two screenshots can be compared.
 3. **Inspect the image yourself** with the image reader. Also compare with the screenshot from before your change, and check the intended design: frame order, timing, position, scale, transparency, looping, pixel-art consistency. A pixel difference alone only catches regressions. It cannot tell if a spell looks exciting or an icon looks good, so you must look.
 4. **Fix and render again.** Repeat until it is right.
-5. For a spell animation, keep the spell gallery working for the new effect kind. Show the user the gallery page and the screenshot.
+5. For a spell animation, keep the spell gallery working for the new effect kind. Show the user the gallery page and the screenshots from the gallery and from the battle sim.
 6. Stop the dev server. Run `npm run check`.
 7. Do not say the work is done until you have looked at the new image. If you could not look, say so.
 

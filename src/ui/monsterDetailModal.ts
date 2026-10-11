@@ -28,14 +28,14 @@ function rankTag(monster: MonsterDefinition): string {
   return '';
 }
 
-function renderLootLine(drop: MonsterDefinition['drops'][number], showsDropRates: boolean): HTMLElement {
+function renderLootLine(drop: MonsterDefinition['drops'][number]): HTMLElement {
   const material = requireById(MATERIALS, drop.materialId);
   const quantity = drop.minQuantity === drop.maxQuantity ? String(drop.minQuantity) : `${drop.minQuantity}-${drop.maxQuantity}`;
   return element(
     'div',
     'loot-line',
     createMaterialIcon(material.id, material.category, 2),
-    element('span', 'card-text small', showsDropRates ? t('dungeons.dropLine', { material: materialName(material.id), quantity, chance: Math.round(drop.chance * 100) }) : t('dungeons.dropLineNoChance', { material: materialName(material.id), quantity })),
+    element('span', 'card-text small', t('dungeons.dropLine', { material: materialName(material.id), quantity, chance: Math.round(drop.chance * 100) })),
   );
 }
 
@@ -72,8 +72,7 @@ function renderMonsterEntry(monster: MonsterDefinition, dungeon: DungeonDefiniti
       element('div', 'card-text small', t('dungeons.monsterLevel', { level: dungeon.level })),
       options.showsMonsterStatistics ? renderStatisticsLine(monster, dungeon) : element('div', 'card-text small hint', t('dungeons.statisticsLocked')),
       ...renderMonsterSpellLines(monster),
-      ...monster.drops.map((drop) => renderLootLine(drop, options.showsDropRates)),
-      ...(options.showsDropRates ? [] : [element('div', 'card-text small hint', t('dungeons.dropsLocked'))]),
+      ...(options.showsDropRates ? monster.drops.map(renderLootLine) : [element('div', 'card-text small hint', t('dungeons.dropsLocked'))]),
     ),
   );
 }

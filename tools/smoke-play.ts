@@ -656,6 +656,8 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   assert.ok(rolledSetItems.some((item) => item.quality === 'rare' && item.rareNameParts !== null), 'a set item can roll rare quality with a rare name');
   assert.ok(rolledSetItems.every((item) => item.materialId === 'sharp-fang'), 'every set item keeps its set material');
   assert.ok(rolledSetItems.filter((item) => item.upgradeLevel > 0).length > 0, 'a set item can carry an upgrade level');
+  const cheapItemSaleAtUpgradeLevel = (upgradeLevel: number): number => generateCraftedItem({ itemId: 'cheap-sword', baseId: 'sword', tier: 1, setMaterialId: null, itemLevel: 1, upgradeLevel, craftingCostCopper: 4, ingredientCount: 1, quality: 'common' }, createRandom(3)).sellValueCopper;
+  assert.ok(Array.from({ length: 7 }, (_, index) => index + 1).every((upgradeLevel) => cheapItemSaleAtUpgradeLevel(upgradeLevel) > cheapItemSaleAtUpgradeLevel(upgradeLevel - 1)), 'every upgrade level sells for more than the level below, also for a cheap item');
   const averageSaleOfQuality = (quality: Item['quality']): number => {
     const sales = rolledSetItems.filter((item) => item.quality === quality && item.upgradeLevel === 0).map((item) => item.sellValueCopper);
     return sales.reduce((total, sale) => total + sale, 0) / sales.length;
@@ -818,7 +820,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   }
 }
 
-// A dungeon gives its own bonus drops from dungeons.json. The level 1 dungeons have none, the Wolf Trail gives 1 basic material in 15% of fights.
+// A dungeon gives its own bonus drops from dungeons.json. The level 1 dungeons have none, the Wolf Trail gives 1 basic material in 20% of fights.
 // Quartz never takes the guaranteed drop, so its real chance is the chance in the data.
 {
   const ratCellar = DUNGEONS.find((dungeon) => dungeon.id === 'rat-cellar')!;
@@ -826,7 +828,7 @@ assert.equal(crowded.overflow[0]?.quantity, 38, 'units that find no room are ret
   const bonusRolls = (dungeon: typeof wolfTrail) => Array.from({ length: 1000 }, (_, seed) => rollDungeonBonusDrops(dungeon, createRandom(seed))).flat();
   assert.equal(bonusRolls(ratCellar).length, 0, 'a level 1 dungeon gives no basic material bonus');
   const wolfBonus = bonusRolls(wolfTrail);
-  assert.ok(wolfBonus.length > 100 && wolfBonus.length < 200, `the Wolf Trail gives a basic material in about 15% of fights (got ${wolfBonus.length} of 1000)`);
+  assert.ok(wolfBonus.length > 150 && wolfBonus.length < 250, `the Wolf Trail gives a basic material in about 20% of fights (got ${wolfBonus.length} of 1000)`);
   assert.ok(wolfBonus.every((stack) => stack.quantity === 1 && ['copper-ore', 'pine-wood', 'rawhide', 'linen'].includes(stack.materialId)), 'the bonus is 1 basic material');
   const quartzFights = Array.from({ length: 2000 }, (_, seed) => rollMonsterLoot('goblin', createRandom(seed)).materials.some((stack) => stack.materialId === 'quartz')).filter(Boolean).length;
   assert.ok(quartzFights > 40 && quartzFights < 120, `a Goblin drops Quartz in about 4% of fights (got ${quartzFights} of 2000)`);

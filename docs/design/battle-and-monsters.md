@@ -44,7 +44,7 @@ The anchors (HP, damage, armour, Resistance for each level) are in `data/balance
 ### Boss
 
 - One boss per town. The balance file of the bracket names the boss, its dungeon, the enter level and the recommended level (A5, A8).
-- **Party and adds:** the boss needs 2 heroes. The fight has 0 or 1 adds (a normal monster of its dungeon), because adds never exceed the party size minus 1.
+- **Party and adds:** the boss needs 2 heroes. The fight always has as many adds (normal monsters of its dungeon) as the party size minus 1, up to the maximum of adds. With 2 heroes, the boss has 1 add.
 - **Rewards:** the drops are in A8 of the bracket file. A boss pays ×5 XP.
 - **Stats (flat numbers in `flatStats`):** a boss is a normal monster lifted by one common factor of the level curve at its dungeon level. The validator keeps the four stats (HP, damage, armour, Resistance) within 15% of their common factor and the attack time inside 1.0-2.0 s. The boss burst comes from its spells, not from a slow attack. The dungeon level does not change a boss. The spells use a share of its attack, so they follow the attack.
 - **Targeting:** every monster picks its target like a hero does: the nearest enemy (see the real-time battle rules).

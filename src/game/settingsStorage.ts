@@ -86,7 +86,7 @@ export function saveSeenChangelogVersion(seenChangelogVersion: string): void {
   }
 }
 
-const DEFAULT_RECIPE_FILTER: RecipeFilterPreferences = { classId: 'all', slot: 'all', sortDirection: 'up' };
+const DEFAULT_RECIPE_FILTER: RecipeFilterPreferences = { classId: 'all', slot: 'all', sortDirection: 'up', isCraftableOnly: false };
 
 export function loadRecipeFilterPreferences(professionId: string): RecipeFilterPreferences {
   const saved = readSettings().recipeFilterByProfessionId?.[professionId] ?? {};
@@ -94,6 +94,7 @@ export function loadRecipeFilterPreferences(professionId: string): RecipeFilterP
     classId: typeof saved.classId === 'string' ? saved.classId : DEFAULT_RECIPE_FILTER.classId,
     slot: typeof saved.slot === 'string' ? saved.slot : DEFAULT_RECIPE_FILTER.slot,
     sortDirection: saved.sortDirection === 'down' ? 'down' : DEFAULT_RECIPE_FILTER.sortDirection,
+    isCraftableOnly: saved.isCraftableOnly === true,
   };
 }
 

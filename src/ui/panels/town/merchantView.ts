@@ -2,7 +2,6 @@ import { listSaleJobs, merchantSaleSlotsOf } from '../../../game';
 import type { GameState } from '../../../model/gameState';
 import { actionButton, element } from '../../dom';
 import { t } from '../../i18n';
-import { createMoneyDisplay } from '../../moneyDisplay';
 import { createBackpackGrid } from '../backpack/backpackGrid';
 import { createMerchantSelectionBar } from '../backpack/merchantSelectionBar';
 import type { PanelContext, PanelRenderer } from '../panelContext';
@@ -46,12 +45,11 @@ function renderSellSections(context: PanelContext): HTMLElement[] {
   return [renderSaleStatus(state), ...backpackSection];
 }
 
-// The gold is an info line at the top. The buttons are the footer row: always last, and sticky, so a short desktop window never hides them.
+// The buttons are the footer row: always last, and sticky, so a short desktop window never hides them.
 export const renderMerchantPanel: PanelRenderer = (context) =>
   element(
     'div',
     'panel-body',
-    element('div', 'merchant-gold-line', createMoneyDisplay(context.store.getState().copper)),
     ...renderSellSections(context),
     element('div', 'panel-footer', actionButton(t('merchant.leave'), context.closePanel), actionButton(t('merchant.upgradeShop'), () => context.openPanel('bank'), { className: 'action-button footer-action' })),
   );

@@ -1,0 +1,78 @@
+/* The top bar is page layout above the stage, so it never covers the town. It holds the only gold readout of the game. */
+.top-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  padding-top: calc(4px + env(safe-area-inset-top));
+  background-color: var(--wood-700);
+  box-shadow: inset 0 -4px 0 var(--ink);
+  z-index: 3;
+}
+
+.top-bar-place {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.top-bar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-title);
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.top-bar-clock {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--parchment-dim);
+}
+
+.top-bar-gold {
+  flex: none;
+  padding: 4px 8px;
+  background: var(--wood-900);
+  box-shadow: var(--outline-2);
+  font-size: 15px;
+}
+
+/* A gain only changes the colour for a moment. Nothing moves. */
+.top-bar-gold-gain .money-part {
+  animation: top-bar-gold-flash 0.7s steps(1);
+}
+
+@keyframes top-bar-gold-flash {
+  0%,
+  50% {
+    color: #fff;
+  }
+}
+
+.top-bar-button {
+  flex: none;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-bar-menu-open .top-bar-clock,
+.top-bar-menu-open .top-bar-button:not(.close-button) {
+  display: none;
+}
